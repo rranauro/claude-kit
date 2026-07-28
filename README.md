@@ -5,6 +5,21 @@ packaged as a plugin. It covers the path from "we should probably do something
 about X" to a merged PR and a cleaned-up worktree, with the design vocabulary
 that keeps the work honest along the way.
 
+## Why I built this
+
+Claude has collapsed the cost of construction. Work that took months takes days,
+and that moves the bottleneck: the scarce input is no longer how fast you can
+build, it's whether what you're building should stand.
+
+An architect can put up a building far faster now. The design still decides
+whether it's worth having. And software rarely fails by falling over — it fails
+by standing, and calcifying.
+
+So the job has shifted. As developers we have to be architects, and own what the
+building looks like. Every command here exists to force that ownership at the
+moment it's cheapest: before the ticket is written, before the class is named,
+before the PR is open.
+
 ## Install
 
 ```
@@ -62,10 +77,18 @@ them:
 - **Worktree plumbing.** `git worktree add` gives you a checkout missing every
   gitignored file the app needs to boot. `/start-ticket` wires those back up, and
   enforces one worktree per issue — two is a trap that hides your own changes.
+- **Nothing to adopt.** No label vocabulary, no triage states, no `docs/agents/`
+  config, no block written into your `CLAUDE.md`. These commands read issues and
+  open PRs; how you triage, label, and run your process stays yours.
 - **A review loop that distrusts reviewers.** `/review-copilot` merges findings
   from multiple bots into one bucket per line and makes you verify each claim
-  against the code before accepting it. Automated reviewers are confidently
-  wrong often enough that this is the difference between review and dictation.
+  against the code before accepting it. Two things make this worth the ceremony.
+  Models aren't ranked better and worse so much as *different* — run two over the
+  same diff and they surface strikingly different issues, so the second reviewer
+  is coverage, not redundancy. And when they independently land on the same line,
+  that corroboration is the strongest signal you get. It's still a signal to
+  verify, not a verdict: agreement makes a finding more likely to be real, never
+  certain.
 
 The two skills here fill gaps rather than compete: `behavior-placement` asks
 *whose* the behavior is, where `codebase-design` asks how deep a module should
