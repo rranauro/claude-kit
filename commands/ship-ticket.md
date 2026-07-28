@@ -1,0 +1,212 @@
+---
+model: opus
+---
+
+End-to-end ticket workflow: clean-main check → worktree → TDD → simplify → PR → automated review (Copilot + Claude headless) → auto-merge → cleanup.
+
+**Arguments:** `$ARGUMENTS` — GitHub issue number (e.g. `/ship-ticket 612`) or issue URL. Required.
+
+---
+
+## What this skill is
+
+A thin orchestrator. Each phase delegates to an existing skill. **Do not re-implement** what those skills already cover — invoke them via the Skill tool and pass through arguments. This file is the only place the *sequencing*, *gates*, and *handoffs between phases* live.
+
+Constituent skills:
+- `/start-ticket` — Phases 1–3 (clean check, worktree, plan)
+- `/commit` — invoked inside Phase 4 as needed
+- `behavior-placement` — Phase 4, when the change adds or moves a class
+- `/simplify` — Phase 4b
+- `/new-pull-request` — Phase 5
+- `/loop` + `/wait-copilot` — Phase 6
+- `/review-copilot` — Phase 7
+- `/cleanup-worktree` — Phase 9
+
+---
+
+## Mandatory constraints
+
+- **Do not duplicate constituent skill bodies.** If a phase says "run `/commit`", invoke the Skill tool — do not inline its steps.
+- **Halt at every gate.** Gates are explicit user checkpoints (Phase 4 plan approval, Phase 5 push approval, Phase 8 auto-merge confirmation). Do not skip them in the name of momentum.
+- **Worktree-prefixed paths.** Once Phase 2 creates `.claude/worktrees/<branch>/`, every Read/Edit/Write must target that path. The tool cwd stays at the main checkout.
+- **Never merge locally.** PRs merge on GitHub only — via `gh pr merge`, never `git merge` into main.
+- **Never run the full RSpec suite without permission.**
+
+---
+
+## Phase 1 — Clean-main check
+
+Delegated to `/start-ticket` Step 2. Before invoking, confirm `$ARGUMENTS` is an issue number/URL; if missing, ask the user.
+
+---
+
+## Phase 2 — Worktree off `origin/main`
+
+Delegated to `/start-ticket` Steps 3–8. Skill name derives from issue title: `<issue>-<short-description>`. The user confirms the branch name inside `/start-ticket`.
+
+After it returns, you will be operating against `.claude/worktrees/<branch>/`.
+
+---
+
+## Phase 3 — Read the plan file
+
+Delegated to `/start-ticket` Step 9. The plan lives at `.claude/worktrees/<branch>/plans/<issue>-plan.md`. If the file exists, summarize and ask whether to proceed. If it does not, fall back to the `/start-ticket` standard flow (identify files, optional codebase exploration, present plan).
+
+**Gate:** do not start Phase 4 until the user has accepted the plan.
+
+---
+
+## Phase 4 — TDD implementation
+
+Not delegated — this is the work itself.
+
+**Spec placement — extend before adding.** For each requirement in the plan, find the existing spec that covers the surface you're touching:
+
+- Modifying an existing model/service/helper/controller method → extend its existing `spec/<type>/<name>_spec.rb`. Add a new `describe`/`context` block, not a new file.
+- Adding a new public method to an existing class → same as above; new `describe '#new_method'` block in the existing spec.
+- Adding a brand-new class (model, service, helper, controller, concern, PORO) → create a matching new spec file. The new file is justified because the production class is new, not because the behavior is new.
+- Cross-cutting feature with no obvious owner → ask the user where the spec belongs before creating one.
+
+Then, per requirement:
+
+1. Write the spec (in the file selected above). Place it in the matching `spec/` subdirectory.
+2. Run that single example (`bundle exec rspec <path>:<line>`) and confirm it fails as expected — no need to ask permission for targeted runs.
+3. Implement the minimal change. Re-run the example; confirm green.
+4. Run the broader spec file (and adjacent specs in the same directory if relevant) for regressions — still no need to ask. Only the full suite (`bundle exec rspec` with no path) requires permission.
+5. When the implementation is complete (or at sensible checkpoints), invoke `/commit` via the Skill tool. Do not push from inside `/commit`.
+
+Apply the project rules from `CLAUDE.md` while implementing — keep controllers thin, scope theme services under `Themes::`, etc. This skill does not restate them.
+
+When the change adds or moves a class, run the `behavior-placement` skill before
+writing it — model, value object, or service, and whether the app already
+derives the answer.
+
+---
+
+## Phase 4b — Simplify pass (before the PR exists)
+
+Specs are green; the PR is not open yet. Invoke `/simplify` via the Skill tool
+on the working diff, then commit any cleanups it applies.
+
+This runs **here, not later**, because cleanups landing now become part of the
+original commits instead of review-response commits — and because the automated
+reviewers in Phase 7 hunt bugs, not duplication. Reuse, over-abstraction, and
+altitude problems are exactly what they under-report and what costs a
+round-trip when the user catches them by hand.
+
+Do NOT run `/code-review` here. Phase 7 already reviews this diff twice
+(Copilot + Claude headless); a third bug-hunt over the same lines buys nothing.
+`/simplify` is quality-only, which is why it doesn't overlap.
+
+If `/simplify` proposes a change that contradicts the ticket's agreed approach,
+surface it to the user rather than applying it — this pass tidies the
+implementation, it does not relitigate the design.
+
+---
+
+## Phase 5 — Push and open PR (gated)
+
+**Gate before pushing.** Ask the user:
+
+> "Ready to push and open the PR, or do you want to boot the worktree and exercise the change in-app first?"
+
+- If they want to test in-app first: pause. Wait for them to come back and approve.
+- If they approve the push: invoke `/new-pull-request` via the Skill tool.
+
+`/new-pull-request` already includes `Closes #<issue-number>` automatically when the branch starts with the issue number — verify this happened in the PR body it produced. If the closing keyword is missing (e.g. issue was not the branch prefix), edit the PR body with `gh pr edit <N> --body` to add it. The closing keyword in the **body** is what auto-closes the issue; the title prefix doesn't count.
+
+**Do NOT enable auto-merge here.** The initial PR is opened with auto-merge **off**. CI is fast and will frequently go green before Copilot/Claude reviews land — enabling `--auto` at creation time can merge the PR before reviewers post. Auto-merge is set in Phase 8, only after the initial review pass has been addressed and pushed.
+
+---
+
+## Phase 6 — Poll for Copilot review (60s, up to 10 min)
+
+**Gate before starting the loop.** This phase holds the current session open for up to 10 minutes. Ask the user:
+
+> "Phase 6 will poll for Copilot's review every 60s for up to 10 minutes — this holds the current session. Continue here, or hand off to a new session?
+>
+> To hand off: open a new Claude Code session in this repo and run `/wait-copilot <PR#>` (then `/review-copilot <PR#>` once Copilot posts)."
+
+- If they want to hand off: stop here. The PR is open; the user picks up from `/wait-copilot` in the new session.
+- If they want to continue: proceed with the loop below.
+
+`/new-pull-request` Step 4a normally kicks off `/loop 90s /wait-copilot <PR#>`. **Override the interval to 60s for this skill** by invoking `/loop` with args `60s /wait-copilot <PR#>` instead.
+
+Bound: 10 attempts (~10 minutes). If `/wait-copilot` has not signalled "ready" after 10 firings, surface this to the user:
+
+> "Copilot has not posted a review after 10 minutes. Stop the loop with `/loop stop` and decide: keep waiting, ping the PR manually, or proceed without Copilot review?"
+
+Do not silently keep polling past the bound.
+
+---
+
+## Phase 7 — Evaluate each comment empirically (both reviewers)
+
+Delegated to `/review-copilot`. Despite its name, that skill addresses **all** automated reviewers:
+- **GitHub Copilot** — inline + top-level review comments
+- **Claude Opus headless review** — posted as a top-level PR comment by `~/.claude/hooks/pr-review-on-create.sh` on `gh pr create`, identifiable by the `<!-- claude-pr-review -->` marker
+
+The skill fetches all present sources, deduplicates overlapping `(path, line)` findings into single buckets, and walks them with the user. Findings flagged by more than one reviewer land in the same bucket and are the strongest signal to act.
+
+**Don't run Phase 7 too early.** Both reviewers post asynchronously after `gh pr create`. Phase 6's `/wait-copilot` polls for Copilot only; the Claude headless review can land later (it's a fresh `claude -p` Opus run reviewing the diff). Before invoking `/review-copilot`, sanity-check that the Claude review comment exists with `gh api repos/{owner}/{repo}/issues/<PR#>/comments --jq '.[] | select(.body | startswith("<!-- claude-pr-review -->"))'`. If it's missing, wait another ~60s before proceeding — running `/review-copilot` against an absent Claude review just means Copilot-only coverage that pass.
+
+**Empirical verification — applies to every reviewer.** Before accepting any claim, read the offending lines and trace the actual behavior. Common false positives from any reviewer:
+
+- "Missing nil check" on a value that is provably non-nil in this code path.
+- "Extract a constant" for something used exactly once.
+- "Race condition" flagged in serial code.
+- "N+1" against a Rails relation that is already eager-loaded upstream.
+
+When the comment doesn't survive evidence, classify as ⚪ Ignore and record the reasoning in the commit message body — `/review-copilot` Step 5 already requires the per-item evaluation to be durable in git history. Reviewers agreeing on the same `(path, line)` bucket is a stronger signal than one alone — but still verify; they can all be wrong about the same thing.
+
+---
+
+## Phase 8 — Auto-merge when green
+
+**Preconditions** — all must be true before this phase runs:
+1. First-pass reviewer output has been seen: the Copilot review (or `/wait-copilot` bound exhausted with explicit user decision to proceed) **and** the `<!-- claude-pr-review -->` comment from the headless hook.
+2. `/review-copilot` Phase 7 has walked findings with the user.
+3. Any review-response commits are pushed to the PR branch.
+
+If all three hold, enable GitHub auto-merge:
+
+```
+gh pr merge <PR#> --auto --squash
+```
+
+GitHub then merges the PR itself once required checks pass. This is the only sanctioned merge path — do not run `git merge` locally and do not prompt the user to.
+
+**One review pass per PR.** After enabling auto-merge, do not re-trigger Copilot/Claude on the response commits and do not re-walk findings. Whatever passes CI on the response push ships.
+
+**Gate before enabling auto-merge.** Confirm with the user:
+
+> "Initial review findings addressed and pushed. Enable auto-merge (squash) for PR #<N>? GitHub will merge once checks pass."
+
+If the user declines (e.g., wants to wait for a human reviewer), stop here. They will merge from the GitHub UI when ready, and Phase 9 can be invoked separately.
+
+If `gh pr merge --auto` errors because auto-merge is not enabled in repo settings, fall back to:
+1. Polling `gh pr checks <PR#>` until all required checks succeed or one fails.
+2. If green, ask the user to confirm, then run `gh pr merge <PR#> --squash`.
+3. If red, surface the failing check and stop.
+
+---
+
+## Phase 9 — Clean up
+
+After the PR is merged on GitHub (auto-merge has fired, or the user merged manually), delegate to `/cleanup-worktree` with the branch name. It handles:
+
+- Verifying merge state on GitHub
+- Confirming the branch isn't checked out elsewhere (always ask)
+- `git worktree remove`
+- `git branch -d` (safe delete, never `-D` without explicit user approval)
+- `git worktree prune` and `git remote prune origin`
+
+If auto-merge is still pending when this skill's session ends, do **not** run cleanup yet. Tell the user: "Auto-merge is set; run `/cleanup-worktree <branch>` once GitHub finishes merging." Do not poll indefinitely.
+
+---
+
+## Failure / interrupt handling
+
+- If any phase fails (spec won't go green, push rejected, Copilot review never lands, auto-merge declined), stop at that phase and surface the state. Do not skip ahead.
+- If the user interrupts mid-skill, the constituent skills' commits and worktree leave the workspace recoverable. Resume by re-invoking the appropriate phase's skill directly (e.g., `/new-pull-request` to pick up at Phase 5).
+- The skill is idempotent at phase boundaries: re-running `/ship-ticket <same-issue>` after partial progress is safe — it will detect the existing worktree and PR.

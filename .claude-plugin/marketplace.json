@@ -1,0 +1,19 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "claude-kit",
+  "description": "Ticket-to-merge workflow for Claude Code: architecture discussion, worktree setup, TDD, automated PR review, and the design vocabulary that keeps behavior on the right object.",
+  "owner": {
+    "name": "Ron Ranauro"
+  },
+  "plugins": [
+    {
+      "name": "ticket-workflow",
+      "description": "End-to-end GitHub ticket workflow. /architect runs the design conversation and files lean issues; /start-ticket sets up an isolated worktree and picks up the plan; /ship-ticket drives TDD through PR, automated review, and cleanup. Includes a PostToolUse hook that posts a Claude review on every PR you open.",
+      "author": {
+        "name": "Ron Ranauro"
+      },
+      "category": "workflow",
+      "source": "./"
+    }
+  ]
+}
