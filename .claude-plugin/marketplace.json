@@ -13,7 +13,7 @@
         "name": "Ron Ranauro"
       },
       "category": "workflow",
-      "source": "./"
+      "source": "./plugins/ticket-workflow"
     }
   ]
 }
