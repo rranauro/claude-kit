@@ -42,6 +42,35 @@ post the review as a comment. Register it in a **project's**
 `.claude/settings.json` rather than the global one, so it only runs for repos
 you want reviewed. Kill switch: `export SKIP_PR_REVIEW=1`.
 
+## Why this and not just a pile of skills?
+
+Good skills already exist for most of the individual moves here — including in
+[Matt Pocock's suite][pocock], which has `to-tickets`, `implement`, `tdd`,
+`code-review`, and `handoff`. If you want the techniques, take them from there.
+
+What's missing when you have techniques but no assembly is everything between
+them:
+
+- **Sequence and gates.** `/ship-ticket` is an orchestrator, not a technique. It
+  knows the simplify pass runs *before* the PR exists, that auto-merge stays off
+  until the first review round is answered, and that pushing waits for you. The
+  ordering is the content — it's what stops you skipping the uncomfortable step
+  because the code looks fine.
+- **Handoff that survives a new session.** `/architect` writes a plan into a
+  gitignored `plans/` store that `/start-ticket` symlinks into every worktree, so
+  a decision reached on Tuesday is still there on Friday from a fresh checkout.
+- **Worktree plumbing.** `git worktree add` gives you a checkout missing every
+  gitignored file the app needs to boot. `/start-ticket` wires those back up, and
+  enforces one worktree per issue — two is a trap that hides your own changes.
+- **A review loop that distrusts reviewers.** `/review-copilot` merges findings
+  from multiple bots into one bucket per line and makes you verify each claim
+  against the code before accepting it. Automated reviewers are confidently
+  wrong often enough that this is the difference between review and dictation.
+
+The two skills here fill gaps rather than compete: `behavior-placement` asks
+*whose* the behavior is, where `codebase-design` asks how deep a module should
+be, and `writing-tickets` is about what a ticket must **not** freeze.
+
 ## The ideas behind it
 
 Three opinions do most of the work here.
