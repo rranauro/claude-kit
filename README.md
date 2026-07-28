@@ -75,17 +75,30 @@ particular language — the one Rails-flavored example, encrypted credentials in
 `/start-ticket` resolves paths with `git rev-parse --show-toplevel`, so there's
 nothing machine-specific to edit before use.
 
-## Pairs well with
+## Companion skills
 
-These are not included — they're other people's work, and this repo ships only
-its own. But the workflow was built alongside them and references them by name:
+Two commands here call skills from [Matt Pocock's suite][pocock] by name:
 
-- Matt Pocock's skills suite, in particular `codebase-design` (the deep-module
-  vocabulary `/architect` uses to compare approaches) and `grilling` (the
-  adversarial pass at the end of Phase 3).
+| Called by | Skill | What it supplies |
+|---|---|---|
+| `/architect` Phase 2 | `codebase-design` | The deep-module vocabulary — interface, seam, depth, leverage — used as the axis for comparing approaches. |
+| `/architect` Phase 3 | `grilling` | The adversarial pass over the converged direction, before any ticket is written. |
 
-If you don't have them installed, the commands still work — they'll just skip
-those steps.
+Install them with the [`skills`][skills-cli] CLI:
+
+```
+npx skills add mattpocock/skills
+```
+
+Claude Code reads global skills from `~/.claude/skills`; the CLI's universal
+target is `~/.agents/skills`. If you install for a non-Claude agent, symlink one
+to the other so Claude Code sees them.
+
+These are referenced, not bundled. Without them the commands still run —
+`/architect` loses its comparison vocabulary and its adversarial pass.
+
+[pocock]: https://github.com/mattpocock/skills
+[skills-cli]: https://github.com/vercel-labs/skills
 
 ## License
 
