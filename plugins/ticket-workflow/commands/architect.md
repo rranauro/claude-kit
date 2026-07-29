@@ -17,8 +17,8 @@ Have an architectural discussion about a technical topic, exploring ideas and tr
 
 **Phase 1 — Understand the problem space:**
 - What is the user trying to achieve? What's the motivation?
-- Read relevant code, docs (`THEME_ARCHITECTURE.md`, `DYNAMIC_RENDERING_ARCHITECTURE.md`, `CLAUDE.md`) as needed
-- Identify constraints: security, multi-tenancy, performance, Rails conventions
+- Read relevant code and whatever architecture docs the project keeps (`CLAUDE.md` first; then any `*_ARCHITECTURE.md`, ADRs, or design notes it has)
+- Identify the constraints that actually bind here — security, tenancy, performance, and the project's own conventions
 - Ask clarifying questions if the topic is ambiguous
 
 If the topic is "this area feels wrong" rather than a specific change, stop and

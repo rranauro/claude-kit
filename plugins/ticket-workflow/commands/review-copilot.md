@@ -2,7 +2,9 @@
 model: sonnet
 ---
 
-Review and address automated PR review feedback one by one — **GitHub Copilot** (inline + top-level review) and the **Claude Opus headless review** posted by the `pr-review-on-create.sh` hook. Overlapping findings on the same `(path, line)` are merged into one bucket, so the user is asked once — and agreement across reviewers is called out as a stronger signal.
+Review and address automated PR review feedback one finding at a time — **GitHub Copilot** (inline + top-level review) and the **Claude Opus headless review** posted by the `pr-review-on-create.sh` hook. Each finding is verified against the actual code before it is acted on, and overlapping findings on the same `(path, line)` are merged into one bucket — agreement across reviewers is called out as a stronger signal.
+
+> **There is no per-item user prompt.** Verification is empirical, not interactive: findings are checked against the code and applied or skipped automatically (Step 3), and the user's review point is the summary in Step 5 plus the commit body that records every decision.
 
 > Despite the file name, this skill is the single addresser for *all* automated PR review comments. Kept the name for backward compatibility with existing references.
 
@@ -16,7 +18,7 @@ Pull from these sources in parallel:
 
 - **Copilot inline:** `gh api repos/{owner}/{repo}/pulls/{number}/comments --jq '.[] | select(.user.login | test("copilot|github-actions"; "i")) | {source: "copilot-inline", id, path, line, body, diff_hunk}'`
 - **Copilot top-level review:** `gh api repos/{owner}/{repo}/pulls/{number}/reviews --jq '.[] | select(.user.login | test("copilot|github-actions"; "i")) | {source: "copilot-review", id, state, body}'`
-- **Claude headless review:** `gh api repos/{owner}/{repo}/issues/{number}/comments --jq '.[] | select(.body | startswith("<!-- claude-pr-review -->")) | {source: "claude-review", id, body}'` — note this hits the **issues** endpoint (PR-level comments), not pulls/comments. The Claude reviewer posts under the human user's gh account, so the `<!-- claude-pr-review -->` HTML marker (set by `~/.claude/hooks/pr-review-on-create.sh`) is the authoritative way to find it. It may be absent if the headless run hasn't posted yet or found nothing; treat it like any empty source.
+- **Claude headless review:** `gh api repos/{owner}/{repo}/issues/{number}/comments --jq '.[] | select(.body | startswith("<!-- claude-pr-review -->")) | {source: "claude-review", id, body}'` — note this hits the **issues** endpoint (PR-level comments), not pulls/comments. The Claude reviewer posts under the human user's gh account, so the `<!-- claude-pr-review -->` HTML marker (set by the `pr-review-on-create.sh` hook, wherever you registered it) is the authoritative way to find it. It may be absent if the headless run hasn't posted yet or found nothing; treat it like any empty source.
 
 > **Match logins case-insensitively** (the `"i"` flag is required). Copilot's *inline* comments are authored by login `Copilot` (capital C), while its top-level review bot is `copilot-pull-request-reviewer[bot]` (lowercase). Without `"i"` the inline pass silently returns nothing — the most important findings get missed.
 
@@ -92,12 +94,26 @@ All items are processed without stopping for approval. The summary in Step 5 is 
 **Step 7 — Push:**
 - Push the branch to origin.
 
-**Step 8 — Enable auto-merge:**
-- First-pass automated reviews have now been addressed (per `feedback_no_auto_merge_until_reviews_addressed.md`), so it's safe to mark the PR for auto-merge on CI green.
-- Run `gh pr merge <PR#> --auto --squash` (use the PR number resolved in Step 1).
-- Run even if no fixes were made — the act of triaging all items counts as "addressed."
+**Step 8 — Enable auto-merge (gated):**
+
+The first-pass automated reviews have now been triaged, which is the precondition
+for auto-merge — triaging every item counts as "addressed" even when no fixes were
+made. Auto-merge stays off until this point precisely because CI often goes green
+before the reviewers post.
+
+**If this skill was invoked by `/ship-ticket`, stop here.** That skill owns the
+auto-merge decision in its own Phase 8 and will run the gate itself; enabling it
+here would bypass that gate.
+
+Otherwise, ask the user before enabling:
+
+> "Review findings triaged and pushed. Enable auto-merge (squash) for PR #<N>? GitHub will merge once checks pass."
+
+- On approval, run `gh pr merge <PR#> --auto --squash` (use the PR number resolved in Step 1).
 - If the command errors because auto-merge is already enabled or the PR is already merged, that's fine — report and continue.
-- Tell the user: "Auto-merge enabled — PR will merge when required CI checks pass."
+- If it errors because auto-merge is disabled in repo settings, say so and let the user merge from the GitHub UI; do not fall back to a local merge.
+- If the user declines, stop — they'll merge when ready.
+- On success, tell the user: "Auto-merge enabled — PR will merge when required CI checks pass."
 
 **Arguments:** $ARGUMENTS
 If the user passes a PR number (e.g., `/review-copilot 228`), use that instead of the current branch's PR.

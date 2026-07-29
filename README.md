@@ -21,9 +21,10 @@ that keeps the work honest along the way.
 | `/architect` | The design conversation. Explores the problem, weighs approaches, converges, then files lean GitHub issues. |
 | `/start-ticket` | Reads an issue, creates an isolated git worktree off `origin/main`, wires up gitignored runtime files, and picks up any plan `/architect` left behind. |
 | `/ship-ticket` | Orchestrates the rest: TDD, a simplify pass, PR, automated review, auto-merge, cleanup. |
-| `/commit` | Focused commit with a real message. |
+| `/commit` | Focused commit with a real message. Reads the project's test, lint, and security gates from `CLAUDE.md`/manifest/CI and runs them on what changed. |
+| `/rails-commit` | The Rails variant of the above — runs RSpec, RuboCop, and Brakeman explicitly instead of discovering them. |
 | `/new-pull-request` | Opens a PR with a closing keyword wired to the issue. |
-| `/review-copilot` | Walks automated review findings one at a time, verifying each against the code before accepting it. |
+| `/review-copilot` | Takes automated review findings one at a time and verifies each against the code before acting, recording the reasoning for every one in the commit body. |
 | `/wait-copilot` | Polls a PR until the automated reviewers post. |
 | `/cleanup-worktree` | Removes a merged worktree and its branch. |
 
@@ -84,11 +85,14 @@ Techniques are the easy part. Everything between them is where the workflow live
   config, no block written into your `CLAUDE.md`. These commands read issues and
   open PRs; how you triage, label, and run your process stays yours.
 - **A review loop that distrusts reviewers.** `/review-copilot` merges findings
-  from multiple bots into one bucket per line and makes you verify each claim
-  against the code before accepting it. The second reviewer is coverage, not
-  redundancy — and when two land on the same line independently, that
-  corroboration is the strongest signal you get. Still a signal to verify, not a
-  verdict: agreement makes a finding more likely to be real, never certain.
+  from multiple bots into one bucket per line and checks each claim against the
+  actual code before acting on it — a "missing nil check" on a provably non-nil
+  path gets classified and dropped, not applied. Every decision, including the
+  rejections, lands in the commit body so the reasoning is durable in git rather
+  than lost in a chat log. The second reviewer is coverage, not redundancy — and
+  when two land on the same line independently, that corroboration is the
+  strongest signal you get. Still a signal to verify, not a verdict: agreement
+  makes a finding more likely to be real, never certain.
 
 ## The ideas behind it
 
@@ -113,23 +117,34 @@ nobody argued about is the one most likely to be wrong.
 ## Assumptions
 
 These commands assume **GitHub** (via `gh`) and **git worktrees**. `/ship-ticket`
-additionally assumes a test suite it can run per-file. Nothing assumes a
-particular language — the one Rails-flavored example, encrypted credentials in
-`/start-ticket`, is marked as an example to adapt.
+additionally assumes a test suite it can run per-file.
+
+**On stacks.** The workflow was developed on Rails, and the generic path is the
+one I keep honest: `/commit` reads your test, lint, and security commands from
+`CLAUDE.md`, the manifest, or CI rather than assuming them, and `/ship-ticket`
+Phase 4 uses your project's test framework with the RSpec form shown as a worked
+example. Where a step is genuinely Rails-shaped it's split out or labeled —
+`/rails-commit` is the opinionated variant, and the encrypted-credentials wiring
+in `/start-ticket` is marked as an example to adapt. If you hit an assumption
+that isn't marked, that's a bug.
 
 `/start-ticket` resolves paths with `git rev-parse --show-toplevel`, so there's
 nothing machine-specific to edit before use.
 
-Where I can, I keep stack dependencies and expectations about how you use GitHub
-out of these commands.
+**External commands these call.** Beyond the companion skills below, the
+workflow invokes `/simplify` (`/ship-ticket` Phase 4b), `/loop` (`/wait-copilot`
+polling), and optionally `/target-debug` (reads the `tickets/` notes
+`/new-pull-request` writes). Each degrades to a skipped step if you don't have
+it, rather than failing.
 
 ## Companion skills
 
 I found [Matt Pocock's suite][pocock] about seven months after building this, and
-took the nuggets that fit. Two commands here call his skills by name:
+took the nuggets that fit. `/architect` calls his skills by name at three points:
 
 | Called by | Skill | What it supplies |
 |---|---|---|
+| `/architect` Phase 1 | `improve-codebase-architecture` | Offered instead of ad-hoc file reading when the topic is "this area feels wrong" rather than a specific change; its scan feeds Phase 2. |
 | `/architect` Phase 2 | `codebase-design` | The deep-module vocabulary — interface, seam, depth, leverage — used as the axis for comparing approaches. |
 | `/architect` Phase 3 | `grilling` | The adversarial pass over the converged direction, before any ticket is written. |
 
@@ -144,13 +159,14 @@ target is `~/.agents/skills`. If you install for a non-Claude agent, symlink one
 to the other so Claude Code sees them.
 
 These are referenced, not bundled. Without them the commands still run —
-`/architect` loses its comparison vocabulary and its adversarial pass.
+`/architect` loses its comparison vocabulary, its adversarial pass, and its
+scan-first opening move.
 
 The two suites compose rather than compete. `codebase-design` asks how deep a
 module should be; `behavior-placement` here asks *whose* the behavior is. And go
 read the rest of his suite regardless of whether you use this one —
-`improve-codebase-architecture` is powerful enough to be worth having on its own,
-and nothing here wires it in.
+`improve-codebase-architecture` earns its place well beyond the one call
+`/architect` makes to it.
 
 [pocock]: https://github.com/mattpocock/skills
 [skills-cli]: https://github.com/vercel-labs/skills

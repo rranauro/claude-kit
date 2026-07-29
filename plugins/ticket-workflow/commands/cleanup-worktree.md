@@ -9,7 +9,7 @@ This command targets the worktree case from `/start-ticket` (worktree at `.claud
 - If `$ARGUMENTS` is a PR number: `gh pr view <num> --json headRefName,state,mergedAt` and take `headRefName` as the branch.
 - If `$ARGUMENTS` is a branch name: use it directly.
 - If `$ARGUMENTS` is a path: derive the branch from `git worktree list`.
-- If empty: use the current branch (`git branch --show-current`). If that's `main`, ask the user which worktree to clean up.
+- If empty: use the current branch (`git rev-parse --abbrev-ref HEAD`). If that's `main`, ask the user which worktree to clean up.
 
 Confirm the worktree path is `.claude/worktrees/<branch-name>/` via `git worktree list`. If it isn't listed there, surface what you found and ask the user before proceeding.
 
@@ -21,8 +21,8 @@ Confirm the worktree path is `.claude/worktrees/<branch-name>/` via `git worktre
 **Step 3 — Verify the worktree has no uncommitted work:**
 - `git -C .claude/worktrees/<branch-name> status --porcelain`
 - **Known-safe leftovers (do NOT prompt about these — silently allow + use `--force` in Step 5):**
-  - `?? lib/mcp/theme-gallery/node_modules` and `?? lib/mcp/unsplash/node_modules` — symlinks `/start-ticket` Step 7 creates back to the main checkout's `node_modules`. They're setup artifacts, not work.
-  - `?? .claude/settings.local.json`, `?? config/credentials.yml.enc` — symlinks `/start-ticket` Step 7 creates to inherit the main checkout's permissions and credentials.
+  - Any untracked path that is a **symlink `/start-ticket` Step 7 created** back into the main checkout. Those are setup artifacts, not work. Confirm with `test -L <path>` rather than matching names — the set is project-specific.
+  - In practice that means the secrets, permissions, and dependency links Step 7 wires up — e.g. `?? .claude/settings.local.json`, `?? config/credentials.yml.enc` (Rails), and any vendored `node_modules` symlinks the project needs.
 - If the porcelain output contains **only** entries from the known-safe set above, treat it as clean and proceed silently. Mark `--force` as required for Step 5 and continue.
 - If the porcelain output contains **anything else** (modified tracked files, untracked files outside the known-safe set), STOP and report what's outstanding. Do NOT pass `--force`; ask the user how to handle the leftovers.
 
@@ -31,10 +31,10 @@ Confirm the worktree path is `.claude/worktrees/<branch-name>/` via `git worktre
 - If yes, STOP. Leave the worktree and branch alone — the user has live work there.
 
 **Step 5 — Remove the worktree (run from the main checkout):**
-- Before removing, stop any RuboCop server daemon bound to this worktree's path: `cd .claude/worktrees/<branch-name> && rubocop --stop-server; cd -`. RuboCop's server mode spawns a persistent background process per directory; if the directory is deleted without stopping it first, the process orphans and keeps running indefinitely (harmless individually, but they accumulate across tickets and idle-burn CPU/memory). Don't prompt — this is a routine cleanup step, and a no-op if no server is running for that path.
+- Before removing, stop any **per-directory daemon** bound to this worktree's path. Tools that run a persistent server per working directory orphan their process when the directory is deleted underneath them — harmless individually, but they accumulate across tickets and idle-burn CPU/memory. Don't prompt; these are routine and no-ops when nothing is running. On Rails that's RuboCop's server mode: `cd .claude/worktrees/<branch-name> && rubocop --stop-server; cd -`. Substitute your stack's equivalent (language servers, watchers, test daemons).
 - `git worktree remove .claude/worktrees/<branch-name>` — or `git worktree remove --force <path>` if Step 3 flagged `--force` required.
 - If the user is currently `cd`'d into the worktree being removed, ask them to switch to the main checkout first; otherwise the remove will fail.
-- **Always sweep the path afterward.** `git worktree remove` deregisters git's bookkeeping but routinely leaves behind `tmp/cache/bootsnap/` (read-only perms set by Ruby) and other runtime files if the Rails app was booted in the worktree. After the `worktree remove` succeeds, unconditionally run `chmod -R u+w <worktree-path> 2>/dev/null; rm -rf <worktree-path>` so VS Code, Finder, and `ls` don't see an orphan directory. Do not prompt — this is a known artifact of having booted the Rails app in the worktree, and a no-op if the path is already gone.
+- **Always sweep the path afterward.** `git worktree remove` deregisters git's bookkeeping but routinely leaves behind runtime files written while the app was booted in the worktree — caches, logs, uploads — some with read-only permissions their writer set. (On Rails the usual culprit is `tmp/cache/bootsnap/`.) After the `worktree remove` succeeds, unconditionally run `chmod -R u+w <worktree-path> 2>/dev/null; rm -rf <worktree-path>` so VS Code, Finder, and `ls` don't see an orphan directory. Do not prompt — this is a no-op if the path is already gone.
 
 **Step 6 — Sync local main and delete the branch:**
 - `git fetch origin main && git pull --ff-only origin main` from `main` first, so the local ref reflects the merge.

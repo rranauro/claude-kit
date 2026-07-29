@@ -1,6 +1,6 @@
 Create a GitHub pull request for the current branch.
 
-Always run the /commit skill first and confirm the branch is ready for a pull request
+Always run `/commit` first — or `/rails-commit` on a Rails project — and confirm the branch is ready for a pull request.
 
 **Step 1 — Push the branch:**
 - If the branch has not been pushed or is behind, push it with `git push -u origin <branch>`.
@@ -31,10 +31,14 @@ gh pr create --title "the pr title" --body "$(cat <<'EOF'
 
 Closes #<issue-number-if-applicable>
 
-Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+Co-Authored-By: Claude <noreply@anthropic.com>
 EOF
 )"
 ```
+
+Name the running model in the trailer if you know it (e.g.
+`Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>`); otherwise leave it as
+`Claude`. Do not hardcode a model version in this file — it goes stale.
 
 **Step 4 — Confirm:**
 Print the PR URL so the user can review it.
@@ -46,7 +50,7 @@ GitHub Copilot reviews PRs automatically and usually takes 3–5 minutes. After 
 Then invoke `/loop` via the Skill tool with args `90s /wait-copilot <PR#>` so polling begins immediately.
 
 **Step 5 — Save ticket context to `tickets/`:**
-After the PR is created, write a summary file to `tickets/<pr-number>-<branch>.md`. This file is picked up by `/target-debug` to understand what recently changed without re-examining the diff.
+After the PR is created, write a summary file to `tickets/<pr-number>-<branch>.md`. It records why the change was made for whoever debugs it later — `/target-debug` reads these if you have it installed, and they stand on their own if you don't. Add `tickets/` to `.gitignore` if it isn't there already; these are local working notes, not repo content.
 
 Format:
 ```markdown

@@ -14,7 +14,7 @@ A thin orchestrator. Each phase delegates to an existing skill. **Do not re-impl
 
 Constituent skills:
 - `/start-ticket` — Phases 1–3 (clean check, worktree, plan)
-- `/commit` — invoked inside Phase 4 as needed
+- `/commit` (or `/rails-commit` on Rails) — invoked inside Phase 4 as needed
 - `behavior-placement` — Phase 4, when the change adds or moves a class
 - `/simplify` — Phase 4b
 - `/new-pull-request` — Phase 5
@@ -30,19 +30,19 @@ Constituent skills:
 - **Halt at every gate.** Gates are explicit user checkpoints (Phase 4 plan approval, Phase 5 push approval, Phase 8 auto-merge confirmation). Do not skip them in the name of momentum.
 - **Worktree-prefixed paths.** Once Phase 2 creates `.claude/worktrees/<branch>/`, every Read/Edit/Write must target that path. The tool cwd stays at the main checkout.
 - **Never merge locally.** PRs merge on GitHub only — via `gh pr merge`, never `git merge` into main.
-- **Never run the full RSpec suite without permission.**
+- **Never run the project's full test suite without permission.** Targeted runs need no permission.
 
 ---
 
 ## Phase 1 — Clean-main check
 
-Delegated to `/start-ticket` Step 2. Before invoking, confirm `$ARGUMENTS` is an issue number/URL; if missing, ask the user.
+Delegated to `/start-ticket`'s safety check (Step 2 as of writing — match on the step's *name*, not its number, since numbering can shift). Before invoking, confirm `$ARGUMENTS` is an issue number/URL; if missing, ask the user.
 
 ---
 
 ## Phase 2 — Worktree off `origin/main`
 
-Delegated to `/start-ticket` Steps 3–8. Skill name derives from issue title: `<issue>-<short-description>`. The user confirms the branch name inside `/start-ticket`.
+Delegated to `/start-ticket`'s issue-fetch through worktree-wiring steps (3–8 as of writing). Branch name derives from the issue title: `<issue>-<short-description>`. The user confirms it inside `/start-ticket`.
 
 After it returns, you will be operating against `.claude/worktrees/<branch>/`.
 
@@ -50,7 +50,9 @@ After it returns, you will be operating against `.claude/worktrees/<branch>/`.
 
 ## Phase 3 — Read the plan file
 
-Delegated to `/start-ticket` Step 9. The plan lives at `.claude/worktrees/<branch>/plans/<issue>-plan.md`. If the file exists, summarize and ask whether to proceed. If it does not, fall back to the `/start-ticket` standard flow (identify files, optional codebase exploration, present plan).
+Delegated to `/start-ticket`'s plan step (Step 9 as of writing). The plan lives at `.claude/worktrees/<branch>/plans/<issue>-plan.md`. If the file exists, `/start-ticket` asks whether it's still fresh and runs its anchor-verification pass when it isn't, then summarizes and asks whether to proceed. If no plan exists, it invokes `/architect` scoped to this issue to create one — do not improvise a plan here.
+
+`/start-ticket`'s placement check (Step 10) is **not** re-run by this skill; Phase 4 below owns it.
 
 **Gate:** do not start Phase 4 until the user has accepted the plan.
 
@@ -60,22 +62,26 @@ Delegated to `/start-ticket` Step 9. The plan lives at `.claude/worktrees/<branc
 
 Not delegated — this is the work itself.
 
-**Spec placement — extend before adding.** For each requirement in the plan, find the existing spec that covers the surface you're touching:
+Use the project's own test framework and layout — read them from `CLAUDE.md`, the
+manifest, or CI config rather than assuming. The Rails/RSpec form is shown below
+as the worked example; substitute the equivalent for your stack.
 
-- Modifying an existing model/service/helper/controller method → extend its existing `spec/<type>/<name>_spec.rb`. Add a new `describe`/`context` block, not a new file.
-- Adding a new public method to an existing class → same as above; new `describe '#new_method'` block in the existing spec.
-- Adding a brand-new class (model, service, helper, controller, concern, PORO) → create a matching new spec file. The new file is justified because the production class is new, not because the behavior is new.
-- Cross-cutting feature with no obvious owner → ask the user where the spec belongs before creating one.
+**Test placement — extend before adding.** For each requirement in the plan, find the existing test that covers the surface you're touching:
+
+- Modifying an existing method → extend its existing test file. Add a new group/context block, not a new file. *(Rails: `spec/<type>/<name>_spec.rb`, a new `describe`/`context`.)*
+- Adding a new public method to an existing class → same as above; a new group for that method in the existing test file.
+- Adding a brand-new unit (class, module, component) → create a matching new test file. The new file is justified because the production unit is new, not because the behavior is new.
+- Cross-cutting feature with no obvious owner → ask the user where the test belongs before creating one.
 
 Then, per requirement:
 
-1. Write the spec (in the file selected above). Place it in the matching `spec/` subdirectory.
-2. Run that single example (`bundle exec rspec <path>:<line>`) and confirm it fails as expected — no need to ask permission for targeted runs.
+1. Write the test (in the file selected above), in the location the project's convention dictates.
+2. Run that single example and confirm it fails as expected — no need to ask permission for targeted runs. *(Rails: `bundle exec rspec <path>:<line>`.)*
 3. Implement the minimal change. Re-run the example; confirm green.
-4. Run the broader spec file (and adjacent specs in the same directory if relevant) for regressions — still no need to ask. Only the full suite (`bundle exec rspec` with no path) requires permission.
-5. When the implementation is complete (or at sensible checkpoints), invoke `/commit` via the Skill tool. Do not push from inside `/commit`.
+4. Run the broader test file (and adjacent tests if relevant) for regressions — still no need to ask. Only the full suite requires permission.
+5. When the implementation is complete (or at sensible checkpoints), invoke `/commit` via the Skill tool — or `/rails-commit` on a Rails project, which runs RSpec, RuboCop, and Brakeman explicitly. Do not push from inside either.
 
-Apply the project rules from `CLAUDE.md` while implementing — keep controllers thin, scope theme services under `Themes::`, etc. This skill does not restate them.
+Apply the project's own rules from `CLAUDE.md` while implementing. This skill does not restate them.
 
 When the change adds or moves a class, run the `behavior-placement` skill before
 writing it — model, value object, or service, and whether the app already
@@ -144,9 +150,11 @@ Do not silently keep polling past the bound.
 
 Delegated to `/review-copilot`. Despite its name, that skill addresses **all** automated reviewers:
 - **GitHub Copilot** — inline + top-level review comments
-- **Claude Opus headless review** — posted as a top-level PR comment by `~/.claude/hooks/pr-review-on-create.sh` on `gh pr create`, identifiable by the `<!-- claude-pr-review -->` marker
+- **Claude Opus headless review** — posted as a top-level PR comment by the `pr-review-on-create.sh` hook on `gh pr create`, identifiable by the `<!-- claude-pr-review -->` marker
 
-The skill fetches all present sources, deduplicates overlapping `(path, line)` findings into single buckets, and walks them with the user. Findings flagged by more than one reviewer land in the same bucket and are the strongest signal to act.
+The skill fetches all present sources, deduplicates overlapping `(path, line)` findings into single buckets, and verifies each against the code before acting. Findings flagged by more than one reviewer land in the same bucket and are the strongest signal to act.
+
+Note that `/review-copilot` does not prompt per finding — it applies or skips each one on the evidence and reports a summary, with every decision recorded in the commit body. The user's checkpoint is that summary, not each item.
 
 **Don't run Phase 7 too early.** Both reviewers post asynchronously after `gh pr create`. Phase 6's `/wait-copilot` polls for Copilot only; the Claude headless review can land later (it's a fresh `claude -p` Opus run reviewing the diff). Before invoking `/review-copilot`, sanity-check that the Claude review comment exists with `gh api repos/{owner}/{repo}/issues/<PR#>/comments --jq '.[] | select(.body | startswith("<!-- claude-pr-review -->"))'`. If it's missing, wait another ~60s before proceeding — running `/review-copilot` against an absent Claude review just means Copilot-only coverage that pass.
 
@@ -165,8 +173,10 @@ When the comment doesn't survive evidence, classify as ⚪ Ignore and record the
 
 **Preconditions** — all must be true before this phase runs:
 1. First-pass reviewer output has been seen: the Copilot review (or `/wait-copilot` bound exhausted with explicit user decision to proceed) **and** the `<!-- claude-pr-review -->` comment from the headless hook.
-2. `/review-copilot` Phase 7 has walked findings with the user.
+2. `/review-copilot` (Phase 7) has triaged every finding and reported its summary.
 3. Any review-response commits are pushed to the PR branch.
+
+`/review-copilot`'s own Step 8 defers to this phase when it was invoked from here, so auto-merge is still off at this point and the gate below is the one that decides.
 
 If all three hold, enable GitHub auto-merge:
 

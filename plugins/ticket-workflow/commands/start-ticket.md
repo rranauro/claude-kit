@@ -13,7 +13,7 @@ The argument should be a GitHub issue number (e.g., `/start-ticket 42`) or a Git
 
 **Step 2 — Safety check (run in parallel, from the main checkout):**
 - `git status` — ensure the working tree is clean (no uncommitted changes)
-- `git branch --show-current` — note the current branch
+- `git rev-parse --abbrev-ref HEAD` — note the current branch (`git branch --show-current` needs git ≥ 2.22 and fails on older installs)
 - `ls .claude/worktrees/ 2>/dev/null | grep "^<issue-number>-"` — check for an existing worktree with the same ticket-number prefix
 
 If there are uncommitted changes, STOP and warn the user. Suggest they commit or stash first.
@@ -97,7 +97,7 @@ changes.
       - **Yes (plan is fresh):** Skip the anchor-verification pass. Present a brief summary of the plan and ask whether to proceed or adjust — no file lookups needed.
       - **No (plan may be stale, or unsure):** Run the anchor-verification pass below.
     - **Anchor-verification pass** (cheap and bounded — a handful of lookups, not a full re-exploration):
-      1. Spot-check every concrete anchor the plan names — do those files/symbols still exist and look as described? (Serena `find_symbol` / targeted grep.)
+      1. Spot-check every concrete anchor the plan names — do those files/symbols still exist and look as described? (Targeted grep, or a symbol-lookup MCP tool such as Serena's `find_symbol` if one is available — grep alone is sufficient.)
       2. `git log` the touched area since the plan's date — did anything land that invalidates an assumption?
     - **Decide:** anchors verify + no contradicting drift → present the plan as-is and proceed. An anchor is missing/moved, or drift contradicts an assumption → the plan's intent still holds, but re-derive the map *in just the affected area* and flag the divergence to the user before proceeding.
     - Note: the more concrete file/line detail a plan asserts, the *more* verification it needs, not less — there's more surface to have gone stale.
