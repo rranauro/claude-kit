@@ -36,9 +36,9 @@ that keeps the work honest along the way.
 
 ### Hooks
 
-`hooks/pr-review-on-create.sh` — a `PostToolUse` hook that fires when
-`gh pr create` succeeds and spawns a detached `claude -p` to review the PR and
-post the review as a comment. Register it in a **project's**
+`plugins/ticket-workflow/hooks/pr-review-on-create.sh` — a `PostToolUse` hook
+that fires when `gh pr create` succeeds and spawns a detached `claude -p` to
+review the PR and post the review as a comment. Register it in a **project's**
 `.claude/settings.json` rather than the global one, so it only runs for repos
 you want reviewed. Kill switch: `export SKIP_PR_REVIEW=1`.
 
@@ -120,8 +120,8 @@ particular language — the one Rails-flavored example, encrypted credentials in
 `/start-ticket` resolves paths with `git rev-parse --show-toplevel`, so there's
 nothing machine-specific to edit before use.
 
-Where possible we eliminate any stack dependencies and expectations about how you
-use GitHub for your project.
+Where I can, I keep stack dependencies and expectations about how you use GitHub
+out of these commands.
 
 ## Companion skills
 
