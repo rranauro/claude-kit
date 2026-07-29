@@ -1,6 +1,6 @@
 Create a GitHub pull request for the current branch.
 
-Always run `/commit` first — or `/rails-commit` on a Rails project — and confirm the branch is ready for a pull request.
+Always run `/commit` first and confirm the branch is ready for a pull request.
 
 **Step 1 — Push the branch:**
 - If the branch has not been pushed or is behind, push it with `git push -u origin <branch>`.

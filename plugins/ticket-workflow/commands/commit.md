@@ -1,8 +1,9 @@
 Create a git commit for the current changes.
 
-Stack-agnostic. For a Rails project with RSpec, RuboCop, and Brakeman wired up,
-use `/rails-commit` instead — it runs those gates explicitly rather than
-discovering them.
+Stack-agnostic: the toolchain is read from the project, never assumed. Projects
+that want a gate enforced rather than remembered should register a hook — see
+`hooks/rails-quality-gates.sh` for the Rails example. This command handles the
+part a hook can't: deciding what a finding means and fixing it.
 
 **Step 1 — Situational awareness (run in parallel):**
 - `git status` — see all modified and untracked files (never use -uall)
@@ -30,9 +31,20 @@ inventing a command. A wrong command that errors is noise; a wrong command that
 silently passes is worse.
 
 **Step 4 — Run the gates on what changed:**
-- **Tests:** run them scoped to the files this branch touched
-  (`git diff main...HEAD --name-only`). Ask before running the full suite —
-  targeted runs need no permission, full runs do.
+
+- **Tests.** Derive the target set explicitly rather than saying "the affected
+  tests" and improvising:
+  1. List the changed sources: `git diff main...HEAD --name-only`.
+  2. Map each to its test by the project's own convention — `app/models/foo.rb` →
+     `spec/models/foo_spec.rb` under RSpec, `src/foo.ts` → `src/foo.test.ts`
+     under Jest, and so on. Read an existing pair to confirm the convention
+     before trusting it.
+  3. A changed file that *is* a test runs as itself.
+  4. Run that set. Anything you couldn't map, say so — an unmapped source is a
+     coverage gap worth naming, not a file to quietly skip.
+
+  Targeted runs need no permission. Only the full suite does — ask before that,
+  and don't ask before the targeted run.
 - **Lint/format:** run the project's linter on the changed files. If it has a
   safe autofix mode, apply it and stage the result.
 - **Security scan:** if the project has one wired up, run it. Show any findings

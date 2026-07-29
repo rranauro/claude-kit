@@ -14,7 +14,7 @@ A thin orchestrator. Each phase delegates to an existing skill. **Do not re-impl
 
 Constituent skills:
 - `/start-ticket` — Phases 1–3 (clean check, worktree, plan)
-- `/commit` (or `/rails-commit` on Rails) — invoked inside Phase 4 as needed
+- `/commit` — invoked inside Phase 4 as needed
 - `behavior-placement` — Phase 4, when the change adds or moves a class
 - `/simplify` — Phase 4b
 - `/new-pull-request` — Phase 5
@@ -79,7 +79,7 @@ Then, per requirement:
 2. Run that single example and confirm it fails as expected — no need to ask permission for targeted runs. *(Rails: `bundle exec rspec <path>:<line>`.)*
 3. Implement the minimal change. Re-run the example; confirm green.
 4. Run the broader test file (and adjacent tests if relevant) for regressions — still no need to ask. Only the full suite requires permission.
-5. When the implementation is complete (or at sensible checkpoints), invoke `/commit` via the Skill tool — or `/rails-commit` on a Rails project, which runs RSpec, RuboCop, and Brakeman explicitly. Do not push from inside either.
+5. When the implementation is complete (or at sensible checkpoints), invoke `/commit` via the Skill tool. Do not push from inside it. If the project registers a commit-time gate hook, expect `/commit` to be blocked and to fix what it reports before retrying — that's the gate working, not a failure.
 
 Apply the project's own rules from `CLAUDE.md` while implementing. This skill does not restate them.
 

@@ -22,7 +22,6 @@ that keeps the work honest along the way.
 | `/start-ticket` | Reads an issue, creates an isolated git worktree off `origin/main`, wires up gitignored runtime files, and picks up any plan `/architect` left behind. |
 | `/ship-ticket` | Orchestrates the rest: TDD, a simplify pass, PR, automated review, auto-merge, cleanup. |
 | `/commit` | Focused commit with a real message. Reads the project's test, lint, and security gates from `CLAUDE.md`/manifest/CI and runs them on what changed. |
-| `/rails-commit` | The Rails variant of the above — runs RSpec, RuboCop, and Brakeman explicitly instead of discovering them. |
 | `/new-pull-request` | Opens a PR with a closing keyword wired to the issue. |
 | `/review-copilot` | Takes automated review findings one at a time and verifies each against the code before acting, recording the reasoning for every one in the commit body. |
 | `/wait-copilot` | Polls a PR until the automated reviewers post. |
@@ -37,11 +36,27 @@ that keeps the work honest along the way.
 
 ### Hooks
 
-`plugins/ticket-workflow/hooks/pr-review-on-create.sh` — a `PostToolUse` hook
-that fires when `gh pr create` succeeds and spawns a detached `claude -p` to
-review the PR and post the review as a comment. Register it in a **project's**
-`.claude/settings.json` rather than the global one, so it only runs for repos
-you want reviewed. Kill switch: `export SKIP_PR_REVIEW=1`.
+Both live in `plugins/ticket-workflow/hooks/`. Register them in a **project's**
+`.claude/settings.json` rather than the global one, so each fires only for the
+repos you want it in.
+
+`pr-review-on-create.sh` — a `PostToolUse` hook that fires when `gh pr create`
+succeeds and spawns a detached `claude -p` to review the PR and post the review
+as a comment. Kill switch: `export SKIP_PR_REVIEW=1`.
+
+`rails-quality-gates.sh` — a `PreToolUse` hook that holds `git commit` to RuboCop
+and Brakeman on the staged Ruby files, blocking the commit with the tool output
+so Claude fixes it and retries. No-ops unless the `Gemfile` carries both. Kill
+switch: `export SKIP_RAILS_GATES=1`.
+
+**Why the Rails opinion is a hook and not a command.** A gate is binary — did it
+pass? — and a hook can't be talked out of it the way a command can when the code
+looks fine. Remediation is the opposite: triaging a Brakeman finding into a real
+XSS or a false positive is judgment, and a shell script has none. So the hook
+enforces and `/commit` fixes, which keeps `/commit` stack-neutral and lets
+non-Rails users simply not register the hook. Tests stay in the command for the
+same reason — choosing which tests cover a change is judgment, and a full suite
+would blow the hook timeout.
 
 ## Why I built this
 
@@ -119,14 +134,14 @@ nobody argued about is the one most likely to be wrong.
 These commands assume **GitHub** (via `gh`) and **git worktrees**. `/ship-ticket`
 additionally assumes a test suite it can run per-file.
 
-**On stacks.** The workflow was developed on Rails, and the generic path is the
-one I keep honest: `/commit` reads your test, lint, and security commands from
-`CLAUDE.md`, the manifest, or CI rather than assuming them, and `/ship-ticket`
-Phase 4 uses your project's test framework with the RSpec form shown as a worked
-example. Where a step is genuinely Rails-shaped it's split out or labeled —
-`/rails-commit` is the opinionated variant, and the encrypted-credentials wiring
-in `/start-ticket` is marked as an example to adapt. If you hit an assumption
-that isn't marked, that's a bug.
+**On stacks.** The workflow was developed on Rails, but the commands are the
+generic path and I keep it honest: `/commit` reads your test, lint, and security
+commands from `CLAUDE.md`, the manifest, or CI rather than assuming them, and
+`/ship-ticket` Phase 4 uses your project's test framework with the RSpec form
+shown as a worked example. The Rails opinions live in a hook you opt into, not in
+the commands. What's left is labeled — the encrypted-credentials wiring in
+`/start-ticket` is marked as an example to adapt. If you hit an assumption that
+isn't marked, that's a bug.
 
 `/start-ticket` resolves paths with `git rev-parse --show-toplevel`, so there's
 nothing machine-specific to edit before use.
