@@ -5,21 +5,6 @@ packaged as a plugin. It covers the path from "we should probably do something
 about X" to a merged PR and a cleaned-up worktree, with the design vocabulary
 that keeps the work honest along the way.
 
-## Why I built this
-
-Claude has collapsed the cost of construction. Work that took months takes days,
-and that moves the bottleneck: the scarce input is no longer how fast you can
-build, it's whether what you're building should stand.
-
-An architect can put up a building far faster now. The design still decides
-whether it's worth having. And software rarely fails by falling over — it fails
-by standing, and calcifying.
-
-So the job has shifted. As developers we have to be architects, and own what the
-building looks like. Every command here exists to force that ownership at the
-moment it's cheapest: before the ticket is written, before the class is named,
-before the PR is open.
-
 ## Install
 
 ```
@@ -51,29 +36,47 @@ before the PR is open.
 
 ### Hooks
 
-`hooks/pr-review-on-create.sh` — a `PostToolUse` hook that fires when
-`gh pr create` succeeds and spawns a detached `claude -p` to review the PR and
-post the review as a comment. Register it in a **project's**
+`plugins/ticket-workflow/hooks/pr-review-on-create.sh` — a `PostToolUse` hook
+that fires when `gh pr create` succeeds and spawns a detached `claude -p` to
+review the PR and post the review as a comment. Register it in a **project's**
 `.claude/settings.json` rather than the global one, so it only runs for repos
 you want reviewed. Kill switch: `export SKIP_PR_REVIEW=1`.
 
-## Why this and not just a pile of skills?
+## Why I built this
 
-Good skills already exist for most of the individual moves here — including in
-[Matt Pocock's suite][pocock], which has `to-tickets`, `implement`, `tdd`,
-`code-review`, and `handoff`. If you want the techniques, take them from there.
+**Better designs, not faster typing.** `/architect` is the foundation. It's an
+argument with the model about the problem before any code exists, and what comes
+out is a design that's easier to debug and needs less hand-holding — which is
+what makes it reasonable to hand the coding to the model.
 
-What's missing when you have techniques but no assembly is everything between
-them:
+**Reviewing became the bottleneck.** Once construction got cheap, review was what
+ate my time. GitHub is the substrate here, so the workflow automates that phase
+where it can: `/new-pull-request` and `/wait-copilot` drive `gh`, and the
+`pr-review-on-create` hook fires a review the moment a PR opens.
+
+**Two models see different things.** Running more than one reviewer over the same
+diff turns up bugs and inconsistencies uncannily well, and it happens before any
+human reviewer engages. They stop requesting changes for things a bot would have
+caught, and spend their attention on in-app testing instead.
+
+## What the orchestration adds
+
+Techniques are the easy part. Everything between them is where the workflow lives:
 
 - **Sequence and gates.** `/ship-ticket` is an orchestrator, not a technique. It
   knows the simplify pass runs *before* the PR exists, that auto-merge stays off
   until the first review round is answered, and that pushing waits for you. The
   ordering is the content — it's what stops you skipping the uncomfortable step
   because the code looks fine.
-- **Handoff that survives a new session.** `/architect` writes a plan into a
+- **Handoff across a context boundary.** `/architect` writes a plan into a
   gitignored `plans/` store that `/start-ticket` symlinks into every worktree, so
-  a decision reached on Tuesday is still there on Friday from a fresh checkout.
+  the intended move is to converge, drop the plan, clear context, and run
+  `/start-ticket` on it immediately — a clean window to implement in, against the
+  repo the plan was written for. The store crosses that boundary rather than
+  banking decisions: `/start-ticket` asks whether the plan is still fresh and, when
+  it isn't, verifies the plan's anchors against the repo before proceeding. A plan
+  that sat a week is a prescription written against code that has moved — the same
+  argument that keeps solutions out of tickets.
 - **Worktree plumbing.** `git worktree add` gives you a checkout missing every
   gitignored file the app needs to boot. `/start-ticket` wires those back up, and
   enforces one worktree per issue — two is a trap that hides your own changes.
@@ -82,35 +85,25 @@ them:
   open PRs; how you triage, label, and run your process stays yours.
 - **A review loop that distrusts reviewers.** `/review-copilot` merges findings
   from multiple bots into one bucket per line and makes you verify each claim
-  against the code before accepting it. Two things make this worth the ceremony.
-  Models aren't ranked better and worse so much as *different* — run two over the
-  same diff and they surface strikingly different issues, so the second reviewer
-  is coverage, not redundancy. And when they independently land on the same line,
-  that corroboration is the strongest signal you get. It's still a signal to
-  verify, not a verdict: agreement makes a finding more likely to be real, never
-  certain.
-
-The two skills here fill gaps rather than compete: `behavior-placement` asks
-*whose* the behavior is, where `codebase-design` asks how deep a module should
-be, and `writing-tickets` is about what a ticket must **not** freeze.
+  against the code before accepting it. The second reviewer is coverage, not
+  redundancy — and when two land on the same line independently, that
+  corroboration is the strongest signal you get. Still a signal to verify, not a
+  verdict: agreement makes a finding more likely to be real, never certain.
 
 ## The ideas behind it
 
 Three opinions do most of the work here.
 
-**Tickets should state the problem, not the solution.** A ticket that freezes a
-file list or a class shape reaches the implementer with authority it never
-earned — those details were guesses made without the code open, and they rot as
-the repo drifts. `writing-tickets` pushes outcomes into domain vocabulary
-instead: not "output `data-field` names are a superset of the input's" (which
-sends someone off to write a parser) but "the redesigned component must still
-declare every field the original declared" (which sends them to the schema the
-app already has).
+**Tickets should state the problem, not the solution.** `writing-tickets` pushes
+the outcome into vocabulary the app already has — not "output `data-field` names
+are a superset of the input's," which sends someone off to write a parser, but
+"the redesigned component must still declare every field the original declared,"
+which sends them to the schema.
 
-**Behavior belongs to whoever owns the data.** Services are the residual, not
-the default. `behavior-placement` gives the priority order — model, then value
-object, then service — and the smells that mean you got it wrong, the loudest
-being a `Service.call(model:, …)` whose body mostly reads from `model`.
+**Behavior decisions belong with the human, not the model.** Model, value object,
+or service is a structural call you live with, so `behavior-placement` hands you
+the priority order and the smells that mean you got it wrong — the loudest being
+a `Service.call(model:, …)` whose body mostly reads from `model`.
 
 **Converging isn't the same as being right.** A design conversation converges on
 whatever it drifted toward. `/architect` ends with an adversarial pass over the
@@ -127,9 +120,13 @@ particular language — the one Rails-flavored example, encrypted credentials in
 `/start-ticket` resolves paths with `git rev-parse --show-toplevel`, so there's
 nothing machine-specific to edit before use.
 
+Where I can, I keep stack dependencies and expectations about how you use GitHub
+out of these commands.
+
 ## Companion skills
 
-Two commands here call skills from [Matt Pocock's suite][pocock] by name:
+I found [Matt Pocock's suite][pocock] about seven months after building this, and
+took the nuggets that fit. Two commands here call his skills by name:
 
 | Called by | Skill | What it supplies |
 |---|---|---|
@@ -148,6 +145,12 @@ to the other so Claude Code sees them.
 
 These are referenced, not bundled. Without them the commands still run —
 `/architect` loses its comparison vocabulary and its adversarial pass.
+
+The two suites compose rather than compete. `codebase-design` asks how deep a
+module should be; `behavior-placement` here asks *whose* the behavior is. And go
+read the rest of his suite regardless of whether you use this one —
+`improve-codebase-architecture` is powerful enough to be worth having on its own,
+and nothing here wires it in.
 
 [pocock]: https://github.com/mattpocock/skills
 [skills-cli]: https://github.com/vercel-labs/skills
