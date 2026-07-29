@@ -19,7 +19,7 @@ gh api repos/{owner}/{repo}/pulls/{N}/comments  --jq '[.[] | select(.user.login 
 **Step 3 — Decide:**
 
 **Not ready** (both counts are 0):
-- Print one short line: `PR #N: still no Copilot review (checked HH:MM:SS) — next check on the loop's interval.` Do not name a specific number of seconds: the caller sets the interval (`/new-pull-request` uses 90s, `/ship-ticket` Phase 6 overrides to 60s), so a hardcoded figure will be wrong half the time.
+- Print one short line: `PR #N: still no Copilot review (checked HH:MM:SS) — next check on the loop's interval.` Do not name a specific number of seconds: the caller sets the interval (`/new-pull-request` uses 90s, `/ship-ticket` `poll-review` overrides to 60s), so a hardcoded figure will be wrong half the time.
 - Do not call any other tools. Do not schedule a wakeup. The `/loop` interval will re-fire.
 
 **Ready** (either count > 0):

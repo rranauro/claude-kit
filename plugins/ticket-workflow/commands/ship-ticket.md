@@ -13,52 +13,52 @@ End-to-end ticket workflow: clean-main check → worktree → TDD → simplify �
 A thin orchestrator. Each phase delegates to an existing skill. **Do not re-implement** what those skills already cover — invoke them via the Skill tool and pass through arguments. This file is the only place the *sequencing*, *gates*, and *handoffs between phases* live.
 
 Constituent skills:
-- `/start-ticket` — Phases 1–3 (clean check, worktree, plan)
-- `/commit` — invoked inside Phase 4 as needed
-- `behavior-placement` — Phase 4, when the change adds or moves a class
-- `/simplify` — Phase 4b
-- `/new-pull-request` — Phase 5
-- `/loop` + `/wait-copilot` — Phase 6
-- `/review-copilot` — Phase 7
-- `/cleanup-worktree` — Phase 9
+- `/start-ticket` — `clean-check`, `worktree`, `read-plan`
+- `/commit` — invoked inside `tdd` as needed
+- `behavior-placement` — `tdd`, when the change adds or moves a class
+- `/simplify` — `simplify-pass`
+- `/new-pull-request` — `push-and-pr`
+- `/loop` + `/wait-copilot` — `poll-review`
+- `/review-copilot` — `evaluate-findings`
+- `/cleanup-worktree` — `cleanup`
 
 ---
 
 ## Mandatory constraints
 
 - **Do not duplicate constituent skill bodies.** If a phase says "run `/commit`", invoke the Skill tool — do not inline its steps.
-- **Halt at every gate.** Gates are explicit user checkpoints (Phase 4 plan approval, Phase 5 push approval, Phase 8 auto-merge confirmation). Do not skip them in the name of momentum.
-- **Worktree-prefixed paths.** Once Phase 2 creates `.claude/worktrees/<branch>/`, every Read/Edit/Write must target that path. The tool cwd stays at the main checkout.
+- **Halt at every gate.** Gates are explicit user checkpoints (`read-plan` plan approval, `push-and-pr` push approval, `poll-review` session-hold approval, `auto-merge` confirmation). Do not skip them in the name of momentum.
+- **Worktree-prefixed paths.** Once `worktree` creates `.claude/worktrees/<branch>/`, every Read/Edit/Write must target that path. The tool cwd stays at the main checkout.
 - **Never merge locally.** PRs merge on GitHub only — via `gh pr merge`, never `git merge` into main.
 - **Never run the project's full test suite without permission.** Targeted runs need no permission.
 
 ---
 
-## Phase 1 — Clean-main check
+## Phase 1 · `clean-check` — Clean-main check
 
-Delegated to `/start-ticket`'s safety check (Step 2 as of writing — match on the step's *name*, not its number, since numbering can shift). Before invoking, confirm `$ARGUMENTS` is an issue number/URL; if missing, ask the user.
+Delegated to `/start-ticket` `safety-check`. Before invoking, confirm `$ARGUMENTS` is an issue number/URL; if missing, ask the user.
 
 ---
 
-## Phase 2 — Worktree off `origin/main`
+## Phase 2 · `worktree` — Worktree off `origin/main`
 
-Delegated to `/start-ticket`'s issue-fetch through worktree-wiring steps (3–8 as of writing). Branch name derives from the issue title: `<issue>-<short-description>`. The user confirms it inside `/start-ticket`.
+Delegated to `/start-ticket` `fetch-issue` through `worktree-paths`. Branch name derives from the issue title: `<issue>-<short-description>`. The user confirms it inside `/start-ticket`.
 
 After it returns, you will be operating against `.claude/worktrees/<branch>/`.
 
 ---
 
-## Phase 3 — Read the plan file
+## Phase 3 · `read-plan` — Read the plan file
 
-Delegated to `/start-ticket`'s plan step (Step 9 as of writing). The plan lives at `.claude/worktrees/<branch>/plans/<issue>-plan.md`. If the file exists, `/start-ticket` asks whether it's still fresh and runs its anchor-verification pass when it isn't, then summarizes and asks whether to proceed. If no plan exists, it invokes `/architect` scoped to this issue to create one — do not improvise a plan here.
+Delegated to `/start-ticket` `plan-implementation`. The plan lives at `.claude/worktrees/<branch>/plans/<issue>-plan.md`. If the file exists, `/start-ticket` asks whether it's still fresh and runs its anchor-verification pass when it isn't, then summarizes and asks whether to proceed. If no plan exists, it invokes `/architect` scoped to this issue to create one — do not improvise a plan here.
 
-`/start-ticket`'s placement check (Step 10) is **not** re-run by this skill; Phase 4 below owns it.
+`/start-ticket` `placement-check` is **not** re-run by this skill; `tdd` below owns it.
 
-**Gate:** do not start Phase 4 until the user has accepted the plan.
+**Gate:** do not start `tdd` until the user has accepted the plan.
 
 ---
 
-## Phase 4 — TDD implementation
+## Phase 4 · `tdd` — TDD implementation
 
 Not delegated — this is the work itself.
 
@@ -89,19 +89,19 @@ derives the answer.
 
 ---
 
-## Phase 4b — Simplify pass (before the PR exists)
+## Phase 4b · `simplify-pass` — Simplify pass (before the PR exists)
 
 Specs are green; the PR is not open yet. Invoke `/simplify` via the Skill tool
 on the working diff, then commit any cleanups it applies.
 
 This runs **here, not later**, because cleanups landing now become part of the
 original commits instead of review-response commits — and because the automated
-reviewers in Phase 7 hunt bugs, not duplication. Reuse, over-abstraction, and
-altitude problems are exactly what they under-report and what costs a
+reviewers in `evaluate-findings` hunt bugs, not duplication. Reuse,
+over-abstraction, and altitude problems are exactly what they under-report and what costs a
 round-trip when the user catches them by hand.
 
-Do NOT run `/code-review` here. Phase 7 already reviews this diff twice
-(Copilot + Claude headless); a third bug-hunt over the same lines buys nothing.
+Do NOT run `/code-review` here. `evaluate-findings` already reviews this diff
+twice (Copilot + Claude headless); a third bug-hunt over the same lines buys nothing.
 `/simplify` is quality-only, which is why it doesn't overlap.
 
 If `/simplify` proposes a change that contradicts the ticket's agreed approach,
@@ -110,7 +110,7 @@ implementation, it does not relitigate the design.
 
 ---
 
-## Phase 5 — Push and open PR (gated)
+## Phase 5 · `push-and-pr` — Push and open PR (gated)
 
 **Gate before pushing.** Ask the user:
 
@@ -121,22 +121,22 @@ implementation, it does not relitigate the design.
 
 `/new-pull-request` already includes `Closes #<issue-number>` automatically when the branch starts with the issue number — verify this happened in the PR body it produced. If the closing keyword is missing (e.g. issue was not the branch prefix), edit the PR body with `gh pr edit <N> --body` to add it. The closing keyword in the **body** is what auto-closes the issue; the title prefix doesn't count.
 
-**Do NOT enable auto-merge here.** The initial PR is opened with auto-merge **off**. CI is fast and will frequently go green before Copilot/Claude reviews land — enabling `--auto` at creation time can merge the PR before reviewers post. Auto-merge is set in Phase 8, only after the initial review pass has been addressed and pushed.
+**Do NOT enable auto-merge here.** The initial PR is opened with auto-merge **off**. CI is fast and will frequently go green before Copilot/Claude reviews land — enabling `--auto` at creation time can merge the PR before reviewers post. Auto-merge is set in `auto-merge`, only after the initial review pass has been addressed and pushed.
 
 ---
 
-## Phase 6 — Poll for Copilot review (60s, up to 10 min)
+## Phase 6 · `poll-review` — Poll for Copilot review (60s, up to 10 min)
 
 **Gate before starting the loop.** This phase holds the current session open for up to 10 minutes. Ask the user:
 
-> "Phase 6 will poll for Copilot's review every 60s for up to 10 minutes — this holds the current session. Continue here, or hand off to a new session?
+> "This phase will poll for Copilot's review every 60s for up to 10 minutes — this holds the current session. Continue here, or hand off to a new session?
 >
 > To hand off: open a new Claude Code session in this repo and run `/wait-copilot <PR#>` (then `/review-copilot <PR#>` once Copilot posts)."
 
 - If they want to hand off: stop here. The PR is open; the user picks up from `/wait-copilot` in the new session.
 - If they want to continue: proceed with the loop below.
 
-`/new-pull-request` Step 4a normally kicks off `/loop 90s /wait-copilot <PR#>`. **Override the interval to 60s for this skill** by invoking `/loop` with args `60s /wait-copilot <PR#>` instead.
+`/new-pull-request` `start-polling` normally kicks off `/loop 90s /wait-copilot <PR#>`. **Override the interval to 60s for this skill** by invoking `/loop` with args `60s /wait-copilot <PR#>` instead.
 
 Bound: 10 attempts (~10 minutes). If `/wait-copilot` has not signalled "ready" after 10 firings, surface this to the user:
 
@@ -146,7 +146,7 @@ Do not silently keep polling past the bound.
 
 ---
 
-## Phase 7 — Evaluate each comment empirically (both reviewers)
+## Phase 7 · `evaluate-findings` — Evaluate each comment empirically (both reviewers)
 
 Delegated to `/review-copilot`. Despite its name, that skill addresses **all** automated reviewers:
 - **GitHub Copilot** — inline + top-level review comments
@@ -156,7 +156,7 @@ The skill fetches all present sources, deduplicates overlapping `(path, line)` f
 
 Note that `/review-copilot` does not prompt per finding — it applies or skips each one on the evidence and reports a summary, with every decision recorded in the commit body. The user's checkpoint is that summary, not each item.
 
-**Don't run Phase 7 too early.** Both reviewers post asynchronously after `gh pr create`. Phase 6's `/wait-copilot` polls for Copilot only; the Claude headless review can land later (it's a fresh `claude -p` Opus run reviewing the diff). Before invoking `/review-copilot`, sanity-check that the Claude review comment exists with `gh api repos/{owner}/{repo}/issues/<PR#>/comments --jq '.[] | select(.body | startswith("<!-- claude-pr-review -->"))'`. If it's missing, wait another ~60s before proceeding — running `/review-copilot` against an absent Claude review just means Copilot-only coverage that pass.
+**Don't run `evaluate-findings` too early.** Both reviewers post asynchronously after `gh pr create`. `poll-review`'s `/wait-copilot` polls for Copilot only; the Claude headless review can land later (it's a fresh `claude -p` Opus run reviewing the diff). Before invoking `/review-copilot`, sanity-check that the Claude review comment exists with `gh api repos/{owner}/{repo}/issues/<PR#>/comments --jq '.[] | select(.body | startswith("<!-- claude-pr-review -->"))'`. If it's missing, wait another ~60s before proceeding — running `/review-copilot` against an absent Claude review just means Copilot-only coverage that pass.
 
 **Empirical verification — applies to every reviewer.** Before accepting any claim, read the offending lines and trace the actual behavior. Common false positives from any reviewer:
 
@@ -165,18 +165,18 @@ Note that `/review-copilot` does not prompt per finding — it applies or skips 
 - "Race condition" flagged in serial code.
 - "N+1" against a Rails relation that is already eager-loaded upstream.
 
-When the comment doesn't survive evidence, classify as ⚪ Ignore and record the reasoning in the commit message body — `/review-copilot` Step 5 already requires the per-item evaluation to be durable in git history. Reviewers agreeing on the same `(path, line)` bucket is a stronger signal than one alone — but still verify; they can all be wrong about the same thing.
+When the comment doesn't survive evidence, classify as ⚪ Ignore and record the reasoning in the commit message body — `/review-copilot` `summarize` already requires the per-item evaluation to be durable in git history. Reviewers agreeing on the same `(path, line)` bucket is a stronger signal than one alone — but still verify; they can all be wrong about the same thing.
 
 ---
 
-## Phase 8 — Auto-merge when green
+## Phase 8 · `auto-merge` — Auto-merge when green
 
 **Preconditions** — all must be true before this phase runs:
 1. First-pass reviewer output has been seen: the Copilot review (or `/wait-copilot` bound exhausted with explicit user decision to proceed) **and** the `<!-- claude-pr-review -->` comment from the headless hook.
-2. `/review-copilot` (Phase 7) has triaged every finding and reported its summary.
+2. `/review-copilot` (`evaluate-findings`) has triaged every finding and reported its summary.
 3. Any review-response commits are pushed to the PR branch.
 
-`/review-copilot`'s own Step 8 defers to this phase when it was invoked from here, so auto-merge is still off at this point and the gate below is the one that decides.
+`/review-copilot` `enable-auto-merge` defers to this phase when it was invoked from here, so auto-merge is still off at this point and the gate below is the one that decides.
 
 If all three hold, enable GitHub auto-merge:
 
@@ -192,7 +192,7 @@ GitHub then merges the PR itself once required checks pass. This is the only san
 
 > "Initial review findings addressed and pushed. Enable auto-merge (squash) for PR #<N>? GitHub will merge once checks pass."
 
-If the user declines (e.g., wants to wait for a human reviewer), stop here. They will merge from the GitHub UI when ready, and Phase 9 can be invoked separately.
+If the user declines (e.g., wants to wait for a human reviewer), stop here. They will merge from the GitHub UI when ready, and `cleanup` can be invoked separately.
 
 If `gh pr merge --auto` errors because auto-merge is not enabled in repo settings, fall back to:
 1. Polling `gh pr checks <PR#>` until all required checks succeed or one fails.
@@ -201,7 +201,7 @@ If `gh pr merge --auto` errors because auto-merge is not enabled in repo setting
 
 ---
 
-## Phase 9 — Clean up
+## Phase 9 · `cleanup` — Clean up
 
 After the PR is merged on GitHub (auto-merge has fired, or the user merged manually), delegate to `/cleanup-worktree` with the branch name. It handles:
 
@@ -218,5 +218,5 @@ If auto-merge is still pending when this skill's session ends, do **not** run cl
 ## Failure / interrupt handling
 
 - If any phase fails (spec won't go green, push rejected, Copilot review never lands, auto-merge declined), stop at that phase and surface the state. Do not skip ahead.
-- If the user interrupts mid-skill, the constituent skills' commits and worktree leave the workspace recoverable. Resume by re-invoking the appropriate phase's skill directly (e.g., `/new-pull-request` to pick up at Phase 5).
+- If the user interrupts mid-skill, the constituent skills' commits and worktree leave the workspace recoverable. Resume by re-invoking the appropriate phase's skill directly (e.g., `/new-pull-request` to pick up at `push-and-pr`).
 - The skill is idempotent at phase boundaries: re-running `/ship-ticket <same-issue>` after partial progress is safe — it will detect the existing worktree and PR.

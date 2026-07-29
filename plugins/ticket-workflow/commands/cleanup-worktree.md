@@ -21,8 +21,8 @@ Confirm the worktree path is `.claude/worktrees/<branch-name>/` via `git worktre
 **Step 3 — Verify the worktree has no uncommitted work:**
 - `git -C .claude/worktrees/<branch-name> status --porcelain`
 - **Known-safe leftovers (do NOT prompt about these — silently allow + use `--force` in Step 5):**
-  - Any untracked path that is a **symlink `/start-ticket` Step 7 created** back into the main checkout. Those are setup artifacts, not work. Confirm with `test -L <path>` rather than matching names — the set is project-specific.
-  - In practice that means the secrets, permissions, and dependency links Step 7 wires up — e.g. `?? .claude/settings.local.json`, `?? config/credentials.yml.enc` (Rails), and any vendored `node_modules` symlinks the project needs.
+  - Any untracked path that is a **symlink `/start-ticket` `wire-worktree` created** back into the main checkout. Those are setup artifacts, not work. Confirm with `test -L <path>` rather than matching names — the set is project-specific.
+  - In practice that means the secrets, permissions, and dependency links `wire-worktree` wires up — e.g. `?? .claude/settings.local.json`, `?? config/credentials.yml.enc` (Rails), and any vendored `node_modules` symlinks the project needs.
 - If the porcelain output contains **only** entries from the known-safe set above, treat it as clean and proceed silently. Mark `--force` as required for Step 5 and continue.
 - If the porcelain output contains **anything else** (modified tracked files, untracked files outside the known-safe set), STOP and report what's outstanding. Do NOT pass `--force`; ask the user how to handle the leftovers.
 

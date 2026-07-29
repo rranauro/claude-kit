@@ -70,7 +70,7 @@ For each item, in order:
 **Step 4 — (removed — no per-item user gate):**
 All items are processed without stopping for approval. The summary in Step 5 is the user's review point.
 
-**Step 5 — After all items are processed:**
+**Step 5 · `summarize` — After all items are processed:**
 - Summarize for the user: how many auto-fixed, how many skipped (non-minor or ignored), and why. Break the count out by source (copilot-inline / copilot-review / claude-review / overlap) so the user can see whether one reviewer is consistently noisy or consistently right.
 - If any fixes were made, the commit message must capture the per-item evaluation so it's durable in git history (not just the conversation). Format:
 
@@ -94,7 +94,7 @@ All items are processed without stopping for approval. The summary in Step 5 is 
 **Step 7 — Push:**
 - Push the branch to origin.
 
-**Step 8 — Enable auto-merge (gated):**
+**Step 8 · `enable-auto-merge` — Enable auto-merge (gated):**
 
 The first-pass automated reviews have now been triaged, which is the precondition
 for auto-merge — triaging every item counts as "addressed" even when no fixes were
@@ -102,7 +102,7 @@ made. Auto-merge stays off until this point precisely because CI often goes gree
 before the reviewers post.
 
 **If this skill was invoked by `/ship-ticket`, stop here.** That skill owns the
-auto-merge decision in its own Phase 8 and will run the gate itself; enabling it
+auto-merge decision in its own `auto-merge` phase and will run the gate itself; enabling it
 here would bypass that gate.
 
 Otherwise, ask the user before enabling:

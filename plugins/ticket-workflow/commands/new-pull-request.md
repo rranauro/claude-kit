@@ -43,7 +43,7 @@ Name the running model in the trailer if you know it (e.g.
 **Step 4 — Confirm:**
 Print the PR URL so the user can review it.
 
-**Step 4a — Start polling for Copilot review:**
+**Step 4a · `start-polling` — Start polling for Copilot review:**
 GitHub Copilot reviews PRs automatically and usually takes 3–5 minutes. After printing the PR URL, tell the user:
 > "Starting `/loop 90s /wait-copilot <PR#>` to poll for Copilot's review — you'll get a macOS notification when it's ready, then stop the loop and I'll run `/review-copilot`."
 

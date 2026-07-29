@@ -7,11 +7,16 @@ Start work on a GitHub issue by reading it, creating a worktree off `origin/main
 **Arguments:** $ARGUMENTS
 The argument should be a GitHub issue number (e.g., `/start-ticket 42`) or a GitHub issue URL.
 
-**Step 1 — Parse the issue reference:**
+Each step below carries a stable id in backticks (`safety-check`, `wire-worktree`,
+…). Those ids are the handle other commands reference — `/ship-ticket` and
+`/cleanup-worktree` both point at steps here. Renumber freely; **never rename an
+id** without updating the references, and grep for one before you delete its step.
+
+**Step 1 · `parse-issue` — Parse the issue reference:**
 - Extract the issue number from `$ARGUMENTS`
 - If no argument is provided, ask the user for the issue number
 
-**Step 2 — Safety check (run in parallel, from the main checkout):**
+**Step 2 · `safety-check` — Safety check (run in parallel, from the main checkout):**
 - `git status` — ensure the working tree is clean (no uncommitted changes)
 - `git rev-parse --abbrev-ref HEAD` — note the current branch (`git branch --show-current` needs git ≥ 2.22 and fails on older installs)
 - `ls .claude/worktrees/ 2>/dev/null | grep "^<issue-number>-"` — check for an existing worktree with the same ticket-number prefix
@@ -22,29 +27,29 @@ If there are uncommitted changes, STOP and warn the user. Suggest they commit or
 > "A worktree for this ticket already exists: `42-add-user-avatar`. Resume it, or replace it with a fresh one?"
 
 **Invariant: one worktree per issue.** Never create a second, suffix-differentiated sibling for the same issue number (e.g. `935-...-scope` alongside `935-...-fields`). Two live worktrees for one issue is a trap — the dev server can be booted in the stale one, hiding the real changes and reading as "my changes aren't showing." Enforce exactly one of:
-- **Resume (default):** Skip Steps 3–7. Set `<branch-name>` to the existing directory name, then jump to Step 8 — use the existing worktree path for all subsequent reads/edits. Do NOT re-run symlink steps (they're already wired).
+- **Resume (default):** Skip `fetch-issue` through `wire-worktree`. Set `<branch-name>` to the existing directory name, then jump to `worktree-paths` — use the existing worktree path for all subsequent reads/edits. Do NOT re-run `wire-worktree` (the symlinks are already there).
 - **Replace:** Only if the existing worktree is being abandoned/re-scoped. First confirm it's not checked out elsewhere and has no unmerged work worth keeping (an open PR on its branch means keep it — Resume instead). Then remove the old worktree per `/cleanup-worktree` semantics (`git worktree remove [--force]`, sweep the path) **before** creating the new one. The new branch reuses the `<issue-number>-` prefix and may keep the same name — there is no sibling to collide with once the old one is gone.
 
-**Step 3 — Fetch the issue:**
+**Step 3 · `fetch-issue` — Fetch the issue:**
 - Run `gh issue view <number>` to read the full issue (title, body, labels, assignees)
 - Summarize the issue for the user: title, key requirements, acceptance criteria if any
 
-**Step 4 — Decide the branching strategy:**
-- **Default:** a new worktree off `origin/main` (proceed to Step 5).
-- **Bundle onto current branch:** if the issue is a small follow-up to in-flight work on the current branch, ask the user whether to bundle. If yes, skip Steps 5–7 and go straight to Step 8 — no new worktree, no new branch.
-- **Stack on a parent branch:** if the issue depends on an unmerged feature branch, ask whether to stack. If yes, replace `origin/main` with the parent branch name in Step 6's `git worktree add`.
+**Step 4 · `branching-strategy` — Decide the branching strategy:**
+- **Default:** a new worktree off `origin/main` (proceed to `confirm-branch-name`).
+- **Bundle onto current branch:** if the issue is a small follow-up to in-flight work on the current branch, ask the user whether to bundle. If yes, skip `confirm-branch-name` through `wire-worktree` and go straight to `worktree-paths` — no new worktree, no new branch.
+- **Stack on a parent branch:** if the issue depends on an unmerged feature branch, ask whether to stack. If yes, replace `origin/main` with the parent branch name in `create-worktree`'s `git worktree add`.
 
-**Step 5 — Confirm the branch name:**
+**Step 5 · `confirm-branch-name` — Confirm the branch name:**
 - Format: `<issue-number>-<short-description>` (e.g., `42-add-user-avatar`)
 - Derive `<short-description>` from the issue title (lowercase, hyphens, max ~50 chars)
 - Confirm with the user before creating
 
-**Step 6 — Create the worktree:**
+**Step 6 · `create-worktree` — Create the worktree:**
 - `git fetch origin main` — refresh `origin/main` (don't rely on "up to date" from `git status`; that only reflects the last fetch)
 - `git worktree add .claude/worktrees/<branch-name> -b <branch-name> origin/main`
 - Worktrees live under `.claude/worktrees/<branch-name>/` inside this repo — never as siblings of the main checkout.
 
-**Step 7 — Wire up the worktree:**
+**Step 7 · `wire-worktree` — Wire up the worktree:**
 
 A fresh worktree contains only tracked files. Anything gitignored but required
 at runtime is missing, and the failures it causes are indirect — blank config,
@@ -77,8 +82,8 @@ changes.
   `ln -sf $MAIN/<path>/node_modules $WT/<path>/node_modules`
 - **The shared `plans/` directory**, so the worktree sees the same persistent,
   gitignored plan store as the main checkout. This is how `/architect`'s
-  `plans/<n>-plan.md` reaches Step 9 — without the link a fresh worktree has no
-  `plans/` at all and the handoff silently breaks:
+  `plans/<n>-plan.md` reaches `plan-implementation` — without the link a fresh
+  worktree has no `plans/` at all and the handoff silently breaks:
   `mkdir -p $MAIN/plans`
   `ln -sfn $MAIN/plans $WT/plans`
   Use `-n` so the link is created *as* `plans` rather than inside an existing
@@ -87,11 +92,11 @@ changes.
   yours does that, say so and let it — don't create the link yourself and risk
   conflicting with it.
 
-**Step 8 — Use worktree-prefixed paths from now on:**
+**Step 8 · `worktree-paths` — Use worktree-prefixed paths from now on:**
 - Every subsequent Read/Edit/Write must target `.claude/worktrees/<branch-name>/<file>` (or the absolute equivalent). The tool cwd is still the main checkout.
 
-**Step 9 — Plan the implementation:**
-- **First**, check if `.claude/worktrees/<branch-name>/plans/<issue-number>-plan.md` exists. That path is a symlink (wired in Step 7) into the shared, persistent project `plans/` directory, so any plan `/architect` wrote — in this or a prior session — is visible here. This file contains the full architectural context, agreed approach, and key decisions.
+**Step 9 · `plan-implementation` — Plan the implementation:**
+- **First**, check if `.claude/worktrees/<branch-name>/plans/<issue-number>-plan.md` exists. That path is a symlink (wired in `wire-worktree`) into the shared, persistent project `plans/` directory, so any plan `/architect` wrote — in this or a prior session — is visible here. This file contains the full architectural context, agreed approach, and key decisions.
   - **If the plan file exists:** Read it and treat its *reasoning* as settled — the why, the chosen approach, the rejected alternatives, and the acceptance criteria. Do NOT relitigate those decisions or re-derive the approach from scratch; that's what the `/architect` session already did.
     - After reading the plan, **ask the user before doing any verification work**: "Is this plan fresh (created this session or just recently, and you're confident nothing relevant has changed in the codebase)?"
       - **Yes (plan is fresh):** Skip the anchor-verification pass. Present a brief summary of the plan and ask whether to proceed or adjust — no file lookups needed.
@@ -105,10 +110,10 @@ changes.
   - **If the plan file does NOT exist:** Do NOT improvise an ad-hoc plan and do NOT start implementing. The ticket has no settled architectural context yet, so the required next step is to **invoke the `/architect` skill to create the plan file** before proceeding.
     - Run the `/architect` skill scoped to this issue (e.g. topic = "implementation plan for issue #<issue-number>: <title>"). The GitHub issue already exists, so `/architect`'s job here is the planning conversation and the durable handoff artifact — NOT issue creation.
     - Work through the architect conversation with the user: understand the problem, explore approaches, converge on a direction (`/architect` Phases 1–3).
-    - When the user converges, write the plan to `$MAIN/plans/<issue-number>-plan.md` (the repository-root `plans/` store, symlinked into this worktree — see Step 7). Use the plan format from `/architect`. Writing the file is **not** deferred in this path — `/start-ticket` needs it as the handoff, so create it now.
+    - When the user converges, write the plan to `$MAIN/plans/<issue-number>-plan.md` (the repository-root `plans/` store, symlinked into this worktree — see `wire-worktree`). Use the plan format from `/architect`. Writing the file is **not** deferred in this path — `/start-ticket` needs it as the handoff, so create it now.
     - Once the plan file is written, re-enter this step at the **"If the plan file exists"** branch above: present the summary, run the anchor-verification pass, and ask the user whether to proceed or adjust before any implementation.
 
-**Step 10 — Placement check (only if the work adds or moves a class):**
+**Step 10 · `placement-check` — Placement check (only if the work adds or moves a class):**
 
 If the agreed approach introduces a new model, concern, service, or PORO — or
 relocates behavior between them — run the `behavior-placement` skill before
