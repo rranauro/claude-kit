@@ -76,10 +76,16 @@ changes.
 - **Claude permissions**, so the worktree inherits the main checkout's allowlist
   instead of re-prompting on rules you already approved:
   `ln -sf $MAIN/.claude/settings.local.json $WT/.claude/settings.local.json`
-- **Installed dependencies** that live outside the lockfile — local MCP server
+- **Installed dependencies.** Start with the project root — a fresh worktree has
+  no `node_modules` at all, so the test runner isn't on disk and the first spec
+  run dies with `command not found` rather than a failing test:
+  `ln -sfn $MAIN/node_modules $WT/node_modules`
+  Then any that live outside the root lockfile — local MCP server
   `node_modules`, vendored bundles — so servers come up green without a
   per-worktree install:
-  `ln -sf $MAIN/<path>/node_modules $WT/<path>/node_modules`
+  `ln -sfn $MAIN/<path>/node_modules $WT/<path>/node_modules`
+  Use `-n` on both, or a re-run links *inside* the existing directory instead of
+  replacing it.
 - **The shared `plans/` directory**, so the worktree sees the same persistent,
   gitignored plan store as the main checkout. This is how `/architect`'s
   `plans/<n>-plan.md` reaches `plan-implementation` — without the link a fresh
