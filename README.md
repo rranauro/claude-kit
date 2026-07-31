@@ -21,6 +21,7 @@ that keeps the work honest along the way.
 | `/architect` | The design conversation. Explores the problem, weighs approaches, converges, then files lean GitHub issues. |
 | `/start-ticket` | Reads an issue, creates an isolated git worktree off `origin/main`, wires up gitignored runtime files, and picks up any plan `/architect` left behind. |
 | `/ship-ticket` | Orchestrates the rest: TDD, a simplify pass, PR, automated review, auto-merge, cleanup. |
+| `/polish-ticket` | Runs a catch-all polish ticket. The user reports problems one at a time; each is triaged into an inline fix on the branch or its own filed ticket. |
 | `/commit` | Focused commit with a real message. Reads the project's test, lint, and security gates from `CLAUDE.md`/manifest/CI and runs them on what changed. |
 | `/new-pull-request` | Opens a PR with a closing keyword wired to the issue. |
 | `/review-copilot` | Takes automated review findings one at a time and verifies each against the code before acting, recording the reasoning for every one in the commit body. |
