@@ -116,7 +116,7 @@ implementation, it does not relitigate the design.
 
 > "Ready to push and open the PR, or do you want to boot the worktree and exercise the change in-app first?"
 
-- If they want to test in-app first: pause. Wait for them to come back and approve.
+- If they want to test in-app first: offer `/walkthrough <issue>`, which derives a checklist from the AC and the diff and walks it one step at a time, keeping its position on disk so a bug found mid-walk doesn't lose the place. If they'd rather drive unaided, pause and wait for them to come back and approve.
 - If they approve the push: invoke `/new-pull-request` via the Skill tool.
 
 `/new-pull-request` already includes `Closes #<issue-number>` automatically when the branch starts with the issue number — verify this happened in the PR body it produced. If the closing keyword is missing (e.g. issue was not the branch prefix), edit the PR body with `gh pr edit <N> --body` to add it. The closing keyword in the **body** is what auto-closes the issue; the title prefix doesn't count.

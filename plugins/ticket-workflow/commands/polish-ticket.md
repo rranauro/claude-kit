@@ -90,6 +90,11 @@ Before triaging, get to a **located cause**, not a guess:
 
 One item at a time. If the user reports several at once, list them back, triage each, and work them in the order they pick.
 
+`/walkthrough` enters here when a step it presented surfaced a bug. The loop is
+unchanged; the only difference is on the way out — after `fix-inline` or
+`file-ticket`, return to that skill's `present-step` rather than to `intake`, so
+the user resumes the walk instead of being asked for another report.
+
 ---
 
 ## Step 5 · `triage` — Inline fix, or its own ticket
