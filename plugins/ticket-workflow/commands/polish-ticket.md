@@ -137,7 +137,7 @@ Carry across what only this session knows: the reproduction, the located cause i
 
 Label it as the project does (bug vs. enhancement). Reference the cleanup epic so the trail survives, and note the new issue number back to the user.
 
-If the item needs a design conversation before anyone can implement it, say so and offer `/architect` — but as a **separate** invocation for that item, not for the epic.
+If the item needs its *how* settled before anyone can implement it, say so and offer `/design` — but as a **separate** invocation for that item, not for the epic. If the *problem itself* is still open, that's `/architect`, likewise separately.
 
 Then return to `intake`. Do not start implementing what you just filed.
 

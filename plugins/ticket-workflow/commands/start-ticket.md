@@ -87,7 +87,7 @@ changes.
   Use `-n` on both, or a re-run links *inside* the existing directory instead of
   replacing it.
 - **The shared `plans/` directory**, so the worktree sees the same persistent,
-  gitignored plan store as the main checkout. This is how `/architect`'s
+  gitignored plan store as the main checkout. This is how `/design`'s
   `plans/<n>-plan.md` reaches `plan-implementation` — without the link a fresh
   worktree has no `plans/` at all and the handoff silently breaks:
   `mkdir -p $MAIN/plans`
@@ -102,8 +102,8 @@ changes.
 - Every subsequent Read/Edit/Write must target `.claude/worktrees/<branch-name>/<file>` (or the absolute equivalent). The tool cwd is still the main checkout.
 
 **Step 9 · `plan-implementation` — Plan the implementation:**
-- **First**, check if `.claude/worktrees/<branch-name>/plans/<issue-number>-plan.md` exists. That path is a symlink (wired in `wire-worktree`) into the shared, persistent project `plans/` directory, so any plan `/architect` wrote — in this or a prior session — is visible here. This file contains the full architectural context, agreed approach, and key decisions.
-  - **If the plan file exists:** Read it and treat its *reasoning* as settled — the why, the chosen approach, the rejected alternatives, and the acceptance criteria. Do NOT relitigate those decisions or re-derive the approach from scratch; that's what the `/architect` session already did.
+- **First**, check if `.claude/worktrees/<branch-name>/plans/<issue-number>-plan.md` exists. That path is a symlink (wired in `wire-worktree`) into the shared, persistent project `plans/` directory, so any plan `/design` wrote — in this or a prior session — is visible here. This file contains the full architectural context, agreed approach, and key decisions.
+  - **If the plan file exists:** Read it and treat its *reasoning* as settled — the why, the chosen approach, the rejected alternatives, and the acceptance criteria. Do NOT relitigate those decisions or re-derive the approach from scratch; that's what the `/design` session already did.
     - After reading the plan, **ask the user before doing any verification work**: "Is this plan fresh (created this session or just recently, and you're confident nothing relevant has changed in the codebase)?"
       - **Yes (plan is fresh):** Skip the anchor-verification pass. Present a brief summary of the plan and ask whether to proceed or adjust — no file lookups needed.
       - **No (plan may be stale, or unsure):** Run the anchor-verification pass below.
@@ -113,10 +113,9 @@ changes.
     - **Decide:** anchors verify + no contradicting drift → present the plan as-is and proceed. An anchor is missing/moved, or drift contradicts an assumption → the plan's intent still holds, but re-derive the map *in just the affected area* and flag the divergence to the user before proceeding.
     - Note: the more concrete file/line detail a plan asserts, the *more* verification it needs, not less — there's more surface to have gone stale.
     - Present a summary and the verification result, then ask the user whether to proceed or adjust.
-  - **If the plan file does NOT exist:** Do NOT improvise an ad-hoc plan and do NOT start implementing. The ticket has no settled architectural context yet, so the required next step is to **invoke the `/architect` skill to create the plan file** before proceeding.
-    - Run the `/architect` skill scoped to this issue (e.g. topic = "implementation plan for issue #<issue-number>: <title>"). The GitHub issue already exists, so `/architect`'s job here is the planning conversation and the durable handoff artifact — NOT issue creation.
-    - Work through the architect conversation with the user: understand the problem, explore approaches, converge on a direction (`/architect` Phases 1–3).
-    - When the user converges, write the plan to `$MAIN/plans/<issue-number>-plan.md` (the repository-root `plans/` store, symlinked into this worktree — see `wire-worktree`). Use the plan format from `/architect`. Writing the file is **not** deferred in this path — `/start-ticket` needs it as the handoff, so create it now.
+  - **If the plan file does NOT exist:** Do NOT improvise an ad-hoc plan and do NOT start implementing. The ticket has no settled architectural context yet, so the required next step is to **invoke the `/design` skill to create the plan file** before proceeding.
+    - Run `/design` with this issue number. The issue states the problem; `/design`'s job is the *how* — placement, approaches, the grilling pass, and the durable handoff artifact.
+    - Write the plan to `$MAIN/plans/<issue-number>-plan.md` (the repository-root `plans/` store, symlinked into this worktree — see `wire-worktree`).
     - Once the plan file is written, re-enter this step at the **"If the plan file exists"** branch above: present the summary, run the anchor-verification pass, and ask the user whether to proceed or adjust before any implementation.
 
 **Step 10 · `placement-check` — Placement check (only if the work adds or moves a class):**

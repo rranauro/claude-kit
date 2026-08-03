@@ -50,7 +50,7 @@ After it returns, you will be operating against `.claude/worktrees/<branch>/`.
 
 ## Phase 3 · `read-plan` — Read the plan file
 
-Delegated to `/start-ticket` `plan-implementation`. The plan lives at `.claude/worktrees/<branch>/plans/<issue>-plan.md`. If the file exists, `/start-ticket` asks whether it's still fresh and runs its anchor-verification pass when it isn't, then summarizes and asks whether to proceed. If no plan exists, it invokes `/architect` scoped to this issue to create one — do not improvise a plan here.
+Delegated to `/start-ticket` `plan-implementation`. The plan lives at `.claude/worktrees/<branch>/plans/<issue>-plan.md`. If the file exists, `/start-ticket` asks whether it's still fresh and runs its anchor-verification pass when it isn't, then summarizes and asks whether to proceed. If no plan exists, it invokes `/design` scoped to this issue to create one — do not improvise a plan here.
 
 `/start-ticket` `placement-check` is **not** re-run by this skill; `tdd` below owns it.
 

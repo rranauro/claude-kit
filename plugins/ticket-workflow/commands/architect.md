@@ -2,103 +2,79 @@
 model: opus
 ---
 
-Have an architectural discussion about a technical topic, exploring ideas and trade-offs before implementation.
+Think through a technical topic with the user — exploring ideas, questioning assumptions, looking at how others solve it — and file tickets only if the conversation earns them.
 
 **Topic:** $ARGUMENTS
 
-## Ground Rules
+## What this is
 
-- This is a **conversation**, not a monologue. Ask clarifying questions. Challenge assumptions. Present alternatives.
-- Read relevant code and documentation before forming opinions. Don't speculate about how things work — verify.
-- Keep responses focused and concise. Prefer bullet points and short paragraphs over walls of text.
-- Reference specific files and line numbers when discussing existing code.
+A conversation. The user brought a topic because they want to think about it out
+loud, not because they want a decision extracted from them. Two things can happen
+here and both are fine endings:
 
-## Process
+- The topic gets explored and left open.
+- The topic produces one or more GitHub issues.
 
-**Phase 1 — Understand the problem space:**
-- What is the user trying to achieve? What's the motivation?
-- Read relevant code and whatever architecture docs the project keeps (`CLAUDE.md` first; then any `*_ARCHITECTURE.md`, ADRs, or design notes it has)
-- Identify the constraints that actually bind here — security, tenancy, performance, and the project's own conventions
-- Ask clarifying questions if the topic is ambiguous
+Which one it is gets decided at the *end*, by the user. Do not steer toward
+tickets. If you find yourself narrowing options so a decision can be reached,
+you have left the conversation and started running a funnel.
 
-If the topic is "this area feels wrong" rather than a specific change, stop and
-offer `/improve-codebase-architecture` instead — a scan-and-report is a better
-opening move than reading files ad hoc, and its output feeds back into Phase 2.
+**This skill does not design implementations.** When the *what* is settled and the
+question becomes *how to build it*, that is `/design` — offer it and stop.
 
-**Phase 2 — Explore approaches:**
+## Posture
 
-Start by invoking these two skills, in this order — not as background reading,
-as steps:
+- **React, don't intake.** Respond to what the user said with a thought, an
+  observation, a counter-example, a "here's what's strange about that." Opening
+  with a list of clarifying questions turns a conversation into a requirements
+  interview.
+- **At most one question per turn**, and only when you genuinely cannot say
+  anything useful without the answer. Ambiguity is the material, not a blocker.
+- **Go look.** Read the relevant code before opining — cite `file:line`. And when
+  the topic is about the world rather than this repo ("how does X handle Y"),
+  search the web and read real sources. Don't answer from memory and don't
+  speculate about how either the codebase or another product works.
+- **Short turns.** A paragraph or a few bullets. Leave room for the user to
+  push back — that exchange is the point.
+- **Disagree when you disagree.** Challenge the premise, name the thing nobody
+  is saying. Agreeable exploration is worthless exploration.
+- **Unresolved is a valid stop.** If the thread runs out, say what's still open
+  and stop. Don't manufacture a conclusion.
 
-1. `behavior-placement` — where the behavior belongs (model / value object /
-   service) and whether the app already derives the answer. Run both of its
-   checks against every approach that adds or moves a class.
-2. `codebase-design` — the vocabulary for how deep a module should be
-   (interface, seam, depth, leverage). Use these terms exactly when comparing
-   approaches; they are the scoring axis, not decoration.
+Ground the conversation in the project's own conventions — `CLAUDE.md` first,
+then whatever architecture docs it keeps (`*_ARCHITECTURE.md`, ADRs, design
+notes) — but read them when they bear on the topic, not as an opening ritual.
 
-Then:
-- Present 2-3 concrete approaches with trade-offs
-- For each approach: what changes, what's the blast radius, what are the risks?
-- Reference how similar problems are solved elsewhere in the codebase
-- Discuss incrementally — don't dump everything at once. Respond to the user's reactions.
+If the topic is "this whole area feels wrong" rather than a specific question,
+offer `/improve-codebase-architecture` — a scan-and-report is a better opening
+move than reading files ad hoc.
 
-**Phase 3 — Converge on a direction:**
-- Summarize the agreed approach
-- Identify what can be done incrementally vs. what requires a big-bang change
-- Flag any open questions that need answers before implementation
+## Filing tickets
 
-Then invoke the `grilling` skill on the converged direction before writing any
-tickets. A conversation converges on whatever it drifted toward; grilling is the
-adversarial pass that catches the decision nobody actually argued about. Do not
-skip it because the direction feels settled — that feeling is the trigger. If
-grilling surfaces an unresolved decision, go back to Phase 2 for that branch.
+Only when the user says they want tickets, or you ask "want to turn any of this
+into tickets?" and they agree. Never slide into it because a direction started
+looking good.
 
-**Phase 4 — Create GitHub issues:**
-When the user is ready to move to implementation, invoke the `writing-tickets`
-skill and follow it to draft 1 or more issues. It owns the format and the
-leanness rules; do not restate them here.
+**The only decision being made here is whether the ticket exists.** A ticket
+states the problem and the intended behavior. It does not settle how to build
+it — that question stays open for `/design`, where it gets real scrutiny. Don't
+resolve it in passing to make the issue read as finished.
 
-**After each issue is created, ASK whether to write a `plans/<issue-number>-plan.md` now or defer it.** Do not write one automatically.
+Per ticket: invoke `writing-tickets` and draft **one** issue as a preview — it
+owns the format and the leanness rules, do not restate them here. Raise any open
+questions specific to that issue, get approval, create it, then move to the next.
+Do not batch-create.
 
-Write it to the `plans/` directory at the repository root — resolve that with
-`git rev-parse --show-toplevel` from the main checkout rather than hardcoding a
-path. Add `/plans` to `.gitignore` if it isn't there already: the directory must
-stay out of the repo, persist across sessions, and be symlinked into every
-worktree by `/start-ticket`. That combination is what makes a plan written here
-the durable handoff `/start-ticket` picks up later, even from a fresh worktree.
-`mkdir -p` it if it doesn't exist.
+Cross-link related existing issues (comments on both sides) when the
+relationship surfaces mid-session.
 
-Two cases:
+**After each issue is created, ASK whether to run `/design` on it now or defer.**
+Default to defer — the issue is the durable artifact, and `/start-ticket` reads
+it and re-explores current code. Reach for `/design` now only when the ticket
+will be picked up immediately or its shape is genuinely non-obvious.
 
-- **Defer (default for tickets not being worked on immediately).** The GitHub issue is the durable artifact; `/start-ticket` reads it and re-explores current code. A plan file written now would drift out of sync with the issue and add context noise before the ticket is touched.
-- **Write it now (when the ticket will be picked up immediately, or the architectural context is expensive to re-derive).** Capture the durable reasoning that the lean issue intentionally omits — the *why* behind the approach and the alternatives rejected — NOT file lists or line numbers that will rot. Keep it short:
+## Never
 
-```markdown
-# Issue #<number>: <title>
-
-## Context & Motivation
-[Why this matters, what prompted it]
-
-## Agreed Approach
-[The direction converged on in Phase 3 — intent level]
-
-## Key Decisions & Trade-offs
-[Decisions made and why alternatives were rejected — the durable reasoning]
-```
-
-Only decisions that were actually examined belong in that last section — in
-practice, the ones grilling put pressure on. A mechanism nobody argued about is
-an assumption, and writing it beside genuine trade-offs launders it into one:
-the implementer can't tell which line cost an hour of discussion and which was
-typed in passing. Leave it out. If a substrate really does need naming, mark it
-provisional and say what would change it.
-
-If you write one, tell the user it'll be picked up by `/start-ticket`. If deferred, note that the issue alone is the handoff.
-
-## Important
-
-- Do NOT jump to solutions. Explore the problem first.
-- Do NOT create issues until the user explicitly says they're ready.
-- Do NOT make implementation changes — this is discussion only.
-- If the topic is too broad, suggest narrowing scope and ask what to focus on first.
+- Make implementation changes. This is discussion only.
+- Create issues before the user explicitly says they're ready.
+- Write a `plans/` file. That's `/design`'s output.
