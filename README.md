@@ -23,6 +23,7 @@ that keeps the work honest along the way.
 | `/start-ticket` | Reads an issue, creates an isolated git worktree off `origin/main`, wires up gitignored runtime files, and picks up any plan `/design` left behind. |
 | `/ship-ticket` | Orchestrates the rest: TDD, a simplify pass, PR, automated review, auto-merge, cleanup. |
 | `/polish-ticket` | Runs a catch-all polish ticket. The user reports problems one at a time; each is triaged into an inline fix on the branch or its own filed ticket. |
+| `/walkthrough` | Verifies a branch in-app one step at a time, against a checklist derived from the issue's acceptance criteria and the diff. The position lives in a file, so a bug found mid-walk detours into triage and returns to the same step. |
 | `/commit` | Focused commit with a real message. Reads the project's test, lint, and security gates from `CLAUDE.md`/manifest/CI and runs them on what changed. |
 | `/new-pull-request` | Opens a PR with a closing keyword wired to the issue. |
 | `/review-copilot` | Takes automated review findings one at a time and verifies each against the code before acting, recording the reasoning for every one in the commit body. |
