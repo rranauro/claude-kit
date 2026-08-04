@@ -27,6 +27,7 @@ that keeps the work honest along the way.
 | `/commit` | Focused commit with a real message. Reads the project's test, lint, and security gates from `CLAUDE.md`/manifest/CI and runs them on what changed. |
 | `/new-pull-request` | Opens a PR with a closing keyword wired to the issue. |
 | `/review-copilot` | Takes automated review findings one at a time and verifies each against the code before acting, recording the reasoning for every one in the commit body. |
+| `/start-review` | The other side of the workflow: a PR arrives and you have to judge it. Checks the branch out in its own worktree, runs the headless reviewer, and walks the app. Assess-only on a colleague's PR; a fix loop on your own. |
 | `/wait-copilot` | Polls a PR until the automated reviewers post. |
 | `/cleanup-worktree` | Removes a merged worktree and its branch. |
 
