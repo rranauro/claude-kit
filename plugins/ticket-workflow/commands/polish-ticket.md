@@ -29,7 +29,7 @@ Constituent skills:
 ## Mandatory constraints
 
 - **One branch, one worktree, many small commits.** Every fix lands on the cleanup branch. Never commit to `main`.
-- **All work happens in the worktree.** Once located, every Read/Edit/Write targets `.claude/worktrees/<branch>/`. The tool cwd stays at the main checkout.
+- **All work happens in the worktree.** Once located, every Read/Edit/Write targets its path — resolved from `git worktree list --porcelain`, not assumed. The tool cwd stays at the main checkout.
 - **Ask before editing, every time.** Approval for one fix is not approval for the next. The user is walking the UI; they decide what gets touched.
 - **Durable state lives in git and the issue, not in context.** This ticket outlives its sessions. If a decision isn't in a commit message, the issue body, or a filed ticket, it is lost.
 - **A ticket is for an unknown fix shape, not for deferring known work.** If you can name the change in one sentence and it meets the inline bar, do it now. Filing a ticket to avoid doing a small fix is the failure mode this skill most easily falls into.
@@ -48,7 +48,7 @@ Keep any free-text remainder — the user often names the existing worktree path
 
 Delegated to `/start-ticket` `safety-check` through `worktree-paths`. Both entry paths route through it:
 
-- **Resuming** (the common case) — `safety-check` finds `.claude/worktrees/<issue>-*` and offers Resume. Take it. The symlinks are already wired; do not re-run `wire-worktree`.
+- **Resuming** (the common case) — `safety-check` finds an existing worktree on an `<issue>-*` branch and offers Resume. Take it. The worktree is already provisioned; do not re-run `wire-worktree`.
 - **Starting fresh** — no worktree matches the issue prefix. `/start-ticket` creates one off `origin/main` and wires it.
 
 Skip `/start-ticket` `plan-implementation` entirely. A cleanup ticket has no settled architecture to hand off, and **do not invoke `/architect` for the epic itself** — that's what `file-ticket` is for, per split-out item. If a plan file happens to exist at `plans/<issue>-plan.md`, read it as context and move on.

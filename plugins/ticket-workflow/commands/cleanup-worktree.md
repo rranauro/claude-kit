@@ -3,7 +3,7 @@ Clean up a feature-branch worktree after its PR has been merged on GitHub.
 **Arguments:** $ARGUMENTS
 Optional: a branch name, worktree path, or PR number. If omitted, infer from the current branch.
 
-This command targets the worktree case from `/start-ticket` (worktree at `.claude/worktrees/<branch-name>/`). If the branch was bundled onto an existing worktree instead of getting its own, only Step 6's branch deletion applies — no worktree to remove.
+This command targets the worktree case from `/start-ticket`. If the branch was bundled onto an existing worktree instead of getting its own, only Step 6's branch deletion applies — no worktree to remove.
 
 **Step 1 — Resolve the target:**
 - If `$ARGUMENTS` is a PR number: `gh pr view <num> --json headRefName,state,mergedAt` and take `headRefName` as the branch.
@@ -11,7 +11,9 @@ This command targets the worktree case from `/start-ticket` (worktree at `.claud
 - If `$ARGUMENTS` is a path: derive the branch from `git worktree list`.
 - If empty: use the current branch (`git rev-parse --abbrev-ref HEAD`). If that's `main`, ask the user which worktree to clean up.
 
-Confirm the worktree path is `.claude/worktrees/<branch-name>/` via `git worktree list`. If it isn't listed there, surface what you found and ask the user before proceeding.
+Resolve `<worktree>` — the branch's path — from `git worktree list --porcelain`, and run the `worktree-conventions` skill to find out whether the project owns worktree teardown. If git lists no worktree for the branch, surface what you found and ask the user before proceeding.
+
+**If the project has a remove command, that command is Step 5.** A project recipe routinely does more than `git worktree remove` — unlinking a dev proxy, dropping a registered subdomain, deleting generated config — and those are exactly the parts you cannot reconstruct afterward. Steps 2-4 still apply as written; Step 5 becomes running it.
 
 **Step 2 — Verify the PR is merged:**
 - `gh pr view <branch-name> --json state,mergedAt,url,number`
@@ -19,7 +21,7 @@ Confirm the worktree path is `.claude/worktrees/<branch-name>/` via `git worktre
 - If no PR exists for the branch, STOP and ask the user before proceeding — the work may not be intended for cleanup.
 
 **Step 3 — Verify the worktree has no uncommitted work:**
-- `git -C .claude/worktrees/<branch-name> status --porcelain`
+- `git -C <worktree> status --porcelain`
 - **Known-safe leftovers (do NOT prompt about these — silently allow + use `--force` in Step 5):**
   - Any untracked path that is a **symlink `/start-ticket` `wire-worktree` created** back into the main checkout. Those are setup artifacts, not work. Confirm with `test -L <path>` rather than matching names — the set is project-specific.
   - In practice that means the secrets, permissions, and dependency links `wire-worktree` wires up — e.g. `?? .claude/settings.local.json`, `?? config/credentials.yml.enc` (Rails), and any vendored `node_modules` symlinks the project needs.
@@ -31,8 +33,8 @@ Confirm the worktree path is `.claude/worktrees/<branch-name>/` via `git worktre
 - If yes, STOP. Leave the worktree and branch alone — the user has live work there.
 
 **Step 5 — Remove the worktree (run from the main checkout):**
-- Before removing, stop any **per-directory daemon** bound to this worktree's path. Tools that run a persistent server per working directory orphan their process when the directory is deleted underneath them — harmless individually, but they accumulate across tickets and idle-burn CPU/memory. Don't prompt; these are routine and no-ops when nothing is running. On Rails that's RuboCop's server mode: `cd .claude/worktrees/<branch-name> && rubocop --stop-server; cd -`. Substitute your stack's equivalent (language servers, watchers, test daemons).
-- `git worktree remove .claude/worktrees/<branch-name>` — or `git worktree remove --force <path>` if Step 3 flagged `--force` required.
+- Before removing, stop any **per-directory daemon** bound to this worktree's path. Tools that run a persistent server per working directory orphan their process when the directory is deleted underneath them — harmless individually, but they accumulate across tickets and idle-burn CPU/memory. Don't prompt; these are routine and no-ops when nothing is running. On Rails that's RuboCop's server mode: `cd <worktree> && rubocop --stop-server; cd -`. Substitute your stack's equivalent (language servers, watchers, test daemons).
+- `git worktree remove <worktree>` — or `git worktree remove --force <worktree>` if Step 3 flagged `--force` required. If the project owns teardown, run **its** remove command instead and do not follow it with a raw `git worktree remove`; it already ran one.
 - If the user is currently `cd`'d into the worktree being removed, ask them to switch to the main checkout first; otherwise the remove will fail.
 - **Always sweep the path afterward.** `git worktree remove` deregisters git's bookkeeping but routinely leaves behind runtime files written while the app was booted in the worktree — caches, logs, uploads — some with read-only permissions their writer set. (On Rails the usual culprit is `tmp/cache/bootsnap/`.) After the `worktree remove` succeeds, unconditionally run `chmod -R u+w <worktree-path> 2>/dev/null; rm -rf <worktree-path>` so VS Code, Finder, and `ls` don't see an orphan directory. Do not prompt — this is a no-op if the path is already gone.
 

@@ -40,8 +40,9 @@ Constituent skills:
   advances the checklist. Presenting a step and marking it passed in the same
   turn makes the artifact record what you predicted rather than what they saw —
   it is the single failure mode that destroys this skill's value.
-- **All work happens in the worktree.** Every Read/Edit/Write targets
-  `.claude/worktrees/<branch>/`. The tool cwd stays at the main checkout.
+- **All work happens in the worktree.** Every Read/Edit/Write targets its path,
+  resolved from `git worktree list --porcelain` rather than assumed — the layout
+  may be the project's, not this suite's. The tool cwd stays at the main checkout.
 - **The artifact is the state.** If the walk's position isn't in the file, it
   doesn't exist. Update the file at `record-result`, before doing anything else.
 - **Don't boot the app.** The user runs the dev server. Give them the commands
