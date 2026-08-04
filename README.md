@@ -30,6 +30,7 @@ that keeps the work honest along the way.
 | `/start-review` | The other side of the workflow: a PR arrives and you have to judge it. Checks the branch out in its own worktree, runs the headless reviewer, and walks the app. Assess-only on a colleague's PR; a fix loop on your own. |
 | `/wait-copilot` | Polls a PR until the automated reviewers post. |
 | `/cleanup-worktree` | Removes a merged worktree and its branch. |
+| `/worktree-gc` | The periodic pass for the ones that never went through `/cleanup-worktree`. Re-checks merge state against a fresh `origin/main`, and sweeps the untracked husks `git worktree remove` leaves behind. |
 
 ### Skills
 
