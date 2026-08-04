@@ -19,15 +19,15 @@ id** without updating the references, and grep for one before you delete its ste
 **Step 2 · `safety-check` — Safety check (run in parallel, from the main checkout):**
 - `git status` — ensure the working tree is clean (no uncommitted changes)
 - `git rev-parse --abbrev-ref HEAD` — note the current branch (`git branch --show-current` needs git ≥ 2.22 and fails on older installs)
-- `ls .claude/worktrees/ 2>/dev/null | grep "^<issue-number>-"` — check for an existing worktree with the same ticket-number prefix
+- `git worktree list --porcelain` — check for an existing worktree whose branch carries this ticket-number prefix. Ask git rather than listing a directory: the layout may be the project's, not this suite's (see `worktree-layout` below).
 
 If there are uncommitted changes, STOP and warn the user. Suggest they commit or stash first.
 
-**If an existing worktree is found** (e.g., `.claude/worktrees/42-add-user-avatar`), present it to the user and ask:
+**If an existing worktree is found** (e.g. a worktree on branch `42-add-user-avatar`), present it to the user and ask:
 > "A worktree for this ticket already exists: `42-add-user-avatar`. Resume it, or replace it with a fresh one?"
 
 **Invariant: one worktree per issue.** Never create a second, suffix-differentiated sibling for the same issue number (e.g. `935-...-scope` alongside `935-...-fields`). Two live worktrees for one issue is a trap — the dev server can be booted in the stale one, hiding the real changes and reading as "my changes aren't showing." Enforce exactly one of:
-- **Resume (default):** Skip `fetch-issue` through `wire-worktree`. Set `<branch-name>` to the existing directory name, then jump to `worktree-paths` — use the existing worktree path for all subsequent reads/edits. Do NOT re-run `wire-worktree` (the symlinks are already there).
+- **Resume (default):** Skip `fetch-issue` through `wire-worktree`. Set `<branch-name>` to the existing branch and `<worktree>` to the path git reported, then jump to `worktree-paths` — use that path for all subsequent reads/edits. Do NOT re-run `wire-worktree` (the worktree is already provisioned).
 - **Replace:** Only if the existing worktree is being abandoned/re-scoped. First confirm it's not checked out elsewhere and has no unmerged work worth keeping (an open PR on its branch means keep it — Resume instead). Then remove the old worktree per `/cleanup-worktree` semantics (`git worktree remove [--force]`, sweep the path) **before** creating the new one. The new branch reuses the `<issue-number>-` prefix and may keep the same name — there is no sibling to collide with once the old one is gone.
 
 **Step 3 · `fetch-issue` — Fetch the issue:**
@@ -44,12 +44,36 @@ If there are uncommitted changes, STOP and warn the user. Suggest they commit or
 - Derive `<short-description>` from the issue title (lowercase, hyphens, max ~50 chars)
 - Confirm with the user before creating
 
-**Step 6 · `create-worktree` — Create the worktree:**
-- `git fetch origin main` — refresh `origin/main` (don't rely on "up to date" from `git status`; that only reflects the last fetch)
-- `git worktree add .claude/worktrees/<branch-name> -b <branch-name> origin/main`
-- Worktrees live under `.claude/worktrees/<branch-name>/` inside this repo — never as siblings of the main checkout.
+**Step 6 · `worktree-layout` — Find out who owns worktrees here:**
 
-**Step 7 · `wire-worktree` — Wire up the worktree:**
+Run the `worktree-conventions` skill. It answers three things, and the rest of
+this command branches on them: whether the project has its own create command,
+whether that command also provisions, and whether it has a matching remove
+command.
+
+Many projects do own this — a `just` recipe or `make` target that creates the
+worktree *and* installs dependencies, links a dev proxy, writes local config.
+Where one exists, `create-worktree` delegates to it and `wire-worktree` is
+skipped entirely. Don't decide that here; the skill does.
+
+**Step 7 · `create-worktree` — Create the worktree:**
+- `git fetch origin main` — refresh `origin/main` (don't rely on "up to date" from `git status`; that only reflects the last fetch)
+- **Project owns it:** run its create command, then resolve the resulting path with `git worktree list --porcelain` as the skill describes. Check the new branch's base — a project recipe often cuts from `HEAD` rather than `origin/main` — and offer a rebase if it's behind. Never assume the path; the command may not print it.
+- **Otherwise:** `git worktree add .claude/worktrees/<branch-name> -b <branch-name> origin/main`, under this repo — never as a sibling of the main checkout.
+
+Either way, hold the resulting absolute path as `<worktree>`. Everything downstream uses it.
+
+**Step 8 · `wire-worktree` — Wire up the worktree:**
+
+**If `worktree-layout` reported that the project's create command provisions,
+skip everything below except the `plans/` link.** It already installed
+dependencies and wired runtime files; symlinking on top of that replaces a real
+`node_modules` with a link, which fails later and far from here. Say you skipped
+it and why.
+
+The `plans/` link is the exception, and it is not optional. No project recipe
+knows this suite exists, so nothing else will ever create it — and without it
+`plan-implementation` finds no plan and `/design`'s handoff silently breaks.
 
 A fresh worktree contains only tracked files. Anything gitignored but required
 at runtime is missing, and the failures it causes are indirect — blank config,
@@ -60,7 +84,7 @@ Resolve the main checkout once and reuse it, rather than hardcoding a path:
 
 ```
 MAIN="$(git rev-parse --show-toplevel)"
-WT=".claude/worktrees/<branch-name>"
+WT="<worktree>"   # the path create-worktree resolved
 ```
 
 **Symlink, don't copy.** A copy goes stale the moment the original rotates or
@@ -98,11 +122,11 @@ changes.
   yours does that, say so and let it — don't create the link yourself and risk
   conflicting with it.
 
-**Step 8 · `worktree-paths` — Use worktree-prefixed paths from now on:**
-- Every subsequent Read/Edit/Write must target `.claude/worktrees/<branch-name>/<file>` (or the absolute equivalent). The tool cwd is still the main checkout.
+**Step 9 · `worktree-paths` — Use worktree-prefixed paths from now on:**
+- Every subsequent Read/Edit/Write must target `<worktree>/<file>` — the path `create-worktree` resolved, absolute. The tool cwd is still the main checkout.
 
-**Step 9 · `plan-implementation` — Plan the implementation:**
-- **First**, check if `.claude/worktrees/<branch-name>/plans/<issue-number>-plan.md` exists. That path is a symlink (wired in `wire-worktree`) into the shared, persistent project `plans/` directory, so any plan `/design` wrote — in this or a prior session — is visible here. This file contains the full architectural context, agreed approach, and key decisions.
+**Step 10 · `plan-implementation` — Plan the implementation:**
+- **First**, check if `<worktree>/plans/<issue-number>-plan.md` exists. That path is a symlink (wired in `wire-worktree`) into the shared, persistent project `plans/` directory, so any plan `/design` wrote — in this or a prior session — is visible here. This file contains the full architectural context, agreed approach, and key decisions.
   - **If the plan file exists:** Read it and treat its *reasoning* as settled — the why, the chosen approach, the rejected alternatives, and the acceptance criteria. Do NOT relitigate those decisions or re-derive the approach from scratch; that's what the `/design` session already did.
     - After reading the plan, **ask the user before doing any verification work**: "Is this plan fresh (created this session or just recently, and you're confident nothing relevant has changed in the codebase)?"
       - **Yes (plan is fresh):** Skip the anchor-verification pass. Present a brief summary of the plan and ask whether to proceed or adjust — no file lookups needed.
@@ -118,7 +142,7 @@ changes.
     - Write the plan to `$MAIN/plans/<issue-number>-plan.md` (the repository-root `plans/` store, symlinked into this worktree — see `wire-worktree`).
     - Once the plan file is written, re-enter this step at the **"If the plan file exists"** branch above: present the summary, run the anchor-verification pass, and ask the user whether to proceed or adjust before any implementation.
 
-**Step 10 · `placement-check` — Placement check (only if the work adds or moves a class):**
+**Step 11 · `placement-check` — Placement check (only if the work adds or moves a class):**
 
 If the agreed approach introduces a new model, concern, service, or PORO — or
 relocates behavior between them — run the `behavior-placement` skill before

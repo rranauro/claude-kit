@@ -28,7 +28,7 @@ Constituent skills:
 
 - **Do not duplicate constituent skill bodies.** If a phase says "run `/commit`", invoke the Skill tool — do not inline its steps.
 - **Halt at every gate.** Gates are explicit user checkpoints (`read-plan` plan approval, `push-and-pr` push approval, `poll-review` session-hold approval, `auto-merge` confirmation). Do not skip them in the name of momentum.
-- **Worktree-prefixed paths.** Once `worktree` creates `.claude/worktrees/<branch>/`, every Read/Edit/Write must target that path. The tool cwd stays at the main checkout.
+- **Worktree-prefixed paths.** Once `worktree` creates the worktree, every Read/Edit/Write must target the path `/start-ticket` `create-worktree` resolved. The tool cwd stays at the main checkout.
 - **Never merge locally.** PRs merge on GitHub only — via `gh pr merge`, never `git merge` into main.
 - **Never run the project's full test suite without permission.** Targeted runs need no permission.
 
@@ -44,13 +44,13 @@ Delegated to `/start-ticket` `safety-check`. Before invoking, confirm `$ARGUMENT
 
 Delegated to `/start-ticket` `fetch-issue` through `worktree-paths`. Branch name derives from the issue title: `<issue>-<short-description>`. The user confirms it inside `/start-ticket`.
 
-After it returns, you will be operating against `.claude/worktrees/<branch>/`.
+After it returns, you will be operating against the worktree path it resolved.
 
 ---
 
 ## Phase 3 · `read-plan` — Read the plan file
 
-Delegated to `/start-ticket` `plan-implementation`. The plan lives at `.claude/worktrees/<branch>/plans/<issue>-plan.md`. If the file exists, `/start-ticket` asks whether it's still fresh and runs its anchor-verification pass when it isn't, then summarizes and asks whether to proceed. If no plan exists, it invokes `/design` scoped to this issue to create one — do not improvise a plan here.
+Delegated to `/start-ticket` `plan-implementation`. The plan lives at `<worktree>/plans/<issue>-plan.md`. If the file exists, `/start-ticket` asks whether it's still fresh and runs its anchor-verification pass when it isn't, then summarizes and asks whether to proceed. If no plan exists, it invokes `/design` scoped to this issue to create one — do not improvise a plan here.
 
 `/start-ticket` `placement-check` is **not** re-run by this skill; `tdd` below owns it.
 

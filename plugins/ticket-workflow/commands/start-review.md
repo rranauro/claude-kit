@@ -60,16 +60,23 @@ since posted, offer a second pass — don't force one.
 
 ```
 git fetch origin pull/<n>/head:pr-<n>-review
-git worktree add .claude/worktrees/pr-<n>-review pr-<n>-review
 ```
 
-Worktrees live under `.claude/worktrees/` inside the repo, the same as
-`/start-ticket`'s — never as siblings of the main checkout.
+Then create the worktree for `pr-<n>-review` per the `worktree-conventions`
+skill: delegate to the project's create command if it has one, otherwise
+`git worktree add .claude/worktrees/pr-<n>-review pr-<n>-review`. Resolve the
+resulting path from `git worktree list --porcelain` — a review worktree in the
+wrong place can't boot the app, and booting it is the entire point.
 
-Then wire it up exactly as `/start-ticket`'s `wire-worktree` step describes:
-symlink the gitignored files the app needs to boot — secrets and their keys,
-`.claude/settings.local.json`, `node_modules` — from the main checkout. Don't
-re-derive that list here; a review worktree that can't boot verifies nothing.
+Skip the base check the skill describes. A review branch is the PR's head; it is
+supposed to sit where the author left it, not on `origin/main`.
+
+If the project's create command already provisions, you are done — it installed
+what the app needs. Otherwise wire it up exactly as `/start-ticket`'s
+`wire-worktree` step describes: symlink the gitignored files the app needs to
+boot — secrets and their keys, `.claude/settings.local.json`, `node_modules` —
+from the main checkout. Don't re-derive that list here; a review worktree that
+can't boot verifies nothing.
 
 ---
 
@@ -204,9 +211,10 @@ sandbox across sessions. Ask:
 
 > "Review worktree `pr-<n>-review` is still on disk. Remove it, or keep it?"
 
-On explicit approval, follow `/cleanup-worktree`'s semantics —
-`git worktree remove [--force]`, sweep the path afterward for the runtime files
-git leaves behind, `git worktree prune` — then `git branch -D pr-<n>-review`
+On explicit approval, follow `/cleanup-worktree`'s semantics — the project's
+remove command if it has one, otherwise `git worktree remove [--force]` plus a
+sweep of the path for the runtime files git leaves behind, then
+`git worktree prune` — and finally `git branch -D pr-<n>-review`
 (the local review branch was never merged; `-d` will refuse it, and that refusal
 carries no information here).
 

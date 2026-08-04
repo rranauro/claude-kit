@@ -20,7 +20,7 @@ that keeps the work honest along the way.
 |---|---|
 | `/architect` | The problem conversation. Explores an idea, questions the premise, looks at how others solve it — and files lean GitHub issues only if the conversation earns them. |
 | `/design` | The *how*, once the *what* is settled. Places the behavior, compares approaches, grills the choice, and writes the durable plan. |
-| `/start-ticket` | Reads an issue, creates an isolated git worktree off `origin/main`, wires up gitignored runtime files, and picks up any plan `/design` left behind. |
+| `/start-ticket` | Reads an issue, creates an isolated git worktree off `origin/main` — or delegates to your project's own worktree command — wires up gitignored runtime files, and picks up any plan `/design` left behind. |
 | `/ship-ticket` | Orchestrates the rest: TDD, a simplify pass, PR, automated review, auto-merge, cleanup. |
 | `/polish-ticket` | Runs a catch-all polish ticket. The user reports problems one at a time; each is triaged into an inline fix on the branch or its own filed ticket. |
 | `/walkthrough` | Verifies a branch in-app one step at a time, against a checklist derived from the issue's acceptance criteria and the diff. The position lives in a file, so a bug found mid-walk detours into triage and returns to the same step. |
@@ -38,6 +38,39 @@ that keeps the work honest along the way.
 |---|---|
 | `behavior-placement` | Where behavior belongs — model, value object, or service — and whether the app already derives the answer. |
 | `writing-tickets` | Lean issues that state the problem and the decision without freezing an implementation. |
+| `worktree-conventions` | Where worktrees live and who creates them — delegates to the project's own command when it has one, and detects the resulting path from git rather than assuming it. |
+
+### Worktree layout
+
+By default worktrees go under `.claude/worktrees/<branch>` inside the repo, and
+`/start-ticket` links the gitignored files the app needs to boot.
+
+If your project already owns this — a `just` recipe, a `make` target, a setup
+script that creates the worktree *and* installs deps and links a dev proxy —
+declare it in `CLAUDE.md` and the commands delegate instead:
+
+```markdown
+## Worktrees
+- create: `just worktree <branch>`
+- remove: `just del-worktree <branch>`
+- provisions: yes
+```
+
+`provisions: yes` means `/start-ticket` skips its own wiring rather than
+symlinking on top of a real install. The path is never configured — it's read
+back from `git worktree list --porcelain` after your command runs, so a layout
+this suite has never seen still works.
+
+Declaring `remove` matters more than it looks. A recipe that unlinks a dev proxy
+or drops a registered subdomain is doing something no generic
+`git worktree remove` can reconstruct, and skipping it leaks that resource on
+every cleanup.
+
+It also narrows what `/worktree-gc` will delete. Under the built-in layout the
+directory holds nothing but worktrees, so anything git no longer names is
+garbage. Under a sibling layout like `../<repo>-<branch>`, the same diff would
+propose deleting unrelated repositories that happen to share the parent — so gc
+falls back to sweeping only paths it removed in that run, and says so.
 
 ### Hooks
 
@@ -48,25 +81,6 @@ repos you want it in.
 `pr-review-on-create.sh` — a `PostToolUse` hook that fires when `gh pr create`
 succeeds and delegates to `scripts/pr-review.sh`, which runs the review headless
 and posts it as a comment. Kill switch: `export SKIP_PR_REVIEW=1`.
-
-### The reviewer script
-
-`plugins/ticket-workflow/scripts/pr-review.sh` holds the review prompt, and
-three entry points share it: the hook above, `/start-review`, and a manual
-re-run after you push fixes. Keeping one copy is what makes a second pass
-comparable to the first.
-
-It decides delivery by authorship. Your own PR gets the review posted as a
-comment; a colleague's gets a file under `<main-checkout>/reviews/pr-<n>/`, and
-posting to it requires an explicit `--post`. An unresolved login falls to the
-file side — the failure mode should be a review you have to go read, not an
-uninvited comment on someone else's work. Scope narrows the same way: full
-categories on your own PRs, bugs and security only on everyone else's.
-
-Everything is detected at runtime — repo via `gh`, your login via `gh api user`,
-the main checkout via `git rev-parse --git-common-dir` so artifacts survive the
-worktree they were produced in. There is no config file to write. Run it by hand
-with `pr-review.sh --help`.
 
 `rails-quality-gates.sh` — a `PreToolUse` hook that holds `git commit` to RuboCop
 and Brakeman on the staged Ruby files, blocking the commit with the tool output
@@ -130,6 +144,25 @@ enforces and `/commit` fixes, which keeps `/commit` stack-neutral and lets
 non-Rails users simply not register the hook. Tests stay in the command for the
 same reason — choosing which tests cover a change is judgment, and a full suite
 would blow the hook timeout.
+
+### The reviewer script
+
+`plugins/ticket-workflow/scripts/pr-review.sh` holds the review prompt, and
+three entry points share it: the hook above, `/start-review`, and a manual
+re-run after you push fixes. Keeping one copy is what makes a second pass
+comparable to the first.
+
+It decides delivery by authorship. Your own PR gets the review posted as a
+comment; a colleague's gets a file under `<main-checkout>/reviews/pr-<n>/`, and
+posting to it requires an explicit `--post`. An unresolved login falls to the
+file side — the failure mode should be a review you have to go read, not an
+uninvited comment on someone else's work. Scope narrows the same way: full
+categories on your own PRs, bugs and security only on everyone else's.
+
+Everything is detected at runtime — repo via `gh`, your login via `gh api user`,
+the main checkout via `git rev-parse --git-common-dir` so artifacts survive the
+worktree they were produced in. There is no config file to write. Run it by hand
+with `pr-review.sh --help`.
 
 ## Why I built this
 
