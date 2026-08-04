@@ -39,6 +39,54 @@ rots as the repo drifts and becomes noise that has to be decluttered before real
 work can start. A short ticket that survives is worth more than an exhaustive
 one that misleads.
 
+## Only the acceptance criteria are binding
+
+Everything else in the ticket — the direction, the key decisions, whatever
+context got written down — is the best guess at the time of writing, by someone
+who did not have the code open. A downstream plan may supersede it freely, and
+doing so is neither a scope change nor a conflict. A plan that satisfies the
+criteria by another route has not violated the ticket.
+
+Say this explicitly when the ticket carries any implementation detail at all.
+Without it, `/start-ticket` reads the whole body as settled and will not
+relitigate a guess that never earned that authority.
+
+Revisit an acceptance criterion only when the *observable outcome* itself has to
+change. Rewording one because the implementation went differently is how a
+ticket stops describing anything.
+
+## Slice a body of work vertically
+
+When one conversation produces several tickets, the split is a design decision,
+not clerical work — and the wrong split is what makes a sequence of PRs
+unreviewable.
+
+**Each ticket cuts a narrow but complete path through every layer it touches.**
+Storage through interface, with its tests. A finished slice is demoable or
+verifiable on its own. Do not file "the models," then "the endpoints," then "the
+screens" — nothing is verifiable until the last one lands, and the reviewer of
+the first has no way to tell whether it was right.
+
+**Prefactoring is its own slice, filed first.** Make the change easy, then make
+the easy change — as two tickets, so the mechanical move is reviewable without
+the behavior change buried inside it.
+
+**Wide mechanical refactors are the exception.** Renaming a column, retyping a
+shared symbol — anything whose blast radius fans across the codebase can't be
+made vertical without touching everything at once. Sequence those expand →
+migrate in batches → contract, each phase its own ticket, and say so rather than
+forcing a slice that doesn't exist.
+
+**Give each ticket its dependencies.** Which tickets must finish before this one
+can start. A ticket with none can start immediately, and that's the ordering the
+set actually has. For a chain, base each PR on its blocker's branch — GitHub
+retargets automatically when the blocker merges.
+
+**Title them in the project's own vocabulary** — the words the codebase and its
+docs already use, not coined jargon. A term that turns out to be fuzzy is a
+question for the conversation that produced these tickets, not something to
+settle by picking a name here.
+
 ## Format
 
 **Use the project's ticket format if it has one.** Check, in order:
