@@ -1,4 +1,4 @@
-Create a git commit for the current changes.
+Create git commits for the current changes, split by concern.
 
 Stack-agnostic: the toolchain is read from the project, never assumed. Projects
 that want a gate enforced rather than remembered should register a hook — see
@@ -53,15 +53,38 @@ silently passes is worse.
 - If a gate does not exist for this project, skip it and say so — don't
   substitute a different tool.
 
-**Step 5 — Draft the commit message:**
+**Step 5 — Group the changes into commits:**
+
+Default to more than one. A commit is one reviewable unit: a reviewer should read
+it, understand the single concern it settles, and move on. A branch's worth of
+unrelated work in one commit forces them to hold all of it at once.
+
+Group so that:
+
+- Code and its tests land **together**, never split across commits.
+- A schema migration is always its own commit.
+- A refactor is separate from new behaviour, even in the same file.
+- Unrelated config or tooling changes stand alone.
+
+Order by dependency — whatever a later commit reads must already exist by then.
+In a Rails project that runs migration → model → service → controller → view. The
+principle is the same anywhere: schema before the code reading it, the data layer
+before its callers, callers before presentation.
+
+Show the planned breakdown before executing — each commit with its files and its
+proposed subject — and ask the user to confirm. If the change genuinely is one
+concern, say so and commit once; the point is that splitting is the default, not
+that every change must be split.
+
+**Step 6 — Draft each commit message:**
 - Summarize the nature of the changes in one concise subject line (≤72 chars)
 - Use imperative mood: "Add", "Fix", "Update", "Remove" — not "Added" or "Adds"
 - Focus on the *why*, not the *what*
-- If the changes span multiple concerns, note that and ask the user whether to split
 
-**Step 6 — Stage and commit:**
+**Step 7 — Stage and commit each group:**
 - Stage specific files by name (avoid `git add -A` or `git add .`)
-- Create the commit using a HEREDOC to preserve formatting:
+- Commit each group in dependency order, so the tree builds at every step
+- Create each commit using a HEREDOC to preserve formatting:
 
 ```
 git commit -m "$(cat <<'EOF'
@@ -78,8 +101,9 @@ Name the running model in the trailer if you know it (e.g.
 `Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>`); otherwise leave it as
 `Claude`. Do not hardcode a model version in this file — it goes stale.
 
-**Step 7 — Confirm:**
-Run `git status` to verify the working tree is clean.
+**Step 8 — Confirm:**
+Run `git status` to verify the working tree is clean, and
+`git log --oneline main..HEAD` to show the user the commits as a set.
 
 **Arguments:** $ARGUMENTS
 If the user passed arguments, treat them as guidance for the commit message or scope (e.g., `/commit fix auth bug` → focus the message on the auth fix).
