@@ -1,0 +1,16 @@
+{
+  "description": "Fires a headless Claude review when `gh pr create` succeeds, posted as a top-level PR comment carrying the <!-- claude-pr-review --> marker that /kit:review-copilot reads. Kill switch: export SKIP_PR_REVIEW=1.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/pr-review-on-create.sh\""
+          }
+        ]
+      }
+    ]
+  }
+}
