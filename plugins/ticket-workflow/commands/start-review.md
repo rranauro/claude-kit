@@ -14,7 +14,7 @@ rename an id** without updating the references.
 
 ## What this is
 
-`/review-copilot` addresses findings on a PR you are already shipping. This is
+`/kit:review-copilot` addresses findings on a PR you are already shipping. This is
 the other direction: a PR arrives, and you have to form a judgment about it.
 
 Two flows run off the same steps, forked on authorship:
@@ -62,7 +62,7 @@ since posted, offer a second pass — don't force one.
 git fetch origin pull/<n>/head:pr-<n>-review
 ```
 
-Then create the worktree for `pr-<n>-review` per the `worktree-conventions`
+Then create the worktree for `pr-<n>-review` per the `kit:worktree-conventions`
 skill: delegate to the project's create command if it has one, otherwise
 `git worktree add .claude/worktrees/pr-<n>-review pr-<n>-review`. Resolve the
 resulting path from `git worktree list --porcelain` — a review worktree in the
@@ -72,7 +72,7 @@ Skip the base check the skill describes. A review branch is the PR's head; it is
 supposed to sit where the author left it, not on `origin/main`.
 
 If the project's create command already provisions, you are done — it installed
-what the app needs. Otherwise wire it up exactly as `/start-ticket`'s
+what the app needs. Otherwise wire it up exactly as `/kit:start-ticket`'s
 `wire-worktree` step describes: symlink the gitignored files the app needs to
 boot — secrets and their keys, `.claude/settings.local.json`, `node_modules` —
 from the main checkout. Don't re-derive that list here; a review worktree that
@@ -142,7 +142,7 @@ not push.
 Static analysis tells you *what to look at*, never *what to conclude*. Before
 treating any finding as real, exercise the flow it lives in.
 
-Hand this to `/walkthrough` — it derives observable steps from the acceptance
+Hand this to `/kit:walkthrough` — it derives observable steps from the acceptance
 criteria and the diff, persists the position to disk, and presents one step at a
 time so a bug found mid-walk doesn't lose your place. Don't re-derive that here.
 
@@ -156,7 +156,7 @@ Two things this command adds on top:
   feature confirms or refutes it. That is the only thing that promotes one to a
   verdict.
 
-If the PR closes no issue, `/walkthrough` has no acceptance criteria to derive
+If the PR closes no issue, `/kit:walkthrough` has no acceptance criteria to derive
 from — say so and walk the author's instructions directly.
 
 ---
@@ -165,7 +165,7 @@ from — say so and walk the author's instructions directly.
 
 **Assess Copilot; don't act on it.** If the author received a Copilot review,
 form your own read on each comment and note whether the author addressed it.
-You may run `/review-copilot <n>` in analysis-only mode to triage them — **never
+You may run `/kit:review-copilot <n>` in analysis-only mode to triage them — **never
 its fix-and-push path.** We do not fix another person's PR.
 
 **Drafting comments.** Never post anything without the user's explicit
@@ -192,7 +192,7 @@ and skip re-raising it:
 ```
 
 **Then act on Copilot** — if the review flagged any of its comments as worth
-acting on, run `/review-copilot <n>`, which verifies each against the code,
+acting on, run `/kit:review-copilot <n>`, which verifies each against the code,
 applies the valid ones, runs the affected tests, and records every decision
 including the rejections. Skip it if reconciliation already disagreed with all
 of them.
@@ -200,7 +200,7 @@ of them.
 **Fix, then push.** Apply edits in the review worktree or your feature worktree
 — your call — run the project's tests and linter on what changed, and exercise
 the feature in the running app. If the fix set was non-trivial, re-run
-`/start-review <n>` on the updated HEAD for a second pass.
+`/kit:start-review <n>` on the updated HEAD for a second pass.
 
 ---
 
@@ -211,7 +211,7 @@ sandbox across sessions. Ask:
 
 > "Review worktree `pr-<n>-review` is still on disk. Remove it, or keep it?"
 
-On explicit approval, follow `/cleanup-worktree`'s semantics — the project's
+On explicit approval, follow `/kit:cleanup-worktree`'s semantics — the project's
 remove command if it has one, otherwise `git worktree remove [--force]` plus a
 sweep of the path for the runtime files git leaves behind, then
 `git worktree prune` — and finally `git branch -D pr-<n>-review`

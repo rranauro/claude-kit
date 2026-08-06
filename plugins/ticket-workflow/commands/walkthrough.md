@@ -20,15 +20,15 @@ bug and the session turns to fixing it, the walkthrough's position lives only in
 the transcript — buried by the detour, erased by a compaction. This skill moves
 that position onto disk, so resuming is a file read instead of a scroll-back.
 
-Use it when a branch is ready to exercise: `/ship-ticket` Phase 5 offers it
+Use it when a branch is ready to exercise: `/kit:ship-ticket` Phase 5 offers it
 before the PR is opened. It also stands alone for a re-verification pass.
 
 Do **not** use it as an intake loop for whatever the user happens to notice —
-that's `/polish-ticket`. This skill has a finite list and an end.
+that's `/kit:polish-ticket`. This skill has a finite list and an end.
 
 Constituent skills:
-- `/polish-ticket` — `intake` through `file-ticket`, for every detour
-- `/ship-ticket` — Phase 5 onward, once the walk finishes
+- `/kit:polish-ticket` — `intake` through `file-ticket`, for every detour
+- `/kit:ship-ticket` — Phase 5 onward, once the walk finishes
 
 ---
 
@@ -53,7 +53,7 @@ Constituent skills:
 ## The artifact
 
 `plans/<issue>-walkthrough.md`, inside the worktree, alongside any
-`plans/<issue>-plan.md` that `/design` left behind.
+`plans/<issue>-plan.md` that `/kit:design` left behind.
 
 ```markdown
 # Walkthrough — #1161 Field values render as plain text
@@ -77,7 +77,7 @@ Four states:
 Exactly one step carries `← CURRENT`. It is the first `[ ]` in file order.
 
 **Do not commit the artifact.** It is per-branch scratch; committing it puts a
-verification checklist in the PR diff of every ticket. If the project's `/commit`
+verification checklist in the PR diff of every ticket. If the project's `/kit:commit`
 gates would sweep it up, say so and leave it out of the staged set explicitly.
 
 ---
@@ -178,9 +178,9 @@ When no `[ ]` remains, go to `finish`.
 
 ## Step 6 · `detour` — Hand the problem to triage
 
-A detour is `/polish-ticket`'s loop, entered mid-walk. Do not re-derive it here.
+A detour is `/kit:polish-ticket`'s loop, entered mid-walk. Do not re-derive it here.
 
-Delegate to `/polish-ticket` `intake` → `triage` → (`fix-inline` | `file-ticket`).
+Delegate to `/kit:polish-ticket` `intake` → `triage` → (`fix-inline` | `file-ticket`).
 Its rules apply unchanged: locate the cause before triaging, converge in two or
 three focused checks, get explicit approval for each fix, one commit per fix.
 
@@ -226,7 +226,7 @@ is about to decide whether to ship anyway.
 
 Then hand back:
 
-- Invoked from `/ship-ticket` Phase 5 → return there, and let the user decide
+- Invoked from `/kit:ship-ticket` Phase 5 → return there, and let the user decide
   whether the open items block the PR.
 - Invoked standalone → ask whether to land, keep fixing, or stop.
 
@@ -237,7 +237,7 @@ it's what `resume` reads if the user comes back with one more thing to check.
 
 ## Failure / interrupt handling
 
-- **Session ends mid-walk.** By design. Re-invoke `/walkthrough <issue>`;
+- **Session ends mid-walk.** By design. Re-invoke `/kit:walkthrough <issue>`;
   `resume` reconstructs the position from the file.
 - **A step can't be performed** — missing data, a feature behind a flag, a theme
   without the relevant surface. That's a skip with a reason, not a failure. Mark
@@ -248,5 +248,5 @@ it's what `resume` reads if the user comes back with one more thing to check.
 - **The user reports a step passing that you expected to fail.** Mark it `[x]`.
   Their observation is the evidence; yours is a prediction.
 - **Fixes accumulate past a handful.** The branch is bigger than a walkthrough —
-  say so and offer `/polish-ticket` for the rest, which is built for an open-ended
+  say so and offer `/kit:polish-ticket` for the rest, which is built for an open-ended
   intake loop rather than a finite list.

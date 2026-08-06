@@ -1,6 +1,6 @@
 Create a GitHub pull request for the current branch.
 
-Always run `/commit` first and confirm the branch is ready for a pull request.
+Always run `/kit:commit` first and confirm the branch is ready for a pull request.
 
 **Step 1 — Push the branch:**
 - If the branch has not been pushed or is behind, push it with `git push -u origin <branch>`.
@@ -45,9 +45,9 @@ Print the PR URL so the user can review it.
 
 **Step 4a · `start-polling` — Start polling for Copilot review:**
 GitHub Copilot reviews PRs automatically and usually takes 3–5 minutes. After printing the PR URL, tell the user:
-> "Starting `/loop 90s /wait-copilot <PR#>` to poll for Copilot's review — you'll get a macOS notification when it's ready, then stop the loop and I'll run `/review-copilot`."
+> "Starting `/loop 90s /kit:wait-copilot <PR#>` to poll for Copilot's review — you'll get a macOS notification when it's ready, then stop the loop and I'll run `/kit:review-copilot`."
 
-Then invoke `/loop` via the Skill tool with args `90s /wait-copilot <PR#>` so polling begins immediately.
+Then invoke `/loop` via the Skill tool with args `90s /kit:wait-copilot <PR#>` so polling begins immediately.
 
 **Step 5 — Save ticket context to `tickets/`:**
 After the PR is created, write a summary file to `tickets/<pr-number>-<branch>.md`. It records why the change was made for whoever debugs it later — `/target-debug` reads these if you have it installed, and they stand on their own if you don't. Add `tickets/` to `.gitignore` if it isn't there already; these are local working notes, not repo content.
@@ -72,4 +72,4 @@ Format:
 Create the `tickets/` directory if it doesn't exist. Tell the user the file has been saved.
 
 **Arguments:** $ARGUMENTS
-If the user passed arguments, treat them as guidance for the PR title, scope, or target branch (e.g., `/new-pull-request ready for review` → mention readiness in the description).
+If the user passed arguments, treat them as guidance for the PR title, scope, or target branch (e.g., `/kit:new-pull-request ready for review` → mention readiness in the description).

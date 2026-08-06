@@ -20,7 +20,7 @@ tickets. If you find yourself narrowing options so a decision can be reached,
 you have left the conversation and started running a funnel.
 
 **This skill does not design implementations.** When the *what* is settled and the
-question becomes *how to build it*, that is `/design` — offer it and stop.
+question becomes *how to build it*, that is `/kit:design` — offer it and stop.
 
 ## Posture
 
@@ -57,10 +57,10 @@ looking good.
 
 **The only decision being made here is whether the ticket exists.** A ticket
 states the problem and the intended behavior. It does not settle how to build
-it — that question stays open for `/design`, where it gets real scrutiny. Don't
+it — that question stays open for `/kit:design`, where it gets real scrutiny. Don't
 resolve it in passing to make the issue read as finished.
 
-Per ticket: invoke `writing-tickets` and draft **one** issue as a preview — it
+Per ticket: invoke `kit:writing-tickets` and draft **one** issue as a preview — it
 owns the format and the leanness rules, do not restate them here. Raise any open
 questions specific to that issue, get approval, create it, then move to the next.
 Do not batch-create.
@@ -68,13 +68,13 @@ Do not batch-create.
 Cross-link related existing issues (comments on both sides) when the
 relationship surfaces mid-session.
 
-**After each issue is created, ASK whether to run `/design` on it now or defer.**
-Default to defer — the issue is the durable artifact, and `/start-ticket` reads
-it and re-explores current code. Reach for `/design` now only when the ticket
+**After each issue is created, ASK whether to run `/kit:design` on it now or defer.**
+Default to defer — the issue is the durable artifact, and `/kit:start-ticket` reads
+it and re-explores current code. Reach for `/kit:design` now only when the ticket
 will be picked up immediately or its shape is genuinely non-obvious.
 
 ## Never
 
 - Make implementation changes. This is discussion only.
 - Create issues before the user explicitly says they're ready.
-- Write a `plans/` file. That's `/design`'s output.
+- Write a `plans/` file. That's `/kit:design`'s output.

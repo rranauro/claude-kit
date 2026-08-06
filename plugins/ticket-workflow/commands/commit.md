@@ -106,4 +106,4 @@ Run `git status` to verify the working tree is clean, and
 `git log --oneline main..HEAD` to show the user the commits as a set.
 
 **Arguments:** $ARGUMENTS
-If the user passed arguments, treat them as guidance for the commit message or scope (e.g., `/commit fix auth bug` → focus the message on the auth fix).
+If the user passed arguments, treat them as guidance for the commit message or scope (e.g., `/kit:commit fix auth bug` → focus the message on the auth fix).

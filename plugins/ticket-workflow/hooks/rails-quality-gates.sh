@@ -4,7 +4,7 @@
 # Blocks the commit (exit 2) with the tool output on stderr, which Claude reads
 # and fixes before retrying.
 #
-# The hook ENFORCES; the /commit command REMEDIATES. Nothing here tries to
+# The hook ENFORCES; the /kit:commit command REMEDIATES. Nothing here tries to
 # autofix: deciding whether a Brakeman finding is a real XSS or a false positive
 # is judgment, and a shell hook has none. It only answers pass/fail.
 #
