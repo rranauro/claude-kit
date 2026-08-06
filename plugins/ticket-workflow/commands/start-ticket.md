@@ -5,11 +5,11 @@ model: sonnet
 Start work on a GitHub issue by reading it, creating a worktree off `origin/main`, and planning the implementation.
 
 **Arguments:** $ARGUMENTS
-The argument should be a GitHub issue number (e.g., `/start-ticket 42`) or a GitHub issue URL.
+The argument should be a GitHub issue number (e.g., `/kit:start-ticket 42`) or a GitHub issue URL.
 
 Each step below carries a stable id in backticks (`safety-check`, `wire-worktree`,
-…). Those ids are the handle other commands reference — `/ship-ticket` and
-`/cleanup-worktree` both point at steps here. Renumber freely; **never rename an
+…). Those ids are the handle other commands reference — `/kit:ship-ticket` and
+`/kit:cleanup-worktree` both point at steps here. Renumber freely; **never rename an
 id** without updating the references, and grep for one before you delete its step.
 
 **Step 1 · `parse-issue` — Parse the issue reference:**
@@ -28,7 +28,7 @@ If there are uncommitted changes, STOP and warn the user. Suggest they commit or
 
 **Invariant: one worktree per issue.** Never create a second, suffix-differentiated sibling for the same issue number (e.g. `935-...-scope` alongside `935-...-fields`). Two live worktrees for one issue is a trap — the dev server can be booted in the stale one, hiding the real changes and reading as "my changes aren't showing." Enforce exactly one of:
 - **Resume (default):** Skip `fetch-issue` through `wire-worktree`. Set `<branch-name>` to the existing branch and `<worktree>` to the path git reported, then jump to `worktree-paths` — use that path for all subsequent reads/edits. Do NOT re-run `wire-worktree` (the worktree is already provisioned).
-- **Replace:** Only if the existing worktree is being abandoned/re-scoped. First confirm it's not checked out elsewhere and has no unmerged work worth keeping (an open PR on its branch means keep it — Resume instead). Then remove the old worktree per `/cleanup-worktree` semantics (`git worktree remove [--force]`, sweep the path) **before** creating the new one. The new branch reuses the `<issue-number>-` prefix and may keep the same name — there is no sibling to collide with once the old one is gone.
+- **Replace:** Only if the existing worktree is being abandoned/re-scoped. First confirm it's not checked out elsewhere and has no unmerged work worth keeping (an open PR on its branch means keep it — Resume instead). Then remove the old worktree per `/kit:cleanup-worktree` semantics (`git worktree remove [--force]`, sweep the path) **before** creating the new one. The new branch reuses the `<issue-number>-` prefix and may keep the same name — there is no sibling to collide with once the old one is gone.
 
 **Step 3 · `fetch-issue` — Fetch the issue:**
 - Run `gh issue view <number>` to read the full issue (title, body, labels, assignees)
@@ -46,7 +46,7 @@ If there are uncommitted changes, STOP and warn the user. Suggest they commit or
 
 **Step 6 · `worktree-layout` — Find out who owns worktrees here:**
 
-Run the `worktree-conventions` skill. It answers three things, and the rest of
+Run the `kit:worktree-conventions` skill. It answers three things, and the rest of
 this command branches on them: whether the project has its own create command,
 whether that command also provisions, and whether it has a matching remove
 command.
@@ -73,7 +73,7 @@ it and why.
 
 The `plans/` link is the exception, and it is not optional. No project recipe
 knows this suite exists, so nothing else will ever create it — and without it
-`plan-implementation` finds no plan and `/design`'s handoff silently breaks.
+`plan-implementation` finds no plan and `/kit:design`'s handoff silently breaks.
 
 A fresh worktree contains only tracked files. Anything gitignored but required
 at runtime is missing, and the failures it causes are indirect — blank config,
@@ -111,7 +111,7 @@ changes.
   Use `-n` on both, or a re-run links *inside* the existing directory instead of
   replacing it.
 - **The shared `plans/` directory**, so the worktree sees the same persistent,
-  gitignored plan store as the main checkout. This is how `/design`'s
+  gitignored plan store as the main checkout. This is how `/kit:design`'s
   `plans/<n>-plan.md` reaches `plan-implementation` — without the link a fresh
   worktree has no `plans/` at all and the handoff silently breaks:
   `mkdir -p $MAIN/plans`
@@ -126,8 +126,8 @@ changes.
 - Every subsequent Read/Edit/Write must target `<worktree>/<file>` — the path `create-worktree` resolved, absolute. The tool cwd is still the main checkout.
 
 **Step 10 · `plan-implementation` — Plan the implementation:**
-- **First**, check if `<worktree>/plans/<issue-number>-plan.md` exists. That path is a symlink (wired in `wire-worktree`) into the shared, persistent project `plans/` directory, so any plan `/design` wrote — in this or a prior session — is visible here. This file contains the full architectural context, agreed approach, and key decisions.
-  - **If the plan file exists:** Read it and treat its *reasoning* as settled — the why, the chosen approach, the rejected alternatives, and the acceptance criteria. Do NOT relitigate those decisions or re-derive the approach from scratch; that's what the `/design` session already did.
+- **First**, check if `<worktree>/plans/<issue-number>-plan.md` exists. That path is a symlink (wired in `wire-worktree`) into the shared, persistent project `plans/` directory, so any plan `/kit:design` wrote — in this or a prior session — is visible here. This file contains the full architectural context, agreed approach, and key decisions.
+  - **If the plan file exists:** Read it and treat its *reasoning* as settled — the why, the chosen approach, the rejected alternatives, and the acceptance criteria. Do NOT relitigate those decisions or re-derive the approach from scratch; that's what the `/kit:design` session already did.
     - After reading the plan, **ask the user before doing any verification work**: "Is this plan fresh (created this session or just recently, and you're confident nothing relevant has changed in the codebase)?"
       - **Yes (plan is fresh):** Skip the anchor-verification pass. Present a brief summary of the plan and ask whether to proceed or adjust — no file lookups needed.
       - **No (plan may be stale, or unsure):** Run the anchor-verification pass below.
@@ -137,20 +137,20 @@ changes.
     - **Decide:** anchors verify + no contradicting drift → present the plan as-is and proceed. An anchor is missing/moved, or drift contradicts an assumption → the plan's intent still holds, but re-derive the map *in just the affected area* and flag the divergence to the user before proceeding.
     - Note: the more concrete file/line detail a plan asserts, the *more* verification it needs, not less — there's more surface to have gone stale.
     - Present a summary and the verification result, then ask the user whether to proceed or adjust.
-  - **If the plan file does NOT exist:** Do NOT improvise an ad-hoc plan and do NOT start implementing. The ticket has no settled architectural context yet, so the required next step is to **invoke the `/design` skill to create the plan file** before proceeding.
-    - Run `/design` with this issue number. The issue states the problem; `/design`'s job is the *how* — placement, approaches, the grilling pass, and the durable handoff artifact.
+  - **If the plan file does NOT exist:** Do NOT improvise an ad-hoc plan and do NOT start implementing. The ticket has no settled architectural context yet, so the required next step is to **invoke the `/kit:design` skill to create the plan file** before proceeding.
+    - Run `/kit:design` with this issue number. The issue states the problem; `/kit:design`'s job is the *how* — placement, approaches, the grilling pass, and the durable handoff artifact.
     - Write the plan to `$MAIN/plans/<issue-number>-plan.md` (the repository-root `plans/` store, symlinked into this worktree — see `wire-worktree`).
     - Once the plan file is written, re-enter this step at the **"If the plan file exists"** branch above: present the summary, run the anchor-verification pass, and ask the user whether to proceed or adjust before any implementation.
 
 **Step 11 · `placement-check` — Placement check (only if the work adds or moves a class):**
 
 If the agreed approach introduces a new model, concern, service, or PORO — or
-relocates behavior between them — run the `behavior-placement` skill before
+relocates behavior between them — run the `kit:behavior-placement` skill before
 implementation starts. It answers where the behavior belongs (model → value
 object → service) and whether the app already derives the answer somewhere.
 
 Run it even when the plan already names a class. A plan file records the
-*direction*, and `/architect` deliberately keeps the implementation substrate
+*direction*, and `/kit:architect` deliberately keeps the implementation substrate
 out of tickets — so a class name appearing in one is usually shorthand, not a
 verified placement decision. This check is where it gets verified.
 

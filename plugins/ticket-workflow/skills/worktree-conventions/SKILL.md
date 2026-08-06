@@ -31,7 +31,7 @@ any that applies to the path you're working in):
   recipe that also unlinks a dev proxy is the common case, and skipping it
   leaves a dangling link nothing will ever clean up.
 - **provisions** — `yes` means create also installs dependencies and wires
-  runtime files. Then `/start-ticket`'s `wire-worktree` must be **skipped
+  runtime files. Then `/kit:start-ticket`'s `wire-worktree` must be **skipped
   entirely**, not merged with — re-symlinking on top of a real install is how
   you get a `node_modules` symlink pointing at a directory the project just
   populated for real.
@@ -57,7 +57,7 @@ blocks. Find the block whose branch matches and take its path. That absolute
 path is what every later Read/Edit/Write targets.
 
 The same lookup finds an *existing* worktree for a branch, which is how
-`/cleanup-worktree`, `/polish-ticket`, `/walkthrough`, and `/ship-ticket` locate
+`/kit:cleanup-worktree`, `/kit:polish-ticket`, `/kit:walkthrough`, and `/kit:ship-ticket` locate
 one without knowing the layout.
 
 **Verify the base.** A project's create command commonly cuts the branch from
@@ -79,7 +79,7 @@ raw `git worktree remove` — it already ran one. What it adds around that (prox
 links, generated config, registered subdomains) is precisely the part you cannot
 reconstruct, which is why it exists.
 
-If it names no remove command, remove it yourself per `/cleanup-worktree`.
+If it names no remove command, remove it yourself per `/kit:cleanup-worktree`.
 
 ## Step 4 — Fallback layout
 
@@ -91,7 +91,7 @@ With no project convention, this suite owns the layout:
 
 Inside the repo, never as a sibling of the main checkout. Create with
 `git worktree add .claude/worktrees/<branch> -b <branch> origin/main`, then run
-`/start-ticket`'s `wire-worktree` to link the gitignored files the app needs to
+`/kit:start-ticket`'s `wire-worktree` to link the gitignored files the app needs to
 boot.
 
 ## The sweep rule

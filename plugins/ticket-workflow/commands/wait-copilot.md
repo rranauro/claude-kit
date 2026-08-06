@@ -1,6 +1,6 @@
-Poll a PR for GitHub Copilot's review and hand off to `/review-copilot` when comments arrive.
+Poll a PR for GitHub Copilot's review and hand off to `/kit:review-copilot` when comments arrive.
 
-Designed to be run via `/loop` (e.g. `/loop 90s /wait-copilot` or `/loop 90s /wait-copilot 612`). Each firing runs one check; on the firing where Copilot's review has landed, this command notifies the user and chains into `/review-copilot`.
+Designed to be run via `/loop` (e.g. `/loop 90s /kit:wait-copilot` or `/loop 90s /kit:wait-copilot 612`). Each firing runs one check; on the firing where Copilot's review has landed, this command notifies the user and chains into `/kit:review-copilot`.
 
 **Step 1 — Resolve the PR:**
 - If `$ARGUMENTS` contains a PR number, use it.
@@ -19,7 +19,7 @@ gh api repos/{owner}/{repo}/pulls/{N}/comments  --jq '[.[] | select(.user.login 
 **Step 3 — Decide:**
 
 **Not ready** (both counts are 0):
-- Print one short line: `PR #N: still no Copilot review (checked HH:MM:SS) — next check on the loop's interval.` Do not name a specific number of seconds: the caller sets the interval (`/new-pull-request` uses 90s, `/ship-ticket` `poll-review` overrides to 60s), so a hardcoded figure will be wrong half the time.
+- Print one short line: `PR #N: still no Copilot review (checked HH:MM:SS) — next check on the loop's interval.` Do not name a specific number of seconds: the caller sets the interval (`/kit:new-pull-request` uses 90s, `/kit:ship-ticket` `poll-review` overrides to 60s), so a hardcoded figure will be wrong half the time.
 - Do not call any other tools. Do not schedule a wakeup. The `/loop` interval will re-fire.
 
 **Ready** (either count > 0):
@@ -27,9 +27,9 @@ gh api repos/{owner}/{repo}/pulls/{N}/comments  --jq '[.[] | select(.user.login 
    ```
    osascript -e 'display notification "Copilot review ready for PR #N" with title "Claude Code" subtitle "<repo>" sound name "Glass"'
    ```
-2. Print: `Copilot review is in for PR #N. Stop the loop now with /loop stop — I'll start /review-copilot.`
-3. Invoke `/review-copilot N` via the Skill tool, passing the PR number explicitly so it doesn't have to re-resolve from the branch.
+2. Print: `Copilot review is in for PR #N. Stop the loop now with /loop stop — I'll start /kit:review-copilot.`
+3. Invoke `/kit:review-copilot N` via the Skill tool, passing the PR number explicitly so it doesn't have to re-resolve from the branch.
 
-**Why stop the loop on hit:** `/review-copilot` is interactive (asks you about each comment). If `/loop` fires again mid-review it will interrupt. The "Stop the loop" message is required output — don't omit it.
+**Why stop the loop on hit:** `/kit:review-copilot` is interactive (asks you about each comment). If `/loop` fires again mid-review it will interrupt. The "Stop the loop" message is required output — don't omit it.
 
 **Arguments:** `$ARGUMENTS` — optional PR number. If omitted, the current branch's PR is used (and re-resolved on every firing, which is fine).

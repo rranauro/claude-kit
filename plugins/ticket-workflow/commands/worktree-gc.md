@@ -6,7 +6,7 @@ Sweep this repo's worktrees — remove the ones whose branches are merged, and d
 
 **Arguments:** none.
 
-`/cleanup-worktree` handles one ticket at the moment it merges. This is the
+`/kit:cleanup-worktree` handles one ticket at the moment it merges. This is the
 periodic pass for everything that didn't go through it: worktrees abandoned
 mid-ticket, ones whose PR merged while you were elsewhere, and directories left
 behind by a previous cleanup. Run it from the main checkout.
@@ -15,7 +15,7 @@ behind by a previous cleanup. Run it from the main checkout.
 
 ## Step 1 · `layout` — Establish who owns worktrees here
 
-Run the `worktree-conventions` skill **before touching anything.** Two answers
+Run the `kit:worktree-conventions` skill **before touching anything.** Two answers
 change how the rest of this command behaves, and one of them is a safety
 constraint, not a preference:
 

@@ -3,7 +3,7 @@ Clean up a feature-branch worktree after its PR has been merged on GitHub.
 **Arguments:** $ARGUMENTS
 Optional: a branch name, worktree path, or PR number. If omitted, infer from the current branch.
 
-This command targets the worktree case from `/start-ticket`. If the branch was bundled onto an existing worktree instead of getting its own, only Step 6's branch deletion applies — no worktree to remove.
+This command targets the worktree case from `/kit:start-ticket`. If the branch was bundled onto an existing worktree instead of getting its own, only Step 6's branch deletion applies — no worktree to remove.
 
 **Step 1 — Resolve the target:**
 - If `$ARGUMENTS` is a PR number: `gh pr view <num> --json headRefName,state,mergedAt` and take `headRefName` as the branch.
@@ -11,7 +11,7 @@ This command targets the worktree case from `/start-ticket`. If the branch was b
 - If `$ARGUMENTS` is a path: derive the branch from `git worktree list`.
 - If empty: use the current branch (`git rev-parse --abbrev-ref HEAD`). If that's `main`, ask the user which worktree to clean up.
 
-Resolve `<worktree>` — the branch's path — from `git worktree list --porcelain`, and run the `worktree-conventions` skill to find out whether the project owns worktree teardown. If git lists no worktree for the branch, surface what you found and ask the user before proceeding.
+Resolve `<worktree>` — the branch's path — from `git worktree list --porcelain`, and run the `kit:worktree-conventions` skill to find out whether the project owns worktree teardown. If git lists no worktree for the branch, surface what you found and ask the user before proceeding.
 
 **If the project has a remove command, that command is Step 5.** A project recipe routinely does more than `git worktree remove` — unlinking a dev proxy, dropping a registered subdomain, deleting generated config — and those are exactly the parts you cannot reconstruct afterward. Steps 2-4 still apply as written; Step 5 becomes running it.
 
@@ -23,7 +23,7 @@ Resolve `<worktree>` — the branch's path — from `git worktree list --porcela
 **Step 3 — Verify the worktree has no uncommitted work:**
 - `git -C <worktree> status --porcelain`
 - **Known-safe leftovers (do NOT prompt about these — silently allow + use `--force` in Step 5):**
-  - Any untracked path that is a **symlink `/start-ticket` `wire-worktree` created** back into the main checkout. Those are setup artifacts, not work. Confirm with `test -L <path>` rather than matching names — the set is project-specific.
+  - Any untracked path that is a **symlink `/kit:start-ticket` `wire-worktree` created** back into the main checkout. Those are setup artifacts, not work. Confirm with `test -L <path>` rather than matching names — the set is project-specific.
   - In practice that means the secrets, permissions, and dependency links `wire-worktree` wires up — e.g. `?? .claude/settings.local.json`, `?? config/credentials.yml.enc` (Rails), and any vendored `node_modules` symlinks the project needs.
 - If the porcelain output contains **only** entries from the known-safe set above, treat it as clean and proceed silently. Mark `--force` as required for Step 5 and continue.
 - If the porcelain output contains **anything else** (modified tracked files, untracked files outside the known-safe set), STOP and report what's outstanding. Do NOT pass `--force`; ask the user how to handle the leftovers.

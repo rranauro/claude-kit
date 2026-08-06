@@ -7,8 +7,8 @@
   },
   "plugins": [
     {
-      "name": "ticket-workflow",
-      "description": "End-to-end GitHub ticket workflow. /architect runs the problem conversation and files lean issues; /design settles the how and writes the plan; /start-ticket sets up an isolated worktree and picks up the plan; /ship-ticket drives TDD through PR, automated review, and cleanup. Includes a PostToolUse hook that posts a Claude review on every PR you open.",
+      "name": "kit",
+      "description": "End-to-end GitHub ticket workflow. /kit:architect runs the problem conversation and files lean issues; /kit:design settles the how and writes the plan; /kit:start-ticket sets up an isolated worktree and picks up the plan; /kit:ship-ticket drives TDD through PR, automated review, and cleanup. Includes a PostToolUse hook that posts a Claude review on every PR you open.",
       "author": {
         "name": "Ron Ranauro"
       },

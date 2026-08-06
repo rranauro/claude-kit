@@ -4,7 +4,7 @@
 # Non-blocking; exits 0 immediately.
 #
 # Detects and delegates only — the prompt, auth handling, delivery rules, and
-# provenance footer live in scripts/pr-review.sh, so this hook, /start-review,
+# provenance footer live in scripts/pr-review.sh, so this hook, /kit:start-review,
 # and manual re-runs all produce the same review.
 #
 # Register it in a project's .claude/settings.json rather than the global one,

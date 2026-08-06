@@ -10,7 +10,7 @@ Design how to build something whose problem is already settled: compare approach
 
 The *what* is decided. This skill answers *how*. If the problem itself is still
 open — if you find yourself asking whether this is the right thing to build —
-stop and go back to `/architect`.
+stop and go back to `/kit:architect`.
 
 If the argument is an issue number or URL, read the issue first. It is the
 statement of the problem; do not re-litigate it here.
@@ -27,7 +27,7 @@ performance, and the project's own rules.
 ## 2 — Place the behavior
 
 Invoke the design skills the project keeps for this — at minimum
-`behavior-placement` (where the behavior belongs, and whether the app already
+`kit:behavior-placement` (where the behavior belongs, and whether the app already
 derives the answer) and `codebase-design` (how deep a module should be:
 interface, seam, depth, leverage). Use whatever others the project has added.
 
@@ -62,8 +62,8 @@ there's no issue. Resolve `plans/` against the repository root via
 `git rev-parse --show-toplevel` from the main checkout rather than hardcoding a
 path; `mkdir -p` it if needed. Add `/plans` to `.gitignore` if it isn't there
 already: the directory must stay out of the repo, persist across sessions, and be
-symlinked into every worktree by `/start-ticket`. That combination is what makes
-a plan written here the durable handoff `/start-ticket` picks up later, even from
+symlinked into every worktree by `/kit:start-ticket`. That combination is what makes
+a plan written here the durable handoff `/kit:start-ticket` picks up later, even from
 a fresh worktree.
 
 Keep it short. Capture the durable reasoning the lean issue intentionally omits —
@@ -90,10 +90,10 @@ implementer can't tell which line cost an hour of discussion and which was typed
 in passing. Leave it out. If a substrate really does need naming, mark it
 provisional and say what would change it.
 
-Tell the user the plan will be picked up by `/start-ticket`.
+Tell the user the plan will be picked up by `/kit:start-ticket`.
 
 ## Never
 
 - Make implementation changes. This is design only.
-- Re-open the problem statement. That's `/architect`.
+- Re-open the problem statement. That's `/kit:architect`.
 - Skip the grilling pass because the direction looks obvious.

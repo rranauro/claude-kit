@@ -18,7 +18,7 @@ Do NOT freeze the **implementation substrate** either: the data structure to
 inspect, the input types, or a class shape like "a value object over the
 before/after HTML pair." Substrate choices read as settled decisions but are
 usually guesses made without the code open, and once written down they reach the
-implementer with an authority they never earned — `/start-ticket` tells them not
+implementer with an authority they never earned — `/kit:start-ticket` tells them not
 to relitigate the plan's reasoning. Say what must be true, not what to build it
 out of.
 
@@ -48,7 +48,7 @@ doing so is neither a scope change nor a conflict. A plan that satisfies the
 criteria by another route has not violated the ticket.
 
 Say this explicitly when the ticket carries any implementation detail at all.
-Without it, `/start-ticket` reads the whole body as settled and will not
+Without it, `/kit:start-ticket` reads the whole body as settled and will not
 relitigate a guess that never earned that authority.
 
 Revisit an acceptance criterion only when the *observable outcome* itself has to

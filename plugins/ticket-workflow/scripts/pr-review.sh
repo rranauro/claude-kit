@@ -3,7 +3,7 @@
 #
 # Single source of truth for the PR-review prompt. Three entry points:
 #   1. a PostToolUse hook on `gh pr create` — your own PRs, posts a PR comment
-#   2. /start-review                        — colleague PRs, file output only
+#   2. /kit:start-review                    — colleague PRs, file output only
 #   3. manual re-run after pushing fixes    — second pass on updated HEAD
 #
 # Inside a Claude session the path is "${CLAUDE_PLUGIN_ROOT}/scripts/pr-review.sh".
@@ -164,7 +164,7 @@ Write the review in this shape. The body MUST begin with these two lines, exactl
     <!-- claude-pr-review -->
     ## Automated review by \`${MODEL}\`
 
-The HTML comment is a stable marker that /review-copilot uses to find this review (it is posted under a human gh user, not a bot login, so login filtering does not work). Do not omit or alter it.
+The HTML comment is a stable marker that /kit:review-copilot uses to find this review (it is posted under a human gh user, not a bot login, so login filtering does not work). Do not omit or alter it.
 
 Then:
 
@@ -172,7 +172,7 @@ Then:
 **AC alignment** — meets | partial | gaps, plus one line on what looks unaddressed.
 **Persistence changes** — list any schema migration, index, or change to how records relate to each other, then flag only the odd ones: a queried column with no index, a cascading delete that reaches further than intended, a migration that locks a large table, a default or backfill applied in place. Adapt the specifics to this project's storage layer. If routine, say 'nothing unexpected' — do not pad.
 **New modules** — inventory of new classes, modules, and services, one line of purpose each, or 'none'. Note one only if it lands somewhere the project's own conventions discourage — check CLAUDE.md and the layout of comparable existing code rather than applying a generic layering opinion.
-**### Inline findings** — for anything tied to a line, start the bullet with \`**\\\`<path>:<line>\\\`** — <finding>\` so /review-copilot can dedup against Copilot's inline comments by (path, line). Tag each \`[suspected-from-code]\` or \`[confirmed]\`.
+**### Inline findings** — for anything tied to a line, start the bullet with \`**\\\`<path>:<line>\\\`** — <finding>\` so /kit:review-copilot can dedup against Copilot's inline comments by (path, line). Tag each \`[suspected-from-code]\` or \`[confirmed]\`.
 **### General notes** — broader observations not tied to a line.
 **Copilot reconciliation** — only if a Copilot review was found. Per comment: Agree (roll into your findings, do not double-count) / Disagree (one line why) / Already covered. Also flag anything significant Copilot missed. Copilot reasons from the diff too, so agreeing with it does not promote a finding to a verdict.
 **Questions for author** — open-ended, for anything that may be a deliberate design choice.
