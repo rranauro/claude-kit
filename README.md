@@ -14,7 +14,7 @@ that keeps the work honest along the way.
 
 Everything the plugin ships is namespaced under `kit:` — `/kit:ship-ticket`,
 `/kit:commit`, and so on. Plugin namespacing is unconditional in Claude Code;
-the prefix comes from the `name` field in `plugins/ticket-workflow/.claude-plugin/plugin.json`.
+the prefix comes from the `name` field in `plugins/kit/.claude-plugin/plugin.json`.
 
 ## What's in it
 
@@ -78,7 +78,7 @@ falls back to sweeping only paths it removed in that run, and says so.
 
 ### Hooks
 
-Both live in `plugins/ticket-workflow/hooks/`. Register them in a **project's**
+Both live in `plugins/kit/hooks/`. Register them in a **project's**
 `.claude/settings.json` rather than the global one, so each fires only for the
 repos you want it in.
 
@@ -103,7 +103,7 @@ on `Bash`, and they differ only in the event they hang off:
         "hooks": [
           {
             "type": "command",
-            "command": "bash /ABSOLUTE/PATH/TO/claude-kit/plugins/ticket-workflow/hooks/pr-review-on-create.sh"
+            "command": "bash /ABSOLUTE/PATH/TO/claude-kit/plugins/kit/hooks/pr-review-on-create.sh"
           }
         ]
       }
@@ -114,7 +114,7 @@ on `Bash`, and they differ only in the event they hang off:
         "hooks": [
           {
             "type": "command",
-            "command": "bash /ABSOLUTE/PATH/TO/claude-kit/plugins/ticket-workflow/hooks/rails-quality-gates.sh",
+            "command": "bash /ABSOLUTE/PATH/TO/claude-kit/plugins/kit/hooks/rails-quality-gates.sh",
             "timeout": 120
           }
         ]
@@ -127,7 +127,7 @@ on `Bash`, and they differ only in the event they hang off:
 Use an absolute path. `${CLAUDE_PLUGIN_ROOT}` only resolves for hooks a plugin
 registers itself, not for ones you wire up in your own settings — if you
 installed via the marketplace, the scripts are under
-`~/.claude/plugins/marketplaces/claude-kit/plugins/ticket-workflow/hooks/`.
+`~/.claude/plugins/marketplaces/claude-kit/plugins/kit/hooks/`.
 
 The `timeout` on the Rails gate is worth keeping: Brakeman scans the whole app
 and the default timeout is not generous enough for a large one. Each script
@@ -151,7 +151,7 @@ would blow the hook timeout.
 
 ### The reviewer script
 
-`plugins/ticket-workflow/scripts/pr-review.sh` holds the review prompt, and
+`plugins/kit/scripts/pr-review.sh` holds the review prompt, and
 three entry points share it: the hook above, `/kit:start-review`, and a manual
 re-run after you push fixes. Keeping one copy is what makes a second pass
 comparable to the first.
