@@ -35,6 +35,7 @@ the prefix comes from the `name` field in `plugins/kit/.claude-plugin/plugin.jso
 | `/kit:start-review` | The other side of the workflow: a PR arrives and you have to judge it. Checks the branch out in its own worktree, runs the headless reviewer, and walks the app. Assess-only on a colleague's PR; a fix loop on your own. |
 | `/kit:cleanup-worktree` | Removes a merged worktree and its branch. |
 | `/kit:worktree-gc` | The periodic pass for the ones that never went through `/kit:cleanup-worktree`. Re-checks merge state against a fresh `origin/main`, and sweeps the untracked husks `git worktree remove` leaves behind. |
+| `/kit:triage-memory` | The same pass for auto-memory. Bins every memory as stale, workflow, duplicate, or unclassified, then clears it down — moving what's worth keeping into an on-demand `WORKFLOW.md` and archiving before deleting. `--dry-run` reports what you'd get back and what you'd lose, without writing anything. |
 
 ### Skills
 
@@ -44,6 +45,7 @@ the prefix comes from the `name` field in `plugins/kit/.claude-plugin/plugin.jso
 | `kit:to-tickets` | Cuts an epic into tracer-bullet tickets, each declaring which tickets must merge before it can start. Adopted from mattpocock/skills; the local fork adds a machine-readable edge marker so `/kit:tend-prs` can start them unattended, and an out-of-scope section so each ticket stands as its own brief. |
 | `kit:writing-tickets` | Lean issues that state the problem and the decision without freezing an implementation. |
 | `kit:worktree-conventions` | Where worktrees live and who creates them — delegates to the project's own command when it has one, and detects the resulting path from git rather than assuming it. |
+| `kit:triage-memory` | Clears down an auto-memory directory that has grown past its usefulness — bins every memory as stale, workflow, duplicate, or unclassified, and trades continuously-loaded memory for a `WORKFLOW.md` that's read only when the work calls for it. |
 
 ### Worktree layout
 
