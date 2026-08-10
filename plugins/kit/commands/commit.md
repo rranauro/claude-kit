@@ -43,8 +43,10 @@ silently passes is worse.
   4. Run that set. Anything you couldn't map, say so — an unmapped source is a
      coverage gap worth naming, not a file to quietly skip.
 
-  Targeted runs need no permission. Only the full suite does — ask before that,
-  and don't ask before the targeted run.
+  **Run named files and examples only — never a directory or the whole suite
+  without asking.** A path argument with no filename is the form this rule exists
+  to catch; it reads as a modest widening and is where the minutes go. CI runs the
+  full sweep on the PR anyway. Targeted runs need no permission — don't ask.
 - **Lint/format:** run the project's linter on the changed files. If it has a
   safe autofix mode, apply it and stage the result.
 - **Security scan:** if the project has one wired up, run it. Show any findings
