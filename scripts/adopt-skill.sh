@@ -121,6 +121,24 @@ if ! git -C "$SKILLS_REPO" diff --quiet -- "$rel" || \
   echo "warning: $rel has uncommitted changes in $SKILLS_REPO; recorded sha $sha will not match what was copied" >&2
 fi
 
+# Publishing this plugin redistributes every adopted skill, and the licenses worth
+# adopting under all require their notice to travel with the copy. So a missing
+# license is a stop, not a warning — it is the one mistake here that is hard to
+# walk back once the repo is public.
+license_src=""
+for candidate in LICENSE LICENSE.md LICENSE.txt LICENCE COPYING; do
+  if [ -f "$SKILLS_REPO/$candidate" ]; then
+    license_src="$SKILLS_REPO/$candidate"
+    break
+  fi
+done
+[ -n "$license_src" ] || {
+  echo "error: no license file at the root of $SKILLS_REPO" >&2
+  echo "hint: confirm the upstream terms allow redistribution, then place its notice" >&2
+  echo "      at $SKILLS_REPO/LICENSE so it can be carried alongside the skill" >&2
+  exit 1
+}
+
 echo "adopting $name"
 echo "  from $src"
 echo "  at   $sha"
@@ -128,6 +146,15 @@ echo "  at   $sha"
 run rm -rf "$dest"
 run mkdir -p "$DEST_ROOT"
 run cp -R "$src" "$dest"
+
+# A skill dir carrying its own license keeps it; the repo-root one is the fallback
+# for the usual case where upstream licenses the whole tree once.
+if [ -f "$src/LICENSE" ]; then
+  echo "  license: kept the one that came with the skill"
+else
+  echo "  license: carrying $(basename "$license_src") from the upstream root"
+  run cp "$license_src" "$dest/LICENSE"
+fi
 
 if $dry_run; then
   echo "would: write $dest/UPSTREAM"
@@ -140,6 +167,10 @@ sha: $sha
 Forked at the sha above. To review what upstream changed since:
   git -C \$SKILLS_REPO diff $sha..HEAD -- $rel
 Port what you want by hand, then bump the sha.
+
+LICENSE beside this file is the upstream project's, carried here because its
+terms require the notice to travel with the copy. It governs this directory
+only; the rest of the plugin is under the LICENSE at the repo root.
 EOF
 fi
 
