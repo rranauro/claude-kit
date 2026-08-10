@@ -1,0 +1,15 @@
+name: lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # The checks live in scripts/lint.sh rather than inline here, so a
+      # contributor can run exactly what CI runs before pushing.
+      - run: ./scripts/lint.sh
