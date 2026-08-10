@@ -125,22 +125,54 @@ changes.
 **Step 9 · `worktree-paths` — Use worktree-prefixed paths from now on:**
 - Every subsequent Read/Edit/Write must target `<worktree>/<file>` — the path `create-worktree` resolved, absolute. The tool cwd is still the main checkout.
 
-**Step 10 · `plan-implementation` — Plan the implementation:**
-- **First**, check if `<worktree>/plans/<issue-number>-plan.md` exists. That path is a symlink (wired in `wire-worktree`) into the shared, persistent project `plans/` directory, so any plan `/kit:design` wrote — in this or a prior session — is visible here. This file contains the full architectural context, agreed approach, and key decisions.
-  - **If the plan file exists:** Read it and treat its *reasoning* as settled — the why, the chosen approach, the rejected alternatives, and the acceptance criteria. Do NOT relitigate those decisions or re-derive the approach from scratch; that's what the `/kit:design` session already did.
-    - After reading the plan, **ask the user before doing any verification work**: "Is this plan fresh (created this session or just recently, and you're confident nothing relevant has changed in the codebase)?"
-      - **Yes (plan is fresh):** Skip the anchor-verification pass. Present a brief summary of the plan and ask whether to proceed or adjust — no file lookups needed.
-      - **No (plan may be stale, or unsure):** Run the anchor-verification pass below.
-    - **Anchor-verification pass** (cheap and bounded — a handful of lookups, not a full re-exploration):
-      1. Spot-check every concrete anchor the plan names — do those files/symbols still exist and look as described? (Targeted grep, or a symbol-lookup MCP tool such as Serena's `find_symbol` if one is available — grep alone is sufficient.)
-      2. `git log` the touched area since the plan's date — did anything land that invalidates an assumption?
-    - **Decide:** anchors verify + no contradicting drift → present the plan as-is and proceed. An anchor is missing/moved, or drift contradicts an assumption → the plan's intent still holds, but re-derive the map *in just the affected area* and flag the divergence to the user before proceeding.
-    - Note: the more concrete file/line detail a plan asserts, the *more* verification it needs, not less — there's more surface to have gone stale.
-    - Present a summary and the verification result, then ask the user whether to proceed or adjust.
-  - **If the plan file does NOT exist:** Do NOT improvise an ad-hoc plan and do NOT start implementing. The ticket has no settled architectural context yet, so the required next step is to **invoke the `/kit:design` skill to create the plan file** before proceeding.
-    - Run `/kit:design` with this issue number. The issue states the problem; `/kit:design`'s job is the *how* — placement, approaches, the grilling pass, and the durable handoff artifact.
-    - Write the plan to `$MAIN/plans/<issue-number>-plan.md` (the repository-root `plans/` store, symlinked into this worktree — see `wire-worktree`).
-    - Once the plan file is written, re-enter this step at the **"If the plan file exists"** branch above: present the summary, run the anchor-verification pass, and ask the user whether to proceed or adjust before any implementation.
+**Step 10 · `plan-implementation` — Confirm the approach is already settled:**
+
+What this step needs is a **settled approach** — the why, the chosen shape, the
+rejected alternatives, and how you'll know it's done. It does not care which of
+two artifacts carries that. Take whichever you have:
+
+- **A plan file** at `<worktree>/plans/<issue-number>-plan.md`. That path is a
+  symlink (wired in `wire-worktree`) into the shared, persistent project `plans/`
+  directory, so any plan `/kit:design` wrote — in this or a prior session — is
+  visible here.
+- **A specified issue.** An issue that carries a written brief is the same
+  artifact published somewhere more durable, and a project whose tickets are
+  written that way should not be made to produce a second copy. It qualifies when
+  **both** hold, judged from the body and comments `fetch-issue` already
+  fetched — no extra lookups:
+  1. It carries the project's AFK-ready triage label (`ready-for-agent` in the
+     canonical vocabulary; check the project's label mapping if it has one).
+  2. It states **testable acceptance criteria** and **what's out of scope**. This
+     is the part that does the work — the label is a claim, these are the
+     evidence. A body that describes a problem without saying when it's solved is
+     a ticket, not a brief, and falls through to `/kit:design` below.
+
+Judge the issue on that contract alone. Length, formatting, and section headings
+are not the test; a short brief that answers both points qualifies and a long
+narrative that answers neither does not.
+
+**If both exist, read both — the plan file wins on conflict.** It is the later,
+more specific artifact. Say so rather than silently picking, because a
+contradiction between them usually means the issue was re-scoped after the plan
+was written, and that's worth a sentence to the user.
+
+**If either artifact is present**, read it and treat its *reasoning* as settled — the why, the chosen approach, the rejected alternatives, and the acceptance criteria. Do NOT relitigate those decisions or re-derive the approach from scratch; that's what the `/kit:design` session already did.
+- After reading it, **ask the user before doing any verification work**: "Is this still fresh — written recently, and nothing relevant has changed in the codebase since?"
+  - **Yes (fresh):** Skip the anchor-verification pass. Present a brief summary and ask whether to proceed or adjust — no file lookups needed.
+  - **No (may be stale, or unsure):** Run the anchor-verification pass below.
+- **Ask it for an issue too, and expect "no" more often.** A `ready-for-agent` issue is *designed* to sit in the queue until an agent picks it up — days or weeks — so an issue brief is stale by default in a way a plan written an hour ago is not. Date it from when the AFK-ready label was applied, not from when the issue was opened.
+- **Anchor-verification pass** (cheap and bounded — a handful of lookups, not a full re-exploration):
+  1. Spot-check every concrete anchor it names — do those files/symbols still exist and look as described? (Targeted grep, or a symbol-lookup MCP tool such as Serena's `find_symbol` if one is available — grep alone is sufficient.)
+  2. `git log` the touched area since it was written — did anything land that invalidates an assumption?
+- **Decide:** anchors verify + no contradicting drift → present it as-is and proceed. An anchor is missing/moved, or drift contradicts an assumption → the intent still holds, but re-derive the map *in just the affected area* and flag the divergence to the user before proceeding.
+- Note: the more concrete file/line detail an artifact asserts, the *more* verification it needs, not less — there's more surface to have gone stale. A well-written brief names interfaces and behavior rather than paths precisely so there is less to rot; verify what it *does* name.
+- Present a summary and the verification result, then ask the user whether to proceed or adjust.
+
+**If neither is present**, do NOT improvise an ad-hoc plan and do NOT start implementing. The ticket has no settled approach yet, so the required next step is to **invoke the `/kit:design` skill** before proceeding.
+- Run `/kit:design` with this issue number. The issue states the problem; `/kit:design`'s job is the *how* — placement, approaches, the grilling pass, and the durable handoff artifact.
+- Write the plan to `$MAIN/plans/<issue-number>-plan.md` (the repository-root `plans/` store, symlinked into this worktree — see `wire-worktree`).
+- Once it's written, re-enter this step at the **"If either artifact is present"** branch above: present the summary, run the anchor-verification pass, and ask the user whether to proceed or adjust before any implementation.
+- **An unspecified issue is not a failure of the issue.** Falling through to here is the normal path for a ticket filed as a lean problem statement, which is how `/kit:architect` writes them. Don't report it as something missing or push the user to go back and rewrite the ticket.
 
 **Step 11 · `placement-check` — Placement check (only if the work adds or moves a class):**
 
@@ -154,10 +186,11 @@ relocates behavior between them — run the `kit:behavior-placement` skill befor
 implementation starts. It answers where the behavior belongs (model → value
 object → service) and whether the app already derives the answer somewhere.
 
-Run it even when the plan already names a class. A plan file records the
-*direction*, and `/kit:architect` deliberately keeps the implementation substrate
-out of tickets — so a class name appearing in one is usually shorthand, not a
-verified placement decision. This check is where it gets verified.
+Run it even when the settled approach already names a class. Both artifacts record
+the *direction* — `/kit:architect` deliberately keeps the implementation substrate
+out of tickets, and a good issue brief describes behavior rather than structure —
+so a class name appearing in either is usually shorthand, not a verified placement
+decision. This check is where it gets verified.
 
 If the skill is installed per-project rather than globally, read it from the
 worktree path (`$WT/.claude/skills/behavior-placement/`), not the main checkout.
