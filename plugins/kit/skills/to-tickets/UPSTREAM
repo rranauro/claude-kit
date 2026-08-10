@@ -1,0 +1,7 @@
+repo: git@github.com:mattpocock/skills.git
+path: skills/engineering/to-tickets
+sha: 84fdeff
+
+Forked at the sha above. To review what upstream changed since:
+  git -C $SKILLS_REPO diff 84fdeff..HEAD -- skills/engineering/to-tickets
+Port what you want by hand, then bump the sha.
