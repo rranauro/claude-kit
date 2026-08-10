@@ -144,6 +144,11 @@ changes.
 
 **Step 11 · `placement-check` — Placement check (only if the work adds or moves a class):**
 
+**If `/kit:ship-ticket` invoked this command, skip this step entirely.** Its `tdd`
+phase owns the placement check and runs it there, next to the code being
+written — where a different answer can still change the file cheaply. Running it
+here too just asks the same question twice, several gates apart.
+
 If the agreed approach introduces a new model, concern, service, or PORO — or
 relocates behavior between them — run the `kit:behavior-placement` skill before
 implementation starts. It answers where the behavior belongs (model → value
@@ -156,5 +161,28 @@ verified placement decision. This check is where it gets verified.
 
 If the skill is installed per-project rather than globally, read it from the
 worktree path (`$WT/.claude/skills/behavior-placement/`), not the main checkout.
+
+**Step 12 · `handoff` — Hand off to implementation:**
+
+This command stops here, with a wired worktree and an accepted plan. It writes no
+code.
+
+**If `/kit:ship-ticket` invoked this command**, it is already at its `tdd` phase —
+say nothing about handoff and return. Do not suggest re-invoking it; that
+restarts the orchestrator from `clean-check`.
+
+**If the user ran this command directly**, tell them what they have and what
+comes next:
+
+> "Worktree `<worktree>` is ready on `<branch-name>`, plan accepted. Run
+> `/kit:ship-ticket <issue-number>` to implement it — TDD, simplify pass, PR,
+> automated review, merge, cleanup. It will detect this worktree and resume from
+> the implementation phase rather than recreating anything.
+>
+> Or implement here yourself, and reach for `/kit:commit` and
+> `/kit:new-pull-request` when you're ready."
+
+Either way, do not begin implementing. `placement-check` above is the last step
+this command owns.
 
 
