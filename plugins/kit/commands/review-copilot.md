@@ -87,6 +87,7 @@ All items are processed without stopping for approval. The summary in Step 5 is 
 
   Use the four categories from Step 3.3, add the minor/non-minor scope label, and tag each line with the source(s). **Include skipped items too** — the durable record of "we considered this and decided not to act" is the point. If Step 6 delegates to `/kit:commit`, pass this body as the intended message rather than letting `/kit:commit` draft its own.
 - If no fixes were made (all comments skipped/ignored), do NOT create a commit. The evaluation summary lives only in the conversation; there is nothing to push.
+- **Report the summary back to your caller in a form it can act on**, naming explicitly whether any **non-minor** item was skipped. `/kit:tend-prs` `merge-policy` branches on exactly that: a skipped non-minor item is the difference between enabling auto-merge and escalating to the user. Do not bury it in prose counts.
 
 **Step 6 — Quality gates (if any fixes were made):**
 - Run the /kit:commit skill
@@ -104,6 +105,11 @@ before the reviewers post.
 **If this skill was invoked by `/kit:ship-ticket`, stop here.** That skill owns the
 auto-merge decision in its own `auto-merge` phase and will run the gate itself; enabling it
 here would bypass that gate.
+
+**If this skill was invoked by `/kit:tend-prs`, stop here too** — but for the
+opposite reason. That command runs unattended, so there is no one to ask; it owns
+the decision in its `merge-policy` step and applies it from the summary you just
+reported. Do not prompt, and do not enable auto-merge yourself.
 
 Otherwise, ask the user before enabling:
 

@@ -43,11 +43,16 @@ Name the running model in the trailer if you know it (e.g.
 **Step 4 — Confirm:**
 Print the PR URL so the user can review it.
 
-**Step 4a · `start-polling` — Start polling for Copilot review:**
-GitHub Copilot reviews PRs automatically and usually takes 3–5 minutes. After printing the PR URL, tell the user:
-> "Starting `/loop 90s /kit:wait-copilot <PR#>` to poll for Copilot's review — you'll get a macOS notification when it's ready, then stop the loop and I'll run `/kit:review-copilot`."
+**Step 4a · `start-polling` — Point at the sweeper, don't poll:**
+GitHub Copilot reviews PRs automatically and usually takes 3–5 minutes; the local Claude headless review can land later still. Waiting for either here would hold the session open to do work that needs nobody present — `/kit:tend-prs` does it out of session, across every open PR at once.
 
-Then invoke `/loop` via the Skill tool with args `90s /kit:wait-copilot <PR#>` so polling begins immediately.
+Check whether the sweeper is already running (`/loop` reports its active loops). Then tell the user one of:
+
+> "PR #<N> is open. `/loop 20m /kit:tend-prs` is already running — it'll triage the reviews, push fixes, and enable auto-merge without you."
+
+> "PR #<N> is open. Start `/loop 20m /kit:tend-prs` to have the reviews triaged and merged unattended, or run `/kit:tend-prs` once by hand after they post."
+
+Do not start the loop yourself. It binds to the current session, and starting a second one silently leaves two sweepers with no clear owner.
 
 **Step 5 — Save ticket context to `tickets/`:**
 After the PR is created, write a summary file to `tickets/<pr-number>-<branch>.md`. It records why the change was made for whoever debugs it later — `/target-debug` reads these if you have it installed, and they stand on their own if you don't. Add `tickets/` to `.gitignore` if it isn't there already; these are local working notes, not repo content.

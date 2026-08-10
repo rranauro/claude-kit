@@ -26,13 +26,13 @@ the prefix comes from the `name` field in `plugins/kit/.claude-plugin/plugin.jso
 | `/kit:design` | The *how*, once the *what* is settled. Places the behavior, compares approaches, grills the choice, and writes the durable plan. |
 | `/kit:start-ticket` | Reads an issue, creates an isolated git worktree off `origin/main` — or delegates to your project's own worktree command — wires up gitignored runtime files, and picks up any plan `/kit:design` left behind. |
 | `/kit:ship-ticket` | Orchestrates the rest: TDD, a simplify pass, PR, automated review, auto-merge, cleanup. |
+| `/kit:tend-prs` | The unattended half. One pass over every open PR you own: triage the review round that landed, push the fixes, enable auto-merge, and remove the worktrees whose PRs have merged. Stateless, so `/loop 20m /kit:tend-prs` is the whole setup. Skips anything you're working in. |
 | `/kit:polish-ticket` | Runs a catch-all polish ticket. The user reports problems one at a time; each is triaged into an inline fix on the branch or its own filed ticket. |
 | `/kit:walkthrough` | Verifies a branch in-app one step at a time, against a checklist derived from the issue's acceptance criteria and the diff. The position lives in a file, so a bug found mid-walk detours into triage and returns to the same step. |
 | `/kit:commit` | Focused commit with a real message. Reads the project's test, lint, and security gates from `CLAUDE.md`/manifest/CI and runs them on what changed. |
 | `/kit:new-pull-request` | Opens a PR with a closing keyword wired to the issue. |
 | `/kit:review-copilot` | Takes automated review findings one at a time and verifies each against the code before acting, recording the reasoning for every one in the commit body. |
 | `/kit:start-review` | The other side of the workflow: a PR arrives and you have to judge it. Checks the branch out in its own worktree, runs the headless reviewer, and walks the app. Assess-only on a colleague's PR; a fix loop on your own. |
-| `/kit:wait-copilot` | Polls a PR until the automated reviewers post. |
 | `/kit:cleanup-worktree` | Removes a merged worktree and its branch. |
 | `/kit:worktree-gc` | The periodic pass for the ones that never went through `/kit:cleanup-worktree`. Re-checks merge state against a fresh `origin/main`, and sweeps the untracked husks `git worktree remove` leaves behind. |
 
@@ -184,8 +184,8 @@ only enter it once you know what you're building.
 
 **Reviewing became the bottleneck.** Once construction got cheap, review was what
 ate my time. GitHub is the substrate here, so the workflow automates that phase
-where it can: `/kit:new-pull-request` and `/kit:wait-copilot` drive `gh`, and the
-`pr-review-on-create` hook fires a review the moment a PR opens.
+where it can: the `pr-review-on-create` hook fires a review the moment a PR opens,
+and `/kit:tend-prs` triages what comes back — on a loop, with nobody watching.
 
 **Two models see different things.** Running more than one reviewer over the same
 diff turns up bugs and inconsistencies uncannily well, and it happens before any
@@ -264,8 +264,8 @@ isn't marked, that's a bug.
 nothing machine-specific to edit before use.
 
 **External commands these call.** Beyond the companion skills below, the
-workflow invokes `/simplify` (`/kit:ship-ticket` Phase 4b), `/loop` (`/kit:wait-copilot`
-polling), and optionally `/target-debug` (reads the `tickets/` notes
+workflow invokes `/simplify` (`/kit:ship-ticket` Phase 4b), `/loop` (drives
+`/kit:tend-prs`), and optionally `/target-debug` (reads the `tickets/` notes
 `/kit:new-pull-request` writes). Each degrades to a skipped step if you don't have
 it, rather than failing.
 
