@@ -30,7 +30,7 @@ Constituent skills:
 - **Halt at every gate.** Gates are explicit user checkpoints (`read-plan` plan approval, `push-and-pr` push approval, `poll-review` session-hold approval, `auto-merge` confirmation). Do not skip them in the name of momentum.
 - **Worktree-prefixed paths.** Once `worktree` creates the worktree, every Read/Edit/Write must target the path `/kit:start-ticket` `create-worktree` resolved. The tool cwd stays at the main checkout.
 - **Never merge locally.** PRs merge on GitHub only — via `gh pr merge`, never `git merge` into main.
-- **Never run the project's full test suite without permission.** Targeted runs need no permission.
+- **Never run a test directory or the full suite without permission.** Named files and examples only; a path argument with no filename needs an ask. CI runs the full sweep on the PR.
 
 ---
 
@@ -78,7 +78,7 @@ Then, per requirement:
 1. Write the test (in the file selected above), in the location the project's convention dictates.
 2. Run that single example and confirm it fails as expected — no need to ask permission for targeted runs. *(Rails: `bundle exec rspec <path>:<line>`.)*
 3. Implement the minimal change. Re-run the example; confirm green.
-4. Run the broader test file (and adjacent tests if relevant) for regressions — still no need to ask. Only the full suite requires permission.
+4. Run the broader test file for regressions — still no need to ask. Naming another *file* is fine; widening to its directory is not, and needs an ask.
 5. When the implementation is complete (or at sensible checkpoints), invoke `/kit:commit` via the Skill tool. Do not push from inside it. If the project registers a commit-time gate hook, expect `/kit:commit` to be blocked and to fix what it reports before retrying — that's the gate working, not a failure.
 
 Apply the project's own rules from `CLAUDE.md` while implementing. This skill does not restate them.
