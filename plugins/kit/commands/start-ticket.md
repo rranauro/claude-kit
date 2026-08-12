@@ -152,9 +152,10 @@ two artifacts carries that. Take whichever you have:
   label as well sends an issue that answers everything a plan would back to
   `/kit:design` because nobody applied a sticker — routine on projects where the
   same person files and implements and never labels their own tickets. Read the
-  label where it exists, for the freshness dating below and as corroboration.
-  Never withhold qualification for its absence, and don't ask the user to go add
-  it.
+  label where it exists — checking the project's own label mapping, since the
+  canonical spelling is not the only one — for the freshness dating below and as
+  corroboration. Never withhold qualification for its absence, and don't ask the
+  user to go add it.
 
   This is not in tension with `/kit:tend-prs`, which *does* require the label
   when it sweeps for startable tickets. There the label is a query filter over
@@ -175,7 +176,7 @@ was written, and that's worth a sentence to the user.
 - After reading it, **ask the user before doing any verification work**: "Is this still fresh — written recently, and nothing relevant has changed in the codebase since?"
   - **Yes (fresh):** Skip the anchor-verification pass. Present a brief summary and ask whether to proceed or adjust — no file lookups needed.
   - **No (may be stale, or unsure):** Run the anchor-verification pass below.
-- **Ask it for an issue too, and expect "no" more often.** An issue is *designed* to sit in the queue until someone picks it up — days or weeks — so an issue brief is stale by default in a way a plan written an hour ago is not. Date it from the most recent evidence the brief was still being maintained: the AFK-ready label's application where there is one, otherwise the last substantive edit or comment. Not from when the issue was opened — that is the one date almost guaranteed to be wrong.
+- **Ask it for an issue too, and expect "no" more often.** An issue is *designed* to sit in the queue until someone picks it up — days or weeks — so an issue brief is stale by default in a way a plan written an hour ago is not. Date it from the most recent evidence the brief was still being maintained — the **later** of the AFK-ready label's application and the last substantive edit or comment, not whichever you find first. Not from when the issue was opened; that is the one date almost guaranteed to be wrong. Substantive means the brief itself moved: an edit to the acceptance criteria or scope, or a comment that changes them. A typo fix, a label shuffle, or a "bumping this" comment is activity, not maintenance, and dates nothing. Unlike the qualification test above, this step may cost a lookup — `updatedAt` and comment timestamps if `fetch-issue` didn't already carry them, and `gh issue view --json timelineItems` for when the label landed. Spend it only when the answer is in doubt.
 - **Anchor-verification pass** (cheap and bounded — a handful of lookups, not a full re-exploration):
   1. Spot-check every concrete anchor it names — do those files/symbols still exist and look as described? (Targeted grep, or a symbol-lookup MCP tool such as Serena's `find_symbol` if one is available — grep alone is sufficient.)
   2. `git log` the touched area since it was written — did anything land that invalidates an assumption?

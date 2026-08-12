@@ -207,6 +207,13 @@ A ticket is **startable** when all of these hold:
 1. Its body contains `<!-- kit-blocked-by: ... -->`. No marker means it was not
    filed as part of an epic — leave it alone. This step never picks up an
    arbitrary `ready-for-agent` ticket, only one whose author declared its edges.
+
+   **The label requirement here is deliberate, and is not the one
+   `/kit:start-ticket` `plan-implementation` relaxed.** There a human has already
+   named the issue, so the label merely corroborates a body you can read, and
+   demanding it withholds work over a missing sticker. Here the label is the
+   filter deciding what gets picked up at all, and dropping it would mean
+   starting whatever happens to be open. Do not harmonize the two.
 2. Every issue number in the marker is **closed**. `/kit:new-pull-request` writes
    `Closes #<issue>`, so a merged PR closes its ticket — a closed blocker means the
    work landed on `main`. An empty marker is trivially satisfied.
