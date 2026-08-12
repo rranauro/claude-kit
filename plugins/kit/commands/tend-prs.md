@@ -253,6 +253,25 @@ command has been quietly declining to help for three days.
 
 A firing where nothing was actionable prints a single line and nothing else.
 
+### Outstanding pins
+
+Append one line when `<main-repo-root>/.claude/pins` holds anything — resolved
+the way `/kit:pin-it` resolves it, from the common dir rather than the cwd:
+
+```
+3 pins outstanding, 1 stale (>30d): theme-preview-caching
+```
+
+Name only the stale ones; the rest are a count. A pin costs nothing to make and
+nothing to keep, so the drawer fills quietly — this line is what makes an unread
+pin visible without you having to remember the command exists.
+
+It is a **report line, not an action**. Never read a pin's contents, never
+triage one, never delete one: resurfacing is a conversation, and nobody is at
+the keyboard. It also never fires a notification — pins are not urgent by
+construction, and the quiet-pass rule below outranks them. A firing whose only
+news is the pin count still prints its single line and stays silent.
+
 **Fire a macOS notification only on escalation or a completed merge-enable:**
 
 ```
