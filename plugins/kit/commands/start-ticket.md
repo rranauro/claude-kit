@@ -137,15 +137,30 @@ two artifacts carries that. Take whichever you have:
   visible here.
 - **A specified issue.** An issue that carries a written brief is the same
   artifact published somewhere more durable, and a project whose tickets are
-  written that way should not be made to produce a second copy. It qualifies when
-  **both** hold, judged from the body and comments `fetch-issue` already
-  fetched — no extra lookups:
-  1. It carries the project's AFK-ready triage label (`ready-for-agent` in the
-     canonical vocabulary; check the project's label mapping if it has one).
-  2. It states **testable acceptance criteria** and **what's out of scope**. This
-     is the part that does the work — the label is a claim, these are the
-     evidence. A body that describes a problem without saying when it's solved is
-     a ticket, not a brief, and falls through to `/kit:design` below.
+  written that way should not be made to produce a second copy. It qualifies on
+  one test, judged from the body and comments `fetch-issue` already fetched — no
+  extra lookups:
+
+  > It states **testable acceptance criteria** and **what's out of scope**.
+
+  A body that describes a problem without saying when it's solved is a ticket,
+  not a brief, and falls through to `/kit:design` below.
+
+  **The project's AFK-ready triage label (`ready-for-agent` in the canonical
+  vocabulary) is not part of that test.** A label is a claim about the body; the
+  body is the evidence, and the evidence is readable either way. Gating on the
+  label as well sends an issue that answers everything a plan would back to
+  `/kit:design` because nobody applied a sticker — routine on projects where the
+  same person files and implements and never labels their own tickets. Read the
+  label where it exists, for the freshness dating below and as corroboration.
+  Never withhold qualification for its absence, and don't ask the user to go add
+  it.
+
+  This is not in tension with `/kit:tend-prs`, which *does* require the label
+  when it sweeps for startable tickets. There the label is a query filter over
+  work nobody asked for, and picking up an unlabelled issue would mean starting
+  something unbidden. Here a human has already named the issue, so the only
+  question left is whether its body settles the approach.
 
 Judge the issue on that contract alone. Length, formatting, and section headings
 are not the test; a short brief that answers both points qualifies and a long
@@ -160,7 +175,7 @@ was written, and that's worth a sentence to the user.
 - After reading it, **ask the user before doing any verification work**: "Is this still fresh — written recently, and nothing relevant has changed in the codebase since?"
   - **Yes (fresh):** Skip the anchor-verification pass. Present a brief summary and ask whether to proceed or adjust — no file lookups needed.
   - **No (may be stale, or unsure):** Run the anchor-verification pass below.
-- **Ask it for an issue too, and expect "no" more often.** A `ready-for-agent` issue is *designed* to sit in the queue until an agent picks it up — days or weeks — so an issue brief is stale by default in a way a plan written an hour ago is not. Date it from when the AFK-ready label was applied, not from when the issue was opened.
+- **Ask it for an issue too, and expect "no" more often.** An issue is *designed* to sit in the queue until someone picks it up — days or weeks — so an issue brief is stale by default in a way a plan written an hour ago is not. Date it from the most recent evidence the brief was still being maintained: the AFK-ready label's application where there is one, otherwise the last substantive edit or comment. Not from when the issue was opened — that is the one date almost guaranteed to be wrong.
 - **Anchor-verification pass** (cheap and bounded — a handful of lookups, not a full re-exploration):
   1. Spot-check every concrete anchor it names — do those files/symbols still exist and look as described? (Targeted grep, or a symbol-lookup MCP tool such as Serena's `find_symbol` if one is available — grep alone is sufficient.)
   2. `git log` the touched area since it was written — did anything land that invalidates an assumption?
