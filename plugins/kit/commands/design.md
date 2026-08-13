@@ -8,9 +8,36 @@ Design how to build something whose problem is already settled: compare approach
 
 ## Precondition
 
-The *what* is decided. This skill answers *how*. If the problem itself is still
-open — if you find yourself asking whether this is the right thing to build —
-stop and go back to `/kit:architect`.
+The *what* is decided — by `/kit:architect`, by `/kit:triage`, or by the user
+saying so. This skill answers *how*. If the problem itself is still open — if you
+find yourself asking whether this is the right thing to build — stop and go back
+to `/kit:architect`.
+
+"Decided" includes a scope that `/kit:triage` just widened or narrowed. Start from
+the scope your caller hands you, not the one the issue body was opened with.
+
+**On scope, the pass closest to implementation wins — and that's this one.**
+`/kit:architect` set the boundary without the code open; `/kit:triage` grilled it
+with the code closed too. You are the first pass reading what actually has to
+change, so if you find the boundary drawn in the wrong place — a decision this
+work forces that the ticket leaves dangling, or scope the code shows is two
+things — say so and move it. Deferring to an earlier pass that knew less is how a
+ticket ships correct-to-spec and wrong.
+
+This is not licence to drift. A widening costs something specific, so it has to
+be paid for:
+
+- **Tell the user it got wider, as its own question.** Not folded into an
+  approach comparison. They're agreeing to a bigger PR.
+- **Write it back to the issue's acceptance criteria.** A widening changes the
+  observable outcome, which is the one reason `kit:writing-tickets` allows a
+  criterion to be revisited. Skip this and the PR stops matching the ticket it
+  closes, and the reviewer can't tell agreed work from improvised work.
+- **Prefer splitting to absorbing** when the extra scope stands on its own. Two
+  reviewable tickets beat one PR that does two things.
+
+Narrowing takes the same treatment. Silently building less than the criteria ask
+for is the same defect wearing the other sign.
 
 If the argument is an issue number or URL, read the issue first. It is the
 statement of the problem; do not re-litigate it here.
@@ -57,7 +84,25 @@ Summarize the agreed approach, what can be done incrementally vs. what requires 
 big-bang change, and any open questions that must be answered before
 implementation.
 
-Then write `plans/<issue-number>-plan.md` — or `plans/<short-slug>-plan.md` if
+Then publish it. Where depends on who called — see **Where the brief goes** below.
+
+### Where the brief goes
+
+**Invoked by `/kit:triage`, or asked to publish to the issue:** post the brief as
+a comment on the issue. That copy survives the machine and is readable by an
+agent that never had your `plans/` directory — which is the point of publishing
+there rather than locally. Also write the local plan file below when there is an
+issue number to name it with; it costs nothing and keeps the offline handoff
+working. On conflict the plan file wins, and `/kit:start-ticket` already knows
+that.
+
+**Invoked directly (the default):** write the local plan file only. Don't post to
+the issue unasked — a comment is public and permanent, and the user came here to
+think, not to publish.
+
+### The local plan file
+
+Write `plans/<issue-number>-plan.md` — or `plans/<short-slug>-plan.md` if
 there's no issue. Resolve `plans/` against the repository root via
 `git rev-parse --show-toplevel` from the main checkout rather than hardcoding a
 path; `mkdir -p` it if needed. Add `/plans` to `.gitignore` if it isn't there
@@ -90,7 +135,9 @@ implementer can't tell which line cost an hour of discussion and which was typed
 in passing. Leave it out. If a substrate really does need naming, mark it
 provisional and say what would change it.
 
-Tell the user the plan will be picked up by `/kit:start-ticket`.
+Tell the user the plan will be picked up by `/kit:start-ticket`. If you were
+invoked by `/kit:triage`, say nothing about handoff and return — it has its own
+publish step to finish.
 
 ## Never
 
