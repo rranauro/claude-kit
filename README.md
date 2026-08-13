@@ -24,6 +24,7 @@ the prefix comes from the `name` field in `plugins/kit/.claude-plugin/plugin.jso
 |---|---|
 | `/kit:architect` | The problem conversation. Explores an idea, questions the premise, looks at how others solve it — and files lean GitHub issues only if the conversation earns them. |
 | `/kit:design` | The *how*, once the *what* is settled. Places the behavior, compares approaches, grills the choice, and writes the durable plan. |
+| `/kit:triage` | The lane for work that arrived rather than work you started. Bins an issue (fixed, duplicate, parked, not-a-ticket), grills its *scope* before any approach exists — which adjacent decisions fold in now, and which are their own tickets — then runs `/kit:design` and leaves the brief on the issue, where an agent that never had your `plans/` directory can read it. |
 | `/kit:start-ticket` | Reads an issue, creates an isolated git worktree off `origin/main` — or delegates to your project's own worktree command — wires up gitignored runtime files, and picks up any plan `/kit:design` left behind. |
 | `/kit:ship-ticket` | Orchestrates the rest: TDD, a simplify pass, PR, automated review, auto-merge, cleanup. |
 | `/kit:tend-prs` | The unattended half. One pass over every open PR you own: triage the review round that landed, push the fixes, enable auto-merge, and remove the worktrees whose PRs have merged. Stateless, so `/loop 20m /kit:tend-prs` is the whole setup. Skips anything you're working in. Reports outstanding `/kit:pin-it` pins so the unread ones surface on their own. |
@@ -185,6 +186,23 @@ being a conversation: if every session ends in tickets, the model starts
 narrowing options in turn two so a decision can be reached. `/kit:architect` is
 allowed to end unresolved. `/kit:design` is where rigor is unconditional, and you
 only enter it once you know what you're building.
+
+`/kit:triage` is the same rigor applied to work that arrived instead of work you
+started. It exists because of a specific failure: an issue can reach an agent
+having never been grilled, and the decisions nobody asked about come back as
+follow-up tickets. More than one follow-up per ticket doesn't converge. So triage
+grills the *boundary* — which adjacent decisions this ticket forces but doesn't
+settle — before `/kit:design` prices an approach against a scope that was never
+examined. Once an approach exists, widening means re-pricing, so the question has
+to be asked first or it doesn't get asked at all.
+
+None of the three is the final word on scope. **The pass closest to
+implementation wins:** architect draws the boundary with no code open, triage
+grills it still with no code open, and `/kit:design` is the first one actually
+reading what has to change — so if design finds the boundary in the wrong place,
+it moves it. The price is that a widening is raised as its own question and
+written back to the issue's acceptance criteria, so the PR still matches the
+ticket it closes.
 
 **Reviewing became the bottleneck.** Once construction got cheap, review was what
 ate my time. GitHub is the substrate here, so the workflow automates that phase
