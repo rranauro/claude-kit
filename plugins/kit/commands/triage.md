@@ -150,10 +150,30 @@ heavier than "this ticket is vetted":
   unattended**, on a loop, with nobody watching.
 
 So the question to put is not "is this ready?" but "is this safe to begin with
-no one watching?" Those come apart. A ticket with an unreconciled data migration,
-a destructive step, or a prerequisite that must land first is *ready* and not
-*safe to start unattended* — hold the label and say which it is. Confirm it as
-its own decision rather than folding it into the publish.
+no one watching?" Those come apart.
+
+**A blocking dependency is not a reason to withhold the label.** `start-next`
+only picks up a ticket whose `kit-blocked-by` marker is fully closed, so the edge
+already holds it back. Withholding as well is redundant, and it defeats the
+mechanism: a labelled ticket starts itself the moment its blocker merges, while
+an unlabelled one waits for a manual pass nobody has scheduled. Record the edge
+in the marker, then label it.
+
+**An unresolved decision is.** `start-next` invokes `/kit:ship-ticket` under a
+no-questions constraint, so a ticket that still carries an open design question
+gets that question answered unattended, inside a diff, by whichever agent picked
+it up. That is the failure this command exists to prevent, arriving through the
+back door. Hold the label until the decision is made — and note that this is the
+same evidence step 1 uses to refuse the already-settled short-circuit, so a
+ticket that legitimately reached step 2 for want of a design pass must not leave
+step 4 labelled unless that pass actually happened.
+
+Also hold it for a step no agent should take alone regardless of the design being
+settled: a data migration that must reconcile production, anything destructive,
+anything whose blast radius the acceptance criteria don't bound.
+
+Say which of these applies rather than just declining. Confirm the label as its
+own decision rather than folding it into the publish.
 
 ## Staleness
 
