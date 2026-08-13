@@ -34,9 +34,47 @@ should exist:
   pass doesn't re-derive it.
 - **Not a ticket** — a question, a support request, a design conversation that
   hasn't earned an issue. Answer it, or point it at `/kit:architect`.
+- **Already settled** — see below. The rest of the command is skipped.
 
 Most of the value of triage is the tickets that never reach step 2. Don't rush
 this to get to the interesting part.
+
+### Already settled
+
+A project that writes good tickets will hand you issues that need nothing from
+steps 2–3. Running the full pass on one of those is redesigning settled work in
+order to apply a sticker. Check for it first.
+
+It's settled when **both** hold, judged from the body and comments you already
+read:
+
+1. The body states **testable acceptance criteria** and **what's out of scope** —
+   the same test `/kit:start-ticket` applies, so passing it means the ticket is
+   already implementable.
+2. The approach has been through a design pass — a `plans/<n>-plan.md` exists, or
+   the issue carries a brief recording the direction and the alternatives
+   rejected.
+
+Criterion 1 alone is not enough. A well-written ticket can state crisp criteria
+over a decision nobody has made — an either/or in the body, or a criterion
+conditional on an answer ("if X is chosen, then…"). That ticket *qualifies* for
+`/kit:start-ticket` and will still be decided unilaterally by whoever implements
+it, in a diff, with nothing recording that a choice was made. It is precisely
+what this command exists for. Send it to step 2.
+
+When it is settled, the only thing left is step 4's label decision. Say what you
+found, confirm, apply, stop. Don't re-grill and don't re-run `/kit:design`.
+
+**Overrides, in both directions:**
+
+- The user can ask for the full pass on a settled ticket. Run it. "Settled" is a
+  judgement about the artifact, not a lock.
+- Go to step 2 anyway when the ticket is settled *stale* — the design pass
+  predates work that has since landed in the same area, or a linked issue has
+  re-scoped it. Say why rather than silently reopening.
+- A ticket that only needs the label, and that you have no doubts about, is a
+  fine thing to confirm in a single turn. That is the command working, not
+  skipping.
 
 ## 2 — Grill the scope
 
@@ -83,8 +121,9 @@ step 2 grilled the boundary, which is a different question from the mechanism.
 
 ## 4 — Publish
 
-`/kit:design` has posted the brief. Two things remain, and both need the user's
-approval:
+`/kit:design` has posted the brief — or, on the already-settled path, the brief
+was already there and this is the only step that runs. Two things remain, and
+both need the user's approval:
 
 **Bring the issue body up to the bar.** The brief is reasoning; the body has to
 state **testable acceptance criteria** and **what is out of scope**. That pair is
@@ -98,12 +137,23 @@ Say in the body that only the acceptance criteria are binding. Without it,
 direction that was a guess.
 
 **Apply the AFK-ready label** — `ready-for-agent` in the canonical vocabulary,
-or the project's own mapping where it differs. This is what makes the issue
-visible to `/kit:tend-prs`, which sweeps by label for work to start unattended.
-It is *not* what makes it qualify for `/kit:start-ticket` — that reads the body.
-Applying it is a statement that you're content for an agent to start this without
-asking again, so confirm it as its own decision rather than folding it into the
-publish.
+or the project's own mapping where it differs.
+
+Be clear with the user about what the label does, because it is narrower and
+heavier than "this ticket is vetted":
+
+- It is *not* what makes the issue qualify for `/kit:start-ticket`. That reads
+  the body; the label is corroboration and a staleness date.
+- It does *not* route the work or choose who implements. `/kit:ship-ticket`
+  never reads it.
+- Its one behavioral effect is that **`/kit:tend-prs` will start this ticket
+  unattended**, on a loop, with nobody watching.
+
+So the question to put is not "is this ready?" but "is this safe to begin with
+no one watching?" Those come apart. A ticket with an unreconciled data migration,
+a destructive step, or a prerequisite that must land first is *ready* and not
+*safe to start unattended* — hold the label and say which it is. Confirm it as
+its own decision rather than folding it into the publish.
 
 ## Staleness
 
