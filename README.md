@@ -28,7 +28,7 @@ the prefix comes from the `name` field in `plugins/kit/.claude-plugin/plugin.jso
 | `/kit:start-ticket` | Reads an issue, creates an isolated git worktree off `origin/main` — or delegates to your project's own worktree command — wires up gitignored runtime files, and picks up any plan `/kit:design` left behind. |
 | `/kit:ship-ticket` | Orchestrates the rest: TDD, a simplify pass, PR, automated review, auto-merge, cleanup. |
 | `/kit:start-next` | Picks up the next epic ticket whose blocking edges have all closed — lowest issue number first — and hands it to `/kit:ship-ticket`. Deliberate by design: `/kit:tend-prs` runs unattended because it never writes an implementation, and this is the step that does. |
-| `/kit:tend-prs` | The unattended half. One pass over every open PR you own: triage the review round that landed, push the fixes, enable auto-merge, and remove the worktrees whose PRs have merged. Stateless, so `/loop 20m /kit:tend-prs` is the whole setup. Skips anything you're working in. Reports outstanding `/kit:pin-it` pins so the unread ones surface on their own. |
+| `/kit:tend-prs` | The unattended half. One pass over every open PR you own: triage the review round that landed, push the fixes, enable auto-merge, and remove the worktrees whose PRs have merged. Stateless and cold-start safe, so it runs headless on a launchd schedule — `install-tending.sh` is the whole setup. Skips anything you're working in. Reports outstanding `/kit:pin-it` pins so the unread ones surface on their own. |
 | `/kit:polish-ticket` | Runs a catch-all polish ticket. The user reports problems one at a time; each is triaged into an inline fix on the branch or its own filed ticket. |
 | `/kit:walkthrough` | Verifies a branch in-app one step at a time, against a checklist derived from the issue's acceptance criteria and the diff. The position lives in a file, so a bug found mid-walk detours into triage and returns to the same step. |
 | `/kit:pin-it` | Parks a requirement that surfaced mid-debug but isn't ready to be discussed — culled to what's expensive to re-derive, saved outside version control at the main checkout so it survives the worktree it was written in. `list` shows what's pinned and flags what's gone stale; a slug brings one back and triages it into an issue, a fix, or a drop. |
@@ -173,6 +173,97 @@ Everything is detected at runtime — repo via `gh`, your login via `gh api user
 the main checkout via `git rev-parse --git-common-dir` so artifacts survive the
 worktree they were produced in. There is no config file to write. Run it by hand
 with `pr-review.sh --help`.
+
+### Running the janitor on a schedule
+
+`/kit:tend-prs` is written to run with nobody watching, and inside a session it
+mostly doesn't run at all — it only fires if you remember to start it, and
+killing it costs you whatever else that session was doing. Two scripts move it
+out of session:
+
+```
+plugins/kit/scripts/install-tending.sh              # every 10 minutes, this repo
+plugins/kit/scripts/install-tending.sh --status     # loaded? what did the last pass do?
+plugins/kit/scripts/install-tending.sh --uninstall  # unload and remove
+```
+
+It writes a launchd agent labelled by the repo it tends, so tending two
+checkouts is two installs and removing one leaves the other alone. launchd
+rather than cron because it survives logout and catches up after sleep; not
+cloud scheduling, which cannot work here at all — the pass needs the real
+worktrees and your local `gh` and `claude` credentials.
+
+`tend-prs.sh` is what the agent runs, and running it by hand is how you watch a
+pass before handing it over. Three properties are the reason it is a script and
+not a one-line `claude -p`:
+
+**The permission grant is a file you can read.** `tending-settings.json`
+enumerates what the pass may do, and the run loads no other settings source —
+`--setting-sources ''` — so the boundary is that file rather than whatever your
+`~/.claude/settings.json` happens to allow this month. Headless means nothing
+can be approved interactively, so a call the grant doesn't cover fails and lands
+in the report; the command is told to record a denial and carry on, never to
+route around one.
+
+Worth being precise about what it does and doesn't control, because the obvious
+reading is wrong. **Read-only commands are auto-approved by the CLI's own
+classifier and cannot be narrowed** — `ls` runs whether or not it appears in the
+allow list, under every permission mode. So the allow list is not an exhaustive
+inventory of what a pass can execute. What it *is* exhaustive about is writes:
+an unlisted side-effecting command is refused outright. That's the boundary that
+matters — what an unwatched job can change, not what it can look at. The deny
+list is load-bearing for the same reason: `git push` has to be allowed for the
+triage step to push fixes, which would otherwise carry `git push --force` along
+with it.
+
+**The pass reads its commands off disk.** A headless `claude -p` doesn't load
+plugin commands the way an interactive session does, and the Skill tool resolves
+`skills/`, not `commands/` — so "invoke `/kit:review-copilot` via the Skill tool"
+fails with *Unknown skill* every time. The runner points the pass at the command
+files instead, resolved from the script's own location rather than from
+`--repo-dir`, because the kit and the repo being tended are different checkouts:
+tending `~/dev/zcommerce` reads its commands from wherever the kit lives.
+
+**You can tell it to leave a PR alone.** Add the **`kit-hold`** label from the
+GitHub UI and the pass takes no action on that PR at all — no triage, no
+auto-merge, no worktree removal — and reports it as held. It works from a phone
+with no checkout, which is the case it was built for: walking a change in the
+running app takes as long as it takes, and the worktree has to still be there
+when you finish. A merged PR that still carries the label keeps its worktree too.
+
+The pass never applies the label and never removes it, and that's enforced by
+the grant rather than left to good behavior — `gh pr edit` and `gh label` are on
+the deny list, and the `gh api` back door is refused as a write. Take the label
+off and the PR is handled normally on the next pass, with no residue: `held` is
+read fresh from the label every firing and stored nowhere.
+
+Create it once per repo with `gh label create kit-hold`.
+
+**Two passes can't act on the same PR.** Derived state makes overlap harmless in
+general, but two concurrent triages of one PR is a double push. The lock is an
+atomic `mkdir` holding the pid — macOS has no `flock` — and a pass killed
+mid-flight leaves a directory that the next pass reclaims only after checking
+the recorded pid is actually gone.
+
+**Every pass leaves a record.** `~/.claude/logs/tend-prs/<owner>-<repo>.log`,
+appended, including the skip reasons — reading a week of passes at once is how
+you notice the worktree that has been dirty since Tuesday. Notifications stay as
+they were: escalations fire one, quiet passes stay silent.
+
+**On sonnet, and on a 10-minute interval.** Both are deliberate. The pass reads
+`gh` JSON and matches branches to worktrees; the one judgment-heavy step,
+verifying review findings against the code, is `/kit:review-copilot`, which
+declares sonnet in its own frontmatter. This is not `pr-review.sh`, where the
+model *is* the deliverable. And polling faster buys nothing: Copilot lands 3–5
+minutes after a PR opens, `classify` deliberately waits for both reviewers, and
+since `/kit:start-next` split out, no downstream work is waiting on a pass to
+finish. A measured quiet pass takes ~27s, so the interval is the difference
+between a few percent duty cycle and a session that never stops.
+
+A pass killed partway is safe by construction, and this is the property to
+preserve when changing any of it: all state is derived from GitHub and git, and
+the triage marker is written last, so a firing that dies mid-triage is
+re-triaged rather than mis-classified as done.
 
 ## Why I built this
 
