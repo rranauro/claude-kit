@@ -71,10 +71,17 @@ if [ "$ACTION" = "status" ]; then
   fi
   if [ -f "$LOG" ]; then
     echo "log:      ${LOG}"
-    echo "--- last 20 lines ---"
-    tail -20 "$LOG"
+    # Passes are bounded by their own start/end markers, so the last one can be
+    # cut exactly rather than guessed at with a line count — a quiet pass is two
+    # lines and a busy one is fifty, and `tail -20` truncates the report you
+    # actually wanted to read.
+    echo
+    echo "--- last pass ---"
+    awk '/=== pass start/ { buf = "" } { buf = buf $0 "\n" } END { printf "%s", buf }' "$LOG"
+    echo "--- to follow the next one: tail -f ${LOG}"
   else
-    echo "log:      (no pass has run yet)"
+    echo "log:      (no pass has run yet — it runs by hand too:"
+    echo "          ${RUNNER} --repo-dir ${MAIN_CHECKOUT})"
   fi
   exit 0
 fi

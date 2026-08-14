@@ -245,10 +245,37 @@ atomic `mkdir` holding the pid — macOS has no `flock` — and a pass killed
 mid-flight leaves a directory that the next pass reclaims only after checking
 the recorded pid is actually gone.
 
-**Every pass leaves a record.** `~/.claude/logs/tend-prs/<owner>-<repo>.log`,
-appended, including the skip reasons — reading a week of passes at once is how
-you notice the worktree that has been dirty since Tuesday. Notifications stay as
-they were: escalations fire one, quiet passes stay silent.
+**Every pass leaves a record**, and `--status` is how you read it:
+
+```
+install-tending.sh --status --repo-dir ~/dev/yourproject
+```
+
+That prints whether the agent is loaded and then the **whole of the last pass**,
+cut at its own start marker rather than by line count — a quiet pass is two lines
+and a busy one is fifty. Underneath it is one appended file per repo,
+`~/.claude/logs/tend-prs/<owner>-<repo>.log`, so `tail -f` follows a run live and
+reading a week at once is how you notice the worktree that has been dirty since
+Tuesday. Skip reasons are in there by design. Notifications are unchanged:
+escalations fire one, quiet passes stay silent, so the log is where you look when
+nothing pinged you.
+
+**A project declares its own gates.** The triage step runs the project's tests
+and linter, and those commands are whatever that repo's `CLAUDE.md` says they
+are — the kit cannot know them, and baking a guess in would hand every repo
+`bundle exec` to buy one repo its gates. Put the additions in
+`<main-checkout>/.claude/tending-settings.json` and they are merged over the
+kit's grant at run time:
+
+```json
+{ "permissions": { "allow": ["Bash(bundle exec rspec:*)", "Bash(bundle exec rubocop:*)"] } }
+```
+
+Only `allow` is worth putting there: deny beats allow in the merged file, so a
+project can widen what a pass may run but cannot unlock anything the kit refuses
+— which matters, because that overlay lives in a repo the pass can write to. A
+malformed overlay is ignored with a warning rather than failing the pass; a
+scheduled job should not stop running over a typo.
 
 **On sonnet, and on a 10-minute interval.** Both are deliberate. The pass reads
 `gh` JSON and matches branches to worktrees; the one judgment-heavy step,
