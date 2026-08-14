@@ -181,10 +181,17 @@ mostly doesn't run at all — it only fires if you remember to start it, and
 killing it costs you whatever else that session was doing. Two scripts move it
 out of session:
 
+The scripts live in this checkout and are run from it by path — nothing is
+copied anywhere on install, so use an absolute path if your shell is somewhere
+else, and name the repo you mean with `--repo-dir`. It defaults to the current
+directory, which is rarely the repo you want tended.
+
 ```
-plugins/kit/scripts/install-tending.sh              # every 10 minutes, this repo
-plugins/kit/scripts/install-tending.sh --status     # loaded? what did the last pass do?
-plugins/kit/scripts/install-tending.sh --uninstall  # unload and remove
+KIT=~/dev/claude-kit/plugins/kit/scripts   # wherever you cloned this
+
+$KIT/install-tending.sh --repo-dir ~/dev/yourproject             # every 10 minutes
+$KIT/install-tending.sh --repo-dir ~/dev/yourproject --status    # loaded? what did the last pass do?
+$KIT/install-tending.sh --repo-dir ~/dev/yourproject --uninstall # unload and remove
 ```
 
 It writes a launchd agent labelled by the repo it tends, so tending two
@@ -216,6 +223,28 @@ list is load-bearing for the same reason: `git push` has to be allowed for the
 triage step to push fixes, which would otherwise carry `git push --force` along
 with it.
 
+**A pattern's prefix has to end on a token boundary.** `Bash(<prefix>:*)` is
+matched against the command's arguments, not against its raw text, so a prefix
+that stops mid-argument matches nothing at all — ever. `Bash(gh api repos/:*)`
+looks like "any repos API call" and is really "an argument equal to `repos/`",
+which no invocation produces. `Bash(git rev-parse:*)` works because its prefix
+ends on an argv token boundary, after `rev-parse`. The failure is silent and
+one-directional: the entry sits in the allow list looking correct while every
+call it names is refused, and unattended is exactly where nobody is watching to
+notice. Test a new entry by running the pass by hand before trusting it.
+(Verified against Claude Code 2.1.232 — this is harness behavior, not a
+documented interface, so re-check it if patterns start failing after an upgrade.)
+
+The rule also constrains what a grant can express, and not always kindly.
+`Bash(osascript -e display notification:*)` is broken for the same reason — the
+whole AppleScript program arrives as one argument — so the notification an
+escalation fires is currently refused. There is no narrower pattern that fixes
+it: `Bash(osascript -e:*)` matches, but `osascript -e` accepts
+`do shell script "…"`, which routes around every deny entry. Widening it would
+trade a dead notification for a general shell escape. The fix is to stop asking
+the agent to notify at all — the runner is plain bash and unconstrained by the
+grant — and that is tracked separately rather than bolted on here.
+
 **The pass reads its commands off disk.** A headless `claude -p` doesn't load
 plugin commands the way an interactive session does, and the Skill tool resolves
 `skills/`, not `commands/` — so "invoke `/kit:review-copilot` via the Skill tool"
@@ -231,9 +260,12 @@ with no checkout, which is the case it was built for: walking a change in the
 running app takes as long as it takes, and the worktree has to still be there
 when you finish. A merged PR that still carries the label keeps its worktree too.
 
-The pass never applies the label and never removes it, and that's enforced by
-the grant rather than left to good behavior — `gh pr edit` and `gh label` are on
-the deny list, and the `gh api` back door is refused as a write. Take the label
+The pass never applies the label and never removes it. `gh pr edit` and `gh label`
+are on the deny list, so the direct routes are closed by the grant rather than by
+good behavior. `gh api` is not similarly constrained — it is allowed wholesale,
+because a path-scoped pattern cannot match at all (see the token-boundary note
+above), and nothing distinguishes a read from a write through it. So that one
+back door rests on the command, not the grant. Take the label
 off and the PR is handled normally on the next pass, with no residue: `held` is
 read fresh from the label every firing and stored nowhere.
 
@@ -257,7 +289,7 @@ the recorded pid is actually gone.
 **Every pass leaves a record**, and `--status` is how you read it:
 
 ```
-install-tending.sh --status --repo-dir ~/dev/yourproject
+$KIT/install-tending.sh --repo-dir ~/dev/yourproject --status
 ```
 
 That prints whether the agent is loaded and then the **whole of the last pass**,
@@ -265,9 +297,10 @@ cut at its own start marker rather than by line count — a quiet pass is two li
 and a busy one is fifty. Underneath it is one appended file per repo,
 `~/.claude/logs/tend-prs/<owner>-<repo>.log`, so `tail -f` follows a run live and
 reading a week at once is how you notice the worktree that has been dirty since
-Tuesday. Skip reasons are in there by design. Notifications are unchanged:
-escalations fire one, quiet passes stay silent, so the log is where you look when
-nothing pinged you.
+Tuesday. Skip reasons are in there by design. Read it rather than waiting to be
+pinged: escalations are *meant* to fire a notification and quiet passes to stay
+silent, but the grant entry that would allow one cannot match (see the
+token-boundary note above), so today nothing fires either way.
 
 **A project declares its own gates.** The triage step runs the project's tests
 and linter, and those commands are whatever that repo's `CLAUDE.md` says they
