@@ -181,10 +181,17 @@ mostly doesn't run at all — it only fires if you remember to start it, and
 killing it costs you whatever else that session was doing. Two scripts move it
 out of session:
 
+The scripts live in this checkout and are run from it by path — nothing is
+copied anywhere on install, so use an absolute path if your shell is somewhere
+else, and name the repo you mean with `--repo-dir`. It defaults to the current
+directory, which is rarely the repo you want tended.
+
 ```
-plugins/kit/scripts/install-tending.sh              # every 10 minutes, this repo
-plugins/kit/scripts/install-tending.sh --status     # loaded? what did the last pass do?
-plugins/kit/scripts/install-tending.sh --uninstall  # unload and remove
+KIT=~/dev/claude-kit/plugins/kit/scripts   # wherever you cloned this
+
+$KIT/install-tending.sh --repo-dir ~/dev/yourproject             # every 10 minutes
+$KIT/install-tending.sh --repo-dir ~/dev/yourproject --status    # loaded? what did the last pass do?
+$KIT/install-tending.sh --repo-dir ~/dev/yourproject --uninstall # unload and remove
 ```
 
 It writes a launchd agent labelled by the repo it tends, so tending two
@@ -231,9 +238,11 @@ with no checkout, which is the case it was built for: walking a change in the
 running app takes as long as it takes, and the worktree has to still be there
 when you finish. A merged PR that still carries the label keeps its worktree too.
 
-The pass never applies the label and never removes it, and that's enforced by
-the grant rather than left to good behavior — `gh pr edit` and `gh label` are on
-the deny list, and the `gh api` back door is refused as a write. Take the label
+The pass never applies the label and never removes it. `gh pr edit` and `gh label`
+are on the deny list, so the direct routes are closed by the grant rather than by
+good behavior. `gh api` is not similarly constrained — its allow entry is a path
+prefix, which a state-changing request satisfies as readily as a read — so that
+one back door rests on the command, not the grant. Take the label
 off and the PR is handled normally on the next pass, with no residue: `held` is
 read fresh from the label every firing and stored nowhere.
 
@@ -257,7 +266,7 @@ the recorded pid is actually gone.
 **Every pass leaves a record**, and `--status` is how you read it:
 
 ```
-install-tending.sh --status --repo-dir ~/dev/yourproject
+$KIT/install-tending.sh --repo-dir ~/dev/yourproject --status
 ```
 
 That prints whether the agent is loaded and then the **whole of the last pass**,
