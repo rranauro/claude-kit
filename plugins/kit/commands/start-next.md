@@ -53,6 +53,22 @@ If nothing is startable, say which tickets are waiting and on what, in one line
 each, and stop. That report is the useful outcome: it tells you whether the epic
 is blocked on a merge or on nothing at all.
 
+**Name the labelled tickets you skipped for want of a marker, separately.** A
+ticket carrying the AFK-ready label but no `kit-blocked-by` line is the one
+failure this command cannot distinguish from a deliberate omission — rule 1 says
+leave it alone, and that is right, but from the outside it is indistinguishable
+from being ignored for no reason. Someone briefed and labelled that ticket
+expecting it to be picked up:
+
+```
+3 labelled tickets have no kit-blocked-by marker, so they are not startable
+here: #41, #43, #47. Add `<!-- kit-blocked-by: -->` to make one startable now.
+```
+
+Report it as information, not an error, and never add the marker yourself — the
+edges are a human's call, and an empty marker written by this command would be it
+granting itself permission to start the ticket.
+
 ---
 
 ## Step 2 · `ship` — Hand it to the attended workflow

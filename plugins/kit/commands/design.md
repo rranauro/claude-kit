@@ -140,7 +140,16 @@ invoked by `/kit:triage`, say nothing about handoff and return — it has its ow
 publish step to finish, including the hold question below.
 
 **When the brief lands on an issue and you were *not* invoked by `/kit:triage`,
-ask whether the PR should be held:**
+check the issue carries a blocking-edge marker** — `<!-- kit-blocked-by: -->`,
+empty if nothing blocks it, or with the comma-separated issue numbers that do.
+Add it if absent; leave an existing one alone.
+
+`/kit:start-next` reads an absent marker as "not part of an epic, leave alone",
+so a well-briefed labelled ticket without one is skipped silently and looks
+startable the whole time. `/kit:triage` writes it in its own publish step, which
+is why this is only for the standalone path — `kit:to-tickets` owns the format.
+
+**Then ask whether the PR should be held:**
 
 ```
 Hold the PR for in-app verification before it merges? (y/N)

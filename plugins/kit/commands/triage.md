@@ -136,6 +136,34 @@ Say in the body that only the acceptance criteria are binding. Without it,
 `/kit:start-ticket` reads the whole body as settled and won't relitigate a
 direction that was a guess.
 
+**Write the blocking-edge marker.** Every ticket this command publishes gets
+this line in its body, whether or not anything blocks it:
+
+```
+<!-- kit-blocked-by: 101,102 -->
+```
+
+Issue numbers only, comma-separated, no `#`. **A ticket with no blockers gets the
+line with nothing after the colon** — `<!-- kit-blocked-by: -->`. `kit:to-tickets`
+owns the format; follow it exactly, and write the prose "Blocked by" section
+alongside it so a human reads the same thing the marker says.
+
+The empty form is not a formality, and omitting it is the failure this step
+exists to prevent. `/kit:start-next` reads **absent** as "not part of an epic,
+leave alone" — so a ticket with a perfect brief and the label still gets skipped,
+silently, and looks startable the whole time. Present-and-empty is what says
+"startable now".
+
+Here is where the edges are known: you have just grilled scope and decided which
+adjacent decisions fold into this ticket and which are their own. That is the
+same conversation that establishes what has to land first. Any ticket you split
+out during that pass is a candidate edge — put its number in the marker of
+whatever now depends on it.
+
+If the issue already carries a marker, reconcile rather than append: a second
+line means two answers to one question, and nothing downstream picks a winner.
+Say what you changed and why.
+
 **Apply the AFK-ready label** — `ready-for-agent` in the canonical vocabulary,
 or the project's own mapping where it differs.
 
