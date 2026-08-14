@@ -223,6 +223,18 @@ list is load-bearing for the same reason: `git push` has to be allowed for the
 triage step to push fixes, which would otherwise carry `git push --force` along
 with it.
 
+**A pattern's prefix has to end on a token boundary.** `Bash(<prefix>:*)` is
+matched against the command's arguments, not against its raw text, so a prefix
+that stops mid-argument matches nothing at all — ever. `Bash(gh api repos/:*)`
+looks like "any repos API call" and is really "an argument equal to `repos/`",
+which no invocation produces. `Bash(git rev-parse:*)` works because its prefix
+ends at a space. The failure is silent and one-directional: the entry sits in the
+allow list looking correct while every call it names is refused, and unattended
+is exactly where nobody is watching to notice. Both bugs this cost us were of
+that shape — the API reads a triage depends on, and the notification an
+escalation fires. Test a new entry by running the pass by hand before trusting
+it.
+
 **The pass reads its commands off disk.** A headless `claude -p` doesn't load
 plugin commands the way an interactive session does, and the Skill tool resolves
 `skills/`, not `commands/` — so "invoke `/kit:review-copilot` via the Skill tool"
@@ -240,9 +252,10 @@ when you finish. A merged PR that still carries the label keeps its worktree too
 
 The pass never applies the label and never removes it. `gh pr edit` and `gh label`
 are on the deny list, so the direct routes are closed by the grant rather than by
-good behavior. `gh api` is not similarly constrained — its allow entry is a path
-prefix, which a state-changing request satisfies as readily as a read — so that
-one back door rests on the command, not the grant. Take the label
+good behavior. `gh api` is not similarly constrained — it is allowed wholesale,
+because a path-scoped pattern cannot match at all (see the token-boundary note
+above), and nothing distinguishes a read from a write through it. So that one
+back door rests on the command, not the grant. Take the label
 off and the PR is handled normally on the next pass, with no residue: `held` is
 read fresh from the label every firing and stored nowhere.
 
