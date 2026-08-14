@@ -23,8 +23,15 @@
 
 set -uo pipefail
 
+# Sonnet, not Opus, and matching what tend-prs.md declares in its own frontmatter
+# — a script that hardcodes a different model silently overrides the command's
+# choice. The pass reads `gh` JSON, matches branches to worktrees, and runs
+# `lsof`; the one judgment-heavy step, verifying review findings against the
+# code, is /kit:review-copilot, which declares sonnet too. This is not
+# pr-review.sh, where the model is the deliverable.
+#
 # Goes stale; override with --model rather than editing callers.
-MODEL="claude-opus-5"
+MODEL="claude-sonnet-5"
 REPO_DIR=""
 TIMEOUT=1800
 DRY_RUN=0

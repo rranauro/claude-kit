@@ -4,7 +4,7 @@
 # Usage: install-tending.sh [options]
 #
 #   --repo-dir <path>    main checkout to tend; default: cwd
-#   --interval <mins>    minutes between passes (default 20)
+#   --interval <mins>    minutes between passes (default 10)
 #   --model <id>         model to pass through to tend-prs.sh
 #   --uninstall          unload and remove the agent for this repo
 #   --status             show whether the agent is loaded, and the last pass
@@ -20,7 +20,7 @@
 set -uo pipefail
 
 REPO_DIR=""
-INTERVAL=20
+INTERVAL=10
 MODEL=""
 ACTION="install"
 

@@ -182,7 +182,7 @@ killing it costs you whatever else that session was doing. Two scripts move it
 out of session:
 
 ```
-plugins/kit/scripts/install-tending.sh              # every 20 minutes, this repo
+plugins/kit/scripts/install-tending.sh              # every 10 minutes, this repo
 plugins/kit/scripts/install-tending.sh --status     # loaded? what did the last pass do?
 plugins/kit/scripts/install-tending.sh --uninstall  # unload and remove
 ```
@@ -217,6 +217,16 @@ the recorded pid is actually gone.
 appended, including the skip reasons — reading a week of passes at once is how
 you notice the worktree that has been dirty since Tuesday. Notifications stay as
 they were: escalations fire one, quiet passes stay silent.
+
+**On sonnet, and on a 10-minute interval.** Both are deliberate. The pass reads
+`gh` JSON and matches branches to worktrees; the one judgment-heavy step,
+verifying review findings against the code, is `/kit:review-copilot`, which
+declares sonnet in its own frontmatter. This is not `pr-review.sh`, where the
+model *is* the deliverable. And polling faster buys nothing: Copilot lands 3–5
+minutes after a PR opens, `classify` deliberately waits for both reviewers, and
+since `/kit:start-next` split out, no downstream work is waiting on a pass to
+finish. A measured quiet pass takes ~27s, so the interval is the difference
+between a few percent duty cycle and a session that never stops.
 
 A pass killed partway is safe by construction, and this is the property to
 preserve when changing any of it: all state is derived from GitHub and git, and
