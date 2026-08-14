@@ -197,15 +197,32 @@ worktrees and your local `gh` and `claude` credentials.
 pass before handing it over. Three properties are the reason it is a script and
 not a one-line `claude -p`:
 
-**The permission grant is a file you can read.** `tending-settings.json` is an
-explicit allowlist — specific `gh` subcommands, git reads, the write verbs the
-triage step actually needs — plus a deny list for the ones no unattended pass
-should reach for (`git push --force`, `gh pr merge --admin`, `rm`). Headless
-means nothing can be approved interactively, so that file *is* the safety
-boundary, and widening it is a diff rather than a decision made mid-run. A call
-outside it fails the pass and lands in the report, which is the behavior you
-want: the command is told to record a denial and carry on, never to route
-around one.
+**The permission grant is a file you can read.** `tending-settings.json`
+enumerates what the pass may do, and the run loads no other settings source —
+`--setting-sources ''` — so the boundary is that file rather than whatever your
+`~/.claude/settings.json` happens to allow this month. Headless means nothing
+can be approved interactively, so a call the grant doesn't cover fails and lands
+in the report; the command is told to record a denial and carry on, never to
+route around one.
+
+Worth being precise about what it does and doesn't control, because the obvious
+reading is wrong. **Read-only commands are auto-approved by the CLI's own
+classifier and cannot be narrowed** — `ls` runs whether or not it appears in the
+allow list, under every permission mode. So the allow list is not an exhaustive
+inventory of what a pass can execute. What it *is* exhaustive about is writes:
+an unlisted side-effecting command is refused outright. That's the boundary that
+matters — what an unwatched job can change, not what it can look at. The deny
+list is load-bearing for the same reason: `git push` has to be allowed for the
+triage step to push fixes, which would otherwise carry `git push --force` along
+with it.
+
+**The pass reads its commands off disk.** A headless `claude -p` doesn't load
+plugin commands the way an interactive session does, and the Skill tool resolves
+`skills/`, not `commands/` — so "invoke `/kit:review-copilot` via the Skill tool"
+fails with *Unknown skill* every time. The runner points the pass at the command
+files instead, resolved from the script's own location rather than from
+`--repo-dir`, because the kit and the repo being tended are different checkouts:
+tending `~/dev/zcommerce` reads its commands from wherever the kit lives.
 
 **Two passes can't act on the same PR.** Derived state makes overlap harmless in
 general, but two concurrent triages of one PR is a double push. The lock is an

@@ -15,9 +15,26 @@
 #
 # The permission grant lives in tending-settings.json next to this file — that
 # is the safety boundary, not this script. Nothing here can be approved
-# interactively, so a tool outside the allowlist fails the pass and gets
-# reported. That is the intended behavior, not a limitation to work around:
-# widening the boundary is an edit to a file you can read and diff.
+# interactively, so a call the grant does not cover fails the pass and gets
+# reported rather than prompting. Widening it is an edit to a file you can read
+# and diff.
+#
+# What that grant does and does not control, measured rather than assumed:
+#
+#   Read-only commands are auto-approved by the CLI's own classifier and cannot
+#   be narrowed by an allowlist — `ls` runs whether or not it is listed, under
+#   every --permission-mode. Do not read the allow list as an exhaustive
+#   inventory of what a pass may execute.
+#
+#   Every *write* is denied unless enumerated. An unlisted side-effecting
+#   command (curl, chmod, touch) is refused with "requires approval", which
+#   headless means refused outright. That is the boundary that matters: what the
+#   pass can change, not what it can look at.
+#
+#   deny beats allow, and is load-bearing rather than decorative. `git push` has
+#   to be allowed for the triage step to push fixes, which would otherwise carry
+#   `git push --force` in with it; the deny entry is what keeps that out, and it
+#   was verified to block with the broad allow in place.
 #
 # Everything is detected at runtime. There is no config file to write.
 
@@ -50,6 +67,30 @@ done
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SETTINGS="${SCRIPT_DIR}/tending-settings.json"
 [ -f "$SETTINGS" ] || { echo "error: no permission grant at ${SETTINGS}" >&2; exit 1; }
+
+# A headless pass reads its commands off disk. Three things have to be true at
+# once and only this arrangement gets all three:
+#
+#   The kit is a plugin, so /kit:tend-prs is the name it is known by — but a
+#   `claude -p` does not load plugin commands the way an interactive session
+#   does, and --setting-sources '' below drops `enabledPlugins` besides.
+#   --plugin-dir makes the names resolve, and still does not make them
+#   *invokable*: the Skill tool only resolves plugins/kit/skills/, and these
+#   live in plugins/kit/commands/. Delegating "via the Skill tool", as the
+#   command files say, fails with "Unknown skill" every time.
+#
+#   So the pass is pointed at the files. Verified working: passes told to do
+#   this run the command; passes told to use the Skill tool spend a turn
+#   discovering the above and then fall back to it anyway.
+#
+#   The path is resolved from this script, never from --repo-dir. The kit and
+#   the repo being tended are different checkouts — tending ~/dev/zcommerce has
+#   to read commands from wherever the kit itself lives — and deriving from
+#   SCRIPT_DIR is what keeps that true for a marketplace cache too.
+KIT_ROOT="$(cd "${SCRIPT_DIR}/../../.." 2>/dev/null && pwd)"
+COMMANDS_DIR="${KIT_ROOT}/plugins/kit/commands"
+[ -f "${COMMANDS_DIR}/tend-prs.md" ] || {
+  echo "error: could not find the kit's commands from ${SCRIPT_DIR} (looked in ${COMMANDS_DIR})" >&2; exit 1; }
 
 [ -n "$REPO_DIR" ] || REPO_DIR="$(pwd)"
 cd "$REPO_DIR" 2>/dev/null || { echo "error: cannot cd to ${REPO_DIR}" >&2; exit 1; }
@@ -125,7 +166,9 @@ CLAUDE_BIN="$(command -v claude || true)"
 # The pass itself is /kit:tend-prs. This says only what the command cannot know
 # about its own invocation: that there is genuinely no terminal, and what to do
 # when it runs into something it is not permitted to do.
-PROMPT="Run one complete /kit:tend-prs pass over ${REPO}, from the main checkout at ${MAIN_CHECKOUT}. Invoke it via the Skill tool and follow it as written.
+PROMPT="Run one complete /kit:tend-prs pass over ${REPO}, from the main checkout at ${MAIN_CHECKOUT}.
+
+Read ${COMMANDS_DIR}/tend-prs.md and follow it verbatim. Where it delegates to another /kit: command, read that command's file from the same directory and follow it the same way — /kit:review-copilot is review-copilot.md, /kit:cleanup-worktree is cleanup-worktree.md. Those files say to delegate 'via the Skill tool'; that does not work here, because the Skill tool resolves skills and these are commands. Reading the file is the delegation. Do not treat an 'Unknown skill' error as a reason to skip a step.
 
 You are running headlessly from a scheduled launchd job. There is no terminal attached and no one to prompt — the command's no-questions constraint is a fact of this environment, not an instruction you could choose to disregard.
 
@@ -138,7 +181,8 @@ if [ "$DRY_RUN" = "1" ]; then
   echo "checkout: ${MAIN_CHECKOUT}"
   echo "settings: ${SETTINGS}"
   echo "log:      ${LOG}"
-  echo "would run: ${CLAUDE_BIN} -p --model ${MODEL} --settings ${SETTINGS} <prompt>"
+  echo "commands: ${COMMANDS_DIR}"
+  echo "would run: ${CLAUDE_BIN} -p --model ${MODEL} --setting-sources '' --settings ${SETTINGS} <prompt>"
   exit 0
 fi
 
@@ -151,8 +195,16 @@ log "=== pass start repo=${REPO} checkout=${MAIN_CHECKOUT} model=${MODEL} auth=s
 ( sleep "$TIMEOUT"; kill -TERM -$$ 2>/dev/null ) &
 WATCHDOG=$!
 
+# --setting-sources '' loads no user, project, or local settings, so the grant
+# is exactly this file. Without it the pass inherits ~/.claude/settings.json and
+# whatever the checkout happens to carry — today that only leaks read
+# permissions, but it means the boundary drifts with a machine's global config
+# rather than with a diff to the file next to this script. A scheduled job that
+# nobody watches should not widen quietly because an unrelated allow rule was
+# added months later.
 "$CLAUDE_BIN" -p \
   --model "$MODEL" \
+  --setting-sources '' \
   --settings "$SETTINGS" \
   "$PROMPT" >>"$LOG" 2>&1 </dev/null
 STATUS=$?
