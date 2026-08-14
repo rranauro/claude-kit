@@ -113,6 +113,63 @@ cd "$MAIN_CHECKOUT" || exit 1
 REPO="$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null)"
 [ -n "$REPO" ] || { echo "error: could not resolve repo from ${MAIN_CHECKOUT}" >&2; exit 1; }
 
+# --- Project overlay grant ----------------------------------------------------
+# The kit cannot know a project's quality gates. /kit:commit discovers them from
+# CLAUDE.md at runtime, so they are whatever that repo says they are — `bundle
+# exec rspec`, `npm test`, a rake task — and the triage step cannot finish a pass
+# without running them. Baking a guess into the kit's grant would hand every
+# repo `bundle exec` to buy one repo its gates.
+#
+# So a project declares its own additions in .claude/tending-settings.json, and
+# they are merged over the kit's here. Only `allow` can be extended: deny beats
+# allow in the merged file, so a project can widen what a pass may run without
+# being able to unlock anything the kit refuses. That asymmetry is the point —
+# the overlay lives in a repo the pass has write access to.
+OVERLAY="${MAIN_CHECKOUT}/.claude/tending-settings.json"
+EFFECTIVE_SETTINGS="$SETTINGS"
+OVERLAY_NOTE="none"
+
+if [ -f "$OVERLAY" ]; then
+  MERGED="$(mktemp -t tending-settings)" || { echo "error: could not create temp settings" >&2; exit 1; }
+  if BASE="$SETTINGS" EXTRA="$OVERLAY" OUT="$MERGED" python3 - <<'PY'
+import json, os, sys
+
+def grant(path):
+    with open(path) as f:
+        return json.load(f).get("permissions", {})
+
+try:
+    base, extra = grant(os.environ["BASE"]), grant(os.environ["EXTRA"])
+except (OSError, ValueError) as e:
+    print(f"overlay unreadable: {e}", file=sys.stderr)
+    sys.exit(1)
+
+def union(key):
+    seen, out = set(), []
+    for entry in list(base.get(key, [])) + list(extra.get(key, [])):
+        if entry not in seen:
+            seen.add(entry)
+            out.append(entry)
+    return out
+
+# Only allow/deny are merged. A project cannot set defaultMode or anything else
+# that would change how the grant is interpreted rather than what it contains.
+with open(os.environ["OUT"], "w") as f:
+    json.dump({"permissions": {"allow": union("allow"), "deny": union("deny")}}, f, indent=2)
+PY
+  then
+    EFFECTIVE_SETTINGS="$MERGED"
+    OVERLAY_NOTE="$OVERLAY"
+  else
+    # A malformed overlay falls back to the kit's grant rather than failing the
+    # pass. The consequence is a denial reported by the pass, which is legible;
+    # the alternative is a scheduled job that stops running over a typo.
+    echo "warning: ignoring unreadable overlay at ${OVERLAY}" >&2
+    OVERLAY_NOTE="${OVERLAY} (ignored — unreadable)"
+    rm -f "$MERGED"
+  fi
+fi
+
 # --- Log ----------------------------------------------------------------------
 # Nothing is attached to this process, so the log is the only record a pass
 # leaves behind. One file per repo, appended: the interesting question after the
@@ -145,7 +202,16 @@ if ! mkdir "$LOCK" 2>/dev/null; then
   mkdir "$LOCK" 2>/dev/null || { log "skipped: could not take lock"; exit 0; }
 fi
 printf '%s' "$$" >"${LOCK}/pid"
-trap 'rm -rf "$LOCK"' EXIT INT TERM
+
+# One trap for everything that must not outlive the pass. Set here rather than
+# where each thing is created, because a second `trap ... EXIT` replaces the
+# first — the merged settings file above would leak on every firing.
+cleanup() {
+  rm -rf "$LOCK"
+  [ "$EFFECTIVE_SETTINGS" != "$SETTINGS" ] && rm -f "$EFFECTIVE_SETTINGS"
+  return 0
+}
+trap cleanup EXIT INT TERM
 
 # --- Force subscription auth --------------------------------------------------
 # launchd hands this process whatever environment it was loaded with. If
@@ -180,14 +246,15 @@ if [ "$DRY_RUN" = "1" ]; then
   echo "repo:     ${REPO}"
   echo "checkout: ${MAIN_CHECKOUT}"
   echo "settings: ${SETTINGS}"
+  echo "overlay:  ${OVERLAY_NOTE}"
   echo "log:      ${LOG}"
   echo "commands: ${COMMANDS_DIR}"
-  echo "would run: ${CLAUDE_BIN} -p --model ${MODEL} --setting-sources '' --settings ${SETTINGS} <prompt>"
+  echo "would run: ${CLAUDE_BIN} -p --model ${MODEL} --setting-sources '' --settings ${EFFECTIVE_SETTINGS} <prompt>"
   exit 0
 fi
 
 # --- Run ----------------------------------------------------------------------
-log "=== pass start repo=${REPO} checkout=${MAIN_CHECKOUT} model=${MODEL} auth=subscription${AUTH_NOTE}"
+log "=== pass start repo=${REPO} checkout=${MAIN_CHECKOUT} model=${MODEL} auth=subscription${AUTH_NOTE} overlay=${OVERLAY_NOTE}"
 
 # A hung pass must not hold the lock until the next reboot. `timeout` is not on
 # a stock macOS, so the watchdog is a background sleep that kills this process
@@ -205,7 +272,7 @@ WATCHDOG=$!
 "$CLAUDE_BIN" -p \
   --model "$MODEL" \
   --setting-sources '' \
-  --settings "$SETTINGS" \
+  --settings "$EFFECTIVE_SETTINGS" \
   "$PROMPT" >>"$LOG" 2>&1 </dev/null
 STATUS=$?
 

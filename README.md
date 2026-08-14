@@ -239,16 +239,52 @@ read fresh from the label every firing and stored nowhere.
 
 Create it once per repo with `gh label create kit-hold`.
 
+**The decision usually gets made earlier than the PR.** `/kit:triage` and
+`/kit:design` both ask whether the downstream PR will need holding — at the
+moment they settle the ticket, which is when you actually know — and record the
+answer on the issue. `/kit:new-pull-request` transcribes it onto the PR at
+creation, so a PR can be born held. Without that, holding means racing a
+scheduled pass: the agent opens a PR, tending fires within minutes, and the label
+you always intended to apply arrives after the merge was already enabled. The
+question defaults to no and takes one keystroke to decline.
+
 **Two passes can't act on the same PR.** Derived state makes overlap harmless in
 general, but two concurrent triages of one PR is a double push. The lock is an
 atomic `mkdir` holding the pid — macOS has no `flock` — and a pass killed
 mid-flight leaves a directory that the next pass reclaims only after checking
 the recorded pid is actually gone.
 
-**Every pass leaves a record.** `~/.claude/logs/tend-prs/<owner>-<repo>.log`,
-appended, including the skip reasons — reading a week of passes at once is how
-you notice the worktree that has been dirty since Tuesday. Notifications stay as
-they were: escalations fire one, quiet passes stay silent.
+**Every pass leaves a record**, and `--status` is how you read it:
+
+```
+install-tending.sh --status --repo-dir ~/dev/yourproject
+```
+
+That prints whether the agent is loaded and then the **whole of the last pass**,
+cut at its own start marker rather than by line count — a quiet pass is two lines
+and a busy one is fifty. Underneath it is one appended file per repo,
+`~/.claude/logs/tend-prs/<owner>-<repo>.log`, so `tail -f` follows a run live and
+reading a week at once is how you notice the worktree that has been dirty since
+Tuesday. Skip reasons are in there by design. Notifications are unchanged:
+escalations fire one, quiet passes stay silent, so the log is where you look when
+nothing pinged you.
+
+**A project declares its own gates.** The triage step runs the project's tests
+and linter, and those commands are whatever that repo's `CLAUDE.md` says they
+are — the kit cannot know them, and baking a guess in would hand every repo
+`bundle exec` to buy one repo its gates. Put the additions in
+`<main-checkout>/.claude/tending-settings.json` and they are merged over the
+kit's grant at run time:
+
+```json
+{ "permissions": { "allow": ["Bash(bundle exec rspec:*)", "Bash(bundle exec rubocop:*)"] } }
+```
+
+Only `allow` is worth putting there: deny beats allow in the merged file, so a
+project can widen what a pass may run but cannot unlock anything the kit refuses
+— which matters, because that overlay lives in a repo the pass can write to. A
+malformed overlay is ignored with a warning rather than failing the pass; a
+scheduled job should not stop running over a typo.
 
 **On sonnet, and on a 10-minute interval.** Both are deliberate. The pass reads
 `gh` JSON and matches branches to worktrees; the one judgment-heavy step,

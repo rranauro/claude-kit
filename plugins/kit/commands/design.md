@@ -137,7 +137,28 @@ provisional and say what would change it.
 
 Tell the user the plan will be picked up by `/kit:start-ticket`. If you were
 invoked by `/kit:triage`, say nothing about handoff and return — it has its own
-publish step to finish.
+publish step to finish, including the hold question below.
+
+**When the brief lands on an issue and you were *not* invoked by `/kit:triage`,
+ask whether the PR should be held:**
+
+```
+Hold the PR for in-app verification before it merges? (y/N)
+```
+
+If yes, `gh issue edit <n> --add-label kit-hold`. `/kit:new-pull-request`
+transcribes it onto the PR, so the hold is in place before a tending pass can
+reach it.
+
+You have just spent a conversation on how this will be built, which is the most
+informed anyone will be about whether the result needs *seeing* before it merges.
+Waiting until the PR exists means racing a scheduled pass with the answer you
+already had. Default to no — a bare Enter — and say yes when the approach you
+just settled produces something you have to look at rather than something a test
+asserts.
+
+Only ask when there is an issue to label; a plan written to a local file has no
+PR coming.
 
 ## Never
 

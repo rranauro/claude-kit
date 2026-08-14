@@ -40,6 +40,39 @@ Name the running model in the trailer if you know it (e.g.
 `Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>`); otherwise leave it as
 `Claude`. Do not hardcode a model version in this file — it goes stale.
 
+**Step 3b — Carry a hold forward, if the issue asked for one:**
+
+If this PR closes an issue, check whether that issue carries `kit-hold`:
+
+```
+gh issue view <issue-number> --json labels -q '.labels[].name'
+```
+
+If it does, apply the same label to the new PR immediately, before printing the
+URL:
+
+```
+gh pr edit <pr-number> --add-label kit-hold
+```
+
+The hold has to be on the PR **before a tending pass can see it**. That pass runs
+on a schedule, so the window between `gh pr create` and the next firing is the
+whole race, and losing it means the PR is triaged and auto-merge is enabled — the
+exact thing the hold was set to prevent, arriving minutes after someone
+deliberately asked for it not to.
+
+This is not the automation deciding to hold something. A human answered that
+question when the ticket was settled, and this step transcribes the answer onto
+the artifact it was about. `/kit:tend-prs` still never writes this label in
+either direction, which is the rule that matters: a pass cannot clear a hold it
+is subject to.
+
+Say in the confirmation that the PR is held and how to release it, since a held
+PR looks identical to an ignored one:
+
+> PR #<N> is open and **held** (`kit-hold`) — tending will skip it entirely.
+> Remove the label when you're done verifying, and the next pass picks it up.
+
 **Step 4 — Confirm:**
 Print the PR URL so the user can review it.
 
