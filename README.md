@@ -224,6 +224,21 @@ files instead, resolved from the script's own location rather than from
 `--repo-dir`, because the kit and the repo being tended are different checkouts:
 tending `~/dev/zcommerce` reads its commands from wherever the kit lives.
 
+**You can tell it to leave a PR alone.** Add the **`kit-hold`** label from the
+GitHub UI and the pass takes no action on that PR at all — no triage, no
+auto-merge, no worktree removal — and reports it as held. It works from a phone
+with no checkout, which is the case it was built for: walking a change in the
+running app takes as long as it takes, and the worktree has to still be there
+when you finish. A merged PR that still carries the label keeps its worktree too.
+
+The pass never applies the label and never removes it, and that's enforced by
+the grant rather than left to good behavior — `gh pr edit` and `gh label` are on
+the deny list, and the `gh api` back door is refused as a write. Take the label
+off and the PR is handled normally on the next pass, with no residue: `held` is
+read fresh from the label every firing and stored nowhere.
+
+Create it once per repo with `gh label create kit-hold`.
+
 **Two passes can't act on the same PR.** Derived state makes overlap harmless in
 general, but two concurrent triages of one PR is a double push. The lock is an
 atomic `mkdir` holding the pid — macOS has no `flock` — and a pass killed

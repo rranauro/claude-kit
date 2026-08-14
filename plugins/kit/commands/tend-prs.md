@@ -36,6 +36,9 @@ risk and lives in `/kit:start-next`, which you invoke deliberately.
 - **Derive all state from GitHub and git.** A firing knows nothing about the
   firings before it and must not need to.
 - **Never merge locally.** `gh pr merge --auto` only.
+- **Never write the `kit-hold` label, in either direction.** It is the one lever
+  a human has over an unattended pass, and a lever this command can move is not
+  one.
 - **A permission denial is a finding, not an obstacle.** Running headless, the
   allowlist in `scripts/tending-settings.json` is the safety boundary, and a
   denied call means the boundary and this command disagree about what a pass
@@ -49,13 +52,16 @@ risk and lives in `/kit:start-next`, which you invoke deliberately.
 
 ```
 gh repo view --json nameWithOwner --jq .nameWithOwner
-gh pr list --author @me --state open --json number,headRefName,url,title,isDraft,createdAt
+gh pr list --author @me --state open --json number,headRefName,url,title,isDraft,createdAt,labels
 git worktree list --porcelain
 git fetch origin main
 ```
 
 Skip draft PRs in everything that follows — a draft is work you haven't finished
 handing over.
+
+`labels` is fetched here, in the one query the whole pass reads from, so the
+hold check below cannot be reached with the label unread.
 
 ---
 
@@ -70,10 +76,42 @@ hands off.)
 
 Each PR is in exactly one state:
 
+- **`held`** — the PR carries the **`kit-hold`** label. Take no action of any
+  kind: no triage, no auto-merge, no worktree removal. Report it as skipped and
+  move on. Decide this **first**, before reading reviewer output or anything
+  else — the point of a hold is that nothing further gets evaluated.
 - **`awaiting-review`** — reviewer output incomplete. Do nothing; a later firing
   gets it.
 - **`untriaged`** — both reviewers are in, no triage marker. This is the work.
 - **`triaged`** — the marker is present. Done here; merging is GitHub's job now.
+
+### `kit-hold` — the human override
+
+One label, applied from the GitHub UI, is how a person tells this command to
+leave a PR alone. It works from a phone with no checkout, which is the point: the
+motivating case is walking a change in the running app, where the PR must survive
+a long verification session without being triaged, merged, or having its worktree
+deleted underneath you. Re-requesting a review, hand-reviewing, and being
+mid-rebase are the same shape.
+
+Create it once per repo with `gh label create kit-hold`, or from the UI.
+
+**Never apply this label, and never remove it.** Not to record that a PR was
+held, not to tidy up after a merge, not because the reason looks resolved. An
+override the automation can clear is not an override — the whole guarantee is
+that a human is the only writer, so a hold means what it meant when it was set,
+however many passes ago. If a held PR looks like it should move, say so in the
+report and leave the label alone.
+
+Removing it is likewise a human act, and takes effect on the next pass with no
+residue: `held` is read fresh from the label every firing and recorded nowhere,
+so a PR that was held for a week classifies on its evidence the moment the label
+comes off, exactly as if it had never been held.
+
+This is the one piece of PR state that is genuinely **stored** rather than
+derived, and that is correct — it encodes an intention that exists nowhere in the
+repo or the PR's history. It is not a precedent for storing `untriaged` and
+`triaged`. Those are sound *because* a cold restart recomputes them.
 
 Detect reviewer output the way `/kit:review-copilot` `Step 2` does — Copilot's
 inline comments and top-level review, plus the `<!-- claude-pr-review -->` marker
@@ -114,6 +152,10 @@ which is exactly the case that distinguishes them.
 Run this for every PR before `triage` touches it, and for every worktree before
 `cleanup` removes it. Skipping is always the safe outcome — the PR is still there
 next firing.
+
+`held` is checked before this, not by it. A hold is about intent and costs one
+field you already fetched; `idle-check` shells out. Ordering them the other way
+would mean proving a held worktree idle in order to then not touch it.
 
 1. **Resolve the path** for the branch from the `git worktree list --porcelain`
    output. No worktree for the branch → notify and skip; the fixes have to be
@@ -180,11 +222,17 @@ once and move on — don't retry it every firing.
 ## Step 6 · `cleanup` — Remove the worktrees whose PRs have merged
 
 ```
-gh pr list --author @me --state merged --limit 30 --json number,headRefName,mergedAt
+gh pr list --author @me --state merged --limit 30 --json number,headRefName,mergedAt,labels
 ```
 
-Intersect with the live worktrees from `inventory`. For each match that passes
-`idle-check`, delegate to `/kit:cleanup-worktree <branch>` — it verifies merge
+Intersect with the live worktrees from `inventory`. **A merged PR still carrying
+`kit-hold` keeps its worktree** — drop it here and report it as held. Merging
+does not retire the hold, and this is the case the override exists for: a
+verification walk that outlives the merge still needs the worktree it is walking
+in. `labels` is fetched on this query for that reason, not just the open one.
+
+For each remaining match that passes `idle-check`, delegate to
+`/kit:cleanup-worktree <branch>` — it verifies merge
 state itself, stops per-directory daemons, removes the worktree, sweeps the husk,
 syncs `main`, and deletes the branch.
 
@@ -202,7 +250,9 @@ this command skipped.
 ## Step 7 · `report` — Say only what happened
 
 Print one compact block: PRs triaged (with fixed/skipped counts), auto-merge
-enabled, worktrees removed, and everything skipped **with its reason**. The
+enabled, worktrees removed, and everything skipped **with its reason** —
+naming `kit-hold` explicitly for anything held, since "held by kit-hold" and
+"worktree dirty" are the difference between a deliberate act and a problem. The
 skipped lines matter most — "worktree dirty, left alone" is how you find out this
 command has been quietly declining to help for three days.
 
