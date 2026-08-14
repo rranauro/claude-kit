@@ -157,7 +157,7 @@ two artifacts carries that. Take whichever you have:
   corroboration. Never withhold qualification for its absence, and don't ask the
   user to go add it.
 
-  This is not in tension with `/kit:tend-prs`, which *does* require the label
+  This is not in tension with `/kit:start-next`, which *does* require the label
   when it sweeps for startable tickets. There the label is a query filter over
   work nobody asked for, and picking up an unlabelled issue would mean starting
   something unbidden. Here a human has already named the issue, so the only

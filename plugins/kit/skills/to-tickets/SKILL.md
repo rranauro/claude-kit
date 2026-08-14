@@ -70,7 +70,7 @@ Do NOT close or modify any parent issue.
 
 ### 5a. Make the edges machine-readable
 
-`/kit:tend-prs` starts these tickets by itself as their blockers merge, so it has to read the edges without a human in the loop. Prose cannot carry that: a bare `#123` appears in ordinary issue text all the time, and a wrong match starts work whose dependency has not landed.
+`/kit:start-next` picks up these tickets as their blockers merge, so it has to read the edges without a human having named the issue. Prose cannot carry that: a bare `#123` appears in ordinary issue text all the time, and a wrong match starts work whose dependency has not landed.
 
 On a tracker, every ticket gets this line in its body, in addition to the prose "Blocked by" section:
 
