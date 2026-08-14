@@ -28,7 +28,7 @@ the prefix comes from the `name` field in `plugins/kit/.claude-plugin/plugin.jso
 | `/kit:start-ticket` | Reads an issue, creates an isolated git worktree off `origin/main` — or delegates to your project's own worktree command — wires up gitignored runtime files, and picks up any plan `/kit:design` left behind. |
 | `/kit:ship-ticket` | Orchestrates the rest: TDD, a simplify pass, PR, automated review, auto-merge, cleanup. |
 | `/kit:start-next` | Picks up the next epic ticket whose blocking edges have all closed — lowest issue number first — and hands it to `/kit:ship-ticket`. Deliberate by design: `/kit:tend-prs` runs unattended because it never writes an implementation, and this is the step that does. |
-| `/kit:tend-prs` | The unattended half. One pass over every open PR you own: triage the review round that landed, push the fixes, enable auto-merge, and remove the worktrees whose PRs have merged. Stateless, so `/loop 20m /kit:tend-prs` is the whole setup. Skips anything you're working in. Reports outstanding `/kit:pin-it` pins so the unread ones surface on their own. |
+| `/kit:tend-prs` | The unattended half. One pass over every open PR you own: triage the review round that landed, push the fixes, enable auto-merge, and remove the worktrees whose PRs have merged. Stateless and cold-start safe, so it runs headless on a launchd schedule — `install-tending.sh` is the whole setup. Skips anything you're working in. Reports outstanding `/kit:pin-it` pins so the unread ones surface on their own. |
 | `/kit:polish-ticket` | Runs a catch-all polish ticket. The user reports problems one at a time; each is triaged into an inline fix on the branch or its own filed ticket. |
 | `/kit:walkthrough` | Verifies a branch in-app one step at a time, against a checklist derived from the issue's acceptance criteria and the diff. The position lives in a file, so a bug found mid-walk detours into triage and returns to the same step. |
 | `/kit:pin-it` | Parks a requirement that surfaced mid-debug but isn't ready to be discussed — culled to what's expensive to re-derive, saved outside version control at the main checkout so it survives the worktree it was written in. `list` shows what's pinned and flags what's gone stale; a slug brings one back and triages it into an issue, a fix, or a drop. |
@@ -173,6 +173,55 @@ Everything is detected at runtime — repo via `gh`, your login via `gh api user
 the main checkout via `git rev-parse --git-common-dir` so artifacts survive the
 worktree they were produced in. There is no config file to write. Run it by hand
 with `pr-review.sh --help`.
+
+### Running the janitor on a schedule
+
+`/kit:tend-prs` is written to run with nobody watching, and inside a session it
+mostly doesn't run at all — it only fires if you remember to start it, and
+killing it costs you whatever else that session was doing. Two scripts move it
+out of session:
+
+```
+plugins/kit/scripts/install-tending.sh              # every 20 minutes, this repo
+plugins/kit/scripts/install-tending.sh --status     # loaded? what did the last pass do?
+plugins/kit/scripts/install-tending.sh --uninstall  # unload and remove
+```
+
+It writes a launchd agent labelled by the repo it tends, so tending two
+checkouts is two installs and removing one leaves the other alone. launchd
+rather than cron because it survives logout and catches up after sleep; not
+cloud scheduling, which cannot work here at all — the pass needs the real
+worktrees and your local `gh` and `claude` credentials.
+
+`tend-prs.sh` is what the agent runs, and running it by hand is how you watch a
+pass before handing it over. Three properties are the reason it is a script and
+not a one-line `claude -p`:
+
+**The permission grant is a file you can read.** `tending-settings.json` is an
+explicit allowlist — specific `gh` subcommands, git reads, the write verbs the
+triage step actually needs — plus a deny list for the ones no unattended pass
+should reach for (`git push --force`, `gh pr merge --admin`, `rm`). Headless
+means nothing can be approved interactively, so that file *is* the safety
+boundary, and widening it is a diff rather than a decision made mid-run. A call
+outside it fails the pass and lands in the report, which is the behavior you
+want: the command is told to record a denial and carry on, never to route
+around one.
+
+**Two passes can't act on the same PR.** Derived state makes overlap harmless in
+general, but two concurrent triages of one PR is a double push. The lock is an
+atomic `mkdir` holding the pid — macOS has no `flock` — and a pass killed
+mid-flight leaves a directory that the next pass reclaims only after checking
+the recorded pid is actually gone.
+
+**Every pass leaves a record.** `~/.claude/logs/tend-prs/<owner>-<repo>.log`,
+appended, including the skip reasons — reading a week of passes at once is how
+you notice the worktree that has been dirty since Tuesday. Notifications stay as
+they were: escalations fire one, quiet passes stay silent.
+
+A pass killed partway is safe by construction, and this is the property to
+preserve when changing any of it: all state is derived from GitHub and git, and
+the triage marker is written last, so a firing that dies mid-triage is
+re-triaged rather than mis-classified as done.
 
 ## Why I built this
 

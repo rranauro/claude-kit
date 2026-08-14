@@ -7,8 +7,13 @@ the fixes, enable auto-merge, and clean up the worktrees whose PRs have merged.
 
 **Arguments:** none.
 
-Designed to be run via `/loop` (e.g. `/loop 20m /kit:tend-prs`). Each firing is
-one complete, self-contained pass. Run it from the main checkout.
+Each firing is one complete, self-contained pass. Run it from the main checkout.
+
+**The intended way to run this is on a schedule, out of session** — install the
+launchd agent with `plugins/kit/scripts/install-tending.sh` and it fires whether
+or not anything is open. `/loop 20m /kit:tend-prs` does the same thing inside a
+session and is the way to watch a few passes before handing it over; it costs you
+the session it runs in, and it only runs when you remember to start it.
 
 This is the unattended half of the ticket workflow. `/kit:ship-ticket` carries a
 ticket to an open PR while you're watching; this carries every open PR the rest
@@ -31,6 +36,12 @@ risk and lives in `/kit:start-next`, which you invoke deliberately.
 - **Derive all state from GitHub and git.** A firing knows nothing about the
   firings before it and must not need to.
 - **Never merge locally.** `gh pr merge --auto` only.
+- **A permission denial is a finding, not an obstacle.** Running headless, the
+  allowlist in `scripts/tending-settings.json` is the safety boundary, and a
+  denied call means the boundary and this command disagree about what a pass
+  needs. Record what was denied and what it was for, then carry on with the rest
+  of the pass. Never route around one — a way around a boundary nobody widened
+  on purpose is the thing the boundary exists to prevent.
 
 ---
 
@@ -196,6 +207,12 @@ skipped lines matter most — "worktree dirty, left alone" is how you find out t
 command has been quietly declining to help for three days.
 
 A firing where nothing was actionable prints a single line and nothing else.
+
+**Print it even though nothing is watching.** On a scheduled run this block is
+captured to `~/.claude/logs/tend-prs/<owner>-<repo>.log`, appended across every
+pass, and it is the only record the firing leaves — there is no scrollback to go
+back to. Write it for someone reading a week of passes at once, looking for the
+skip that has been repeating.
 
 ### Outstanding pins
 
