@@ -176,6 +176,34 @@ anything whose blast radius the acceptance criteria don't bound.
 Say which of these applies rather than just declining. Confirm the label as its
 own decision rather than folding it into the publish.
 
+**Then ask one more question, in the same breath: will the PR need holding?**
+
+```
+Hold the PR for in-app verification before it merges? (y/N)
+```
+
+If yes, put `kit-hold` on the **issue** — `gh issue edit <n> --add-label
+kit-hold`. `/kit:new-pull-request` transcribes it onto the PR it opens, so the
+hold is in place from the moment the PR exists.
+
+Ask it here because **here is where the answer is known**. You have just decided
+this is safe for an agent to start alone; whether the result needs walking in the
+running app before it merges is the same judgment, made with the same context in
+front of you. The alternative is finding out later: the agent opens a PR, a
+tending pass fires within minutes, and you are racing a schedule to label
+something you already knew would need it.
+
+**Default to no, and keep the question cheap.** Most tickets do not need a hold —
+the reviewers and the acceptance criteria are the check, and a PR that merges
+clean is the normal outcome. A prompt that demands real thought every time is one
+people learn to dismiss without reading, which costs you the few that mattered.
+Bare Enter means no hold.
+
+Say yes when the acceptance criteria describe something you have to *see* — a
+rendered view, an interaction, a migration's effect on real data — rather than
+something a test asserts. That is the case `kit-hold` was built for, and it is
+usually obvious from the criteria you just wrote.
+
 ## Staleness
 
 An agent-ready issue is designed to sit in the queue, so its brief ages in a way

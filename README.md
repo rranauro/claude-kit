@@ -239,6 +239,15 @@ read fresh from the label every firing and stored nowhere.
 
 Create it once per repo with `gh label create kit-hold`.
 
+**The decision usually gets made earlier than the PR.** `/kit:triage` and
+`/kit:design` both ask whether the downstream PR will need holding — at the
+moment they settle the ticket, which is when you actually know — and record the
+answer on the issue. `/kit:new-pull-request` transcribes it onto the PR at
+creation, so a PR can be born held. Without that, holding means racing a
+scheduled pass: the agent opens a PR, tending fires within minutes, and the label
+you always intended to apply arrives after the merge was already enabled. The
+question defaults to no and takes one keystroke to decline.
+
 **Two passes can't act on the same PR.** Derived state makes overlap harmless in
 general, but two concurrent triages of one PR is a double push. The lock is an
 atomic `mkdir` holding the pid — macOS has no `flock` — and a pass killed

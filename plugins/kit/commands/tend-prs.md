@@ -96,6 +96,13 @@ mid-rebase are the same shape.
 
 Create it once per repo with `gh label create kit-hold`, or from the UI.
 
+It can also arrive before you ever see the PR. `/kit:triage` and `/kit:design`
+ask whether the downstream PR will need holding at the moment the ticket is
+settled, record the answer on the issue, and `/kit:new-pull-request` transcribes
+it onto the PR at creation — so a PR can be born held, which is the only way to
+win the race against a pass that fires minutes later. That changes nothing here:
+a human still made the decision, and this command still never writes the label.
+
 **Never apply this label, and never remove it.** Not to record that a PR was
 held, not to tidy up after a merge, not because the reason looks resolved. An
 override the automation can clear is not an override — the whole guarantee is
