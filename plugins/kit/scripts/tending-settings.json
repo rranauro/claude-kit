@@ -33,7 +33,7 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(lsof:*)",
-      "Bash(osascript -e:*)"
+      "Bash(osascript -e display notification:*)"
     ],
     "deny": [
       "Bash(gh pr create:*)",

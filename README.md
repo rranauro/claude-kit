@@ -228,12 +228,22 @@ matched against the command's arguments, not against its raw text, so a prefix
 that stops mid-argument matches nothing at all — ever. `Bash(gh api repos/:*)`
 looks like "any repos API call" and is really "an argument equal to `repos/`",
 which no invocation produces. `Bash(git rev-parse:*)` works because its prefix
-ends at a space. The failure is silent and one-directional: the entry sits in the
-allow list looking correct while every call it names is refused, and unattended
-is exactly where nobody is watching to notice. Both bugs this cost us were of
-that shape — the API reads a triage depends on, and the notification an
-escalation fires. Test a new entry by running the pass by hand before trusting
-it.
+ends on an argv token boundary, after `rev-parse`. The failure is silent and
+one-directional: the entry sits in the allow list looking correct while every
+call it names is refused, and unattended is exactly where nobody is watching to
+notice. Test a new entry by running the pass by hand before trusting it.
+(Verified against Claude Code 2.1.232 — this is harness behavior, not a
+documented interface, so re-check it if patterns start failing after an upgrade.)
+
+The rule also constrains what a grant can express, and not always kindly.
+`Bash(osascript -e display notification:*)` is broken for the same reason — the
+whole AppleScript program arrives as one argument — so the notification an
+escalation fires is currently refused. There is no narrower pattern that fixes
+it: `Bash(osascript -e:*)` matches, but `osascript -e` accepts
+`do shell script "…"`, which routes around every deny entry. Widening it would
+trade a dead notification for a general shell escape. The fix is to stop asking
+the agent to notify at all — the runner is plain bash and unconstrained by the
+grant — and that is tracked separately rather than bolted on here.
 
 **The pass reads its commands off disk.** A headless `claude -p` doesn't load
 plugin commands the way an interactive session does, and the Skill tool resolves
@@ -287,9 +297,10 @@ cut at its own start marker rather than by line count — a quiet pass is two li
 and a busy one is fifty. Underneath it is one appended file per repo,
 `~/.claude/logs/tend-prs/<owner>-<repo>.log`, so `tail -f` follows a run live and
 reading a week at once is how you notice the worktree that has been dirty since
-Tuesday. Skip reasons are in there by design. Notifications are unchanged:
-escalations fire one, quiet passes stay silent, so the log is where you look when
-nothing pinged you.
+Tuesday. Skip reasons are in there by design. Read it rather than waiting to be
+pinged: escalations are *meant* to fire a notification and quiet passes to stay
+silent, but the grant entry that would allow one cannot match (see the
+token-boundary note above), so today nothing fires either way.
 
 **A project declares its own gates.** The triage step runs the project's tests
 and linter, and those commands are whatever that repo's `CLAUDE.md` says they
