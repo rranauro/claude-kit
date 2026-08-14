@@ -3,8 +3,7 @@ model: sonnet
 ---
 
 Sweep every open PR you own: triage the automated reviews that have landed, push
-the fixes, enable auto-merge, clean up the worktrees whose PRs have merged, and
-start the next epic ticket whose blockers have landed.
+the fixes, enable auto-merge, and clean up the worktrees whose PRs have merged.
 
 **Arguments:** none.
 
@@ -14,6 +13,10 @@ one complete, self-contained pass. Run it from the main checkout.
 This is the unattended half of the ticket workflow. `/kit:ship-ticket` carries a
 ticket to an open PR while you're watching; this carries every open PR the rest
 of the way while you're not.
+
+**It never writes an implementation.** Every step here reacts to work a human
+already approved — a review round, a merge. Starting a new ticket is a different
+risk and lives in `/kit:start-next`, which you invoke deliberately.
 
 ---
 
@@ -28,10 +31,6 @@ of the way while you're not.
 - **Derive all state from GitHub and git.** A firing knows nothing about the
   firings before it and must not need to.
 - **Never merge locally.** `gh pr merge --auto` only.
-- **One unattended implementation at a time.** `start-next` runs at most one
-  ticket per firing and only when nothing is in flight. Everything else here
-  reacts to work a human already approved; that step writes new code, which is a
-  different risk and gets a tighter bound.
 
 ---
 
@@ -182,10 +181,6 @@ Its `Step 4` is replaced by `idle-check`, per Step 3. Every other gate in it
 stays: an unexpectedly dirty worktree still stops that one cleanup, and that is
 the behavior you want from something deleting directories unattended.
 
-Run `cleanup` **before** `start-next` below. Cleanup frees the in-flight slot that
-step checks, so doing it first lets a merged ticket and its successor turn over in
-one firing instead of two.
-
 Do **not** delegate to `/kit:worktree-gc` here. It refuses to remove anything
 without confirmation by design, and it sweeps orphan directories — neither
 belongs in an unattended pass. It stays the human-run periodic catch for whatever
@@ -193,68 +188,10 @@ this command skipped.
 
 ---
 
-## Step 6b · `start-next` — Start the next unblocked ticket
-
-Epic tickets filed by `kit:to-tickets` carry their blocking edges as a marker in
-the issue body. This step reads them and starts work that is now unblocked.
-
-```
-gh issue list --state open --label ready-for-agent --json number,title,body,labels
-```
-
-A ticket is **startable** when all of these hold:
-
-1. Its body contains `<!-- kit-blocked-by: ... -->`. No marker means it was not
-   filed as part of an epic — leave it alone. This step never picks up an
-   arbitrary `ready-for-agent` ticket, only one whose author declared its edges.
-
-   **The label requirement here is deliberate, and is not the one
-   `/kit:start-ticket` `plan-implementation` relaxed.** There a human has already
-   named the issue, so the label merely corroborates a body you can read, and
-   demanding it withholds work over a missing sticker. Here the label is the
-   filter deciding what gets picked up at all, and dropping it would mean
-   starting whatever happens to be open. Do not harmonize the two.
-2. Every issue number in the marker is **closed**. `/kit:new-pull-request` writes
-   `Closes #<issue>`, so a merged PR closes its ticket — a closed blocker means the
-   work landed on `main`. An empty marker is trivially satisfied.
-3. No open PR or live worktree already exists for it (it hasn't been started).
-
-**Start at most one ticket per firing, and only when nothing is in flight.**
-In-flight means any open PR or live worktree from a previous `start-next`. This
-serializes unattended implementation deliberately: it is the highest-risk thing
-this command does, and one branch at a time means at most one bad branch exists
-before you next look. Raise the cap only when you're comfortable reviewing several
-unattended branches at once — the blocking edges already serialize much of an epic
-regardless.
-
-If several tickets are startable, take the lowest issue number. Filing order is
-dependency order, so the lowest is the earliest slice.
-
-Then invoke `/kit:ship-ticket <number>` via the Skill tool. **It runs under this
-command's no-questions constraint**, which resolves its two human gates as follows:
-
-- **`read-plan`** — the ticket's brief is the settled approach, per
-  `/kit:start-ticket` `plan-implementation`. Accept it and proceed **only if** the
-  anchor-verification pass comes back clean. If an anchor has moved or drift
-  contradicts an assumption, **stop and escalate** — do not re-derive the approach
-  unattended. That is a design decision, and it is why the ticket says what it says.
-- **`push-and-pr`** — push without asking, and skip the offer to walk the change
-  in-app. The PR is where this work gets reviewed; the reviewers run on create and
-  the rest of this command triages them.
-
-Everything else in `ship-ticket` stays as written — TDD, the placement check, the
-gates, `/simplify`. If any of them fails, ship-ticket stops at that phase, and the
-half-finished worktree is left for you with a notification. Do not retry it on the
-next firing; a second attempt at a failure a human hasn't looked at is how one bad
-assumption becomes several branches.
-
----
-
 ## Step 7 · `report` — Say only what happened
 
 Print one compact block: PRs triaged (with fixed/skipped counts), auto-merge
-enabled, worktrees removed, any ticket started (with its number and title), and
-everything skipped **with its reason**. The
+enabled, worktrees removed, and everything skipped **with its reason**. The
 skipped lines matter most — "worktree dirty, left alone" is how you find out this
 command has been quietly declining to help for three days.
 
