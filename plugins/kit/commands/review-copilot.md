@@ -91,9 +91,19 @@ All items are processed without stopping for approval. The summary in Step 5 is 
 
 **Step 6 — Quality gates (if any fixes were made):**
 - Run the /kit:commit skill
+- **A gate that cannot run is a gate that failed.** A missing runtime, a broken
+  shim, an interpreter that isn't on `PATH` — none of these mean the fixes are
+  fine, they mean nothing checked them. Treat it exactly as a red gate: stop,
+  and report what could not run and why. Unattended this is the difference
+  between a review fix that was verified and one that merely compiles in
+  someone's head, and the failure reads as an environment footnote rather than a
+  refusal unless this step insists otherwise.
 
 **Step 7 — Push:**
-- Push the branch to origin.
+- Push the branch to origin — **only if Step 6's gates actually ran and passed.**
+  If they could not run, leave the fixes committed locally, push nothing, and
+  escalate. An unverified push is the one outcome that looks identical to a
+  verified one from GitHub.
 
 **Step 8 · `enable-auto-merge` — Enable auto-merge (gated):**
 
