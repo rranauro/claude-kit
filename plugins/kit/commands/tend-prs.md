@@ -167,7 +167,9 @@ would mean proving a held worktree idle in order to then not touch it.
 1. **Resolve the path** for the branch from the `git worktree list --porcelain`
    output. No worktree for the branch → notify and skip; the fixes have to be
    made somewhere, and this command does not create worktrees.
-2. **Uncommitted work** — `git -C <worktree> status --porcelain`. Apply
+2. **Uncommitted work** — `cd <worktree> && git status --porcelain`. Deliberately
+   not the `git -C <worktree>` form: the grant cannot permit that safely (see the
+   README's token-boundary note), so unattended it is refused. Apply
    `/kit:cleanup-worktree` `Step 3`'s known-safe rule: untracked entries that are
    symlinks back into the main checkout are setup artifacts, not work. Anything
    else means you have work in progress there → skip and report.
