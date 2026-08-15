@@ -241,9 +241,12 @@ not cover `git -C <path> status --porcelain` — the second token is `-C`, not
 `status`. Allowing `Bash(git -C:*)` would fix that call and every other one:
 `git -C <path> push --force` would pass too, because the deny entries fail to
 match the `-C` form for exactly the same reason. So the grant cannot express this
-safely, and the commands avoid the form instead — `cd <worktree> && git status`
-rather than `git -C <worktree> status`. Interactive commands may still use `-C`,
-where a human is present to approve.
+safely. Swapping it for `cd <worktree> && git status` does not help either, which
+is what the commands tried first: the first token is then `cd`, so that form is
+unmatched too, and the obvious repair — a `Bash(cd:*)` prefix — matches a compound
+command and leaves every deny entry one `&&` away from being bypassed. Interactive
+commands may still use `-C`, where a human is present to approve. Unattended,
+`idle-check` moved out of the agent entirely; see the paragraph below.
 
 The rule also constrains what a grant can express, and not always kindly.
 `Bash(osascript -e display notification:*)` is broken for the same reason — the
@@ -254,6 +257,15 @@ it: `Bash(osascript -e:*)` matches, but `osascript -e` accepts
 trade a dead notification for a general shell escape. The fix is to stop asking
 the agent to notify at all — the runner is plain bash and unconstrained by the
 grant — and that is tracked separately rather than bolted on here.
+
+`idle-check` is the same shape and is already fixed that way. Deciding whether a
+worktree is free to write to means reading `git status` and `lsof` for a path that
+is not the agent's cwd, which no grantable pattern covers. So `tend-prs.sh`
+surveys every linked worktree before it invokes `claude -p` and passes the
+verdicts in as `<path> <branch> <idle|busy> <reason>`; the pass reads them instead
+of proving them. Attended runs still derive it themselves. The general lesson is
+worth stating plainly: when the grant cannot express a check, move the check to
+the runner rather than widening the grant to fit it.
 
 **The pass reads its commands off disk.** A headless `claude -p` doesn't load
 plugin commands the way an interactive session does, and the Skill tool resolves

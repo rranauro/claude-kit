@@ -228,6 +228,72 @@ CLAUDE_BIN="$(command -v claude || true)"
 [ -n "$CLAUDE_BIN" ] || CLAUDE_BIN="$HOME/.local/bin/claude"
 [ -x "$CLAUDE_BIN" ] || { log "failed: no claude binary at ${CLAUDE_BIN}"; exit 1; }
 
+# --- Idle survey --------------------------------------------------------------
+# `idle-check` asks whether a worktree is free to be written to. The agent cannot
+# answer it: proving it needs `git status` and `lsof` against a path that is not
+# its cwd, and every form of that is either unmatched by the grant (`git -C …`,
+# `cd … && git status` — both fail the first-token rule) or unsafe to grant (a
+# `Bash(cd:*)` prefix matches a compound command, so every deny entry is one `&&`
+# away from being bypassed). The runner has no such problem: it is plain bash,
+# outside the grant entirely. So it answers the question and passes the verdicts
+# in, the same move the escalation notification already makes.
+#
+# Emits one line per linked worktree: "<path>\t<branch>\t<idle|busy>\t<reason>".
+has_symlink_ancestor() {
+  local wt="$1" rel="$2" dir
+  dir="$(dirname "$rel")"
+  while [ "$dir" != "." ] && [ "$dir" != "/" ]; do
+    [ -L "${wt}/${dir}" ] && return 0
+    dir="$(dirname "$dir")"
+  done
+  return 1
+}
+
+survey_worktree() {
+  local wt="$1" branch="$2" leftovers="" line code file procs
+  # Known-safe leftovers, per /kit:cleanup-worktree Step 3: setup symlinks back
+  # into the main checkout. They arrive in two spellings — untracked for a link
+  # that adds a path, deleted for one laid *over* a tracked directory (Rails'
+  # storage/ shadowing storage/.keep). Both are wiring, neither is work.
+  while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    code="${line:0:2}"
+    file="${line:3}"
+    case "$code" in
+      '??') [ -L "${wt}/${file}" ] && continue ;;
+      *D*)  has_symlink_ancestor "$wt" "$file" && continue ;;
+    esac
+    leftovers="${leftovers}${leftovers:+, }${line}"
+  done < <(cd "$wt" 2>/dev/null && git status --porcelain 2>/dev/null)
+
+  if [ -n "$leftovers" ]; then
+    printf '%s\t%s\tbusy\tuncommitted work: %s\n' "$wt" "$branch" "$leftovers"
+    return
+  fi
+
+  # A process whose cwd sits in the worktree is an editor or shell someone left
+  # open. Exclude this pass's own pid so the survey never reports itself.
+  procs="$(lsof -d cwd 2>/dev/null | grep -F "$wt" | awk -v me="$$" '$2 != me { print $1 }' | sort -u | tr '\n' ' ')"
+  if [ -n "${procs// /}" ]; then
+    printf '%s\t%s\tbusy\tin use by: %s\n' "$wt" "$branch" "${procs% }"
+    return
+  fi
+
+  printf '%s\t%s\tidle\t-\n' "$wt" "$branch"
+}
+
+IDLE_SURVEY=""
+while IFS= read -r wt_path; do
+  [ -z "$wt_path" ] && continue
+  [ "$wt_path" = "$MAIN_CHECKOUT" ] && continue
+  wt_branch="$(cd "$wt_path" 2>/dev/null && git rev-parse --abbrev-ref HEAD 2>/dev/null)"
+  IDLE_SURVEY="${IDLE_SURVEY}$(survey_worktree "$wt_path" "${wt_branch:-unknown}")
+"
+done < <(git -C "$MAIN_CHECKOUT" worktree list --porcelain 2>/dev/null | awk '/^worktree /{print $2}')
+
+[ -z "$IDLE_SURVEY" ] && IDLE_SURVEY="(no linked worktrees)"
+log "idle survey: $(printf '%s' "$IDLE_SURVEY" | tr '\n' ';')"
+
 # --- Prompt -------------------------------------------------------------------
 # The pass itself is /kit:tend-prs. This says only what the command cannot know
 # about its own invocation: that there is genuinely no terminal, and what to do
@@ -237,6 +303,11 @@ PROMPT="Run one complete /kit:tend-prs pass over ${REPO}, from the main checkout
 Read ${COMMANDS_DIR}/tend-prs.md and follow it verbatim. Where it delegates to another /kit: command, read that command's file from the same directory and follow it the same way — /kit:review-copilot is review-copilot.md, /kit:cleanup-worktree is cleanup-worktree.md. Those files say to delegate 'via the Skill tool'; that does not work here, because the Skill tool resolves skills and these are commands. Reading the file is the delegation. Do not treat an 'Unknown skill' error as a reason to skip a step.
 
 You are running headlessly from a scheduled launchd job. There is no terminal attached and no one to prompt — the command's no-questions constraint is a fact of this environment, not an instruction you could choose to disregard.
+
+This pass's \`idle-check\` verdicts, surveyed by the runner immediately before you started, one line per linked worktree as <path> <branch> <idle|busy> <reason>:
+
+${IDLE_SURVEY}
+Treat these as the answer to Step 3 and do not re-derive them — you are not permitted to, and the attempt is what stalls a pass. A worktree absent from this list has none; \`busy\` means skip and report the reason verbatim. The survey is a snapshot taken seconds ago, which is the same guarantee a check you ran yourself would give.
 
 Your permissions are a fixed allowlist. If you need a tool or command outside it, the call fails: do not retry it, do not look for another way around it, and do not treat the denial as a reason to skip silently. Record what was denied and why you wanted it, then carry on with the rest of the pass — a permission boundary that turns out to be too narrow is something to widen deliberately, after reading the report.
 

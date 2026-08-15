@@ -167,18 +167,28 @@ would mean proving a held worktree idle in order to then not touch it.
 1. **Resolve the path** for the branch from the `git worktree list --porcelain`
    output. No worktree for the branch → notify and skip; the fixes have to be
    made somewhere, and this command does not create worktrees.
-2. **Uncommitted work** — `cd <worktree> && git status --porcelain`. Deliberately
-   not the `git -C <worktree>` form: the grant cannot permit that safely (see the
-   README's token-boundary note), so unattended it is refused. Apply
-   `/kit:cleanup-worktree` `Step 3`'s known-safe rule in full — both halves.
-   Setup symlinks back into the main checkout appear as untracked entries, but a
-   link laid *over* a tracked directory instead reports its contents deleted,
-   permanently (Rails' `storage/` → ` D storage/.keep`). Reading that half as
-   work is how a correctly wired worktree gets skipped every firing, forever.
-   Anything else means you have work in progress there → skip and report.
-3. **Someone is in it** — `lsof -d cwd 2>/dev/null | grep -F "<worktree>"`. A
-   process whose working directory sits inside the worktree is a shell or an
-   editor you left open → skip and report.
+2. **Read the verdict.** Two questions decide it — whether the worktree holds
+   uncommitted work (applying `/kit:cleanup-worktree` `Step 3`'s known-safe rule
+   in full, both halves) and whether a process has its cwd inside it. Where the
+   answers come from depends on who is running:
+   - **Unattended**, `tend-prs.sh` surveys every linked worktree in plain bash
+     immediately before invoking you and passes the verdicts in as
+     `<path> <branch> <idle|busy> <reason>`. Use them as given. Do **not**
+     re-derive them: you are not permitted to, and the attempt is what stalls the
+     pass rather than something to work around.
+   - **Attended**, derive them yourself — `git -C <worktree> status --porcelain`
+     and `lsof -d cwd 2>/dev/null | grep -F "<worktree>"`.
+3. `busy` → skip and report the reason verbatim. `idle` → proceed.
+
+**Why the runner owns this unattended.** The check reaches a path that is not the
+agent's cwd, and every form of that is either unmatched by the grant or unsafe to
+grant: `git -C <path> status` fails the first-token rule, `cd <path> && git status`
+fails it too (the first token is `cd`), and a `Bash(cd:*)` prefix would match a
+compound command — putting every deny entry one `&&` away from being bypassed. So
+the grant genuinely cannot express it, and the answer is the one the README
+already reaches for with the escalation notification: the runner is plain bash,
+outside the grant, and hands in what it found. A verdict computed seconds before
+the pass starts is the same guarantee a check run inside it would give.
 
 Step 3 replaces `/kit:cleanup-worktree` `Step 4`, which asks the user whether the
 branch is checked out elsewhere. That question has a mechanical answer; this is
