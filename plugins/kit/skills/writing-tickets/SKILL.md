@@ -82,6 +82,10 @@ can start. A ticket with none can start immediately, and that's the ordering the
 set actually has. For a chain, base each PR on its blocker's branch — GitHub
 retargets automatically when the blocker merges.
 
+This skill records those dependencies as prose only. The machine-readable form
+the unattended commands read is `kit:to-tickets`' — reach for it when a whole set
+is being filed at once.
+
 **Title them in the project's own vocabulary** — the words the codebase and its
 docs already use, not coined jargon. A term that turns out to be fuzzy is a
 question for the conversation that produced these tickets, not something to
