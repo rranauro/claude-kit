@@ -180,6 +180,15 @@ would mean proving a held worktree idle in order to then not touch it.
      and `lsof -d cwd 2>/dev/null | grep -F "<worktree>"`.
 3. `busy` → skip and report the reason verbatim. `idle` → proceed.
 
+**A linter's cache daemon is not a holder.** The runner stops the ones it
+recognizes before it answers, because they are not what this check is protecting.
+An editor or a shell holds a cwd because a person is standing there; a `rubocop
+--server` holds one because an autoformat hook started it behind you, and it is
+reparented to init and idles on that cwd until the machine reboots. Reporting it
+as busy defers the cleanup on *every* pass rather than a later one, which is the
+opposite of what "deferred to a later pass" tells the reader. Attended, stop it
+yourself when it is the only thing holding the worktree.
+
 **Why the runner owns this unattended.** The check reaches a path that is not the
 agent's cwd, and every form of that is either unmatched by the grant or unsafe to
 grant: `git -C <path> status` fails the first-token rule, `cd <path> && git status`

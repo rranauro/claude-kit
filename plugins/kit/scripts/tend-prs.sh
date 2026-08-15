@@ -279,6 +279,59 @@ has_symlink_ancestor() {
   return 1
 }
 
+# Processes whose cwd is inside the worktree, as "<pid> <command-name>". This
+# pass's own pid is never one of them.
+cwd_holders() {
+  lsof -d cwd 2>/dev/null | grep -F "$1" | awk -v me="$$" '$2 != me { print $2, $1 }'
+}
+
+# Cache daemons a linter starts behind your back, matched on the full command
+# line rather than the process name — `ruby` is what lsof reports for a rubocop
+# server, and it is equally what it reports for a spec run someone is watching.
+#
+# Matched as a *prefix* of the command line, never a substring: a substring
+# match also hits every process that merely mentions the pattern — the grep
+# looking for it, an editor with this script open, a shell whose history line
+# contains it — and TERMs them. One pattern per line, each written as the
+# daemon's command line actually begins.
+RECLAIMABLE_DAEMONS='rubocop --server'
+
+# A worktree is held by two unlike things. An editor or a shell is someone's
+# session: it holds a cwd because a person is standing there, and removing the
+# directory under them is the thing idle-check exists to prevent. A linter's
+# cache daemon is nobody's session — it is started by an autoformat hook,
+# reparented to init, and it idles on that cwd until the machine reboots. Left
+# alone it is not a transient condition a later pass clears, which is what
+# "deferred to a later pass" promises: the worktree is held forever, by a process
+# whose only purpose is to make the next lint run faster.
+#
+# So stop them and re-ask. Stopping one costs the next lint run its warm start
+# and nothing else.
+reclaim_daemons() {
+  local wt="$1" pid command pattern reclaimed=0
+  while read -r pid _; do
+    [ -z "$pid" ] && continue
+    command="$(ps -p "$pid" -o command= 2>/dev/null)"
+    while IFS= read -r pattern; do
+      [ -z "$pattern" ] && continue
+      case "$command" in
+        "$pattern"*)
+          kill "$pid" 2>/dev/null || continue
+          reclaimed=1
+          log "reclaimed '${pattern}' (pid $pid) holding $wt"
+          break
+          ;;
+      esac
+    done <<<"$RECLAIMABLE_DAEMONS"
+  done < <(cwd_holders "$wt")
+
+  # The caller re-asks lsof straight after, and a TERM the kernel has not
+  # delivered yet would still read as held — reporting busy for a process this
+  # function just retired, and deferring the cleanup one more pass for nothing.
+  [ "$reclaimed" -eq 1 ] && sleep 1
+  return 0
+}
+
 survey_worktree() {
   local wt="$1" branch="$2" leftovers="" line code file procs
   # Known-safe leftovers, per /kit:cleanup-worktree Step 3: setup symlinks back
@@ -301,9 +354,13 @@ survey_worktree() {
     return
   fi
 
-  # A process whose cwd sits in the worktree is an editor or shell someone left
-  # open. Exclude this pass's own pid so the survey never reports itself.
-  procs="$(lsof -d cwd 2>/dev/null | grep -F "$wt" | awk -v me="$$" '$2 != me { print $1 }' | sort -u | tr '\n' ' ')"
+  # A process whose cwd sits in the worktree is usually an editor or shell
+  # someone left open. Reclaim the exceptions first — see reclaim_daemons — or a
+  # linter's cache daemon defers the same cleanup on every pass, forever.
+  reclaim_daemons "$wt"
+
+  # Exclude this pass's own pid so the survey never reports itself.
+  procs="$(cwd_holders "$wt" | awk '{ print $2 }' | sort -u | tr '\n' ' ')"
   if [ -n "${procs// /}" ]; then
     printf '%s\t%s\tbusy\tin use by: %s\n' "$wt" "$branch" "${procs% }"
     return
