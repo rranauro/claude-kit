@@ -235,6 +235,16 @@ notice. Test a new entry by running the pass by hand before trusting it.
 (Verified against Claude Code 2.1.232 — this is harness behavior, not a
 documented interface, so re-check it if patterns start failing after an upgrade.)
 
+**And it has to match from the first token.** A global flag between the binary
+and its subcommand displaces everything after it, so `Bash(git status:*)` does
+not cover `git -C <path> status --porcelain` — the second token is `-C`, not
+`status`. Allowing `Bash(git -C:*)` would fix that call and every other one:
+`git -C <path> push --force` would pass too, because the deny entries fail to
+match the `-C` form for exactly the same reason. So the grant cannot express this
+safely, and the commands avoid the form instead — `cd <worktree> && git status`
+rather than `git -C <worktree> status`. Interactive commands may still use `-C`,
+where a human is present to approve.
+
 The rule also constrains what a grant can express, and not always kindly.
 `Bash(osascript -e display notification:*)` is broken for the same reason — the
 whole AppleScript program arrives as one argument — so the notification an
