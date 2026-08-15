@@ -229,7 +229,10 @@ sits green until you notice it.
 
 - `/kit:review-copilot` skipped a **non-minor** item. That's a finding it judged
   real enough to record and too large to safely apply alone.
-- The project's gates failed, or the push was rejected.
+- The project's gates failed, **could not be run at all**, or the push was
+  rejected. A gate that never ran is not a gate that passed, and unattended it is
+  the likelier of the two — a scheduled job inherits no login shell, so a missing
+  runtime looks like an environment note rather than a red build.
 - `gh pr checks <N>` already shows a failing required check.
 
 An escalated PR stays `triaged`, so later firings leave it alone and it waits for

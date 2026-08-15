@@ -228,6 +228,36 @@ CLAUDE_BIN="$(command -v claude || true)"
 [ -n "$CLAUDE_BIN" ] || CLAUDE_BIN="$HOME/.local/bin/claude"
 [ -x "$CLAUDE_BIN" ] || { log "failed: no claude binary at ${CLAUDE_BIN}"; exit 1; }
 
+# --- Toolchain PATH -----------------------------------------------------------
+# The plist's PATH covers gh, claude, and git; it does not cover a per-project
+# language runtime. A version manager works by putting its shims ahead of the
+# system binaries in a login shell's PATH, and launchd starts no login shell, so
+# a pass inherits the *system* runtime instead — on macOS that is Ruby 2.6 and a
+# `/usr/local/bin/bundle` shim that dies with "bad interpreter".
+#
+# The damage is quiet and specific: the pass still triages, still commits, still
+# pushes, and only the quality gates fail — so review fixes land unverified while
+# the report calls it an environment note. Prepend whatever shim directories
+# exist; this runs on every firing, so an already-installed plist is fixed
+# without reinstalling.
+TOOLCHAIN_DIRS=""
+for shim_dir in \
+  "$HOME/.rbenv/shims" \
+  "$HOME/.nodenv/shims" \
+  "$HOME/.pyenv/shims" \
+  "$HOME/.asdf/shims" \
+  "$HOME/.local/share/mise/shims" \
+  "$HOME/.volta/bin"
+do
+  [ -d "$shim_dir" ] && TOOLCHAIN_DIRS="${TOOLCHAIN_DIRS}${shim_dir}:"
+done
+if [ -n "$TOOLCHAIN_DIRS" ]; then
+  export PATH="${TOOLCHAIN_DIRS}${PATH}"
+  log "toolchain path: prepended ${TOOLCHAIN_DIRS%:}"
+else
+  log "toolchain path: no version-manager shims found; gates run against the system runtime"
+fi
+
 # --- Idle survey --------------------------------------------------------------
 # `idle-check` asks whether a worktree is free to be written to. The agent cannot
 # answer it: proving it needs `git status` and `lsof` against a path that is not
