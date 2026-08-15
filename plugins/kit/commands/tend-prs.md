@@ -170,9 +170,12 @@ would mean proving a held worktree idle in order to then not touch it.
 2. **Uncommitted work** — `cd <worktree> && git status --porcelain`. Deliberately
    not the `git -C <worktree>` form: the grant cannot permit that safely (see the
    README's token-boundary note), so unattended it is refused. Apply
-   `/kit:cleanup-worktree` `Step 3`'s known-safe rule: untracked entries that are
-   symlinks back into the main checkout are setup artifacts, not work. Anything
-   else means you have work in progress there → skip and report.
+   `/kit:cleanup-worktree` `Step 3`'s known-safe rule in full — both halves.
+   Setup symlinks back into the main checkout appear as untracked entries, but a
+   link laid *over* a tracked directory instead reports its contents deleted,
+   permanently (Rails' `storage/` → ` D storage/.keep`). Reading that half as
+   work is how a correctly wired worktree gets skipped every firing, forever.
+   Anything else means you have work in progress there → skip and report.
 3. **Someone is in it** — `lsof -d cwd 2>/dev/null | grep -F "<worktree>"`. A
    process whose working directory sits inside the worktree is a shell or an
    editor you left open → skip and report.
