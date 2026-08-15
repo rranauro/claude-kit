@@ -55,6 +55,21 @@ Only when the user says they want tickets, or you ask "want to turn any of this
 into tickets?" and they agree. Never slide into it because a direction started
 looking good.
 
+**Before drafting anything, ask whether this is a set.** If the tickets are
+slices of one piece of work rather than separate findings that happened to share
+a conversation, offer to hand off to `kit:to-tickets` and invoke it here — it
+reads the conversation it is already in. It owns dependency-ordered publishing
+and the `kit-blocked-by` markers the unattended commands read; issues drafted
+one-by-one below carry no marker, and `/kit:start-next` reads an absent marker as
+"leave alone", so they look startable and never start. On the handoff path, skip
+the per-ticket `/kit:design` offer below — only the frontier ticket could be
+designed usefully anyway. If the user declines, or the tickets are independent,
+carry on one at a time.
+
+Judge it on *slices of one thing*, not on "A blocks B". A real blocking edge is
+usually an implementation fact, and this command has not decided the how — let
+`kit:to-tickets` derive the actual edges in its own quiz.
+
 **The only decision being made here is whether the ticket exists.** A ticket
 states the problem and the intended behavior. It does not settle how to build
 it — that question stays open for `/kit:design`, where it gets real scrutiny. Don't
@@ -63,7 +78,8 @@ resolve it in passing to make the issue read as finished.
 Per ticket: invoke `kit:writing-tickets` and draft **one** issue as a preview — it
 owns the format and the leanness rules, do not restate them here. Raise any open
 questions specific to that issue, get approval, create it, then move to the next.
-Do not batch-create.
+Do not batch-create — this command never batch-*drafts*. A session can still end
+in a set, filed by the handoff above.
 
 Cross-link related existing issues (comments on both sides) when the
 relationship surfaces mid-session.
