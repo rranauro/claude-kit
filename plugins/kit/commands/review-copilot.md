@@ -121,6 +121,11 @@ opposite reason. That command runs unattended, so there is no one to ask; it own
 the decision in its `merge-policy` step and applies it from the summary you just
 reported. Do not prompt, and do not enable auto-merge yourself.
 
+In both cases "stop here" ends *this* skill, not the caller's run. Return the
+Step 5 summary and let the caller continue — a pass that treats this as the end of
+its own work leaves the PR triaged with auto-merge never enabled, which is the one
+state nothing downstream is watching for.
+
 Otherwise, ask the user before enabling:
 
 > "Review findings triaged and pushed. Enable auto-merge (squash) for PR #<N>? GitHub will merge once checks pass."

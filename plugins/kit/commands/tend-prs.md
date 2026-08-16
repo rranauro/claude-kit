@@ -52,7 +52,7 @@ risk and lives in `/kit:start-next`, which you invoke deliberately.
 
 ```
 gh repo view --json nameWithOwner --jq .nameWithOwner
-gh pr list --author @me --state open --json number,headRefName,url,title,isDraft,createdAt,labels
+gh pr list --author @me --state open --json number,headRefName,url,title,isDraft,createdAt,labels,autoMergeRequest
 git worktree list --porcelain
 git fetch origin main
 ```
@@ -61,7 +61,10 @@ Skip draft PRs in everything that follows — a draft is work you haven't finish
 handing over.
 
 `labels` is fetched here, in the one query the whole pass reads from, so the
-hold check below cannot be reached with the label unread.
+hold check below cannot be reached with the label unread. `autoMergeRequest` is
+fetched for the same reason: `merge-policy` has to be able to tell a PR that was
+left to merge from one that was left behind, and that answer is a field on the
+PR rather than something a pass could remember.
 
 ---
 
@@ -83,7 +86,34 @@ Each PR is in exactly one state:
 - **`awaiting-review`** — reviewer output incomplete. Do nothing; a later firing
   gets it.
 - **`untriaged`** — both reviewers are in, no triage marker. This is the work.
-- **`triaged`** — the marker is present. Done here; merging is GitHub's job now.
+- **`triaged`** — the marker is present. The review round is closed out, but this
+  is **not** the end of the pass's interest in the PR: `merge-policy` still asks
+  whether it is actually on its way to merging. See below.
+- **`escalated`** — the marker is present *and* carries `<!-- kit-escalated -->`.
+  A previous pass judged this one to need a human. Leave it entirely alone.
+
+### `triaged` is not a terminal state
+
+A PR reaches `triaged` the moment the marker is written, and the marker is written
+whether or not auto-merge was then enabled. Those are two separate steps, and the
+second one can fail to happen for reasons that have nothing to do with the PR: the
+pass hit its timeout between them, `gh pr merge` errored transiently, the firing
+was killed. Treating the marker alone as "done here, merging is GitHub's job now"
+strands exactly those PRs — green, unheld, un-escalated, and passed over by every
+subsequent firing forever, which reads to you as the command having quietly
+stopped working.
+
+So the marker closes out **triage**, not the PR. `merge-policy` runs against every
+open PR the pass has not been told to leave alone, and the question it asks —
+"does this PR have auto-merge on?" — is answered by `autoMergeRequest` from
+`inventory`, freshly, on every firing. A PR that already has it is a no-op. A PR
+that doesn't gets it, one firing later than intended rather than never.
+
+Escalation is the one case that must survive, since a pass that re-enabled
+auto-merge on a PR a previous pass deliberately held back would be worse than the
+stranding. That is what `<!-- kit-escalated -->` is for: the reason a human is
+wanted is recorded on the PR at the moment it is decided, so a cold restart
+recomputes the same verdict from the same evidence.
 
 ### `kit-hold` — the human override
 
@@ -142,8 +172,11 @@ Detect the triage marker:
 
 ```
 gh api repos/{owner}/{repo}/issues/{N}/comments \
-  --jq '[.[] | select(.body | startswith("<!-- kit-triaged -->"))] | length'
+  --jq '[.[] | select(.body | startswith("<!-- kit-triaged -->")) | .body] | join("\n")'
 ```
+
+Take the bodies rather than a count: the same read decides `triaged` versus
+`escalated`, and a count cannot answer the second question.
 
 **The marker is the only sound idempotency signal.** "Has the branch moved since
 the review?" looks equivalent and isn't: `/kit:review-copilot` legitimately
@@ -216,6 +249,11 @@ commits with the per-item reasoning in the body, and pushes. Do not re-implement
 or second-guess any of it. Tell it this is an unattended `/kit:tend-prs` run so
 its `enable-auto-merge` step follows `merge-policy` below instead of prompting.
 
+`/kit:review-copilot`'s own `Step 8` says to stop without enabling auto-merge when
+this command invoked it. That is a handoff, not the end of the pass: it stops
+*that* command precisely so `merge-policy` below can own the decision. Continue to
+Step 5.
+
 Then write the marker, whatever the outcome:
 
 ```
@@ -226,13 +264,35 @@ gh pr comment <N> --body "<!-- kit-triaged -->
 One comment serves as both the durable record on the PR and `classify`'s
 idempotency signal. Post it even when nothing was fixed — *especially* then.
 
+When `merge-policy` escalates, the marker carries a second line naming why:
+
+```
+gh pr comment <N> --body "<!-- kit-triaged -->
+<!-- kit-escalated: gates could not be run (bundle exec rspec: command not found) -->
+<the Step 5 summary review-copilot produced>"
+```
+
+Write the escalation reason into the marker in the same comment, not a later one.
+A pass that posts the triage marker and then dies before recording *why* it was
+escalating leaves a PR that looks merely triaged, which is the stranding this is
+here to prevent — inverted.
+
 ---
 
 ## Step 5 · `merge-policy` — Auto-merge by default, escalate by exception
 
+**This step runs against every open PR that is neither `held`, `escalated`, nor
+`awaiting-review`** — the one triaged a minute ago in Step 4 and the one triaged
+three firings back alike. Skip any whose `autoMergeRequest` from `inventory` is
+already non-null; there is nothing to do and nothing to report.
+
 On a clean triage, run `gh pr merge <N> --auto --squash`. With a single review
 round there is nothing further to wait for, and leaving it off just means the PR
 sits green until you notice it.
+
+Re-running this on an already-triaged PR is safe by construction: enabling
+auto-merge is idempotent, it is the only write this step makes, and the merge
+itself stays GitHub's to perform once checks pass.
 
 **Escalate instead — notify, leave auto-merge off — when any of these hold:**
 
@@ -244,9 +304,18 @@ sits green until you notice it.
   runtime looks like an environment note rather than a red build.
 - `gh pr checks <N>` already shows a failing required check.
 
-An escalated PR stays `triaged`, so later firings leave it alone and it waits for
-you. Say which PR and which of the three reasons, so the notification is
-actionable without opening anything.
+An escalated PR is recorded as such on the PR itself, via the `<!-- kit-escalated -->`
+line in Step 4's marker, so later firings classify it `escalated`, leave it alone,
+and it waits for you. Say which PR and which of the three reasons, so the
+notification is actionable without opening anything — and put that same reason in
+the marker, so the next pass has it too.
+
+The first two reasons are things only the pass that ran the triage can observe. A
+PR triaged by an earlier firing carries the answer in its marker or does not have
+one, and "does not have one" means it was not escalated — do not re-derive it, and
+do not treat the absence as a reason to withhold auto-merge. The third reason,
+`gh pr checks <N>`, is live evidence and is checked on every firing regardless of
+which pass did the triage.
 
 If `gh pr merge` errors because auto-merge is disabled in repo settings, report it
 once and move on — don't retry it every firing.
@@ -298,6 +367,12 @@ pass, and it is the only record the firing leaves — there is no scrollback to 
 back to. Write it for someone reading a week of passes at once, looking for the
 skip that has been repeating.
 
+**Printing it is the whole of writing it.** The runner redirects this pass's
+output into that log itself; you have no file access outside the checkout and need
+none. Do not try to append to the log — the denial you get is not a finding about
+a boundary that is too narrow, it is the boundary correctly refusing a write that
+was already done for you.
+
 ### Outstanding pins
 
 Append one line when `<main-repo-root>/.claude/pins` holds anything — resolved
@@ -322,6 +397,12 @@ news is the pin count still prints its single line and stays silent.
 ```
 osascript -e 'display notification "<what happened>" with title "Claude Code" subtitle "<repo>" sound name "Glass"'
 ```
+
+Keep the single quotes and the exact word order. The grant matches the command as
+a literal string prefix, opening quote included, so `osascript -e "display ..."`
+and any reordering are a different command as far as the boundary is concerned and
+are denied. This is the one place in the pass where the phrasing of a command, not
+just its effect, has to match.
 
 Never notify on a quiet pass. A loop that pings every 20 minutes to say it did
 nothing is a loop you will turn off.
