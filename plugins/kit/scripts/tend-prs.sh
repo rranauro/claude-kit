@@ -387,7 +387,11 @@ log "idle survey: $(printf '%s' "$IDLE_SURVEY" | tr '\n' ';')"
 # when it runs into something it is not permitted to do.
 PROMPT="Run one complete /kit:tend-prs pass over ${REPO}, from the main checkout at ${MAIN_CHECKOUT}.
 
-Read ${COMMANDS_DIR}/tend-prs.md and follow it verbatim. Where it delegates to another /kit: command, read that command's file from the same directory and follow it the same way — /kit:review-copilot is review-copilot.md, /kit:cleanup-worktree is cleanup-worktree.md. Those files say to delegate 'via the Skill tool'; that does not work here, because the Skill tool resolves skills and these are commands. Reading the file is the delegation. Do not treat an 'Unknown skill' error as a reason to skip a step.
+Read ${COMMANDS_DIR}/tend-prs.md and follow it verbatim. Where it delegates to another /kit: command, read that command's file from the same directory and follow it the same way — /kit:review-copilot is review-copilot.md, /kit:cleanup-worktree is cleanup-worktree.md, /kit:commit is commit.md. Those files say to delegate 'via the Skill tool'; that does not work here, because the Skill tool resolves skills and these are commands. Reading the file is the delegation. Do not treat an 'Unknown skill' error as a reason to skip a step.
+
+That directory is outside your working directory, so listing it with ls or find is denied while the Read tool reaches it fine. Do not probe for a command file — every /kit: command names an existing <name>.md there, so read the one you need directly.
+
+Your report is captured to a log by this runner, which redirects your output into it. Print the Step 7 report and nothing more; do not try to write or append to any log file yourself.
 
 You are running headlessly from a scheduled launchd job. There is no terminal attached and no one to prompt — the command's no-questions constraint is a fact of this environment, not an instruction you could choose to disregard.
 
