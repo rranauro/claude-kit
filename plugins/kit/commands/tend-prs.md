@@ -227,8 +227,8 @@ agent's cwd, and every form of that is either unmatched by the grant or unsafe t
 grant: `git -C <path> status` fails the first-token rule, `cd <path> && git status`
 fails it too (the first token is `cd`), and a `Bash(cd:*)` prefix would match a
 compound command — putting every deny entry one `&&` away from being bypassed. So
-the grant genuinely cannot express it, and the answer is the one the README
-already reaches for with the escalation notification: the runner is plain bash,
+the grant genuinely cannot express it, and the answer is the one
+`docs/scheduled-tending.md` already reaches for with the escalation notification: the runner is plain bash,
 outside the grant, and hands in what it found. A verdict computed seconds before
 the pass starts is the same guarantee a check run inside it would give.
 

@@ -1,0 +1,77 @@
+# Hooks
+
+Both live in `plugins/kit/hooks/`. Register them in a **project's**
+`.claude/settings.json` rather than the global one, so each fires only for the
+repos you want it in.
+
+`pr-review-on-create.sh` — a `PostToolUse` hook that fires when `gh pr create`
+succeeds and delegates to `scripts/pr-review.sh`, which runs the review headless
+and posts it as a comment. Kill switch: `export SKIP_PR_REVIEW=1`.
+
+`rails-quality-gates.sh` — a `PreToolUse` hook that holds `git commit` to RuboCop
+and Brakeman on the staged Ruby files, blocking the commit with the tool output
+so Claude fixes it and retries. No-ops unless the `Gemfile` carries both. Kill
+switch: `export SKIP_RAILS_GATES=1`.
+
+## Registering them
+
+Add to the project's `.claude/settings.json` — both match on `Bash`, and they
+differ only in the event they hang off:
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /ABSOLUTE/PATH/TO/claude-kit/plugins/kit/hooks/pr-review-on-create.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /ABSOLUTE/PATH/TO/claude-kit/plugins/kit/hooks/rails-quality-gates.sh",
+            "timeout": 120
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Use an absolute path. `${CLAUDE_PLUGIN_ROOT}` only resolves for hooks a plugin
+registers itself, not for ones you wire up in your own settings — if you
+installed via the marketplace, the scripts are under
+`~/.claude/plugins/marketplaces/claude-kit/plugins/kit/hooks/`.
+
+The `timeout` on the Rails gate is worth keeping: Brakeman scans the whole app
+and the default timeout is not generous enough for a large one. Each script
+filters its own trigger — `pr-review-on-create` acts only on `gh pr create`,
+`rails-quality-gates` only on `git commit` — so the broad `Bash` matcher costs a
+fast no-op on every other command.
+
+## Why they aren't auto-registered
+
+A plugin can ship a `hooks/hooks.json` that turns its hooks on for every repo the
+plugin is enabled in. Neither of these should work that way: one spends tokens on
+a headless review, the other blocks your commits. Opting in per project is the
+point.
+
+## Why the Rails opinion is a hook and not a command
+
+A gate is binary — did it pass? — and a hook can't be talked out of it the way a
+command can when the code looks fine. Remediation is the opposite: triaging a
+Brakeman finding into a real XSS or a false positive is judgment, and a shell
+script has none. So the hook enforces and `/kit:commit` fixes, which keeps
+`/kit:commit` stack-neutral and lets non-Rails users simply not register the hook.
+Tests stay in the command for the same reason — choosing which tests cover a
+change is judgment, and a full suite would blow the hook timeout.
