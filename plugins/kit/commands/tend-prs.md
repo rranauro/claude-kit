@@ -11,7 +11,8 @@ Each firing is one complete, self-contained pass. Run it from the main checkout.
 
 **The intended way to run this is on a schedule, out of session** — install the
 launchd agent with `plugins/kit/scripts/install-tending.sh` and it fires whether
-or not anything is open. `/loop 20m /kit:tend-prs` does the same thing inside a
+or not anything is open. A firing with no judgment work to do costs no model at
+all; see `## What the runner does before you`. `/loop 20m /kit:tend-prs` does the same thing inside a
 session and is the way to watch a few passes before handing it over; it costs you
 the session it runs in, and it only runs when you remember to start it.
 
@@ -45,6 +46,48 @@ risk and lives in `/kit:start-next`, which you invoke deliberately.
   needs. Record what was denied and what it was for, then carry on with the rest
   of the pass. Never route around one — a way around a boundary nobody widened
   on purpose is the thing the boundary exists to prevent.
+
+---
+
+## What the runner does before you
+
+**This section is about unattended firings only.** Run by hand, you do every step
+below yourself and nothing here applies.
+
+The pass has two halves and only one of them needs a model. Verifying a review
+finding against the code, and judging whether a skipped item is non-minor, is
+judgment. The merge side is not: a merged PR is a fact GitHub reports, a worktree
+either matches its branch or does not, `kit-hold` is a label read rather than
+weighed, and fast-forwarding `main` is the same command every firing.
+
+That mattered because the merge side is the *common* case. Firing every ten
+minutes, roughly two thirds of passes had nothing to do but confirm it, and each
+one spent a full context — re-reading this file and its delegates before printing
+a line saying nothing happened.
+
+So `tend-prs.sh` does the mechanical half in plain bash on every firing, before
+it decides whether to start you at all:
+
+| It has already done | Which is |
+|---|---|
+| Fetched and fast-forwarded `main` | `Step 6`'s sync, and the standing request that `main` carry what merged |
+| Removed the worktrees and branches of merged PRs | `Step 6` entire |
+| Surveyed every surviving worktree for idleness | `Step 3`, handed to you as verdicts |
+
+Then it asks whether anything is left that needs judgment, and starts a model only
+if so. Three things trip that gate, each mapping to a step below:
+
+- reviews have landed and there is no triage marker → `Step 4` has a round to close
+- a check is failing and the PR is not yet escalated → `Step 5` has one escalation to record
+- the marker is present but auto-merge is off → `Step 5`'s stranding case
+
+**The gate over-approximates on purpose, and it is not your classification.** It
+answers the cheap question — "could there possibly be work here?" — and errs
+toward yes, because a false yes costs one quiet pass while a false no strands a
+PR forever. Every rule that decides what actually *happens* to a PR stays in this
+file, in one place. So when the prompt names the PRs that tripped the gate, treat
+that as the reason you were woken, not as an answer: derive each PR's state
+yourself per `Step 2`, and be willing to conclude a listed PR needs nothing.
 
 ---
 
@@ -205,7 +248,9 @@ would mean proving a held worktree idle in order to then not touch it.
    in full, both halves) and whether a process has its cwd inside it. Where the
    answers come from depends on who is running:
    - **Unattended**, `tend-prs.sh` surveys every linked worktree in plain bash
-     immediately before invoking you and passes the verdicts in as
+     after its own cleanup and immediately before invoking you — so the list
+     describes the worktrees that survived this firing, not the ones it started
+     with — and passes the verdicts in as
      `<path> <branch> <idle|busy> <reason>`. Use them as given. Do **not**
      re-derive them: you are not permitted to, and the attempt is what stalls the
      pass rather than something to work around.
@@ -358,23 +403,28 @@ it stays: a worktree the survey reports `busy` for uncommitted work still stops
 that one cleanup, and that is the behavior you want from something deleting
 directories unattended.
 
-**Unattended, the removal itself is the runner's, not yours.** Its `Step 5`
-sweeps the husk with `rm -rf`, and the grant denies `rm` deliberately — a
-scheduled job composing a path to delete recursively, with nobody watching, is
-the one thing worth keeping out of reach. So `Steps 5` through `7` are not yours
-to run: decide eligibility, then append the worktree's path to the removal
-request file `tend-prs.sh` names in your prompt, and report it as cleaned up.
-The runner re-validates every path against `git worktree list` and re-checks it
-is idle at the moment it deletes it, so a stale nomination costs a skip rather
-than a wrong directory.
+**Unattended, this entire step is the runner's and none of it is yours.** It has
+already run by the time you start. Do not query merged PRs, do not nominate a
+worktree for removal, and do not report cleanup — `tend-prs.sh` logs what it
+removed itself, and a report claiming credit for it is just noise in the log.
 
-`Steps 1` and `2` still apply to you as written — resolving the worktree and
-verifying the PR is `MERGED` is exactly the eligibility you are nominating on.
-`Step 6` splits: its `main` sync is yours and worth doing either way, but its
-branch delete is the runner's, because git refuses to delete a branch that is
-still checked out in a worktree and the worktree is still there while you are
-running. Issue the fetch and the pull as two calls, not one `&&` chain — a
-compound command fails the grant's first-token rule whatever its parts are.
+That is not a permissions workaround; it is where the step belongs. Nothing here
+needs judgment — a merged PR is a fact GitHub reports, a worktree either matches
+its branch or does not, and `kit-hold` is a label read rather than weighed — so
+the whole step reduces to `gh` output intersected with `git worktree list`. It
+was worth moving because it was the *only* thing most firings had to do, and
+starting a model to discover that cost a context per pass to accomplish nothing.
+See `## What the runner does before you`.
+
+Two parts of it genuinely could not stay here anyway, which is what made the
+split obvious. `Step 5`'s husk sweep needs `rm`, and the grant denies `rm`
+deliberately — a scheduled job composing a path to delete recursively, with
+nobody watching, is the one thing worth keeping out of reach. And `Step 6`'s
+branch delete has to happen *after* the worktree is gone, because git refuses to
+delete a branch that is still checked out in one.
+
+**Attended, do the whole step yourself** exactly as written above — you have the
+permissions, and a person is there to answer the gates.
 
 Do **not** delegate to `/kit:worktree-gc` here. It refuses to remove anything
 without confirmation by design, and it sweeps orphan directories — neither
