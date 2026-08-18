@@ -370,17 +370,26 @@ survey_worktree() {
   printf '%s\t%s\tidle\t-\n' "$wt" "$branch"
 }
 
+# Run *after* the merge-side cleanup, never before it. The survey is what the
+# model is handed in place of a check it cannot make, and a worktree this pass
+# removed a moment ago has no business appearing in it — a verdict for a path
+# that no longer exists is the one kind of staleness the re-check at deletion
+# cannot catch, because nothing gets deleted twice.
 IDLE_SURVEY=""
-while IFS= read -r wt_path; do
-  [ -z "$wt_path" ] && continue
-  [ "$wt_path" = "$MAIN_CHECKOUT" ] && continue
-  wt_branch="$(cd "$wt_path" 2>/dev/null && git rev-parse --abbrev-ref HEAD 2>/dev/null)"
-  IDLE_SURVEY="${IDLE_SURVEY}$(survey_worktree "$wt_path" "${wt_branch:-unknown}")
+run_idle_survey() {
+  local wt_path wt_branch
+  IDLE_SURVEY=""
+  while IFS= read -r wt_path; do
+    [ -z "$wt_path" ] && continue
+    [ "$wt_path" = "$MAIN_CHECKOUT" ] && continue
+    wt_branch="$(cd "$wt_path" 2>/dev/null && git rev-parse --abbrev-ref HEAD 2>/dev/null)"
+    IDLE_SURVEY="${IDLE_SURVEY}$(survey_worktree "$wt_path" "${wt_branch:-unknown}")
 "
-done < <(git -C "$MAIN_CHECKOUT" worktree list --porcelain 2>/dev/null | awk '/^worktree /{print $2}')
+  done < <(git -C "$MAIN_CHECKOUT" worktree list --porcelain 2>/dev/null | awk '/^worktree /{print $2}')
 
-[ -z "$IDLE_SURVEY" ] && IDLE_SURVEY="(no linked worktrees)"
-log "idle survey: $(printf '%s' "$IDLE_SURVEY" | tr '\n' ';')"
+  [ -z "$IDLE_SURVEY" ] && IDLE_SURVEY="(no linked worktrees)"
+  log "idle survey: $(printf '%s' "$IDLE_SURVEY" | tr '\n' ';')"
+}
 
 # --- Teardown requests --------------------------------------------------------
 # Removing a worktree is the other half of the problem the idle survey solved,
@@ -391,17 +400,20 @@ log "idle survey: $(printf '%s' "$IDLE_SURVEY" | tr '\n' ';')"
 # between a bad path and an unrecoverable sweep. Granting it back to buy one
 # repo its cleanup would spend the boundary for every repo the kit tends.
 #
-# So the agent nominates and the runner executes. The agent decides *which*
-# worktrees are eligible — that needs merged-PR state and `kit-hold`, which only
-# it has fetched — and writes their paths here, one per line. This runs the
-# teardown afterwards in plain bash, outside the grant entirely.
+# It does not need one. Deciding which worktrees are eligible turned out to need
+# no judgment either — a merged PR is a fact GitHub reports and `kit-hold` is a
+# label read rather than weighed — so `merged_cleanup` below nominates in bash
+# and this executes, both outside the grant, and the model is never involved in
+# the merge side at all.
 #
-# The asymmetry is what makes it safe: a nomination is a *name*, never a path to
-# delete. It is matched against what `git worktree list` reports for this
-# checkout at teardown time, so the only paths that can be swept are ones git
-# already agrees are linked worktrees of this repo. A path the model composed,
-# a typo, a directory outside the repo, or MAIN_CHECKOUT itself matches nothing
-# and is refused.
+# Nomination stays a separate step from deletion even though both are now bash,
+# because the validation is worth keeping wherever the names come from: every
+# path is matched against what `git worktree list` reports for this checkout at
+# teardown time, so the only directories reachable are ones git already agrees
+# are linked worktrees of this repo. A malformed branch name, a path outside the
+# repo, or MAIN_CHECKOUT itself matches nothing and is refused. That guard cost
+# nothing to write and is the difference between a bug and an unrecoverable
+# `rm -rf`.
 REMOVAL_REQUEST="$(mktemp -t tend-prs-removals)" || {
   echo "error: could not create removal request file" >&2; exit 1; }
 
@@ -497,57 +509,275 @@ perform_teardown() {
   return 0
 }
 
-# --- Prompt -------------------------------------------------------------------
-# The pass itself is /kit:tend-prs. This says only what the command cannot know
-# about its own invocation: that there is genuinely no terminal, and what to do
-# when it runs into something it is not permitted to do.
-PROMPT="Run one complete /kit:tend-prs pass over ${REPO}, from the main checkout at ${MAIN_CHECKOUT}.
+# --- Merge-side lifecycle (no model) ------------------------------------------
+# The pass has two halves and only one of them needs judgment. Verifying a
+# review finding against the code is the model's work. The merge side is not:
+# a merged PR is a fact GitHub reports, a worktree either matches its branch or
+# does not, `kit-hold` is a label read rather than weighed, and fast-forwarding
+# main is the same command every firing. Spawning a whole context to discover
+# that is what made roughly two thirds of these passes cost a model to report
+# they had nothing to do.
+#
+# So this half runs in bash on every firing, whether or not a model is started.
 
-Read ${COMMANDS_DIR}/tend-prs.md and follow it verbatim. Where it delegates to another /kit: command, read that command's file from the same directory and follow it the same way — /kit:review-copilot is review-copilot.md, /kit:cleanup-worktree is cleanup-worktree.md, /kit:commit is commit.md. Those files say to delegate 'via the Skill tool'; that does not work here, because the Skill tool resolves skills and these are commands. Reading the file is the delegation. Do not treat an 'Unknown skill' error as a reason to skip a step.
+# Path of the linked worktree checked out on a branch, empty if none is.
+worktree_for_branch() {
+  git -C "$MAIN_CHECKOUT" worktree list --porcelain 2>/dev/null | awk -v want="refs/heads/$1" '
+    /^worktree /{ path = $2 }
+    /^branch /  { if ($2 == want) { print path; exit } }'
+}
 
-That directory is outside your working directory, so listing it with ls or find is denied while the Read tool reaches it fine. Do not probe for a command file — every /kit: command names an existing <name>.md there, so read the one you need directly.
+# `/kit:cleanup-worktree` Step 6's first half, and the standing request that main
+# actually carry the merges this pass just cleaned up after.
+#
+# Every guard here is about not being the thing that loses work: it touches main
+# only when main is what is checked out, only when nothing is uncommitted, and
+# only when the move is a genuine fast-forward. Anything else is logged and left,
+# because a scheduled job resolving a divergence unattended is how you find out
+# it did the wrong one.
+main_sync() {
+  local branch head
+  git -C "$MAIN_CHECKOUT" fetch origin main --quiet 2>/dev/null
 
-Your report is captured to a log by this runner, which redirects your output into it. Print the Step 7 report and nothing more; do not try to write or append to any log file yourself.
+  branch="$(git -C "$MAIN_CHECKOUT" rev-parse --abbrev-ref HEAD 2>/dev/null)"
+  if [ "$branch" != "main" ]; then
+    log "main sync: skipped — main checkout is on '${branch:-unknown}', not main"
+    return 0
+  fi
+  if [ -n "$(git -C "$MAIN_CHECKOUT" status --porcelain 2>/dev/null)" ]; then
+    log "main sync: skipped — main checkout has uncommitted changes"
+    return 0
+  fi
+  if ! git -C "$MAIN_CHECKOUT" merge-base --is-ancestor HEAD origin/main 2>/dev/null; then
+    log "main sync: local main holds commits origin/main does not; left alone"
+    return 0
+  fi
+  if git -C "$MAIN_CHECKOUT" diff --quiet HEAD origin/main 2>/dev/null; then
+    log "main sync: already current"
+    return 0
+  fi
+  if git -C "$MAIN_CHECKOUT" merge --ff-only origin/main --quiet 2>/dev/null; then
+    head="$(git -C "$MAIN_CHECKOUT" rev-parse --short HEAD 2>/dev/null)"
+    log "main sync: fast-forwarded main to ${head}"
+  else
+    log "main sync: fast-forward refused; left alone"
+  fi
+}
 
-You are running headlessly from a scheduled launchd job. There is no terminal attached and no one to prompt — the command's no-questions constraint is a fact of this environment, not an instruction you could choose to disregard.
+# Step 6. Nominates the worktree of every merged PR that is not held, then hands
+# the list to the teardown that already validates and re-checks each one.
+#
+# A merged PR still carrying `kit-hold` keeps its worktree — merging does not
+# retire the hold, and that is the case the override exists for: a verification
+# walk that outlives the merge still needs the worktree it is walking in.
+merged_cleanup() {
+  local line state num branch path nominated=0
 
-This pass's \`idle-check\` verdicts, surveyed by the runner immediately before you started, one line per linked worktree as <path> <branch> <idle|busy> <reason>:
+  while IFS=$'\t' read -r state num branch; do
+    [ -z "$branch" ] && continue
+    path="$(worktree_for_branch "$branch")"
+    [ -z "$path" ] && continue
 
-${IDLE_SURVEY}
-Treat these as the answer to Step 3 and do not re-derive them — you are not permitted to, and the attempt is what stalls a pass. A worktree absent from this list has none; \`busy\` means skip and report the reason verbatim. The survey is a snapshot taken seconds ago, which is the same guarantee a check you ran yourself would give.
+    if [ "$state" = "held" ]; then
+      log "cleanup: PR #${num} (${branch}) merged but held by kit-hold; worktree kept"
+      continue
+    fi
+    printf '%s\n' "$path" >>"$REMOVAL_REQUEST"
+    log "cleanup: nominated ${path} (PR #${num}, ${branch}, merged)"
+    nominated=$((nominated + 1))
+  done < <(gh pr list --author @me --state merged --limit 30 \
+             --json number,headRefName,labels \
+             --jq '.[] | [((.labels // []) | map(.name) | if index("kit-hold") then "held" else "free" end), (.number|tostring), .headRefName] | @tsv' \
+           2>/dev/null)
 
-You cannot remove a worktree yourself — \`rm\` is denied to you by design, and the husk sweep in \`/kit:cleanup-worktree\` Step 5 needs it. This runner does the removal after you finish. So for Step 7 cleanup, decide eligibility as the command says — the PR is \`MERGED\`, it does not carry \`kit-hold\`, and the survey above reports the worktree \`idle\` — and then, instead of running \`/kit:cleanup-worktree\` Steps 5 through 7, append that worktree's absolute path as one line to:
+  [ "$nominated" -eq 0 ] && log "cleanup: no merged-PR worktrees to remove"
+  return 0
+}
 
-${REMOVAL_REQUEST}
+# --- The gate -----------------------------------------------------------------
+# Whether this firing needs a model at all.
+#
+# This deliberately does **not** re-implement `classify`. It answers the cheaper
+# question — "could there possibly be model work here?" — and errs toward yes.
+# Every rule that decides what actually happens to a PR stays in tend-prs.md,
+# in one place, where it is documented and can be reasoned about; duplicating it
+# here in jq would give it a second home that drifts from the first, and the
+# failure mode of that drift is a PR silently never triaged.
+#
+# So the gate is an over-approximation on purpose. A false yes costs one pass
+# that reports nothing happened, which is what every pass costs today. A false
+# no would strand a PR, so nothing here may be clever.
+#
+# The three triggers, per the command's own steps:
+#
+#   reviews landed, no marker  → Step 4 has triage to do
+#   a failing check, unescalated → Step 5 has one escalation to record, once
+#   marker present, auto-merge off → Step 5's stranding case
+#
+# Escalated PRs are excluded throughout: the whole point of the marker is that a
+# human was asked for, so re-spawning a model to re-reach that verdict every ten
+# minutes is the loop this gate exists to stop. That bound is what makes the
+# failing-check trigger affordable — it fires once per red PR, not once per
+# firing, because the marker it writes is durable.
+GATE_REASONS=""
 
-Nothing else goes in that file, one path per line, and only paths that appeared verbatim in the survey above. The runner re-checks each one is idle at the moment it deletes it, then stops the worktree's daemons, removes it, sweeps the husk, deletes the merged branch, and prunes. Report those worktrees as cleaned up in your Step 7 report, noting the runner performs the removal.
+needs_model() {
+  local num branch draft age amr labels markers escalated copilot_inline copilot_review claude_review failing
 
-Steps 3 and 4 of \`/kit:cleanup-worktree\` are both already answered by the survey above — Step 3's uncommitted-work check is what the survey's \`busy\`/\`idle\` verdict *is*, applying that step's known-safe rule in full. Do not run \`git -C <worktree> status --porcelain\` to re-derive it; that call is not permitted here and attempting it is what has been stalling cleanup. Steps 1, 2, and 6 of that command still apply to you as written.
+  while IFS=$'\t' read -r num branch draft age amr labels; do
+    [ -z "$num" ] && continue
+    [ "$draft" = "true" ] && continue
+    case ",${labels}," in *,kit-hold,*) continue ;; esac
 
-Your permissions are a fixed allowlist. If you need a tool or command outside it, the call fails: do not retry it, do not look for another way around it, and do not treat the denial as a reason to skip silently. Record what was denied and why you wanted it, then carry on with the rest of the pass — a permission boundary that turns out to be too narrow is something to widen deliberately, after reading the report.
+    # One read answers both "is there a marker" and "does it escalate", which is
+    # why the bodies are taken rather than a count.
+    markers="$(gh api "repos/${REPO}/issues/${num}/comments" \
+      --jq '[.[] | select(.body | startswith("<!-- kit-triaged -->")) | .body] | join("\n")' 2>/dev/null)"
+    case "$markers" in *'<!-- kit-escalated'*) continue ;; esac
 
-Finish by printing the command's Step 7 report, in full, including every skip reason. It is written to a log nobody is watching in real time, so the report is the whole record of this pass."
+    if [ -n "$markers" ]; then
+      # Triaged. The only remaining question is whether it is actually on its way
+      # to merging; `null` here is the stranding Step 5 describes.
+      if [ "$amr" = "null" ] || [ -z "$amr" ]; then
+        GATE_REASONS="${GATE_REASONS}  PR #${num} (${branch}): triaged but auto-merge is off
+"
+      fi
+      continue
+    fi
 
+    # No marker. Has the review round landed? Logins are matched
+    # case-insensitively because Copilot's inline comments come from `Copilot`
+    # and its top-level review from `copilot-pull-request-reviewer[bot]`;
+    # without the "i" the inline pass silently finds nothing.
+    copilot_inline="$(gh api "repos/${REPO}/pulls/${num}/comments" \
+      --jq '[.[] | select(.user.login | test("copilot|github-actions"; "i"))] | length' 2>/dev/null)"
+    copilot_review="$(gh api "repos/${REPO}/pulls/${num}/reviews" \
+      --jq '[.[] | select(.user.login | test("copilot|github-actions"; "i"))] | length' 2>/dev/null)"
+    claude_review="$(gh api "repos/${REPO}/issues/${num}/comments" \
+      --jq '[.[] | select(.body | startswith("<!-- claude-pr-review -->"))] | length' 2>/dev/null)"
+
+    local has_copilot=0 has_claude=0
+    [ "${copilot_inline:-0}" -gt 0 ] 2>/dev/null && has_copilot=1
+    [ "${copilot_review:-0}" -gt 0 ] 2>/dev/null && has_copilot=1
+    [ "${claude_review:-0}" -gt 0 ] 2>/dev/null && has_claude=1
+
+    # Both, or — past 30 minutes — whichever one is ever going to arrive. The
+    # age escape is what stops a hook that failed to fire from stranding the PR.
+    if [ "$has_copilot" = "1" ] && [ "$has_claude" = "1" ]; then
+      GATE_REASONS="${GATE_REASONS}  PR #${num} (${branch}): both reviews landed, not yet triaged
+"
+    elif [ "${age:-0}" -ge 30 ] 2>/dev/null && { [ "$has_copilot" = "1" ] || [ "$has_claude" = "1" ]; }; then
+      GATE_REASONS="${GATE_REASONS}  PR #${num} (${branch}): one review landed ${age}m ago, not yet triaged
+"
+    fi
+
+    # A red check is worth one escalation, and the marker check above means it
+    # is worth exactly one.
+    failing="$(gh pr view "$num" --json statusCheckRollup \
+      --jq '[(.statusCheckRollup // [])[] | select((.conclusion // .state) as $c | $c == "FAILURE" or $c == "ERROR" or $c == "TIMED_OUT")] | length' 2>/dev/null)"
+    if [ "${failing:-0}" -gt 0 ] 2>/dev/null; then
+      GATE_REASONS="${GATE_REASONS}  PR #${num} (${branch}): ${failing} failing check(s), not yet escalated
+"
+    fi
+  done < <(gh pr list --author @me --state open --limit 50 \
+             --json number,headRefName,isDraft,createdAt,labels,autoMergeRequest \
+             --jq '.[] | [(.number|tostring), .headRefName, (.isDraft|tostring),
+                          (((now - (.createdAt|fromdateiso8601)) / 60) | floor | tostring),
+                          (if .autoMergeRequest == null then "null" else "set" end),
+                          ((.labels // []) | map(.name) | join(","))] | @tsv' \
+           2>/dev/null)
+
+  [ -n "$GATE_REASONS" ]
+}
+# --- Dry run ------------------------------------------------------------------
+# Evaluated before anything is written, so --dry-run can be used to ask "would
+# this firing have started a model, and why" without syncing, deleting, or
+# spawning anything.
 if [ "$DRY_RUN" = "1" ]; then
   echo "repo:     ${REPO}"
   echo "checkout: ${MAIN_CHECKOUT}"
   echo "settings: ${SETTINGS}"
   echo "overlay:  ${OVERLAY_NOTE}"
   echo "log:      ${LOG}"
-  echo "removals: ${REMOVAL_REQUEST}"
   echo "commands: ${COMMANDS_DIR}"
-  echo "would run: ${CLAUDE_BIN} -p --model ${MODEL} --setting-sources '' --settings ${EFFECTIVE_SETTINGS} <prompt>"
+  if needs_model; then
+    echo "gate:     MODEL NEEDED"
+    printf '%s' "$GATE_REASONS"
+    echo "would run: ${CLAUDE_BIN} -p --model ${MODEL} --setting-sources '' --settings ${EFFECTIVE_SETTINGS} <prompt>"
+  else
+    echo "gate:     no model needed — merge-side work only, would run in bash and exit"
+  fi
   exit 0
 fi
 
 # --- Run ----------------------------------------------------------------------
-log "=== pass start repo=${REPO} checkout=${MAIN_CHECKOUT} model=${MODEL} auth=subscription${AUTH_NOTE} overlay=${OVERLAY_NOTE}"
+log "=== pass start repo=${REPO} checkout=${MAIN_CHECKOUT} auth=subscription${AUTH_NOTE} overlay=${OVERLAY_NOTE}"
 
 # A hung pass must not hold the lock until the next reboot. `timeout` is not on
 # a stock macOS, so the watchdog is a background sleep that kills this process
 # group — cheap, and it fires whether the hang is in the model or in a gh call.
+# Armed before the bash phases, not just the model: a `gh` call can hang too.
 ( sleep "$TIMEOUT"; kill -TERM -$$ 2>/dev/null ) &
 WATCHDOG=$!
+
+# --- Phase 1: the merge side, in bash -----------------------------------------
+# Runs on every firing whether or not a model is started. Ordered by dependency:
+# main has to carry the merges before a branch delete can tell a merged branch
+# from an unmerged one, and the survey has to describe the worktrees that are
+# still there after the cleanup rather than the ones that were there before it.
+main_sync
+merged_cleanup
+perform_teardown
+run_idle_survey
+
+# --- Phase 2: the gate --------------------------------------------------------
+# The only reason left to spend a model. Everything above was mechanical; what
+# remains — verifying a review finding against the code, judging whether a
+# skipped item is non-minor — is not.
+if ! needs_model; then
+  log "=== pass end ok (no model needed)"
+  kill "$WATCHDOG" 2>/dev/null
+  exit 0
+fi
+
+log "model needed:$(printf '\n%s' "$GATE_REASONS" | tr '\n' ';')"
+
+# --- Phase 3: the model -------------------------------------------------------
+# The pass itself is /kit:tend-prs. This says only what the command cannot know
+# about its own invocation: that there is genuinely no terminal, which of its
+# steps the runner has already carried out, and what to do when it runs into
+# something it is not permitted to do.
+PROMPT="Run one /kit:tend-prs pass over ${REPO}, from the main checkout at ${MAIN_CHECKOUT}.
+
+Read ${COMMANDS_DIR}/tend-prs.md and follow it verbatim, with the exception of the steps named below as already done. Where it delegates to another /kit: command, read that command's file from the same directory and follow it the same way — /kit:review-copilot is review-copilot.md, /kit:commit is commit.md. Those files say to delegate 'via the Skill tool'; that does not work here, because the Skill tool resolves skills and these are commands. Reading the file is the delegation. Do not treat an 'Unknown skill' error as a reason to skip a step.
+
+That directory is outside your working directory, so listing it with ls or find is denied while the Read tool reaches it fine. Do not probe for a command file — every /kit: command names an existing <name>.md there, so read the one you need directly.
+
+You are running headlessly from a scheduled launchd job. There is no terminal attached and no one to prompt — the command's no-questions constraint is a fact of this environment, not an instruction you could choose to disregard.
+
+**This runner already did the merge side of the pass in plain bash, before starting you.** It is not yours to redo, and you have neither the permissions nor the evidence to redo it correctly:
+
+- Step 6 \`cleanup\` is **done**. Merged PRs were matched to worktrees, anything carrying \`kit-hold\` was left alone, and the rest were removed along with their branches. Do not query merged PRs, do not nominate anything for removal, and do not report worktree cleanup — the runner logs that itself. Report only what you did.
+- The \`main\` sync is **done** — main was fetched and fast-forwarded where that was safe.
+- Step 3 \`idle-check\` is **answered**, below.
+
+What is left for you is Steps 1, 2, 4, 5 and 7 — take the inventory, classify each open PR, triage the review rounds, apply the merge policy, and report.
+
+You were started because the gate below found work that needs judgment. These are the PRs that tripped it, as the runner saw them seconds ago:
+
+${GATE_REASONS}
+Treat that as a reason you were woken, not as your classification. Derive each PR's state yourself per Step 2 — the gate deliberately over-approximates, so a PR listed here may turn out to need nothing, and that is a fine outcome to report. Do not skip a PR merely because it is absent from the list.
+
+This pass's \`idle-check\` verdicts, surveyed by the runner after the cleanup above and immediately before you started, one line per surviving linked worktree as <path> <branch> <idle|busy> <reason>:
+
+${IDLE_SURVEY}
+Treat these as the answer to Step 3 and do not re-derive them — you are not permitted to, and the attempt is what stalls a pass. A worktree absent from this list has none; \`busy\` means skip and report the reason verbatim. In particular do not run \`git -C <worktree> status --porcelain\`: that call is denied here, and the \`uncommitted work:\` reason in a \`busy\` verdict is already that check's answer.
+
+Your report is captured to a log by this runner, which redirects your output into it. Print the Step 7 report and nothing more; do not try to write or append to any log file yourself.
+
+Your permissions are a fixed allowlist. If you need a tool or command outside it, the call fails: do not retry it, do not look for another way around it, and do not treat the denial as a reason to skip silently. Record what was denied and why you wanted it, then carry on with the rest of the pass — a permission boundary that turns out to be too narrow is something to widen deliberately, after reading the report.
+
+Finish by printing the command's Step 7 report, in full, including every skip reason. It is written to a log nobody is watching in real time, so the report is the whole record of this pass."
 
 # --setting-sources '' loads no user, project, or local settings, so the grant
 # is exactly this file. Without it the pass inherits ~/.claude/settings.json and
@@ -565,14 +795,8 @@ STATUS=$?
 
 kill "$WATCHDOG" 2>/dev/null
 
-# Run the teardown the pass nominated, whatever its exit status. A pass that
-# died after verifying a merged PR and writing the nomination has still done the
-# work of deciding; every path is re-validated and re-checked for idleness here,
-# so acting on the file is no more trusting than acting on a clean exit.
-perform_teardown
-
 if [ "$STATUS" -eq 0 ]; then
-  log "=== pass end ok"
+  log "=== pass end ok (model ran on ${MODEL})"
 else
   log "=== pass end FAILED (exit ${STATUS})"
   # Escalate the same way the command does. A pass that cannot run at all is
