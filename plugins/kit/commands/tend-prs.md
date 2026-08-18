@@ -232,9 +232,22 @@ the grant genuinely cannot express it, and the answer is the one
 outside the grant, and hands in what it found. A verdict computed seconds before
 the pass starts is the same guarantee a check run inside it would give.
 
-Step 3 replaces `/kit:cleanup-worktree` `Step 4`, which asks the user whether the
-branch is checked out elsewhere. That question has a mechanical answer; this is
-it. Do not ask it.
+Step 3 replaces **both** of `/kit:cleanup-worktree`'s gates, and it is the same
+verdict answering them:
+
+- Its `Step 4` asks the user whether the branch is checked out elsewhere. That
+  question has a mechanical answer; this is it. Do not ask it.
+- Its `Step 3` checks the worktree for uncommitted work. That check *is* what
+  produced the `idle`/`busy` verdict you were handed — the known-safe rule it
+  describes was applied in full, both halves, to produce it. Unattended, do not
+  run `git -C <worktree> status --porcelain` to re-derive it: the paragraph above
+  is about that exact command, and the denial stalls the cleanup rather than
+  deferring it. `busy` with an `uncommitted work:` reason **is** that step
+  stopping the cleanup, reported the way it asks for.
+
+Because the known-safe leftovers were already excluded to reach `idle`, an
+`idle` worktree is one that step would have cleared with `--force` — which is
+why the runner removes with `--force` and you do not need to flag it.
 
 ---
 
@@ -339,9 +352,29 @@ For each remaining match that passes `idle-check`, delegate to
 state itself, stops per-directory daemons, removes the worktree, sweeps the husk,
 syncs `main`, and deletes the branch.
 
-Its `Step 4` is replaced by `idle-check`, per Step 3. Every other gate in it
-stays: an unexpectedly dirty worktree still stops that one cleanup, and that is
-the behavior you want from something deleting directories unattended.
+Its `Steps 3 and 4` are replaced by `idle-check`, per Step 3 — that verdict
+answers both, and re-deriving either is what stalls a pass. Every other gate in
+it stays: a worktree the survey reports `busy` for uncommitted work still stops
+that one cleanup, and that is the behavior you want from something deleting
+directories unattended.
+
+**Unattended, the removal itself is the runner's, not yours.** Its `Step 5`
+sweeps the husk with `rm -rf`, and the grant denies `rm` deliberately — a
+scheduled job composing a path to delete recursively, with nobody watching, is
+the one thing worth keeping out of reach. So `Steps 5` through `7` are not yours
+to run: decide eligibility, then append the worktree's path to the removal
+request file `tend-prs.sh` names in your prompt, and report it as cleaned up.
+The runner re-validates every path against `git worktree list` and re-checks it
+is idle at the moment it deletes it, so a stale nomination costs a skip rather
+than a wrong directory.
+
+`Steps 1` and `2` still apply to you as written — resolving the worktree and
+verifying the PR is `MERGED` is exactly the eligibility you are nominating on.
+`Step 6` splits: its `main` sync is yours and worth doing either way, but its
+branch delete is the runner's, because git refuses to delete a branch that is
+still checked out in a worktree and the worktree is still there while you are
+running. Issue the fetch and the pull as two calls, not one `&&` chain — a
+compound command fails the grant's first-token rule whatever its parts are.
 
 Do **not** delegate to `/kit:worktree-gc` here. It refuses to remove anything
 without confirmation by design, and it sweeps orphan directories — neither
