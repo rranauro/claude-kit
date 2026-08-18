@@ -209,6 +209,7 @@ printf '%s' "$$" >"${LOCK}/pid"
 cleanup() {
   rm -rf "$LOCK"
   [ "$EFFECTIVE_SETTINGS" != "$SETTINGS" ] && rm -f "$EFFECTIVE_SETTINGS"
+  [ -n "${REMOVAL_REQUEST:-}" ] && rm -f "$REMOVAL_REQUEST"
   return 0
 }
 trap cleanup EXIT INT TERM
@@ -381,6 +382,121 @@ done < <(git -C "$MAIN_CHECKOUT" worktree list --porcelain 2>/dev/null | awk '/^
 [ -z "$IDLE_SURVEY" ] && IDLE_SURVEY="(no linked worktrees)"
 log "idle survey: $(printf '%s' "$IDLE_SURVEY" | tr '\n' ';')"
 
+# --- Teardown requests --------------------------------------------------------
+# Removing a worktree is the other half of the problem the idle survey solved,
+# and it splits the same way. `/kit:cleanup-worktree` Step 5 sweeps the husk
+# `git worktree remove` leaves behind with `chmod -R u+w` and `rm -rf`, and the
+# kit's grant denies `rm:*` on purpose — this is a scheduled job deleting
+# directories with nobody watching, and that deny is the one entry standing
+# between a bad path and an unrecoverable sweep. Granting it back to buy one
+# repo its cleanup would spend the boundary for every repo the kit tends.
+#
+# So the agent nominates and the runner executes. The agent decides *which*
+# worktrees are eligible — that needs merged-PR state and `kit-hold`, which only
+# it has fetched — and writes their paths here, one per line. This runs the
+# teardown afterwards in plain bash, outside the grant entirely.
+#
+# The asymmetry is what makes it safe: a nomination is a *name*, never a path to
+# delete. It is matched against what `git worktree list` reports for this
+# checkout at teardown time, so the only paths that can be swept are ones git
+# already agrees are linked worktrees of this repo. A path the model composed,
+# a typo, a directory outside the repo, or MAIN_CHECKOUT itself matches nothing
+# and is refused.
+REMOVAL_REQUEST="$(mktemp -t tend-prs-removals)" || {
+  echo "error: could not create removal request file" >&2; exit 1; }
+
+# Everything `/kit:cleanup-worktree` Steps 5-7 do, for one worktree git has
+# already confirmed is its own. Ordered so a failure stops that worktree rather
+# than half-finishing it: the branch delete and the husk sweep only run once the
+# `worktree remove` has actually succeeded.
+teardown_worktree() {
+  local wt="$1" branch="$2"
+
+  # Per-directory daemons bound to this path. reclaim_daemons already stopped
+  # the ones the survey recognizes, but the pass ran for minutes since — an
+  # autoformat hook during triage restarts a rubocop server on the very
+  # worktree about to be removed.
+  reclaim_daemons "$wt"
+
+  if ! git -C "$MAIN_CHECKOUT" worktree remove --force "$wt" 2>/dev/null; then
+    log "teardown: FAILED to remove worktree ${wt} — left in place"
+    return 1
+  fi
+
+  # `git worktree remove` deregisters git's bookkeeping and routinely leaves
+  # runtime files written while the app was booted here — bootsnap caches, logs,
+  # uploads — some read-only because their writer made them so. Without the
+  # chmod the rm partially fails and leaves an orphan directory that VS Code and
+  # Finder still show. Both are no-ops when the path is already gone.
+  if [ -d "$wt" ]; then
+    chmod -R u+w "$wt" 2>/dev/null
+    rm -rf "$wt" 2>/dev/null
+  fi
+  [ -d "$wt" ] && log "teardown: husk remains at ${wt} after sweep"
+
+  # Safe delete first. A squash-merge leaves the branch's commits out of main's
+  # ancestry, so git refuses -d on work that is genuinely merged; the agent only
+  # nominates worktrees whose PR it verified MERGED, which is what makes -D the
+  # right escalation rather than a guess.
+  if [ -n "$branch" ] && [ "$branch" != "unknown" ]; then
+    if git -C "$MAIN_CHECKOUT" branch -d "$branch" 2>/dev/null; then
+      log "teardown: removed ${wt} and deleted branch ${branch}"
+    elif git -C "$MAIN_CHECKOUT" branch -D "$branch" 2>/dev/null; then
+      log "teardown: removed ${wt} and force-deleted squash-merged branch ${branch}"
+    else
+      log "teardown: removed ${wt}; branch ${branch} could not be deleted"
+    fi
+  else
+    log "teardown: removed ${wt} (no branch resolved)"
+  fi
+  return 0
+}
+
+perform_teardown() {
+  local path branch verdict registered removed=0 refused=0
+
+  [ -s "$REMOVAL_REQUEST" ] || { log "teardown: no worktrees nominated"; return 0; }
+
+  registered="$(git -C "$MAIN_CHECKOUT" worktree list --porcelain 2>/dev/null | awk '/^worktree /{print $2}')"
+
+  while IFS= read -r path; do
+    path="${path#"${path%%[![:space:]]*}"}"
+    path="${path%"${path##*[![:space:]]}"}"
+    [ -z "$path" ] && continue
+    case "$path" in '#'*) continue ;; esac
+
+    if [ "$path" = "$MAIN_CHECKOUT" ] || ! printf '%s\n' "$registered" | grep -qxF "$path"; then
+      log "teardown: REFUSED ${path} — not a linked worktree of ${REPO}"
+      refused=$((refused + 1))
+      continue
+    fi
+
+    # The survey that cleared this worktree was taken before the pass, and the
+    # pass may have run for twenty minutes. Someone opening a shell in it since
+    # then is exactly what idle-check exists to catch, so ask again at the
+    # moment of deletion rather than trusting a verdict that has gone stale.
+    branch="$(cd "$path" 2>/dev/null && git rev-parse --abbrev-ref HEAD 2>/dev/null)"
+    verdict="$(survey_worktree "$path" "${branch:-unknown}" | cut -f3-)"
+    case "$verdict" in
+      idle*) ;;
+      *) log "teardown: skipped ${path} — became busy since the survey (${verdict#*	})"
+         refused=$((refused + 1)); continue ;;
+    esac
+
+    teardown_worktree "$path" "${branch:-unknown}" && removed=$((removed + 1))
+  done < "$REMOVAL_REQUEST"
+
+  if [ "$removed" -gt 0 ]; then
+    git -C "$MAIN_CHECKOUT" worktree prune 2>/dev/null
+    # Remote-tracking refs for branches GitHub deleted on merge. Step 7 of
+    # cleanup-worktree; it needs no worktree of its own, but it is pointless to
+    # run when nothing was actually removed.
+    git -C "$MAIN_CHECKOUT" remote prune origin 2>/dev/null
+  fi
+  log "teardown: ${removed} removed, ${refused} refused/skipped"
+  return 0
+}
+
 # --- Prompt -------------------------------------------------------------------
 # The pass itself is /kit:tend-prs. This says only what the command cannot know
 # about its own invocation: that there is genuinely no terminal, and what to do
@@ -400,6 +516,14 @@ This pass's \`idle-check\` verdicts, surveyed by the runner immediately before y
 ${IDLE_SURVEY}
 Treat these as the answer to Step 3 and do not re-derive them — you are not permitted to, and the attempt is what stalls a pass. A worktree absent from this list has none; \`busy\` means skip and report the reason verbatim. The survey is a snapshot taken seconds ago, which is the same guarantee a check you ran yourself would give.
 
+You cannot remove a worktree yourself — \`rm\` is denied to you by design, and the husk sweep in \`/kit:cleanup-worktree\` Step 5 needs it. This runner does the removal after you finish. So for Step 7 cleanup, decide eligibility as the command says — the PR is \`MERGED\`, it does not carry \`kit-hold\`, and the survey above reports the worktree \`idle\` — and then, instead of running \`/kit:cleanup-worktree\` Steps 5 through 7, append that worktree's absolute path as one line to:
+
+${REMOVAL_REQUEST}
+
+Nothing else goes in that file, one path per line, and only paths that appeared verbatim in the survey above. The runner re-checks each one is idle at the moment it deletes it, then stops the worktree's daemons, removes it, sweeps the husk, deletes the merged branch, and prunes. Report those worktrees as cleaned up in your Step 7 report, noting the runner performs the removal.
+
+Steps 3 and 4 of \`/kit:cleanup-worktree\` are both already answered by the survey above — Step 3's uncommitted-work check is what the survey's \`busy\`/\`idle\` verdict *is*, applying that step's known-safe rule in full. Do not run \`git -C <worktree> status --porcelain\` to re-derive it; that call is not permitted here and attempting it is what has been stalling cleanup. Steps 1, 2, and 6 of that command still apply to you as written.
+
 Your permissions are a fixed allowlist. If you need a tool or command outside it, the call fails: do not retry it, do not look for another way around it, and do not treat the denial as a reason to skip silently. Record what was denied and why you wanted it, then carry on with the rest of the pass — a permission boundary that turns out to be too narrow is something to widen deliberately, after reading the report.
 
 Finish by printing the command's Step 7 report, in full, including every skip reason. It is written to a log nobody is watching in real time, so the report is the whole record of this pass."
@@ -410,6 +534,7 @@ if [ "$DRY_RUN" = "1" ]; then
   echo "settings: ${SETTINGS}"
   echo "overlay:  ${OVERLAY_NOTE}"
   echo "log:      ${LOG}"
+  echo "removals: ${REMOVAL_REQUEST}"
   echo "commands: ${COMMANDS_DIR}"
   echo "would run: ${CLAUDE_BIN} -p --model ${MODEL} --setting-sources '' --settings ${EFFECTIVE_SETTINGS} <prompt>"
   exit 0
@@ -439,6 +564,12 @@ WATCHDOG=$!
 STATUS=$?
 
 kill "$WATCHDOG" 2>/dev/null
+
+# Run the teardown the pass nominated, whatever its exit status. A pass that
+# died after verifying a merged PR and writing the nomination has still done the
+# work of deciding; every path is re-validated and re-checked for idleness here,
+# so acting on the file is no more trusting than acting on a clean exit.
+perform_teardown
 
 if [ "$STATUS" -eq 0 ]; then
   log "=== pass end ok"
