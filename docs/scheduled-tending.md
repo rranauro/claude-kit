@@ -16,9 +16,14 @@ directory, which is rarely the repo you want tended.
 KIT=~/dev/claude-kit/plugins/kit/scripts   # wherever you cloned this
 
 $KIT/install-tending.sh --repo-dir ~/dev/yourproject             # every 10 minutes
+$KIT/install-tending.sh --repo-dir ~/dev/yourproject --interval 30
 $KIT/install-tending.sh --repo-dir ~/dev/yourproject --status    # loaded? what did the last pass do?
 $KIT/install-tending.sh --repo-dir ~/dev/yourproject --uninstall # unload and remove
 ```
+
+`--interval` takes minutes and defaults to 10. Reinstalling over an existing
+agent is how you change it — the install unloads the old one first, so there is
+no separate edit step and no stale plist left loaded.
 
 It writes a launchd agent labelled by the repo it tends, so tending two
 checkouts is two installs and removing one leaves the other alone. launchd
@@ -154,8 +159,18 @@ $KIT/install-tending.sh --repo-dir ~/dev/yourproject --status
 ```
 
 That prints whether the agent is loaded and then the **whole of the last pass**,
-cut at its own start marker rather than by line count — a quiet pass is two lines
-and a busy one is fifty. Underneath it is one appended file per repo,
+cut at its own start marker rather than by line count — a quiet pass is a handful
+of lines and a busy one is fifty.
+
+Two kinds of line share that file, and it is worth knowing which you are reading.
+The runner writes the merge side itself — `main sync:`, `cleanup:`, `teardown:`,
+`idle survey:` — so those appear on every firing whether or not a model ran, and
+a firing that ends `pass end ok (no model needed)` is the gate reporting there was
+no judgment work. Everything else is the model's Step 7 report, printed only on
+the firings that started one. So a worktree removal shows up as a `teardown:` line
+rather than in a report.
+
+Underneath it is one appended file per repo,
 `~/.claude/logs/tend-prs/<owner>-<repo>.log`, so `tail -f` follows a run live and
 reading a week at once is how you notice the worktree that has been dirty since
 Tuesday. Skip reasons are in there by design. Read it rather than waiting to be
@@ -181,17 +196,49 @@ project can widen what a pass may run but cannot unlock anything the kit refuses
 malformed overlay is ignored with a warning rather than failing the pass; a
 scheduled job should not stop running over a typo.
 
-## On sonnet, and on a 10-minute interval
+## What a firing costs
 
-Both are deliberate. The pass reads `gh` JSON and matches branches to worktrees;
-the one judgment-heavy step, verifying review findings against the code, is
-`/kit:review-copilot`, which declares sonnet in its own frontmatter. This is not
-`pr-review.sh`, where the model *is* the deliverable. And polling faster buys
-nothing: Copilot lands 3–5 minutes after a PR opens, `classify` deliberately
-waits for both reviewers, and since `/kit:start-next` split out, no downstream
-work is waiting on a pass to finish. A measured quiet pass takes ~27s, so the
-interval is the difference between a few percent duty cycle and a session that
-never stops.
+Most firings cost no model at all. `tend-prs.sh` does the mechanical half of the
+pass itself, in plain bash, before deciding whether to start one: it
+fast-forwards `main` where that is safe, removes the worktrees and branches of
+merged PRs, and surveys what survives for idleness. None of that needs judgment
+— a merged PR is a fact GitHub reports, a worktree either matches its branch or
+does not, and `kit-hold` is a label read rather than weighed.
+
+Then it asks whether anything is left that does. Three things start a model:
+reviews have landed with no triage marker, a check is failing on a PR not yet
+escalated, or the marker is present but auto-merge is off. Nothing else does.
+A quiet firing reaches that verdict in a few seconds of `gh` calls and exits.
+
+This is why the interval can be short. Before the gate, every firing spent a
+full context — re-reading `tend-prs.md` and its delegates, ~5.8k tokens of
+instructions before any tool output — and roughly two thirds of them did so to
+print a line saying nothing happened. Polling faster still buys nothing on the
+work that matters (Copilot lands 3–5 minutes after a PR opens, `classify`
+deliberately waits for both reviewers, and since `/kit:start-next` split out no
+downstream work waits on a pass), but the cost of guessing the interval wrong in
+the fast direction is now small.
+
+The gate over-approximates on purpose: a false yes costs one quiet pass, while a
+false no would strand a PR forever. It answers "could there possibly be work
+here", never "what is the work" — every rule about what actually happens to a PR
+stays in `tend-prs.md`, so there is no second copy to drift.
+
+## On sonnet
+
+`tend-prs.sh` passes `--model` to the headless run, and **that flag is the only
+thing that sets the model.** The `model: sonnet` frontmatter in `tend-prs.md` and
+`review-copilot.md` has no effect on a scheduled pass: the runner points the pass
+at those files to *read*, because plugin commands do not load under `claude -p`
+and the Skill tool resolves `skills/` rather than `commands/`, so nothing ever
+parses their frontmatter. It governs attended use, and the runner's default
+matches it so the two do not disagree — but if you want a different model
+unattended, `--model` is the lever, and editing the frontmatter will appear to do
+nothing.
+
+Sonnet is the right default because the model is not the deliverable here, unlike
+`pr-review.sh`. The one judgment-heavy step is verifying review findings against
+the code, in `/kit:review-copilot`.
 
 A pass killed partway is safe by construction, and this is the property to
 preserve when changing any of it: all state is derived from GitHub and git, and

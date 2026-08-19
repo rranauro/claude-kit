@@ -40,12 +40,18 @@
 
 set -uo pipefail
 
-# Sonnet, not Opus, and matching what tend-prs.md declares in its own frontmatter
-# — a script that hardcodes a different model silently overrides the command's
-# choice. The pass reads `gh` JSON, matches branches to worktrees, and runs
-# `lsof`; the one judgment-heavy step, verifying review findings against the
-# code, is /kit:review-copilot, which declares sonnet too. This is not
-# pr-review.sh, where the model is the deliverable.
+# Sonnet, not Opus. This flag is the *only* thing that sets the model for a
+# scheduled pass: tend-prs.md and review-copilot.md both declare `model: sonnet`
+# in frontmatter, and neither has any effect here, because the runner points the
+# pass at those files to read rather than invoking them as commands — nothing
+# parses their frontmatter. The default is kept equal to what they declare so the
+# two do not disagree on inspection, but the frontmatter is not enforcing it and
+# editing it will appear to do nothing.
+#
+# Sonnet is right because the model is not the deliverable, unlike pr-review.sh.
+# The merge side of the pass now runs in bash and never reaches a model at all;
+# what is left is verifying review findings against the code, in
+# /kit:review-copilot, which is judgment sonnet handles.
 #
 # Goes stale; override with --model rather than editing callers.
 MODEL="claude-sonnet-5"
