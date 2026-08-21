@@ -63,12 +63,13 @@ performance, and the project's own rules.
 
 Invoke the design skills the project keeps for this — at minimum
 `kit:behavior-placement` (where the behavior belongs, and whether the app already
-derives the answer) and `codebase-design` (how deep a module should be:
-interface, seam, depth, leverage). Use whatever others the project has added.
+derives the answer) and `kit:rails-codebase-design` (what shape the result takes,
+and what to count when it's wrong). Use whatever others the project has added.
 
-These are steps, not background reading. Run the placement checks against every
-approach that adds or moves a class, and use the design vocabulary exactly when
-comparing approaches — it is the scoring axis, not decoration.
+`kit:behavior-placement` is a step: run its checks against every approach that
+adds or moves a class. `kit:rails-codebase-design` is not a step — it is the
+axis those approaches get scored on, so use its properties and counts exactly
+when comparing. Neither one produces the design.
 
 ## 3 — Compare approaches
 
