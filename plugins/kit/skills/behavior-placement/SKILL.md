@@ -50,6 +50,12 @@ hydrating related data) and extend it rather than reopening "service vs model."
 Treat a prior "keep it a service" decision as an input to revisit when the user
 reopens it, not a constraint.
 
+When the answer really is a new class, propose its home rather than picking one:
+name the nearest existing sibling of the same kind, say you'd put it beside that
+one under that one's convention, and let the user confirm. Never open a new
+top-level directory on your own — that's a claim the project has a category it
+doesn't have yet, and it's the user's claim to make.
+
 ## Check 2 — what does the system already know?
 
 Run this before proposing anything that computes a new answer out of existing
