@@ -79,13 +79,15 @@ when comparing. Neither one produces the design.
 - Discuss incrementally. Don't dump everything at once — respond to the user's
   reactions.
 
-## 4 — Grill the choice
+## 4 — Confirm the choice
 
 Once a direction emerges, invoke `kit:grilling` on it. A discussion converges on
-whatever it drifted toward; grilling is the adversarial pass that catches the
-decision nobody actually argued about. Do not skip it because the direction feels
-settled — that feeling is the trigger. If grilling surfaces an unresolved
-decision, go back to step 3 for that branch.
+whatever it drifted toward; this pass states what that direction commits to and
+gets the user to confirm it, which is what catches the decision nobody actually
+argued about. Do not skip it because the direction feels settled — that feeling
+is the trigger. Most of what comes back should be confirmations; if it surfaces a
+decision that genuinely changes performance, testability, or maintainability, go
+back to step 3 for that branch.
 
 ## 5 — Write the plan
 
