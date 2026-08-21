@@ -18,19 +18,41 @@ command owns that.
 Six properties. Each is checkable by reading the file, and an approach either
 has it or does not.
 
-**`initialize` says what it takes.** Named arguments. Required and optional are
-distinguishable at a glance, and every optional one carries a sensible default.
-A caller should be able to construct the object correctly without reading the
-body.
+**`initialize` says what it takes — or the framework already said it.** Named
+arguments. Required and optional are distinguishable at a glance, and every
+optional one carries a sensible default. A caller should be able to construct
+the object correctly without reading the body.
+
+Where the object is an ActiveRecord, `find` and the associations *are* the
+construction: the state is established before any of your code runs. A concern
+adding instance methods over that state is the same well-shaped object, and is
+the preferred way to organise model behavior — not a fallback for when there is
+nothing to construct.
 
 **Accessors expose the inputs and the working state.** What the object was
 given, and what it computed along the way, are readable. A caller can see what
 it is working from; a test can assert on it without reaching into instance
 variables.
 
-**Methods chain.** `SomeClass.new(data: some_data).method1.method2` composes,
-because each step returns something the next step can act on. Chaining is what
-lets a call site state the whole operation in one legible line.
+**Methods chain, and chain by returning `self`.**
+`SomeClass.new(data: some_data).method1.method2` composes because each step
+returns something the next step can act on. A method that computes a value and
+returns it bare loses the name at the call site:
+
+```ruby
+a = model_instance.method1   # what is a?
+```
+
+Assign the result to an accessor-backed attribute and return `self`, and the
+call site says what it got:
+
+```ruby
+a = model_instance.method1.y   # a is y
+```
+
+The chain can then continue into the next method or terminate in an output
+format. This is why the accessor property above matters: the accessors are what
+make chaining legible rather than just terse.
 
 **Output formats terminate the chain.** When the object serves several
 representations, `.to_json`, `.to_yaml`, and `.to_csv` hang off that same

@@ -98,6 +98,13 @@ threading the same argument through each other means that argument is the
 parameter is the record is an instance method that never moved.
 `kit:rails-codebase-design` holds the full set.
 
+**A concern is a first-class outcome, not a size-management tactic.** Check 1's
+first option already says behavior belongs on the model that owns the data;
+where that behavior is a cohesive cluster, a concern over the record's
+established state is the answer — reach for a separate object only when the
+state it works from is *not* the record's. Concern methods that assign to an
+accessor and return `self` chain like any other well-shaped object.
+
 **Do not reach for dependency injection to answer a placement question.**
 Neither check is satisfied by passing the database in, and "it would be easier
 to test in isolation" is not a placement argument in either direction.
