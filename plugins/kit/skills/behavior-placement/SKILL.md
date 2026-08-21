@@ -7,8 +7,8 @@ description: Decide where behavior belongs — model, value object, or service �
 
 Two checks to run before proposing any new class or refactor. An app is a
 collection of models that own their data and behavior; services are the
-residual, not the default. This is the long form of `CLAUDE.md`'s model-first
-rule — that rule states the conclusion, this states how to reach it.
+residual, not the default. A project rule that says "default behavior to the
+model" states the conclusion; this states how to reach it.
 
 ## Check 1 — where does the behavior live?
 
@@ -48,9 +48,9 @@ reopens it, not a constraint.
 
 Run this before proposing anything that computes a new answer out of existing
 data. Search for a model, concern, or schema that already derives it. The reuse
-that matters here is the *derivation*, not the class — `CLAUDE.md`'s "look for
-an existing equivalent" rule is about code, and it won't fire when the thing to
-reuse is an answer.
+that matters here is the *derivation*, not the class — a "look for an existing
+equivalent" habit is about code, and it won't fire when the thing to reuse is an
+answer.
 
 Re-deriving from a serialized form (HTML, JSON, CSV headers) what the app
 already hydrates forks the definition, and the two copies drift apart on the
