@@ -36,6 +36,12 @@ reads from `model`; the name is an agent-noun verb (`-er`/`-or` — Resolver,
 Swapper, Loader, Manager, Handler); it's a `self.call` that news-up an instance
 and calls it once; `Service.call(model:, x:)` reads better as `model.verb(x:)`.
 
+The same misplacement happens without a service in sight: a class method that
+takes the record it operates on (`Model.do_thing(record)`) is an instance method
+that never moved onto the instance. Reserve class level for what genuinely has
+no receiver — scopes, finders, factories. If the first parameter is the
+receiver, make it the receiver.
+
 When refactoring: ask **"who owns this state?"** before "where does this file
 go?" — layout follows ownership, and relocating a file to a nicer folder is the
 lowest-value refactor. Put **delete / inline / fold-onto-a-model** on the
