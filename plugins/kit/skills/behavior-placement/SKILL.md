@@ -79,8 +79,44 @@ wait for the user to confirm before writing anything.
 If the checks say the proposal on the table is misplaced, say so in the same
 shape: where it is, where it belongs, and which smell gave it away.
 
+## In a Rails codebase
+
+The two checks above are language-neutral. Where the project is Rails, three
+things sharpen them.
+
+**The namespace carries the data; the child may carry the role.** `Csv`,
+`Html`, `Api` name what kind of data is in play, and `Api::Request` or
+`Csv::Editor` underneath is correct — an action name at the child level is not
+the agent-noun smell. The smell is a top-level class named for an action with
+no data structure above it.
+
+**Counting settles what the checks leave to argument.** Construction taking
+more than three arguments, or arguments from more than two aggregates, means an
+unnamed structure is being assembled at every call site. Several class methods
+threading the same argument through each other means that argument is the
+`initialize` of the object that should exist. A class method whose first
+parameter is the record is an instance method that never moved.
+`kit:rails-codebase-design` holds the full set.
+
+**Do not reach for dependency injection to answer a placement question.**
+Neither check is satisfied by passing the database in, and "it would be easier
+to test in isolation" is not a placement argument in either direction.
+
+### Front-end modules
+
+The same two checks apply to the JavaScript alongside. A Stimulus controller's
+declared values and targets are its construction, so ownership is decided the
+same way: state belongs to the module whose element holds it, and a module
+querying or mutating DOM owned by another has taken on state it does not own —
+move the behavior to the owner rather than reaching across.
+
+Where the convention is that the server calculates state and hands the result
+to the front end, Check 1 stops at the server. A module rendering what it was
+given is correctly placed; do not propose relocating the calculation into it.
+
 ## Relation to other skills
 
-`codebase-design` supplies the vocabulary for *how deep* a module should be
-(interface, seam, depth, leverage). This skill answers *whose* it is. Run both
-when designing a new module: placement first, depth second.
+`kit:rails-codebase-design` supplies the axis for *what shape* the result
+should take — how `initialize` reads, whether methods chain, what to count when
+they don't. This skill answers *whose* the behavior is. Run both when designing
+a new class: placement first, shape second.
