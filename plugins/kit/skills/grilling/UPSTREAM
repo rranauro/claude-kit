@@ -1,0 +1,11 @@
+repo: git@github.com:mattpocock/skills.git
+path: skills/productivity/grilling
+sha: 0ab1b63
+
+Forked at the sha above. To review what upstream changed since:
+  git -C $SKILLS_REPO diff 0ab1b63..HEAD -- skills/productivity/grilling
+Port what you want by hand, then bump the sha.
+
+LICENSE beside this file is the upstream project's, carried here because its
+terms require the notice to travel with the copy. It governs this directory
+only; the rest of the plugin is under the LICENSE at the repo root.

@@ -16,16 +16,24 @@ to `/kit:architect`.
 "Decided" includes a scope that `/kit:triage` just widened or narrowed. Start from
 the scope your caller hands you, not the one the issue body was opened with.
 
-**On scope, the pass closest to implementation wins — and that's this one.**
-`/kit:architect` set the boundary without the code open; `/kit:triage` grilled it
-with the code closed too. You are the first pass reading what actually has to
-change, so if you find the boundary drawn in the wrong place — a decision this
-work forces that the ticket leaves dangling, or scope the code shows is two
-things — say so and move it. Deferring to an earlier pass that knew less is how a
-ticket ships correct-to-spec and wrong.
+**On scope, the default is the boundary you were handed.** `/kit:architect` set
+it without the code open; `/kit:triage` grilled it with the code closed too. You
+are the first pass reading what actually has to change, so you are the one who
+can see the ticket is *unbuildable or wrong as written* — a decision this work
+forces that the ticket leaves dangling, or scope the code shows is two things.
+That is the test, and only that: not "is there a better boundary?", to which the
+answer is nearly always yes.
 
-This is not licence to drift. A widening costs something specific, so it has to
-be paid for:
+Scale the exploration to the change. A one-file ticket does not get four
+subsystems mapped.
+
+A remark from the user about future work is **parked** — reported as a sentence
+they can ignore. Never turn one into a scope question, and never present scope
+options with `AskUserQuestion`: three options framed as a decision obligate a
+decision that nobody asked for.
+
+If the ticket really is unbuildable as written, the widening costs something
+specific, so it has to be paid for:
 
 - **Tell the user it got wider, as its own question.** Not folded into an
   approach comparison. They're agreeing to a bigger PR.
@@ -72,7 +80,7 @@ comparing approaches — it is the scoring axis, not decoration.
 
 ## 4 — Grill the choice
 
-Once a direction emerges, invoke `grilling` on it. A discussion converges on
+Once a direction emerges, invoke `kit:grilling` on it. A discussion converges on
 whatever it drifted toward; grilling is the adversarial pass that catches the
 decision nobody actually argued about. Do not skip it because the direction feels
 settled — that feeling is the trigger. If grilling surfaces an unresolved
@@ -173,4 +181,5 @@ PR coming.
 
 - Make implementation changes. This is design only.
 - Re-open the problem statement. That's `/kit:architect`.
+- Manufacture a scope decision out of a passing remark. Park it instead.
 - Skip the grilling pass because the direction looks obvious.

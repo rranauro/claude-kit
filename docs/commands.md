@@ -48,6 +48,7 @@ the prefix comes from the `name` field in `plugins/kit/.claude-plugin/plugin.jso
 | Skill | What it does |
 |---|---|
 | `kit:behavior-placement` | Where behavior belongs — model, value object, or service — and whether the app already derives the answer. |
+| `kit:grilling` | The adversarial pass over a converged direction or a ticket's boundary, run as rounds of numbered questions. Adopted from mattpocock/skills; the local fork fences the grilling to what the change actually builds, so the frontier holds only questions whose answers change this implementation, parks everything adjacent instead of asking about it, and stops when no open question can move the code rather than when the design tree is exhausted. |
 | `kit:to-tickets` | Cuts an epic into tracer-bullet tickets, each declaring which tickets must merge before it can start. Adopted from mattpocock/skills; the local fork adds a machine-readable edge marker so `/kit:start-next` can pick them up on its own, and an out-of-scope section so each ticket stands as its own brief. |
 | `kit:writing-tickets` | Lean issues that state the problem and the decision without freezing an implementation. |
 | `kit:worktree-conventions` | Where worktrees live and who creates them — delegates to the project's own command when it has one, and detects the resulting path from git rather than assuming it. See [worktrees](worktrees.md). |
