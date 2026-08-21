@@ -1,13 +1,12 @@
 # Companion skills
 
 I found [Matt Pocock's suite][pocock] about seven months after building this, and
-took the nuggets that fit. The design commands call his skills by name at two
-points, and carry a fork of a third:
+took the nuggets that fit. The design commands call one of his skills by name,
+and carry a fork of a second:
 
 | Called by | Skill | What it supplies |
 |---|---|---|
 | `/kit:architect` | `improve-codebase-architecture` | Offered instead of ad-hoc file reading when the topic is "this area feels wrong" rather than a specific question. |
-| `/kit:design` step 2 | `codebase-design` | The deep-module vocabulary — interface, seam, depth, leverage — used as the axis for comparing approaches. |
 
 `grilling` used to be the third. It is now forked into the plugin as
 `kit:grilling` — see [commands](commands.md) for what the fork changes and
@@ -26,12 +25,21 @@ target is `~/.agents/skills`. If you install for a non-Claude agent, symlink one
 to the other so Claude Code sees them.
 
 These are referenced, not bundled. Without them the commands still run —
-`/kit:design` loses its comparison vocabulary and `/kit:architect` loses its
-scan-first opening move. The adversarial pass is no longer at risk: it ships
-with the plugin.
+`/kit:architect` loses its scan-first opening move. The adversarial pass and the
+comparison vocabulary are no longer at risk: both ship with the plugin.
 
-The two suites compose rather than compete. `codebase-design` asks how deep a
-module should be; `kit:behavior-placement` here asks *whose* the behavior is. And go
+`codebase-design` used to be the second call. `/kit:design` now uses
+`kit:rails-codebase-design` instead, written here rather than adopted. The
+upstream skill is deliberately scale-agnostic — a "module" is a function, a
+class, or a tier-spanning slice — and its testability advice is written for
+functional code. Against an in-process Rails object that combination produced
+false findings and no way to conclude a class was already fine, which left the
+adversarial pass with nothing to check. The replacement trades portability for
+counts that either fire or don't, and an explicit list of what is not a finding.
+
+The two suites still compose rather than compete. `kit:rails-codebase-design`
+asks what shape an object should take; `kit:behavior-placement` asks *whose* the
+behavior is. And go
 read the rest of his suite regardless of whether you use this one —
 `improve-codebase-architecture` earns its place well beyond the one call
 `/kit:architect` makes to it.
