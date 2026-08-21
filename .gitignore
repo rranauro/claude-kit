@@ -4,3 +4,6 @@
 plans/
 tickets/
 reviews/
+
+# Worktrees created by /kit commands
+.claude/worktrees/

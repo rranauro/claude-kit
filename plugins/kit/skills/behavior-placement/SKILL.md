@@ -7,8 +7,8 @@ description: Decide where behavior belongs — model, value object, or service �
 
 Two checks to run before proposing any new class or refactor. An app is a
 collection of models that own their data and behavior; services are the
-residual, not the default. This is the long form of `CLAUDE.md`'s model-first
-rule — that rule states the conclusion, this states how to reach it.
+residual, not the default. A project rule that says "default behavior to the
+model" states the conclusion; this states how to reach it.
 
 ## Check 1 — where does the behavior live?
 
@@ -36,6 +36,12 @@ reads from `model`; the name is an agent-noun verb (`-er`/`-or` — Resolver,
 Swapper, Loader, Manager, Handler); it's a `self.call` that news-up an instance
 and calls it once; `Service.call(model:, x:)` reads better as `model.verb(x:)`.
 
+The same misplacement happens without a service in sight: a class method that
+takes the record it operates on (`Model.do_thing(record)`) is an instance method
+that never moved onto the instance. Reserve class level for what genuinely has
+no receiver — scopes, finders, factories. If the first parameter is the
+receiver, make it the receiver.
+
 When refactoring: ask **"who owns this state?"** before "where does this file
 go?" — layout follows ownership, and relocating a file to a nicer folder is the
 lowest-value refactor. Put **delete / inline / fold-onto-a-model** on the
@@ -44,18 +50,34 @@ hydrating related data) and extend it rather than reopening "service vs model."
 Treat a prior "keep it a service" decision as an input to revisit when the user
 reopens it, not a constraint.
 
+When the answer really is a new class, propose its home rather than picking one:
+name the nearest existing sibling of the same kind, say you'd put it beside that
+one under that one's convention, and let the user confirm. Never open a new
+top-level directory on your own — that's a claim the project has a category it
+doesn't have yet, and it's the user's claim to make.
+
 ## Check 2 — what does the system already know?
 
 Run this before proposing anything that computes a new answer out of existing
 data. Search for a model, concern, or schema that already derives it. The reuse
-that matters here is the *derivation*, not the class — `CLAUDE.md`'s "look for
-an existing equivalent" rule is about code, and it won't fire when the thing to
-reuse is an answer.
+that matters here is the *derivation*, not the class — a "look for an existing
+equivalent" habit is about code, and it won't fire when the thing to reuse is an
+answer.
 
 Re-deriving from a serialized form (HTML, JSON, CSV headers) what the app
 already hydrates forks the definition, and the two copies drift apart on the
 first schema change. If a proposal starts by parsing something, ask what
 populated that something and whether the populated form is still in reach.
+
+## What to hand back
+
+Both checks end in a proposal, not an action. State it in a few lines: what the
+behavior is, where it should live and under what name, which check decided it,
+and — if Check 2 found one — the existing derivation you'd reuse instead. Then
+wait for the user to confirm before writing anything.
+
+If the checks say the proposal on the table is misplaced, say so in the same
+shape: where it is, where it belongs, and which smell gave it away.
 
 ## Relation to other skills
 

@@ -81,7 +81,7 @@ found, confirm, apply, stop. Don't re-grill and don't re-run `/kit:design`.
 This is the pass that does not exist anywhere else in the workflow, and it runs
 *before* any approach is compared — because it changes what is being designed.
 
-Invoke `grilling` on the ticket's **boundary**, not its approach:
+Invoke `kit:grilling` on the ticket's **boundary**, not its approach:
 
 - Which adjacent decisions does implementing this force, that the ticket doesn't
   settle? Whoever implements it will answer them by picking whatever is locally
