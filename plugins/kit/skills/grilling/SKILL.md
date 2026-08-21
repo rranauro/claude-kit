@@ -65,9 +65,27 @@ Most branches have one best answer. Stating it as one of two or three
 "alternatives" is noise dressed as rigour — it asks the user to re-derive a
 conclusion you already reached.
 
-A decision earns a question only when choosing differently would change
-**performance, testability, or maintainability and extensibility**. Those are
-the consequences worth a user's time; nothing else on the tree is.
+A decision earns a question only when it commits to one of the following. Each
+is checkable against the change itself; a category with no check behind it is
+taste, and does not earn a question.
+
+**Performance — does the work happen once, or once per row?** The direction
+puts a query, an HTTP call, or an AI call inside a loop, a render path, or
+something running on every request. Count the calls per request. If the answer
+is "one" either way, there is no question here.
+
+**Testability — can you construct it and call it?** Write the first line of the
+test in your head. If reaching the behavior means going through the network,
+the clock, an AI response, or a whole controller, that is the finding. If it is
+`Thing.new(…).method`, there is no question here.
+
+**Maintainability and extensibility — what does the next change touch?** Name
+the next change that is actually likely — a second format, a second provider,
+one more field — and count the files it edits. Two or more places that must
+change together when one fact changes is the finding. "It might be hard to
+extend later" without a named next change is not.
+
+Nothing else on the tree is worth a user's time.
 
 When one does earn it, present the direction and the single best alternative —
 what it buys, what it costs, and which you recommend. Not a menu.
