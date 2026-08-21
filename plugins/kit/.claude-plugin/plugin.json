@@ -1,7 +1,7 @@
 {
   "name": "kit",
   "description": "End-to-end GitHub ticket workflow for Claude Code: architecture discussion, worktree isolation, TDD, automated PR review, and cleanup.",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "author": {
     "name": "Ron Ranauro"
   },
