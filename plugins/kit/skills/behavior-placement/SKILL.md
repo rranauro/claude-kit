@@ -69,6 +69,16 @@ already hydrates forks the definition, and the two copies drift apart on the
 first schema change. If a proposal starts by parsing something, ask what
 populated that something and whether the populated form is still in reach.
 
+## What to hand back
+
+Both checks end in a proposal, not an action. State it in a few lines: what the
+behavior is, where it should live and under what name, which check decided it,
+and — if Check 2 found one — the existing derivation you'd reuse instead. Then
+wait for the user to confirm before writing anything.
+
+If the checks say the proposal on the table is misplaced, say so in the same
+shape: where it is, where it belongs, and which smell gave it away.
+
 ## Relation to other skills
 
 `codebase-design` supplies the vocabulary for *how deep* a module should be
