@@ -69,12 +69,50 @@ already hydrates forks the definition, and the two copies drift apart on the
 first schema change. If a proposal starts by parsing something, ask what
 populated that something and whether the populated form is still in reach.
 
+## Check 3 — who produces it, who consumes it?
+
+Checks 1 and 2 reason from the class's own shape. That is not enough to pick a
+**namespace**, because a class that reads one kind of data and emits another has
+a claim from both sides, and reasoning from shape alone settles it by taste.
+
+So before naming anything, enumerate the call sites — one `rg` for the
+constructor and one for the methods — and write down the two lists: who
+constructs it, and who calls it. The shape of that graph decides:
+
+- **Many producers, one consumer domain** → a boundary type. Name it for the
+  **consumer's** boundary, not for the data it happens to read. Several callers
+  agreeing on a shape none of them owns is what a boundary is.
+- **One producer, many consumers** → a shared derivation. Name it for the
+  **data**, in that data's namespace.
+- **Producer and consumer are the same model** → not a separate class at all.
+  Check 1 already answered this: a method, or a concern.
+- **Producer and consumer are the same class, and both are private** → not a
+  class either. It is a private method, and extracting it is speculative until
+  a second consumer exists.
+
+The **outputs** are as much of the tell as the inputs. A method returning prose
+assembled for one caller to read — a formatted string, a prompt fragment, a
+rendered message — is not a query over the input data, however much of that data
+it touched on the way. Ask what a caller from the input's own namespace would do
+with the return value; if the honest answer is "nothing, that string only makes
+sense to the one consumer," the namespace belongs to the consumer.
+
+Do this before proposing the name, and state the census in the proposal. A
+placement that cannot name its producers and consumers has not been derived,
+only asserted — and an asserted namespace is the one nobody can argue with later
+because no reasoning was written down.
+
 ## What to hand back
 
-Both checks end in a proposal, not an action. State it in a few lines: what the
-behavior is, where it should live and under what name, which check decided it,
-and — if Check 2 found one — the existing derivation you'd reuse instead. Then
-wait for the user to confirm before writing anything.
+All three checks end in a proposal, not an action. State it in a few lines: what
+the behavior is, where it should live and under what name, which check decided
+it, the producer/consumer census from Check 3, and — if Check 2 found one — the
+existing derivation you'd reuse instead. Then wait for the user to confirm
+before writing anything.
+
+Where two namespaces both had a claim, say which one you rejected and why. That
+sentence belongs in the class comment too: the next reader will re-litigate the
+choice otherwise, having no record that it was ever made.
 
 If the checks say the proposal on the table is misplaced, say so in the same
 shape: where it is, where it belongs, and which smell gave it away.
@@ -89,6 +127,11 @@ things sharpen them.
 `Csv::Editor` underneath is correct — an action name at the child level is not
 the agent-noun smell. The smell is a top-level class named for an action with
 no data structure above it.
+
+Which data, though, is Check 3's question, not this rule's. "The namespace
+carries the data" is ambiguous the moment a class reads one kind and emits
+another — parses HTML, returns prompt text; reads a CSV, returns an import
+report. Run the census and let the call sites break the tie.
 
 **Counting settles what the checks leave to argument.** Construction taking
 more than three arguments, or arguments from more than two aggregates, means an

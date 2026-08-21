@@ -69,6 +69,14 @@ it: `Api::Request`, `Api::Response`, `Csv::Document`, `Csv::Editor`. The
 constraint is that the namespace carries the data; a role name underneath it is
 correct, not a violation.
 
+*Which* data is decided at the call sites, not by reading the class. An object
+that takes one kind of data and returns another — parses HTML, emits prompt
+text — is claimed by both namespaces, and the constructor argument is the
+weaker claim of the two. Many producers feeding one consumer is a boundary
+type, and belongs to the consumer; one producer feeding many consumers is a
+shared derivation, and belongs to the data. `kit:behavior-placement` Check 3
+runs the census.
+
 An object with all six is legible from its call site. Someone planning a change
 can tell what it holds and what it answers without opening it — which is the
 whole point of the axis.
@@ -105,6 +113,12 @@ the state was described wrong.
 already establishes elsewhere forks the definition, and the two copies diverge
 on the first change. Recomputing from a serialized form — HTML, JSON, CSV
 headers — what the application already loaded is the usual case.
+
+**The unheld namespace.** A class whose returns make sense to only one caller,
+filed under the namespace of the data it reads rather than the one it serves.
+The tell is the return type: ask what a caller from the namespace it currently
+sits in would do with the value. If nothing there would ever want it, the class
+is filed under its input instead of its owner.
 
 **The deletion test.** Imagine the object gone. If the complexity vanishes, it
 was a pass-through. If it reappears at every caller, it earns its place.
