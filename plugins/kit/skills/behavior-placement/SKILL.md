@@ -5,10 +5,18 @@ description: Decide where behavior belongs — model, value object, or service �
 
 # Behavior Placement
 
-Two checks to run before proposing any new class or refactor. An app is a
+Checks to run before proposing any new class or refactor. An app is a
 collection of models that own their data and behavior; services are the
 residual, not the default. A project rule that says "default behavior to the
 model" states the conclusion; this states how to reach it.
+
+**Also run these when adding a second entry point to a class that already
+exists** — a second class method taking the same data, a second `for_*`
+constructor, a second key in a returned hash. Nothing in a well-shaped class
+resists that addition, which is exactly the problem: an unnamed structure
+assembles itself one non-breaking commit at a time, each commit defensible on
+its own, and the shape is only visible once three of them have landed. The
+second entry point is the last moment the question is cheap to ask.
 
 ## Check 1 — where does the behavior live?
 
@@ -113,6 +121,28 @@ before writing anything.
 Where two namespaces both had a claim, say which one you rejected and why. That
 sentence belongs in the class comment too: the next reader will re-litigate the
 choice otherwise, having no record that it was ever made.
+
+**When the proposal is a class, write its `initialize` line verbatim, and the
+return type of each public method.** Not a description of them — the signature,
+as it will appear:
+
+```
+initialize(html, template)     # state: one page's markup + the theme it came from
+#manifest -> String, #style_block -> String, #example_section -> String
+```
+
+This is the whole check, and it is not a formatting requirement. A name is
+cheap and every misplaced class in the codebase already has a good one; the
+constructor is where the state either gets named or gets deferred, and deferring
+it is what produces a class nobody can reason about without opening it. If the
+signature cannot be written — if what it takes is "the record, and it'll pull
+what it needs" — there is no class yet. That is a method on whatever owns the
+record, and Check 1 already placed it.
+
+The counts in `kit:rails-codebase-design` §2 cannot help here: they measure
+committed code, and a proposal has one method, one call site, and a count of
+one. The signature is the forward-form of the same question, and it is the only
+part of the design that can be wrong in a way a reader can see before it ships.
 
 If the checks say the proposal on the table is misplaced, say so in the same
 shape: where it is, where it belongs, and which smell gave it away.
