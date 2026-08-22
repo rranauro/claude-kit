@@ -123,7 +123,12 @@ FOOTER="
 # any linked worktree, which is the whole reason it's used here instead of
 # `--show-toplevel`.
 if [ -z "$OUT_DIR" ]; then
-  COMMON_DIR="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
+  # --path-format=absolute needs git >=2.31; older git echoes it back as a
+  # literal unrecognized flag, so resolve to absolute via cd/pwd instead.
+  COMMON_DIR="$(git rev-parse --git-common-dir 2>/dev/null)"
+  if [ -n "$COMMON_DIR" ]; then
+    COMMON_DIR="$(cd "$COMMON_DIR" 2>/dev/null && pwd)"
+  fi
   if [ -n "$COMMON_DIR" ]; then
     MAIN_CHECKOUT="$(dirname "$COMMON_DIR")"
   else
@@ -208,12 +213,12 @@ CHANGED="$(
 echo "$(date -u +%FT%TZ) pr=${PR_URL} author=${AUTHOR} source=${SOURCE} model=${MODEL} auth=${AUTH}${AUTH_NOTE} post=${POST} changed=[${CHANGED}]" >>"$LOG"
 
 if [ "$DETACH" = "1" ]; then
-  nohup "$CLAUDE_BIN" -p --model "$MODEL" --max-turns 15 --dangerously-skip-permissions "$PROMPT" \
+  nohup "$CLAUDE_BIN" -p --model "$MODEL" --max-turns 30 --dangerously-skip-permissions "$PROMPT" \
     >>"$LOG" 2>&1 </dev/null &
   disown
   echo "review of PR #${PR_NUM} running in background; log: $LOG"
 else
-  "$CLAUDE_BIN" -p --model "$MODEL" --max-turns 15 --dangerously-skip-permissions "$PROMPT" 2>&1 | tee -a "$LOG"
+  "$CLAUDE_BIN" -p --model "$MODEL" --max-turns 30 --dangerously-skip-permissions "$PROMPT" 2>&1 | tee -a "$LOG"
   [ "$POST" = "no" ] && echo "review written to: $OUT_FILE"
 fi
 
