@@ -55,6 +55,31 @@ Revisit an acceptance criterion only when the *observable outcome* itself has to
 change. Rewording one because the implementation went differently is how a
 ticket stops describing anything.
 
+## A criterion is a fence, not a route
+
+Write each criterion with a **consumer** as its subject — the caller, the user,
+the neighbouring system — and say what it must observe. A criterion whose
+subject is the code ("the section markers are answered by the HTML layer")
+describes the fix in the grammar of an outcome, and exactly one route satisfies
+it. That contradicts the rule above: a plan meeting the criteria another way has
+not violated the ticket, so a criterion only one plan can meet is not a
+criterion.
+
+Two tests, both cheap:
+
+- Could the implementer satisfy this and still have built the wrong thing? The
+  fence is too low.
+- Could they satisfy it *only* by making the change already in your head? It is
+  a route. Move it into the problem statement, where it is explicitly
+  non-binding.
+
+A ticket born from a diagnosis is where this goes wrong, because each finding
+looks like a criterion waiting to be written. It is not. For a refactor the
+fence is almost always **behavior preservation** — every consumer still receives
+what it received, by whatever path — and one sentence naming those consumers and
+the directions that must hold is often the entire binding set. A diagnosis
+ticket carrying seven criteria has usually copied its findings across the line.
+
 ## Slice a body of work vertically
 
 When one conversation produces several tickets, the split is a design decision,
