@@ -46,8 +46,10 @@ then whatever architecture docs it keeps (`*_ARCHITECTURE.md`, ADRs, design
 notes) — but read them when they bear on the topic, not as an opening ritual.
 
 If the topic is "this whole area feels wrong" rather than a specific question,
-offer `/improve-codebase-architecture` — a scan-and-report is a better opening
-move than reading files ad hoc.
+offer `kit:improve-codebase-architecture` — a scan-and-report is a better opening
+move than reading files ad hoc. It ends at a ranked report in `plans/`; reading
+it together is a fine place for the conversation to go next, and picking a
+candidate off it is the user's call, not a step.
 
 ## Filing tickets
 

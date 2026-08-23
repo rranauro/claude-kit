@@ -75,6 +75,13 @@ when comparing. Neither one produces the design.
 
 - Present 2-3 concrete approaches with trade-offs.
 - For each: what changes, what's the blast radius, what are the risks?
+- **For each approach that adds a class, carry step 2's output into the
+  comparison — the `initialize` line and the return type of each public
+  method.** Not a summary of them; the signatures. Approaches compared on
+  features all look reasonable, and the difference between the shape that reads
+  well in a year and the one that doesn't is usually visible only in what the
+  constructor takes. Two approaches whose constructors are identical are one
+  approach.
 - Reference how similar problems are already solved in this codebase.
 - Discuss incrementally. Don't dump everything at once — respond to the user's
   reactions.

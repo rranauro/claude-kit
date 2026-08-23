@@ -15,7 +15,7 @@ command owns that.
 
 ## 1 — What a well-shaped object looks like
 
-Six properties. Each is checkable by reading the file, and an approach either
+Seven properties. Each is checkable by reading the file, and an approach either
 has it or does not.
 
 **`initialize` says what it takes — or the framework already said it.** Named
@@ -28,6 +28,23 @@ construction: the state is established before any of your code runs. A concern
 adding instance methods over that state is the same well-shaped object, and is
 the preferred way to organise model behavior — not a fallback for when there is
 nothing to construct.
+
+**It takes the narrowest input it actually uses.** If the object calls one or
+two methods on a record, it takes those values — and the reader that produces
+them goes on the record, where the data lives. Taking the record instead leaves
+the dependency surface unpinned: what the class depends on is "whatever that
+model has," it widens silently on the next change, and someone planning a change
+has to load the model into their head to reason about the class at all.
+
+Narrowing costs something, which is why it gets skipped: work moves *out* of the
+class and onto a caller, and giving work away reads as scope creep. It isn't. A
+class that shrank because a model gained a named reader is the transaction
+working correctly — the extraction became legible, and it landed where the data
+already was.
+
+This is about objects you construct. Where the framework constructed it, the
+previous property already applies: `find` and the associations are the input,
+and there is nothing to narrow.
 
 **Accessors expose the inputs and the working state.** What the object was
 given, and what it computed along the way, are readable. A caller can see what
@@ -77,9 +94,71 @@ type, and belongs to the consumer; one producer feeding many consumers is a
 shared derivation, and belongs to the data. `kit:behavior-placement` Check 3
 runs the census.
 
-An object with all six is legible from its call site. Someone planning a change
-can tell what it holds and what it answers without opening it — which is the
-whole point of the axis.
+An object with all seven is legible from its call site. Someone planning a
+change can tell what it holds and what it answers without opening it — which is
+the whole point of the axis.
+
+## 1.5 — The properties applied once, end to end
+
+The properties describe a destination. This shows the move, because the move is
+the part that does not follow from knowing the destination — and a redesign that
+starts from the bad class and stays inside it reliably fails to find it.
+
+A class assembled three sourcing paths over one derivation. Two callers: an
+offline harness working from a theme file, and a live page in the app.
+
+**Before** — the class holds every path, and both callers hand it a record:
+
+```ruby
+X.for_page(page)            # -> { manifest:, style_block:, example_section: }
+X.for_template(template)    # -> same hash
+X.from_html(html)           # -> same hash
+```
+
+**After** — three panels, and the middle one is the lesson:
+
+```ruby
+# caller
+Ai::Request::Page.new(page.component_source_html, page.template).manifest
+
+# model — the extraction moved here
+class Page
+  def component_source_html   # narrowest input: the class needed a String
+    components.kept.map(&:current_html).join("\n")
+  end
+end
+
+# class
+class Ai::Request::Page
+  def initialize(html, template)   # arity 2, one aggregate — nothing unnamed
+  def manifest        -> String    # declarative name, typed return
+  def style_block     -> String
+  def example_section -> String
+end
+```
+
+Read the annotations, not the shapes. Each one names the property or count it
+answers; nothing here is a template, and copying the surface — naming things
+`Document`, returning `self` — while the input stays a record reproduces the
+original defect with better vocabulary.
+
+Three things this shows that a single-class example cannot:
+
+- **The class got smaller because a caller got a reader.** `component_source_html`
+  is the whole narrowing property in one method, and it lives on the model, not
+  in the class being designed. Any before/after that shows only the class makes
+  this invisible — which is why the obvious redesign preserves the record
+  argument and lands back where it started.
+- **Two of the three entry points were deleted, not converted.** They were not
+  requirements; they were sourcing decisions the class had absorbed from its
+  callers. The callers took them back, and each one now reads what it sources.
+- **The hash became the object.** Its three keys were always the three methods.
+
+The one-line anti-example, which is all one is worth: `def self.for_page(page)`
+— the first parameter is the receiver, and the state was never named. A longer
+bad example teaches the wrong lesson, because real misplaced classes have good
+names, real comments, and clean tests. They do not look bad. Matching against a
+catalogue of ugly shapes is how they get missed.
 
 ## 2 — What to count when it isn't
 
@@ -113,6 +192,14 @@ the state was described wrong.
 already establishes elsewhere forks the definition, and the two copies diverge
 on the first change. Recomputing from a serialized form — HTML, JSON, CSV
 headers — what the application already loaded is the usual case.
+
+**The fixed-key hash.** A method returning a hash whose keys are known when the
+method is written is a class that was never named — its keys are the methods it
+would have had. The cost lands at every call site: readers key into it by
+symbol, `.to_s` defensively because nothing guarantees a type, and no name for
+the thing survives the assignment. Section 1's chaining property does not catch
+this, because a hash is a legal terminator; the tell is that the keys are
+literal, not that a hash came back.
 
 **The unheld namespace.** A class whose returns make sense to only one caller,
 filed under the namespace of the data it reads rather than the one it serves.
