@@ -48,12 +48,14 @@ Techniques are the easy part. Everything between them is where the workflow live
   until the first review round is answered, and that pushing waits for you. The
   ordering is the content — it's what stops you skipping the uncomfortable step
   because the code looks fine.
-- **Handoff across a context boundary.** `/kit:architect` writes a plan into a
-  gitignored `plans/` store that `/kit:start-ticket` symlinks into every worktree, so
-  the intended move is to converge, drop the plan, clear context, and run
-  `/kit:start-ticket` on it immediately — a clean window to implement in, against the
-  repo the plan was written for. The store crosses that boundary rather than
-  banking decisions: `/kit:start-ticket` asks whether the plan is still fresh and, when
+- **Handoff across a context boundary.** `/kit:design` stores a plan on the issue
+  it belongs to, mirrored into a gitignored `plans/` cache that `/kit:start-ticket`
+  symlinks into every worktree, so the intended move is to converge, drop the
+  plan, clear context, and run `/kit:start-ticket` on it immediately — a clean
+  window to implement in, against the repo the plan was written for. Storing it
+  on the issue is what makes the boundary crossable by someone other than you:
+  another machine, a scheduled run, a second developer, a worktree that has since
+  been deleted. The store crosses that boundary rather than banking decisions: `/kit:start-ticket` asks whether the plan is still fresh and, when
   it isn't, verifies the plan's anchors against the repo before proceeding. A plan
   that sat a week is a prescription written against code that has moved — the same
   argument that keeps solutions out of tickets.

@@ -52,8 +52,19 @@ Constituent skills:
 
 ## The artifact
 
-`plans/<issue>-walkthrough.md`, inside the worktree, alongside any
-`plans/<issue>-plan.md` that `/kit:design` left behind.
+The `walkthrough` artifact, stored by `kit:ticket-artifacts` — the live copy in
+the cache at `plans/<issue>-walkthrough.md`, which the worktree shares with the
+main checkout, and a marked comment on the issue that outlives both.
+
+**The cache is the live position; the comment is the record.** Write the file on
+every `record-result` — that is what makes the position real. Sync the comment
+three times only: at `write-artifact`, at `detour`, and at `finish`. A PATCH per
+step puts a network call between every question and the next answer, and nobody
+reads the issue mid-walk.
+
+The comment is what stops the walk dying with the worktree.
+`/kit:cleanup-worktree` used to take the record of what was actually exercised
+with it, at the moment someone was deciding whether to ship anyway.
 
 ```markdown
 # Walkthrough — #1161 Field values render as plain text
@@ -128,14 +139,18 @@ coverage.
 
 ## Step 3 · `write-artifact` — Persist it
 
-Write `plans/<issue>-walkthrough.md` in the worktree, in the format above. Give
-every step a stable `w<n>` id at creation and never renumber — detour notes,
-filed issues, and commit messages reference these ids, and renumbering breaks
-every reference at once.
+Store the `walkthrough` artifact in the format above — cache file and comment
+both, via `kit:ticket-artifacts`. Give every step a stable `w<n>` id at creation
+and never renumber: detour notes, filed issues, and commit messages reference
+these ids, and renumbering breaks every reference at once.
 
 Mark `w1` as `← CURRENT`, then go to `present-step`.
 
-If the file already exists, this is a resume — go to `resume` instead.
+**If the artifact already exists, this is a resume — go to `resume` instead.**
+Check through the skill, not the filesystem. A walk started in a worktree that
+has since been removed, or on another machine, has a comment and no file, and
+reading the directory alone would restart it from `w1` and silently discard
+everything that was already verified.
 
 ---
 
@@ -189,6 +204,9 @@ Two things this skill adds on top:
 - **Carry the step id into the record.** The commit subject or filed issue should
   name the observation (`w4: row order lost after reload`), so the artifact's
   `→ #1187` annotation resolves to something months later.
+- **Sync the comment before delegating.** A detour is where a walk most often
+  ends for good — the fix takes over the session and nobody comes back. Whatever
+  was verified up to here should be on the issue before you hand control away.
 - **Return by re-arming the step, not by advancing.** When a detour ends in an
   inline fix, flip `[!]` back to `[ ]`, restore `← CURRENT` to it, and go to
   `present-step` — the user re-walks the step to verify the fix. When it ends in
@@ -206,10 +224,12 @@ position is on disk and `resume` will find it whenever they come back.
 Triggered by re-invoking the command, by the user asking where you were, or by
 returning from a long detour.
 
-Read the artifact. Report, in two lines: how many passed, skipped, and failed,
-and what's still open. Then go straight to `present-step` for the `← CURRENT`
-step. Do not re-derive the list and do not re-run `confirm-list` — the file is
-authoritative, including over your memory of the session.
+Read the artifact through `kit:ticket-artifacts` — cache first, then the comment,
+which is the copy that survives a removed worktree. Report, in two lines: how
+many passed, skipped, and failed, and what's still open. Then go straight to
+`present-step` for the `← CURRENT` step. Do not re-derive the list and do not
+re-run `confirm-list` — the artifact is authoritative, including over your memory
+of the session.
 
 If the branch has gained commits since the walk began, note which — a fix may
 have invalidated a step already marked `[x]`, and the user may want it re-armed.
@@ -230,8 +250,10 @@ Then hand back:
   whether the open items block the PR.
 - Invoked standalone → ask whether to land, keep fixing, or stop.
 
-Leave the artifact in place. It is the record of what was actually exercised, and
-it's what `resume` reads if the user comes back with one more thing to check.
+Sync the comment one last time and leave both copies in place. It is the record
+of what was actually exercised, it's what `resume` reads if the user comes back
+with one more thing to check, and on the issue it is readable by whoever reviews
+the PR — who otherwise has only the claim that a walk happened.
 
 ---
 

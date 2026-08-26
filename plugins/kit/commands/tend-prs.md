@@ -167,7 +167,11 @@ a long verification session without being triaged, merged, or having its worktre
 deleted underneath you. Re-requesting a review, hand-reviewing, and being
 mid-rebase are the same shape.
 
-Create it once per repo with `gh label create kit-hold`, or from the UI.
+Create it once per repo with `gh label create kit-hold`, or from the UI. Create
+`kit-blocked` alongside it — same shape at the other end of the pipeline, read by
+`/kit:start-next` to keep a ready ticket from being *started* while a human still
+has something to clear. Nothing in this command reads it; it lives on issues, not
+PRs.
 
 It can also arrive before you ever see the PR. `/kit:triage` and `/kit:design`
 ask whether the downstream PR will need holding at the moment the ticket is

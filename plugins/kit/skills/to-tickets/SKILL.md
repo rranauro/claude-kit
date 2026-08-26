@@ -1,7 +1,7 @@
 ---
 name: to-tickets
 description: Break a plan, spec, or the current conversation into a set of tracer-bullet tickets, each declaring its blocking edges, published to the configured tracker — edges as text in one file per ticket locally, or native blocking links on a real tracker.
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # To Tickets
@@ -82,6 +82,8 @@ Issue numbers only, comma-separated, no `#`. **A ticket with no blockers gets th
 
 The marker is authoritative and the prose is for humans. Write both and keep them agreeing.
 
+**Only ticket edges belong in the marker.** It is satisfied by each number being closed, so a blocker no merge can close — a credential, a vendor account, a change in another repo, a decision still open — has no expressible form here. Write that one in the prose "Blocked by" section and put `kit-blocked` on the issue; `/kit:start-next` skips a `kit-blocked` ticket and reports the prose reason. Never write a non-numeric token into the marker.
+
 This needs two passes, since a ticket cannot cite a number that does not exist yet: create every issue first, collect the numbers, then edit each one to add its marker.
 
 Before publishing, check the edges for a cycle. Two tickets that block each other can never start, and the loop will pass over them in silence rather than report anything.
@@ -90,7 +92,7 @@ Before publishing, check the edges for a cycle. Two tickets that block each othe
 
 Add an **Out of scope** section to each issue, alongside the acceptance criteria.
 
-`/kit:start-ticket` `plan-implementation` accepts an issue in place of a plan file only when it carries *both* testable acceptance criteria and stated scope boundaries. Criteria alone do not qualify it. A ticket missing the boundary falls through to `/kit:design` when an agent picks it up, which stalls the epic to ask a human for a decision this session already made.
+`/kit:start-ticket` `plan-implementation` accepts an issue in place of a stored plan only when it carries *both* testable acceptance criteria and stated scope boundaries. Criteria alone do not qualify it. A ticket missing the boundary falls through to `/kit:design` when an agent picks it up, which stalls the epic to ask a human for a decision this session already made.
 
 It also does the job the section is named for: an agent implementing a narrow slice will otherwise fix adjacent things it notices, and the review round is a poor place to discover that.
 

@@ -102,32 +102,25 @@ Summarize the agreed approach, what can be done incrementally vs. what requires 
 big-bang change, and any open questions that must be answered before
 implementation.
 
-Then publish it. Where depends on who called — see **Where the brief goes** below.
+Then store it. `kit:ticket-artifacts` owns where it goes and how it is found
+again; invoke it rather than reproducing the mechanics here.
 
-### Where the brief goes
+### Where the plan goes
 
-**Invoked by `/kit:triage`, or asked to publish to the issue:** post the brief as
-a comment on the issue. That copy survives the machine and is readable by an
-agent that never had your `plans/` directory — which is the point of publishing
-there rather than locally. Also write the local plan file below when there is an
-issue number to name it with; it costs nothing and keeps the offline handoff
-working. On conflict the plan file wins, and `/kit:start-ticket` already knows
-that.
+**There is an issue number:** store it as the `plan` artifact — the marked
+comment on the issue, updated in place, and the `plans/<issue-number>-plan.md`
+mirror. Both, in one step. This is the default now regardless of who invoked the
+command: the same reasoning reaches an agent that never had your `plans/`
+directory, and a direct invocation is no longer a plan that dies with the
+machine.
 
-**Invoked directly (the default):** write the local plan file only. Don't post to
-the issue unasked — a comment is public and permanent, and the user came here to
-think, not to publish.
+The issue is already public, so posting there discloses nothing the ticket
+didn't. What it does add is permanence — say what you're about to store before
+you store it, and take a no. A conversation the user wanted to think in rather
+than publish is theirs to keep local.
 
-### The local plan file
-
-Write `plans/<issue-number>-plan.md` — or `plans/<short-slug>-plan.md` if
-there's no issue. Resolve `plans/` against the repository root via
-`git rev-parse --show-toplevel` from the main checkout rather than hardcoding a
-path; `mkdir -p` it if needed. Add `/plans` to `.gitignore` if it isn't there
-already: the directory must stay out of the repo, persist across sessions, and be
-symlinked into every worktree by `/kit:start-ticket`. That combination is what makes
-a plan written here the durable handoff `/kit:start-ticket` picks up later, even from
-a fresh worktree.
+**There is no issue number:** write `plans/<short-slug>-plan.md` and stop.
+Nothing to attach it to; don't offer to file an issue to hold it.
 
 Keep it short. Capture the durable reasoning the lean issue intentionally omits —
 the *why* behind the approach and the alternatives rejected — NOT file lists or
@@ -157,7 +150,7 @@ Tell the user the plan will be picked up by `/kit:start-ticket`. If you were
 invoked by `/kit:triage`, say nothing about handoff and return — it has its own
 publish step to finish, including the hold question below.
 
-**When the brief lands on an issue and you were *not* invoked by `/kit:triage`,
+**When the plan lands on an issue and you were *not* invoked by `/kit:triage`,
 check the issue carries a blocking-edge marker** — `<!-- kit-blocked-by: -->`,
 empty if nothing blocks it, or with the comma-separated issue numbers that do.
 Add it if absent; leave an existing one alone.
@@ -166,6 +159,13 @@ Add it if absent; leave an existing one alone.
 so a well-briefed labelled ticket without one is skipped silently and looks
 startable the whole time. `/kit:triage` writes it in its own publish step, which
 is why this is only for the standalone path — `kit:to-tickets` owns the format.
+
+The marker takes issue numbers only. If the design surfaced a blocker no merge
+will close — a credential, a vendor account, a change in another repo, a decision
+left open — that goes on the issue as the `kit-blocked` label, with the reason in
+the body's "Blocked by" section. `/kit:start-next` skips a `kit-blocked` ticket
+and reports the reason, so the ticket stays labelled and visible rather than
+being withheld.
 
 **Then ask whether the PR should be held:**
 
