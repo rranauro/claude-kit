@@ -160,6 +160,42 @@ bad example teaches the wrong lesson, because real misplaced classes have good
 names, real comments, and clean tests. They do not look bad. Matching against a
 catalogue of ugly shapes is how they get missed.
 
+### The same move at one-method scale
+
+The example above is a whole-class redesign. The more common case is one return
+type, and it is worth showing because nothing is extracted and nothing is deleted.
+
+**Before** — the object is built, asked for its table, and thrown away:
+
+```ruby
+rates = RateTable.new(carrier: carrier, zones: zones).rates   # -> Hash
+rate  = rates[[line.zone_id, line.weight_class]]
+```
+
+**After** — the object is kept, and asked:
+
+```ruby
+rate = rate_table.rate(line.zone_id, line.weight_class)
+
+class RateTable
+  def rate(zone_id, weight_class) = rates[[zone_id, weight_class]]
+  def rates = @rates ||= …          # the index, memoized, one query
+end
+```
+
+Three consequences, none of them visible from the return type alone:
+
+- **The composite key stopped being public.** It was never data a caller needed;
+  it was the lookup's internal index.
+- **Two threaded parameters left the caller.** A hash has to be passed down to
+  wherever its key can be built. An object does not.
+- **Memoization became possible.** A discarded object cannot cache, so the
+  caller's workaround is to hoist the construction and thread the result — which
+  is the threaded-argument count arriving by a different road. Read that
+  direction: the threaded argument was the symptom, the discarded object the
+  cause. Treating the symptom produces a caller that hoists a hash and still
+  builds keys.
+
 ## 2 — What to count when it isn't
 
 Counts, not preferences. Each states what the number means and stops there.
@@ -168,9 +204,13 @@ Counts, not preferences. Each states what the number means and stops there.
 than two aggregates: a structure nobody has named is being assembled at every
 call site. The missing structure is the finding, not the length of the list.
 
-**The threaded argument.** Several class methods passing the same argument to
-each other: that argument is the `initialize` of an object that does not exist
-yet, and those methods are its instance methods.
+**The threaded argument.** Several methods passing the same argument to each
+other — class methods, or private instance methods handing it down a chain. That
+argument is the `initialize` of an object that does not exist yet, and the methods
+threading it are its instance methods. Where they are already instance methods of
+some object, the argument is state that object never named: it gets built at the
+top of the chain and carried by hand, one parameter at every hop, because there is
+nowhere for it to live.
 
 **The first-parameter receiver.** A class method whose first parameter is the
 record it operates on is an instance method that never moved onto the instance.
@@ -199,13 +239,39 @@ would have had. The cost lands at every call site: readers key into it by
 symbol, `.to_s` defensively because nothing guarantees a type, and no name for
 the thing survives the assignment. Section 1's chaining property does not catch
 this, because a hash is a legal terminator; the tell is that the keys are
-literal, not that a hash came back.
+literal, not that a hash came back. When the keys are computed rather than
+literal, the next count applies.
+
+**The keyed lookup handed out raw.** A method returning a hash the caller
+dereferences by a key it builds itself — `rates[[zone_id, weight_class]]`.
+Sibling of the fixed-key hash, and the reason that count's "keys are literal"
+tell walks past it: the keys are computed, so nothing looks hardcoded. The cost
+is worse, not better — the caller now knows the key's shape and order as well as
+the value's, every call site restates that contract, and a wrong key yields `nil`
+rather than an error. The fix is not a new class; the object already exists and
+was discarded. Keep the hash private and add the question:
+`rate(zone_id, weight_class)`.
 
 **The unheld namespace.** A class whose returns make sense to only one caller,
 filed under the namespace of the data it reads rather than the one it serves.
 The tell is the return type: ask what a caller from the namespace it currently
 sits in would do with the value. If nothing there would ever want it, the class
 is filed under its input instead of its owner.
+
+**The loop that produces and consumes.** A loop whose body creates something and
+then feeds it to a second operation — a record created, then its children built
+from it. Tell: a local assigned inside the block and then passed to something that
+writes further records. Building a record, mutating it, and saving it is one
+operation on one object — that is not this count, and a loop doing only that is
+correct. Two passes over the collection, or two methods, say the same thing with a
+failure boundary a reader can state: all of the first, then all of the second.
+Where it shows up first is the spec — the second operation cannot be exercised
+without driving the first.
+
+This is the only count about the inside of a method body. It is here because the
+shape survives every other check: arity, naming, and placement can all be correct
+while the body still interleaves two operations that had no reason to be
+interleaved.
 
 **The deletion test.** Imagine the object gone. If the complexity vanishes, it
 was a pass-through. If it reappears at every caller, it earns its place.

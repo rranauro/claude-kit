@@ -59,8 +59,8 @@ carries a file and a line:
 
 - **Construction arity** — more than three arguments, or arguments from more
   than two aggregates.
-- **The threaded argument** — several class methods passing the same argument
-  to each other.
+- **The threaded argument** — several methods passing the same argument to each
+  other, class methods or private instance methods down a chain.
 - **The first-parameter receiver** — `Model.do_thing(record)`.
 - **Reaching back to the class** — repeated `self.class.` inside instance methods.
 - **The doubled name** — one name defined twice, especially with differing
@@ -70,6 +70,11 @@ carries a file and a line:
 - **The duplicated answer** — a method recomputing from a serialized form what
   the app already hydrates.
 - **The fixed-key hash** — a returned hash whose keys are literal.
+- **The keyed lookup handed out raw** — a returned hash the caller dereferences
+  by a composite key it builds itself. Fires at the call site, not the producer,
+  so a sub-agent reading only the class that returns it will miss this one.
+- **The loop that produces and consumes** — a loop creating a record and then
+  passing it to something that writes further records.
 - **The unheld namespace** — a class filed under the data it reads rather than
   the caller it serves.
 
@@ -118,6 +123,17 @@ neither is a design pass:
 the next change: how many callers pay the cost, how often the area changes (the
 hot spots from step 1), and how confident the count is. That order is the report
 order.
+
+**A named target gets its own section, not a rank position.** Ranking is global,
+and global ranking always buries the specific: a rule duplicated across five
+callers outranks a defect confined to one method every time, so when the user
+named a file, class, or diff, its own findings sink below the cut and they read a
+report that never mentions the thing they asked about. So split the report when
+the invocation named a target — that target's findings first, in their own
+section, ranked only among themselves, and reported even when they are weak.
+"These counts fired here, these did not" is a real answer to the question that was
+asked. The system-wide ranking follows underneath. Label which section a candidate
+is in, and never merge the two.
 
 ### 3. Present candidates as an HTML report
 

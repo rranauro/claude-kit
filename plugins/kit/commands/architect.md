@@ -34,6 +34,14 @@ question becomes *how to build it*, that is `/kit:design` — offer it and stop.
   the topic is about the world rather than this repo ("how does X handle Y"),
   search the web and read real sources. Don't answer from memory and don't
   speculate about how either the codebase or another product works.
+- **Never grade object shape unarmed.** When the topic turns to whether a class
+  is well-formed — "is this good?", "does this need splitting?", a proposed
+  extraction — load `kit:rails-codebase-design` before answering, and read the
+  class's callers and its return types, not just the file. Size is not the axis:
+  "it's only a hundred lines, looks fine" is a verdict that closes the topic
+  while having measured nothing, which is the opposite of what this command is
+  for. Reaching for the axis is not the same as running a scan — score what the
+  conversation is already looking at.
 - **Short turns.** A paragraph or a few bullets. Leave room for the user to
   push back — that exchange is the point.
 - **Disagree when you disagree.** Challenge the premise, name the thing nobody
