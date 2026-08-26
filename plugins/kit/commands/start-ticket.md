@@ -71,9 +71,11 @@ dependencies and wired runtime files; symlinking on top of that replaces a real
 `node_modules` with a link, which fails later and far from here. Say you skipped
 it and why.
 
-The `plans/` link is the exception, and it is not optional. No project recipe
-knows this suite exists, so nothing else will ever create it — and without it
-`plan-implementation` finds no plan and `/kit:design`'s handoff silently breaks.
+The `plans/` link is the exception. No project recipe knows this suite exists, so
+nothing else will ever create it, and `plan-implementation` and `/kit:walkthrough`
+both expect the cache to be there. Missing, the handoff no longer breaks — the
+store is the issue, and `kit:ticket-artifacts` falls back to it — but every read
+becomes a network call and every write splits across two directories.
 
 A fresh worktree contains only tracked files. Anything gitignored but required
 at runtime is missing, and the failures it causes are indirect — blank config,
@@ -110,10 +112,10 @@ changes.
   `ln -sfn $MAIN/<path>/node_modules $WT/<path>/node_modules`
   Use `-n` on both, or a re-run links *inside* the existing directory instead of
   replacing it.
-- **The shared `plans/` directory**, so the worktree sees the same persistent,
-  gitignored plan store as the main checkout. This is how `/kit:design`'s
-  `plans/<n>-plan.md` reaches `plan-implementation` — without the link a fresh
-  worktree has no `plans/` at all and the handoff silently breaks:
+- **The shared `plans/` directory**, so the worktree reads and writes the same
+  gitignored artifact cache as the main checkout. Without the link a fresh
+  worktree has no `plans/` at all, so every artifact read costs a `gh` round trip
+  and every artifact written lands somewhere the checkout can't see:
   `mkdir -p $MAIN/plans`
   `ln -sfn $MAIN/plans $WT/plans`
   Use `-n` so the link is created *as* `plans` rather than inside an existing
@@ -131,13 +133,15 @@ What this step needs is a **settled approach** — the why, the chosen shape, th
 rejected alternatives, and how you'll know it's done. It does not care which of
 two artifacts carries that. Take whichever you have:
 
-- **A plan file** at `<worktree>/plans/<issue-number>-plan.md`. That path is a
-  symlink (wired in `wire-worktree`) into the shared, persistent project `plans/`
-  directory, so any plan `/kit:design` wrote — in this or a prior session — is
-  visible here.
-- **A specified issue.** An issue that carries a written brief is the same
-  artifact published somewhere more durable, and a project whose tickets are
-  written that way should not be made to produce a second copy. It qualifies on
+- **A stored plan**, read through `kit:ticket-artifacts` — the cache at
+  `<worktree>/plans/<issue-number>-plan.md` if it's there, otherwise the marked
+  `plan` comment on the issue, which the skill writes back to the cache as it
+  reads. Never conclude there is no plan from a missing file: the file is the
+  cache and the comment is the store, and a fresh clone, a rebuilt worktree, or
+  another machine has the second without the first.
+- **A specified issue whose body stands on its own.** A ticket written that way
+  carries the same thing a plan would, and a project that writes them should not
+  be made to produce a second copy. It qualifies on
   one test, judged from the body and comments `fetch-issue` already fetched — no
   extra lookups:
 
@@ -163,14 +167,22 @@ two artifacts carries that. Take whichever you have:
   something unbidden. Here a human has already named the issue, so the only
   question left is whether its body settles the approach.
 
+  **`kit-blocked` is different, and worth saying out loud once.** It means a
+  human recorded something they must clear before this is started — a credential,
+  a vendor, a decision, a production reconcile. You are not gated on it here,
+  since naming the issue is a human overriding their own flag. But say it before
+  writing any code, quoting the reason from the body's "Blocked by" section, and
+  let them confirm. Never remove the label; that is their statement, not yours.
+
 Judge the issue on that contract alone. Length, formatting, and section headings
 are not the test; a short brief that answers both points qualifies and a long
 narrative that answers neither does not.
 
-**If both exist, read both — the plan file wins on conflict.** It is the later,
+**If both exist, read both — the stored plan wins on conflict.** It is the later,
 more specific artifact. Say so rather than silently picking, because a
 contradiction between them usually means the issue was re-scoped after the plan
-was written, and that's worth a sentence to the user.
+was written, and that's worth a sentence to the user. (Cache-versus-comment is a
+different question, and `kit:ticket-artifacts` settles it: the comment wins.)
 
 **If either artifact is present**, read it and treat its *reasoning* as settled — the why, the chosen approach, the rejected alternatives, and the acceptance criteria. Do NOT relitigate those decisions or re-derive the approach from scratch; that's what the `/kit:design` session already did.
 - After reading it, **ask the user before doing any verification work**: "Is this still fresh — written recently, and nothing relevant has changed in the codebase since?"
@@ -186,7 +198,7 @@ was written, and that's worth a sentence to the user.
 
 **If neither is present**, do NOT improvise an ad-hoc plan and do NOT start implementing. The ticket has no settled approach yet, so the required next step is to **invoke the `/kit:design` skill** before proceeding.
 - Run `/kit:design` with this issue number. The issue states the problem; `/kit:design`'s job is the *how* — placement, approaches, the grilling pass, and the durable handoff artifact.
-- Write the plan to `$MAIN/plans/<issue-number>-plan.md` (the repository-root `plans/` store, symlinked into this worktree — see `wire-worktree`).
+- It stores the plan itself, via `kit:ticket-artifacts` — the marked comment on the issue plus the `$MAIN/plans/<issue-number>-plan.md` mirror. Don't write either file here.
 - Once it's written, re-enter this step at the **"If either artifact is present"** branch above: present the summary, run the anchor-verification pass, and ask the user whether to proceed or adjust before any implementation.
 - **An unspecified issue is not a failure of the issue.** Falling through to here is the normal path for a ticket filed as a lean problem statement, which is how `/kit:architect` writes them. Don't report it as something missing or push the user to go back and rewrite the ticket.
 

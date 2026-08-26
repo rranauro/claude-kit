@@ -54,7 +54,7 @@ After it returns, you will be operating against the worktree path it resolved.
 
 ## Phase 3 · `read-plan` — Confirm the approach is settled
 
-Delegated to `/kit:start-ticket` `plan-implementation`. It takes the settled approach from either artifact that carries one — a plan file at `<worktree>/plans/<issue>-plan.md`, or an issue specified enough to stand as its own brief — asks whether it's still fresh, runs its anchor-verification pass when it isn't, then summarizes and asks whether to proceed. If neither exists, it invokes `/kit:design` scoped to this issue. Do not improvise a plan here, and do not require a plan file when the issue already says what a plan would.
+Delegated to `/kit:start-ticket` `plan-implementation`. It takes the settled approach from either artifact that carries one — the stored `plan`, which `kit:ticket-artifacts` resolves from the local cache or the issue comment, or an issue specified enough to stand as its own brief — asks whether it's still fresh, runs its anchor-verification pass when it isn't, then summarizes and asks whether to proceed. If neither exists, it invokes `/kit:design` scoped to this issue. Do not improvise a plan here, do not require a plan when the issue already says what a plan would, and do not read `plans/` directly — a missing file is not a missing plan.
 
 `/kit:start-ticket` `placement-check` skips itself when this skill is the caller, and `handoff` after it is a no-op here. `tdd` below owns the placement check.
 

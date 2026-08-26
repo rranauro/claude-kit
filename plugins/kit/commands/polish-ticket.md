@@ -51,7 +51,7 @@ Delegated to `/kit:start-ticket` `safety-check` through `worktree-paths`. Both e
 - **Resuming** (the common case) — `safety-check` finds an existing worktree on an `<issue>-*` branch and offers Resume. Take it. The worktree is already provisioned; do not re-run `wire-worktree`.
 - **Starting fresh** — no worktree matches the issue prefix. `/kit:start-ticket` creates one off `origin/main` and wires it.
 
-Skip `/kit:start-ticket` `plan-implementation` entirely. A cleanup ticket has no settled architecture to hand off, and **do not invoke `/kit:architect` for the epic itself** — that's what `file-ticket` is for, per split-out item. If a plan file happens to exist at `plans/<issue>-plan.md`, read it as context and move on.
+Skip `/kit:start-ticket` `plan-implementation` entirely. A cleanup ticket has no settled architecture to hand off, and **do not invoke `/kit:architect` for the epic itself** — that's what `file-ticket` is for, per split-out item. If a `plan` artifact happens to exist, read it as context and move on — the cache file only, and don't spend a `gh` round trip going after the comment when one isn't there.
 
 ### Confirm the work is all in one place
 

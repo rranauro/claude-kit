@@ -10,12 +10,13 @@ list the open issues that are not yet agent-ready and work them one at a time.
 ## What this is for
 
 `/kit:start-ticket` qualifies an issue as settled when its body states testable
-acceptance criteria and what's out of scope. Nothing in the workflow *produces*
-such a body except `/kit:design`, and `/kit:design`'s output lands in a gitignored
-local `plans/` directory that dies with the machine. So the agent-ready path is
-reachable only by writing the brief by hand, ungrilled.
+acceptance criteria and what's out of scope. `/kit:design` stores the reasoning
+behind that — but reasoning is not acceptance criteria, and nothing else in the
+workflow brings the *body* up to the bar. So the agent-ready path is reachable
+only by writing it by hand, ungrilled.
 
-This command is the missing producer. It ends with the brief on the issue.
+This command is the missing producer. It grills the scope, runs `/kit:design`,
+and ends with a body an agent can pick up unattended.
 
 **One issue at a time, with approval before anything is written.** Never sweep a
 list applying labels. The reason to work a queue here is that the *scope* pass
@@ -51,9 +52,9 @@ read:
 1. The body states **testable acceptance criteria** and **what's out of scope** —
    the same test `/kit:start-ticket` applies, so passing it means the ticket is
    already implementable.
-2. The approach has been through a design pass — a `plans/<n>-plan.md` exists, or
-   the issue carries a brief recording the direction and the alternatives
-   rejected.
+2. The approach has been through a design pass — a stored `plan` artifact exists
+   (`kit:ticket-artifacts` finds it, cache or comment), or the body itself records
+   the direction and the alternatives rejected.
 
 Criterion 1 alone is not enough. A well-written ticket can state crisp criteria
 over a decision nobody has made — an either/or in the body, or a criterion
@@ -113,17 +114,17 @@ one design can't improve on.
 
 ## 3 — Design the how
 
-Run `/kit:design` on the settled scope, telling it to publish to the issue (see
-its **Where the brief goes** section). It owns grounding in the code, behavior
+Run `/kit:design` on the settled scope. It stores the plan on the issue on its
+own now — you no longer have to ask it to. It owns grounding in the code, behavior
 placement, comparing approaches, and grilling the choice. Do not reimplement any
 of that here, and do not skip it because step 2 made the work feel obvious —
 step 2 grilled the boundary, which is a different question from the mechanism.
 
 ## 4 — Publish
 
-`/kit:design` has posted the brief — or, on the already-settled path, the brief
-was already there and this is the only step that runs. Two things remain, and
-both need the user's approval:
+`/kit:design` has stored the plan — or, on the already-settled path, it was
+already there and this is the only step that runs. Two things remain, and both
+need the user's approval:
 
 **Bring the issue body up to the bar.** The brief is reasoning; the body has to
 state **testable acceptance criteria** and **what is out of scope**. That pair is
@@ -164,6 +165,15 @@ If the issue already carries a marker, reconcile rather than append: a second
 line means two answers to one question, and nothing downstream picks a winner.
 Say what you changed and why.
 
+**The marker holds issue numbers and nothing else.** It is read mechanically —
+`/kit:start-next` satisfies it by checking that each number is closed — so a
+blocker it cannot close is not expressible there. A credential that has not been
+issued, a vendor account in review, a change landing in another repo, a decision
+you have not made: those go to the `kit-blocked` label below, with the reason in
+the prose "Blocked by" section next to the marker. Do not smuggle them into the
+marker as free text; it is parsed, and a token that is not a number either breaks
+the check or is silently dropped.
+
 **Apply the AFK-ready label** — `ready-for-agent` in the canonical vocabulary,
 or the project's own mapping where it differs.
 
@@ -197,14 +207,45 @@ same evidence step 1 uses to refuse the already-settled short-circuit, so a
 ticket that legitimately reached step 2 for want of a design pass must not leave
 step 4 labelled unless that pass actually happened.
 
-Also hold it for a step no agent should take alone regardless of the design being
-settled: a data migration that must reconcile production, anything destructive,
-anything whose blast radius the acceptance criteria don't bound.
+**Everything else that stands in the way gets the label plus `kit-blocked`.**
+Withholding is a claim that the ticket is *not designed*, and it is the wrong
+claim for a ticket that is designed and merely waiting. Two cases:
+
+- The ticket waits on something no merge will clear — a credential, a vendor
+  account, a change in another repo, a decision that is yours to make and does
+  not touch the approach.
+- The ticket is settled but names a step no agent should take alone: a data
+  migration that must reconcile production, anything destructive, anything whose
+  blast radius the acceptance criteria don't bound.
+
+Both are `ready-for-agent` **and** `kit-blocked` — `gh issue edit <n> --add-label
+kit-blocked` — with the reason written into the body's "Blocked by" section.
+`/kit:start-next` skips a `kit-blocked` ticket and reports it by name with that
+reason, and never removes the label; clearing it is your statement that the thing
+is actually cleared. The difference from withholding is that the ticket stays
+visible and becomes startable the moment you drop one label, rather than needing
+a re-triage nobody scheduled.
+
+So the two levers are not interchangeable. Withhold `ready-for-agent` when the
+*brief* is not finished. Apply `kit-blocked` when the brief is finished and the
+*world* is not ready.
 
 Say which of these applies rather than just declining. Confirm the label as its
 own decision rather than folding it into the publish.
 
-**Then ask one more question, in the same breath: will the PR need holding?**
+**Then ask two more questions, in the same breath.** First, is anything holding
+the start?
+
+```
+Anything a human must clear before an agent starts this? (y/N)
+```
+
+Yes means `kit-blocked` and a line in "Blocked by" saying what and who clears it.
+Same reason to ask it here as the hold below: the scope pass you just ran is what
+surfaced the credential, the vendor, or the migration, and this is the last
+moment that context is in front of you. Default to no.
+
+**Second: will the PR need holding?**
 
 ```
 Hold the PR for in-app verification before it merges? (y/N)
@@ -246,3 +287,7 @@ date is the timestamp, and that command knows to read it.
 - Apply the agent-ready label to more than one issue without individual approval.
 - Widen a ticket's scope without telling the user it got wider.
 - Skip step 3's grilling because step 2 already grilled something.
+- Remove `kit-blocked` from an issue. Applying it is a decision the user confirms;
+  clearing it is their statement that the thing was actually cleared, and you
+  cannot verify what it was waiting on. Re-triaging a blocked ticket does not
+  clear it either.

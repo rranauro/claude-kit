@@ -11,8 +11,8 @@ the prefix comes from the `name` field in `plugins/kit/.claude-plugin/plugin.jso
 | Command | What it does |
 |---|---|
 | `/kit:architect` | The problem conversation. Explores an idea, questions the premise, looks at how others solve it — and files lean GitHub issues only if the conversation earns them. |
-| `/kit:design` | The *how*, once the *what* is settled. Places the behavior, compares approaches, grills the choice, and writes the durable plan. |
-| `/kit:triage` | The lane for work that arrived rather than work you started. Bins an issue (fixed, duplicate, parked, not-a-ticket), grills its *scope* before any approach exists — which adjacent decisions fold in now, and which are their own tickets — then runs `/kit:design` and leaves the brief on the issue, where an agent that never had your `plans/` directory can read it. |
+| `/kit:design` | The *how*, once the *what* is settled. Places the behavior, compares approaches, grills the choice, and stores the plan on the issue it belongs to — where an agent that never had your `plans/` directory can read it. |
+| `/kit:triage` | The lane for work that arrived rather than work you started. Bins an issue (fixed, duplicate, parked, not-a-ticket), grills its *scope* before any approach exists — which adjacent decisions fold in now, and which are their own tickets — then runs `/kit:design` and brings the body up to the bar an unattended agent can pick up from. |
 
 ### Building it
 
@@ -20,7 +20,7 @@ the prefix comes from the `name` field in `plugins/kit/.claude-plugin/plugin.jso
 |---|---|
 | `/kit:start-ticket` | Reads an issue, creates an isolated git worktree off `origin/main` — or delegates to your project's own worktree command — wires up gitignored runtime files, and picks up any plan `/kit:design` left behind. |
 | `/kit:ship-ticket` | Orchestrates the rest: TDD, a simplify pass, PR, automated review, auto-merge, cleanup. |
-| `/kit:start-next` | Picks up the next epic ticket whose blocking edges have all closed — lowest issue number first — and hands it to `/kit:ship-ticket`. Deliberate by design: `/kit:tend-prs` runs unattended because it never writes an implementation, and this is the step that does. |
+| `/kit:start-next` | Picks up the next epic ticket whose blocking edges have all closed — lowest issue number first — and hands it to `/kit:ship-ticket`. Skips any ticket carrying `kit-blocked`, the start-side twin of `kit-hold`: a ready ticket waiting on something no merge will clear, reported by name with its reason rather than silently withheld. Deliberate by design: `/kit:tend-prs` runs unattended because it never writes an implementation, and this is the step that does. |
 | `/kit:polish-ticket` | Runs a catch-all polish ticket. The user reports problems one at a time; each is triaged into an inline fix on the branch or its own filed ticket. |
 | `/kit:commit` | Focused commit with a real message. Reads the project's test, lint, and security gates from `CLAUDE.md`/manifest/CI and runs them on what changed. |
 | `/kit:new-pull-request` | Opens a PR with a closing keyword wired to the issue. |
@@ -53,6 +53,7 @@ the prefix comes from the `name` field in `plugins/kit/.claude-plugin/plugin.jso
 | `kit:grilling` | The confirmation pass over a converged direction or a ticket's boundary. Adopted from mattpocock/skills; the local fork diverges hard. It fences the pass to what the change actually builds and parks everything adjacent, and it **asserts rather than interrogates** — stating what it takes to be true with the evidence, so the user corrects rather than answers. A question is earned only where choosing differently changes performance, testability, or maintainability, and then it carries one alternative rather than a menu. An edge case that cannot name the input and the path reaching it is not raised at all. |
 | `kit:to-tickets` | Cuts an epic into tracer-bullet tickets, each declaring which tickets must merge before it can start. Adopted from mattpocock/skills; the local fork adds a machine-readable edge marker so `/kit:start-next` can pick them up on its own, and an out-of-scope section so each ticket stands as its own brief. |
 | `kit:writing-tickets` | Lean issues that state the problem and the decision without freezing an implementation. |
+| `kit:ticket-artifacts` | Where a plan, brief, or walkthrough is stored and how it's found again. One marked comment per kind on the issue is the store — updated in place, so an issue never accumulates superseded copies — and gitignored `plans/<n>-<kind>.md` is a cache of it. Collapses three storage rules and three recovery paths into one, and gives the walkthrough a life beyond the worktree it was written in. |
 | `kit:worktree-conventions` | Where worktrees live and who creates them — delegates to the project's own command when it has one, and detects the resulting path from git rather than assuming it. See [worktrees](worktrees.md). |
 | `kit:triage-memory` | Clears down an auto-memory directory that has grown past its usefulness — bins every memory as stale, workflow, duplicate, or unclassified, and trades continuously-loaded memory for a `WORKFLOW.md` that's read only when the work calls for it. |
 

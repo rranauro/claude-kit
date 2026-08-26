@@ -19,7 +19,7 @@ worktrees**; there's nothing to configure and no vocabulary to adopt.
 
 ```
 /kit:architect     talk about the problem, file lean issues
-/kit:design        settle the approach, grill it, write the plan
+/kit:design        settle the approach, grill it, store the plan on the issue
 /kit:start-ticket  isolated worktree, wired up, plan in hand
 /kit:ship-ticket   TDD → simplify → PR → review → auto-merge → cleanup
 ```
