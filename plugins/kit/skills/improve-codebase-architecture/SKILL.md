@@ -124,6 +124,17 @@ the next change: how many callers pay the cost, how often the area changes (the
 hot spots from step 1), and how confident the count is. That order is the report
 order.
 
+**A named target gets its own section, not a rank position.** Ranking is global,
+and global ranking always buries the specific: a rule duplicated across five
+callers outranks a defect confined to one method every time, so when the user
+named a file, class, or diff, its own findings sink below the cut and they read a
+report that never mentions the thing they asked about. So split the report when
+the invocation named a target — that target's findings first, in their own
+section, ranked only among themselves, and reported even when they are weak.
+"These counts fired here, these did not" is a real answer to the question that was
+asked. The system-wide ranking follows underneath. Label which section a candidate
+is in, and never merge the two.
+
 ### 3. Present candidates as an HTML report
 
 Write the report into the repository's `plans/` directory, so it sits beside the
