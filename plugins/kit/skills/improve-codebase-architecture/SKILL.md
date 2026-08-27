@@ -230,6 +230,10 @@ Two side effects are worth doing inline if the conversation continues:
   future explorer to avoid re-suggesting the same thing — skip ephemeral reasons
   ("not worth it right now") and self-evident ones.
 
+`kit:domain-modeling` owns both formats — glossary entries in its
+`CONTEXT-FORMAT`, ADRs in its `ADR-FORMAT`. Invoke it rather than inventing a
+shape here.
+
 ## Never
 
 - Make implementation changes. This is a scan and a report.

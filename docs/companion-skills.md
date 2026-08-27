@@ -1,7 +1,7 @@
 # Companion skills
 
 I found [Matt Pocock's suite][pocock] about seven months after building this, and
-took the nuggets that fit. Three of his skills now live in the plugin as forks,
+took the nuggets that fit. Four of his skills now live in the plugin as forks,
 and one of his ideas was replaced outright.
 
 | Forked as | From | What it supplies |
@@ -9,6 +9,13 @@ and one of his ideas was replaced outright.
 | `kit:improve-codebase-architecture` | `improve-codebase-architecture` | The scan-and-report `/kit:architect` offers when the topic is "this area feels wrong" rather than a specific question. |
 | `kit:grilling` | `grilling` | The confirmation pass over a converged direction or a ticket's boundary. |
 | `kit:to-tickets` | `to-tickets` | Cutting an epic into dependency-ordered tracer-bullet tickets. |
+| `kit:domain-modeling` | `domain-modeling` | The glossary and ADR formats behind the two side effects `kit:improve-codebase-architecture` leaves behind, and the active discipline of sharpening terms mid-design. |
+
+`grill-with-docs` is deliberately not forked: upstream it is a one-line composer
+that calls `grilling` and `domain-modeling` back to back, and both halves are
+here under their own names. `/kit:architect` and `/kit:design` already run the
+grill; reach for `kit:domain-modeling` alongside it when the model itself is what
+the conversation is changing.
 
 Each fork carries an `UPSTREAM` file with the sha it was taken at and the `git
 diff` incantation for reviewing what upstream changed since, plus the upstream
@@ -62,7 +69,8 @@ reasons.
 
 The two suites compose rather than compete. `kit:rails-codebase-design` asks what
 shape an object should take; `kit:behavior-placement` asks *whose* the behavior
-is. And go read the rest of his suite regardless of whether you use this one.
+is; `kit:domain-modeling` asks what the thing is *called* and whether the
+glossary already answers that. And go read the rest of his suite regardless of whether you use this one.
 
 [pocock]: https://github.com/mattpocock/skills
 [skills-cli]: https://github.com/vercel-labs/skills
