@@ -7,10 +7,10 @@
 # provenance footer live in scripts/pr-review.sh, so this hook, /kit:start-review,
 # and manual re-runs all produce the same review.
 #
-# Registered by hooks/hooks.json, so it ships and versions with the reviewer it
-# delegates to. That means it fires in every repo you create a PR from — the
-# posting rule in pr-review.sh is what keeps it off other people's work: it posts
-# only when the PR author is you, and writes to a file otherwise.
+# Not auto-registered: register it in a project's .claude/settings.json, per
+# docs/hooks.md. A project that ships its own PR-review hook keeps it — this one
+# never competes with it. The posting rule in pr-review.sh is what keeps a review
+# off other people's work: it posts only when the PR author is you.
 # Kill switch: export SKIP_PR_REVIEW=1.
 
 set -u
