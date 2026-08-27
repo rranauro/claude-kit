@@ -134,9 +134,19 @@ if [ -z "$OUT_DIR" ]; then
   else
     MAIN_CHECKOUT="$REPO_ROOT"
   fi
-  OUT_DIR="${MAIN_CHECKOUT}/reviews/pr-${PR_NUM}"
+  # never the checkout root: a monorepo keeps its root for tracked project dirs, so
+  # nest under the app subdir when there is one.
+  if [ -d "${MAIN_CHECKOUT}/rx" ]; then
+    OUT_DIR="${MAIN_CHECKOUT}/rx/tmp/reviews/pr-${PR_NUM}"
+  else
+    OUT_DIR="${MAIN_CHECKOUT}/tmp/reviews/pr-${PR_NUM}"
+  fi
 fi
 OUT_FILE="${OUT_DIR}/claude-review.md"
+
+# here, not in the prompt: the headless agent's sandbox refuses mkdir outside its
+# working directory, which silently downgrades the run to stdout-only.
+mkdir -p "$OUT_DIR"
 
 if [ "$POST" = "yes" ]; then
   DELIVERY="Post the review as a PR comment: pipe the body into \`gh pr comment ${PR_URL} --body-file -\`."
@@ -212,13 +222,16 @@ CHANGED="$(
 
 echo "$(date -u +%FT%TZ) pr=${PR_URL} author=${AUTHOR} source=${SOURCE} model=${MODEL} auth=${AUTH}${AUTH_NOTE} post=${POST} changed=[${CHANGED}]" >>"$LOG"
 
+# 15 silently truncated reviews of large diffs — the run dies mid-read and writes no artifact.
+MAX_TURNS="${PR_REVIEW_MAX_TURNS:-60}"
+
 if [ "$DETACH" = "1" ]; then
-  nohup "$CLAUDE_BIN" -p --model "$MODEL" --max-turns 30 --dangerously-skip-permissions "$PROMPT" \
+  nohup "$CLAUDE_BIN" -p --model "$MODEL" --max-turns "$MAX_TURNS" --dangerously-skip-permissions "$PROMPT" \
     >>"$LOG" 2>&1 </dev/null &
   disown
   echo "review of PR #${PR_NUM} running in background; log: $LOG"
 else
-  "$CLAUDE_BIN" -p --model "$MODEL" --max-turns 30 --dangerously-skip-permissions "$PROMPT" 2>&1 | tee -a "$LOG"
+  "$CLAUDE_BIN" -p --model "$MODEL" --max-turns "$MAX_TURNS" --dangerously-skip-permissions "$PROMPT" 2>&1 | tee -a "$LOG"
   [ "$POST" = "no" ] && echo "review written to: $OUT_FILE"
 fi
 
