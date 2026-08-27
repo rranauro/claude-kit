@@ -16,7 +16,7 @@
 #   --detach              run in background; log to ~/.claude/logs/pr-review
 #   --post                post the review as a PR comment
 #   --no-post             write to a local file instead
-#   --out-dir <path>      where --no-post writes; default <main-checkout>/reviews/pr-<n>
+#   --out-dir <path>      where --no-post writes; default <project>/tmp/reviews/pr-<n>
 #   --source <label>      provenance label for the footer (default: manual)
 #   --model <id>          model to run the review on
 #
@@ -169,15 +169,11 @@ if [ -z "$OUT_DIR" ]; then
 fi
 OUT_FILE="${OUT_DIR}/claude-review.md"
 
-# here, not in the prompt: the headless agent's sandbox refuses mkdir outside its
-# working directory, which silently downgrades the run to stdout-only.
-mkdir -p "$OUT_DIR"
-
-if [ "$POST" = "yes" ]; then
-  DELIVERY="Post the review as a PR comment: pipe the body into \`gh pr comment ${PR_URL} --body-file -\`."
-else
-  DELIVERY="Do NOT post anything to GitHub. Write the review to \`${OUT_FILE}\` (\`mkdir -p\` the directory first). This PR is authored by someone else; posting is the user's decision, not yours."
-fi
+# The agent delivers nothing. It runs inside the sandbox of whatever launched it,
+# where a Write or an mkdir outside the working directory is refused — and a refusal
+# arriving after the review is written costs the entire run. Emitting to stdout
+# always works; the shell below is what posts or saves it.
+DELIVERY="Print the review body to stdout as your final message. Your entire final message must BE the review, starting at the \`<!-- claude-pr-review -->\` line — no preamble, no closing remark, no surrounding code fence, no restating of these instructions. Do not write any file, do not post to GitHub, do not use the Write tool. Delivery is handled by the caller."
 
 # --- Prompt -------------------------------------------------------------------
 # Written for a senior engineer in the project's stack. Name the specific
@@ -250,14 +246,54 @@ echo "$(date -u +%FT%TZ) pr=${PR_URL} author=${AUTHOR} source=${SOURCE} model=${
 # 15 silently truncated reviews of large diffs — the run dies mid-read and writes no artifact.
 MAX_TURNS="${PR_REVIEW_MAX_TURNS:-60}"
 
+# Capture, then deliver. A review that reaches stdout and fails to land is still
+# in the log; one the agent failed to write is not — the agent's own report of the
+# failure becomes the only trace, and nothing reads it.
+run_review() {
+  local body status
+  body="$("$CLAUDE_BIN" -p --model "$MODEL" --max-turns "$MAX_TURNS" \
+    --dangerously-skip-permissions "$PROMPT" 2>>"$LOG" </dev/null)"
+  status=$?
+  printf '%s\n' "$body" >>"$LOG"
+  if [ "$status" -ne 0 ] || [ -z "$body" ]; then
+    echo "FAILED: claude exited ${status} with ${#body} bytes of review" >>"$LOG"
+    return 1
+  fi
+
+  # A headless agent still editorializes: it will preface the review, or fence the
+  # whole thing to show it is quoting the required first lines. Both break the
+  # marker contract /kit:review-copilot reads, and a fenced body posts as literal
+  # code. Cut to the last marker — the real body is always the final one — and drop
+  # a fence closing at EOF. The log above keeps the unedited output.
+  local start
+  start="$(printf '%s\n' "$body" | grep -n '<!-- claude-pr-review -->' | tail -1 | cut -d: -f1)"
+  if [ -z "$start" ]; then
+    echo "FAILED: review carries no <!-- claude-pr-review --> marker" >>"$LOG"
+    return 1
+  fi
+  body="$(printf '%s\n' "$body" | tail -n "+${start}" |
+    awk 'NR > 1 { print prev } { prev = $0 } END { if (prev != "```") print prev }')"
+  if [ "$POST" = "yes" ]; then
+    printf '%s\n' "$body" | gh pr comment "$PR_URL" --body-file - >>"$LOG" 2>&1 || {
+      echo "FAILED: review produced but gh pr comment rejected it" >>"$LOG"; return 1; }
+  else
+    mkdir -p "$OUT_DIR" || { echo "FAILED: cannot create ${OUT_DIR}" >>"$LOG"; return 1; }
+    printf '%s\n' "$body" >"$OUT_FILE" || return 1
+  fi
+}
+
 if [ "$DETACH" = "1" ]; then
-  nohup "$CLAUDE_BIN" -p --model "$MODEL" --max-turns "$MAX_TURNS" --dangerously-skip-permissions "$PROMPT" \
-    >>"$LOG" 2>&1 </dev/null &
-  disown
+  ( trap '' HUP; run_review ) >/dev/null 2>&1 &
+  disown 2>/dev/null || true
   echo "review of PR #${PR_NUM} running in background; log: $LOG"
-else
-  "$CLAUDE_BIN" -p --model "$MODEL" --max-turns "$MAX_TURNS" --dangerously-skip-permissions "$PROMPT" 2>&1 | tee -a "$LOG"
-  [ "$POST" = "no" ] && echo "review written to: $OUT_FILE"
+  exit 0
 fi
 
-exit 0
+if run_review; then
+  [ "$POST" = "no" ] && echo "review written to: $OUT_FILE"
+  exit 0
+fi
+
+# The one thing the old version could not do: say that it failed.
+echo "error: review of PR #${PR_NUM} failed; see $LOG" >&2
+exit 1
