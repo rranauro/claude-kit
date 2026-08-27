@@ -41,7 +41,7 @@ the prefix comes from the `name` field in `plugins/kit/.claude-plugin/plugin.jso
 |---|---|
 | `/kit:cleanup-worktree` | Removes a merged worktree and its branch. |
 | `/kit:worktree-gc` | The periodic pass for the ones that never went through `/kit:cleanup-worktree`. Re-checks merge state against a fresh `origin/main`, and sweeps the untracked husks `git worktree remove` leaves behind. |
-| `/kit:triage-memory` | The same pass for auto-memory. Bins every memory as stale, workflow, duplicate, or unclassified, then clears it down — moving what's worth keeping into an on-demand `WORKFLOW.md` and archiving before deleting. `--dry-run` reports what you'd get back and what you'd lose, without writing anything. |
+| `/kit:triage-memory-run` | The same pass for auto-memory. Bins every memory as stale, workflow, duplicate, or unclassified, then clears it down — moving what's worth keeping into an on-demand `WORKFLOW.md` and archiving before deleting. `--dry-run` reports what you'd get back and what you'd lose, without writing anything. |
 
 ## Skills
 
