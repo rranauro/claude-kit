@@ -7,12 +7,13 @@ description: Build and sharpen a project's domain model. Use when discussing cod
 
 Actively build and sharpen the project's domain model as you design. This is the *active* discipline: challenging terms, inventing edge-case scenarios, and writing the glossary and decisions down the moment they crystallise. (Merely *reading* `CONTEXT.md` for vocabulary is not this skill: that's a one-line habit any skill can do. This skill is for when you're changing the model, not just consuming it.)
 
-`/kit:architect` and `/kit:design` are where it usually fires, and
-`kit:improve-codebase-architecture` reaches it for the two side effects it
-leaves behind — a term a candidate named that the glossary doesn't have, and an
-ADR for a candidate the user rejected for a load-bearing reason. It never runs
-on its own during unrelated work: a session touching the code is not a session
-changing the model.
+Three callers reach it, each at the point where the model actually changes:
+`/kit:architect` when the topic turns on what a thing *is* rather than how it
+works; `/kit:design` once a choice is confirmed, for the concept it names and
+the alternatives it rejected; and `kit:improve-codebase-architecture` for the
+same two artifacts a scan leaves behind. It never runs on its own during
+unrelated work — a session touching the code is not a session changing the
+model.
 
 ## File structure
 

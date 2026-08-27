@@ -96,6 +96,22 @@ is the trigger. Most of what comes back should be confirmations; if it surfaces 
 decision that genuinely changes performance, testability, or maintainability, go
 back to step 3 for that branch.
 
+Then invoke `kit:domain-modeling` on what the confirmed choice leaves behind —
+but only if it left something. Two things qualify, and neither survives the plan
+file:
+
+- **The design names a concept the glossary doesn't have.** A class you are about
+  to add is a noun the project will use in code review and in every later ticket.
+  Write the entry now, while the meaning is still being argued; a term back-filled
+  later records what got built rather than what was decided.
+- **An approach was rejected for a reason a future reader would need.** Step 3
+  compared 2-3 of them and the losers are about to disappear. If someone would
+  credibly propose one again next quarter, that is an ADR. If they wouldn't, it
+  isn't — the skill's three gates decide, not this step.
+
+Most designs leave neither, and that is the normal outcome. Don't manufacture a
+term or an ADR to have run the step.
+
 ## 5 — Write the plan
 
 Summarize the agreed approach, what can be done incrementally vs. what requires a

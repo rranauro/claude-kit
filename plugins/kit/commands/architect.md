@@ -42,6 +42,13 @@ question becomes *how to build it*, that is `/kit:design` — offer it and stop.
   while having measured nothing, which is the opposite of what this command is
   for. Reaching for the axis is not the same as running a scan — score what the
   conversation is already looking at.
+- **Challenge the word, not just the idea.** When the topic turns on what a thing
+  *is* — two words being used for one concept, one word covering two, a name the
+  glossary doesn't have — load `kit:domain-modeling` and settle it here. A topic
+  explored in language nobody pinned down produces tickets that read as agreement
+  and get built as two different things. That skill writes the glossary entry as
+  the term resolves, which is why it belongs in the conversation rather than in
+  the issue body afterwards.
 - **Short turns.** A paragraph or a few bullets. Leave room for the user to
   push back — that exchange is the point.
 - **Disagree when you disagree.** Challenge the premise, name the thing nobody
