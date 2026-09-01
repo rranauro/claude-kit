@@ -33,7 +33,7 @@ open PR you own — triage the review round, push the fixes, enable auto-merge,
 remove merged worktrees — so it runs headless on a launchd schedule. And a
 `PostToolUse` hook fires a second independent reviewer the moment a PR opens.
 
-That's the shape. There are ~15 commands and 5 skills in all; the full list is in
+That's the shape. There are ~15 commands and 11 skills in all; the full list is in
 [docs/commands.md](docs/commands.md).
 
 ## Documentation
