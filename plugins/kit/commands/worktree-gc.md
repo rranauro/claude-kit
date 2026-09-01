@@ -167,12 +167,15 @@ after itself is what that command is for. Say so rather than going looking.
 Show each candidate with its size (`du -sh`), ask, and on approval:
 
 ```
-chmod -R u+w <path> 2>/dev/null; rm -rf <path>
+chmod -R u+rwX <path> 2>/dev/null; rm -rf <path>
 ```
 
 The `chmod` is not optional — an app booted in the worktree leaves cache files
 whose writer set them read-only, and `rm -rf` aborts partway on those, leaving a
-smaller husk in place of the big one.
+smaller husk in place of the big one. `u+rwX`, not `u+w`: a directory that is not
+traversable cannot be descended into to delete what is under it, so the sweep
+fails on the directory rather than on the files inside it. `X` adds execute to
+directories only.
 
 ---
 

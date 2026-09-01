@@ -115,6 +115,9 @@ are not interchangeable:**
   `git worktree list` named *before* the removal, captured up front. If the
   project has a remove command, this doesn't arise — let it clean up.
 
-Either way, `chmod -R u+w <path>` before `rm -rf`: an app booted in the worktree
+Either way, `chmod -R u+rwX <path>` before `rm -rf`: an app booted in the worktree
 leaves cache files whose writer marked them read-only, and `rm -rf` aborts
-partway on those, replacing a big husk with a smaller one.
+partway on those, replacing a big husk with a smaller one. `u+rwX` rather than
+`u+w` — a directory left non-traversable cannot be descended into to delete what
+is under it, so the sweep fails on the directory itself. `X` adds execute to
+directories only, never to files.
