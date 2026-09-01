@@ -35,14 +35,17 @@ sequence is repeated here with each gate replaced by a rule, and the cases a rul
 cannot decide **park** (see below) instead of asking.
 
 **What makes that safe is the plan, not this file.** A ticket reaching Step 3 has
-a plan a human wrote and `/kit:triage` published — `kit:start-ticket` no longer
-accepts a body that merely reads settled. This command spends that authorization;
-it does not manufacture one. Where no plan exists, it parks.
+a plan — one a human wrote and `/kit:triage` published, or one Step 2 derived
+because the ticket's kind says its acceptance can be asserted without a human
+eye. `kit:start-ticket` no longer accepts a body that merely reads settled, and
+neither form is manufactured here: the first is authorization granted, the second
+is authorization the acceptance criteria and the PR reviewer stand behind. Where
+neither is available, it parks.
 
 `/kit:tend-prs` is the other unattended half: it picks up at the open PR, triages
 the review round, enables auto-merge, and removes the worktree once it lands.
-Between them, the only things left for you are designing the ticket and walking
-the PRs that carry `kit-hold`.
+Between them, what is left for you is designing the tickets whose result someone
+has to look at, answering the parks, and walking the PRs that carry `kit-hold`.
 
 ---
 
@@ -214,11 +217,46 @@ below replaces a question with a rule:
 | "Present a summary and ask whether to proceed or adjust" | The plan is the authorization. Anchors verify and no drift contradicts them → proceed. |
 | An anchor moved, or drift contradicts an assumption | **Park.** Its own text calls this a design decision, and it is right. |
 | `kit-blocked` present → confirm before coding | Unreachable: Step 1 rule 3 already filtered it. If you somehow got here, park. |
-| No plan present → invoke `/kit:design` | **Park.** Designing unattended is the one thing this workflow exists to keep a human in. |
+| No plan present → invoke `/kit:design` | Design it here when the kind allows, park when it doesn't — see below. |
 
-That last row is why the tightened qualification matters. A body that merely
-reads as settled no longer passes, so a ticket reaching implementation here has a
-plan a human wrote, which is precisely the authorization this step is spending.
+### No plan: design it, or park
+
+A stored plan is a human's authorization and this step spends it. Where there
+isn't one, whether this command may make its own turns on a single question,
+which the ticket's kind already answers: **can this ticket's acceptance be
+asserted without a human eye?**
+
+- **`bug`, `improve-codebase`, `technical-debt`** — invoke `/kit:design <number>
+  unattended` and continue with the plan it stores. That mode owns what changes
+  when nobody is watching; do not reproduce its rules here.
+- **`user-experience`** — park, and say the kind is why. The plan is not what is
+  missing: no unattended pass can stand in for someone looking at the result, so
+  this ticket parks again on the next firing and the report should say so rather
+  than reading as a fixable gap.
+- **No kind at all** — park. Unclassified is not a default, and choosing one here
+  would be this command granting itself the permission the label exists to give.
+
+The criteria are what make the first case safe, not the kind label by itself.
+`/kit:design`'s own preconditions require them, so a ticket with a qualifying
+kind and a body that never says what "done" means parks there — correctly, and
+with a better reason than this step could give.
+
+**A park inside `/kit:design` is this ticket's park.** It has already commented
+the decision and applied `kit-blocked`. Stop working the ticket, carry its reason
+into Step 6's report, and **do not park it again** — a second comment says the
+same thing twice and leaves a reader dating two copies of one reason.
+
+**Skip the anchor pass for a plan produced by this run.** The row above says run
+it always, and that is right for a plan that has aged in a queue. A plan written
+minutes ago from the tree you are about to change has nothing to have drifted
+from; re-verifying it against the source it was just read out of proves nothing.
+Anchor-verify a stored plan, never a fresh one.
+
+**What the reviewer is for.** A stored plan was argued with a human before any
+code existed. A plan this step derived was not, and the acceptance criteria plus
+the PR review are what stand in its place — which is why Step 5 says so on the
+PR. That is the trade this path makes, and it is only a fair one while the
+reviewer can see which kind of plan they are reading.
 
 Also skip `placement-check` there — `implement` below runs it next to the code.
 
@@ -275,6 +313,12 @@ already answered — at triage, as `kit-hold`, which `/kit:new-pull-request`
 transcribes onto the PR. A held PR gets its reviews and waits for your
 walkthrough; an unheld one was decided not to need it.
 
+**If the plan was written by this run, say so in the PR body** — one line, that
+the approach was designed unattended and the plan comment on the issue carries
+the alternatives it beat. The reviewer is the first human to see that reasoning,
+and a review that does not know it is reviewing a derived design reviews only the
+diff.
+
 Verify the body carries `Closes #<issue>`. The closing keyword in the body is
 what closes the ticket, and `/kit:run-ticket` reads a blocker as cleared only
 when its issue is closed — a missing keyword strands every ticket downstream of
@@ -284,10 +328,18 @@ Leave auto-merge off. `/kit:tend-prs` sets it after the review round is triaged.
 
 ## Step 6 · `report` — Say what happened
 
-One paragraph. Which ticket was taken, what the PR number is, whether it carries
-`kit-hold` and so needs your walkthrough, and — separately and by name — anything
-parked, with the decision each one is waiting on. The parked list is the useful
-half of this report: it is your queue.
+One paragraph. Which ticket was taken, what the PR number is, whether the plan
+was stored or designed by this run, whether it carries `kit-hold` and so needs
+your walkthrough, and — separately and by name — anything parked, with the
+decision each one is waiting on. The parked list is the useful half of this
+report: it is your queue.
+
+**Split the parked list by what would clear it.** A ticket parked on a decision
+inside its design is waiting on an answer. A `user-experience` ticket parked for
+its kind is waiting on you to run `/kit:design` yourself, and will park on every
+firing until you do. An unclassified one is waiting on a label, which is seconds
+of work. Reported as one list they read as the same problem and the cheapest of
+the three hides among the others.
 
 From here `/kit:tend-prs` takes over — it catches the review round, triages the
 findings, enables auto-merge unless something warrants your attention, and removes
