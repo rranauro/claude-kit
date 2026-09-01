@@ -40,6 +40,28 @@ should exist:
 Most of the value of triage is the tickets that never reach step 2. Don't rush
 this to get to the interesting part.
 
+### Assign the kind
+
+A ticket that survives binning gets **exactly one kind label** — the project's
+mapping owns the strings; the canonical four are `bug`, `improve-codebase`,
+`technical-debt`, and `user-experience`. Two kinds is two answers to one
+question, and nothing downstream picks a winner.
+
+The kind is not a topic. It answers one question: **can this ticket's acceptance
+be asserted without a human eye?** A failing test that goes green, a shape count,
+behavior preserved across a refactor — those are yes, and they are the first
+three. A rendered view, an interaction, a thing someone has to look at — that is
+`user-experience`. Subject-matter labels (`cli`, `Security`, `enhancement`, …)
+carry no kind and stack freely alongside it.
+
+This is the switch the unattended design pass reads, which is why it is assigned
+here rather than inferred later: kinds 1-3 can be designed with nobody present,
+because their acceptance criteria hold the result to something checkable.
+`user-experience` cannot, and parks for a human at the design pass.
+
+**Kind does not decide `kit-hold`** — see step 4. It decides who has to be
+present while the approach is chosen, not whether the result must be walked.
+
 ### Already settled
 
 A project that writes good tickets will hand you issues that need nothing from
@@ -272,6 +294,14 @@ running app before it merges is the same judgment, made with the same context in
 front of you. The alternative is finding out later: the agent opens a PR, a
 tending pass fires within minutes, and you are racing a schedule to label
 something you already knew would need it.
+
+**Ask it of every kind, and never infer it from one.** A `user-experience`
+ticket is the obvious candidate for a hold and still often does not need one —
+it may be a dependency inside a suite, with nothing rendered to walk yet. A
+`technical-debt` ticket can need one, when the refactor lands under a view whose
+behavior no test pins. Kind says who must be present at the design; this question
+asks what the finished PR needs. They are different judgements and the second is
+the user's.
 
 **Default to no, and keep the question cheap.** Most tickets do not need a hold —
 the reviewers and the acceptance criteria are the check, and a PR that merges
