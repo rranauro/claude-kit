@@ -19,7 +19,7 @@ every open PR on a loop. Don't reintroduce those phases here; a session that has
 to stay alive to finish a ticket is the problem that command exists to solve.
 
 Constituent skills:
-- `/kit:start-ticket` — `clean-check`, `worktree`, `read-plan`
+- `kit:start-ticket` — `clean-check`, `worktree`, `read-plan`
 - `/kit:commit` — invoked inside `tdd` as needed
 - `kit:behavior-placement` — `tdd`, when the change adds or moves a class
 - `/simplify` — `simplify-pass`
@@ -32,7 +32,7 @@ Constituent skills:
 
 - **Do not duplicate constituent skill bodies.** If a phase says "run `/kit:commit`", invoke the Skill tool — do not inline its steps.
 - **Halt at every gate.** Gates are explicit user checkpoints (`read-plan` plan approval, `push-and-pr` push approval). Do not skip them in the name of momentum.
-- **Worktree-prefixed paths.** Once `worktree` creates the worktree, every Read/Edit/Write must target the path `/kit:start-ticket` `create-worktree` resolved. The tool cwd stays at the main checkout.
+- **Worktree-prefixed paths.** Once `worktree` creates the worktree, every Read/Edit/Write must target the path `kit:start-ticket` `create-worktree` resolved. The tool cwd stays at the main checkout.
 - **Never merge locally.** PRs merge on GitHub only — via `gh pr merge`, never `git merge` into main.
 - **Never run a test directory or the full suite without permission.** Named files and examples only; a path argument with no filename needs an ask. CI runs the full sweep on the PR.
 
@@ -40,13 +40,13 @@ Constituent skills:
 
 ## Phase 1 · `clean-check` — Clean-main check
 
-Delegated to `/kit:start-ticket` `safety-check`. Before invoking, confirm `$ARGUMENTS` is an issue number/URL; if missing, ask the user.
+Delegated to `kit:start-ticket` `safety-check`. Before invoking, confirm `$ARGUMENTS` is an issue number/URL; if missing, ask the user.
 
 ---
 
 ## Phase 2 · `worktree` — Worktree off `origin/main`
 
-Delegated to `/kit:start-ticket` `fetch-issue` through `worktree-paths`. Branch name derives from the issue title: `<issue>-<short-description>`. The user confirms it inside `/kit:start-ticket`.
+Delegated to `kit:start-ticket` `fetch-issue` through `worktree-paths`. Branch name derives from the issue title: `<issue>-<short-description>`. The user confirms it inside `kit:start-ticket`.
 
 After it returns, you will be operating against the worktree path it resolved.
 
@@ -54,9 +54,9 @@ After it returns, you will be operating against the worktree path it resolved.
 
 ## Phase 3 · `read-plan` — Confirm the approach is settled
 
-Delegated to `/kit:start-ticket` `plan-implementation`. It takes the settled approach from either artifact that carries one — the stored `plan`, which `kit:ticket-artifacts` resolves from the local cache or the issue comment, or an issue specified enough to stand as its own brief — asks whether it's still fresh, runs its anchor-verification pass when it isn't, then summarizes and asks whether to proceed. If neither exists, it invokes `/kit:design` scoped to this issue. Do not improvise a plan here, do not require a plan when the issue already says what a plan would, and do not read `plans/` directly — a missing file is not a missing plan.
+Delegated to `kit:start-ticket` `plan-implementation`. It takes the settled approach from either artifact that carries one — the stored `plan`, which `kit:ticket-artifacts` resolves from the local cache or the issue comment, or an issue specified enough to stand as its own brief — asks whether it's still fresh, runs its anchor-verification pass when it isn't, then summarizes and asks whether to proceed. If neither exists, it invokes `/kit:design` scoped to this issue. Do not improvise a plan here, do not require a plan when the issue already says what a plan would, and do not read `plans/` directly — a missing file is not a missing plan.
 
-`/kit:start-ticket` `placement-check` skips itself when this skill is the caller, and `handoff` after it is a no-op here. `tdd` below owns the placement check.
+`kit:start-ticket` `placement-check` skips itself when this skill is the caller, and `handoff` after it is a no-op here. `tdd` below owns the placement check.
 
 **Gate:** do not start `tdd` until the user has accepted the plan.
 

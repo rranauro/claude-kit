@@ -215,7 +215,7 @@ full context — re-reading `tend-prs.md` and its delegates, ~5.8k tokens of
 instructions before any tool output — and roughly two thirds of them did so to
 print a line saying nothing happened. Polling faster still buys nothing on the
 work that matters (Copilot lands 3–5 minutes after a PR opens, `classify`
-deliberately waits for both reviewers, and since `/kit:start-next` split out no
+deliberately waits for both reviewers, and since `/kit:run-ticket` split out no
 downstream work waits on a pass), but the cost of guessing the interval wrong in
 the fast direction is now small.
 

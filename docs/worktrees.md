@@ -1,7 +1,7 @@
 # Worktree layout
 
 By default worktrees go under `.claude/worktrees/<branch>` inside the repo, and
-`/kit:start-ticket` links the gitignored files the app needs to boot.
+`kit:start-ticket` links the gitignored files the app needs to boot.
 
 ## Delegating to your project's own command
 
@@ -16,7 +16,7 @@ declare it in `CLAUDE.md` and the commands delegate instead:
 - provisions: yes
 ```
 
-`provisions: yes` means `/kit:start-ticket` skips its own wiring rather than
+`provisions: yes` means `kit:start-ticket` skips its own wiring rather than
 symlinking on top of a real install. The path is never configured — it's read
 back from `git worktree list --porcelain` after your command runs, so a layout
 this suite has never seen still works.

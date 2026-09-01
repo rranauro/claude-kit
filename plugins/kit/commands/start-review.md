@@ -72,7 +72,7 @@ Skip the base check the skill describes. A review branch is the PR's head; it is
 supposed to sit where the author left it, not on `origin/main`.
 
 If the project's create command already provisions, you are done — it installed
-what the app needs. Otherwise wire it up exactly as `/kit:start-ticket`'s
+what the app needs. Otherwise wire it up exactly as `kit:start-ticket`'s
 `wire-worktree` step describes: symlink the gitignored files the app needs to
 boot — secrets and their keys, `.claude/settings.local.json`, `node_modules` —
 from the main checkout. Don't re-derive that list here; a review worktree that

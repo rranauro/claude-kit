@@ -49,18 +49,18 @@ Techniques are the easy part. Everything between them is where the workflow live
   ordering is the content — it's what stops you skipping the uncomfortable step
   because the code looks fine.
 - **Handoff across a context boundary.** `/kit:design` stores a plan on the issue
-  it belongs to, mirrored into a gitignored `plans/` cache that `/kit:start-ticket`
+  it belongs to, mirrored into a gitignored `plans/` cache that `kit:start-ticket`
   symlinks into every worktree, so the intended move is to converge, drop the
-  plan, clear context, and run `/kit:start-ticket` on it immediately — a clean
+  plan, clear context, and run `kit:start-ticket` on it immediately — a clean
   window to implement in, against the repo the plan was written for. Storing it
   on the issue is what makes the boundary crossable by someone other than you:
   another machine, a scheduled run, a second developer, a worktree that has since
-  been deleted. The store crosses that boundary rather than banking decisions: `/kit:start-ticket` asks whether the plan is still fresh and, when
+  been deleted. The store crosses that boundary rather than banking decisions: `kit:start-ticket` asks whether the plan is still fresh and, when
   it isn't, verifies the plan's anchors against the repo before proceeding. A plan
   that sat a week is a prescription written against code that has moved — the same
   argument that keeps solutions out of tickets.
 - **Worktree plumbing.** `git worktree add` gives you a checkout missing every
-  gitignored file the app needs to boot. `/kit:start-ticket` wires those back up, and
+  gitignored file the app needs to boot. `kit:start-ticket` wires those back up, and
   enforces one worktree per issue — two is a trap that hides your own changes.
 - **Nothing to adopt.** No label vocabulary, no triage states, no `docs/agents/`
   config, no block written into your `CLAUDE.md`. These commands read issues and

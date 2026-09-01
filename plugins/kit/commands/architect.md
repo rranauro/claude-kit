@@ -77,7 +77,7 @@ slices of one piece of work rather than separate findings that happened to share
 a conversation, offer to hand off to `kit:to-tickets` and invoke it here — it
 reads the conversation it is already in. It owns dependency-ordered publishing
 and the `kit-blocked-by` markers the unattended commands read; issues drafted
-one-by-one below carry no marker, and `/kit:start-next` reads an absent marker as
+one-by-one below carry no marker, and `/kit:run-ticket` reads an absent marker as
 "leave alone", so they look startable and never start. On the handoff path, skip
 the per-ticket `/kit:design` offer below — only the frontier ticket could be
 designed usefully anyway. If the user declines, or the tickets are independent,
@@ -102,7 +102,7 @@ Cross-link related existing issues (comments on both sides) when the
 relationship surfaces mid-session.
 
 **After each issue is created, ASK whether to run `/kit:design` on it now or defer.**
-Default to defer — the issue is the durable artifact, and `/kit:start-ticket` reads
+Default to defer — the issue is the durable artifact, and `kit:start-ticket` reads
 it and re-explores current code. Reach for `/kit:design` now only when the ticket
 will be picked up immediately or its shape is genuinely non-obvious.
 

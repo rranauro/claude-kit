@@ -22,7 +22,7 @@ of the way while you're not.
 
 **It never writes an implementation.** Every step here reacts to work a human
 already approved — a review round, a merge. Starting a new ticket is a different
-risk and lives in `/kit:start-next`, which you invoke deliberately.
+risk and lives in `/kit:run-ticket`, which you invoke deliberately.
 
 ---
 
@@ -169,7 +169,7 @@ mid-rebase are the same shape.
 
 Create it once per repo with `gh label create kit-hold`, or from the UI. Create
 `kit-blocked` alongside it — same shape at the other end of the pipeline, read by
-`/kit:start-next` to keep a ready ticket from being *started* while a human still
+`/kit:run-ticket` to keep a ready ticket from being *started* while a human still
 has something to clear. Nothing in this command reads it; it lives on issues, not
 PRs.
 

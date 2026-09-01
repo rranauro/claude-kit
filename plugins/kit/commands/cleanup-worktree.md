@@ -3,7 +3,7 @@ Clean up a feature-branch worktree after its PR has been merged on GitHub.
 **Arguments:** $ARGUMENTS
 Optional: a branch name, worktree path, or PR number. If omitted, infer from the current branch.
 
-This command targets the worktree case from `/kit:start-ticket`. If the branch was bundled onto an existing worktree instead of getting its own, only Step 6's branch deletion applies — no worktree to remove.
+This command targets the worktree case from `kit:start-ticket`. If the branch was bundled onto an existing worktree instead of getting its own, only Step 6's branch deletion applies — no worktree to remove.
 
 **Step 1 — Resolve the target:**
 - If `$ARGUMENTS` is a PR number: `gh pr view <num> --json headRefName,state,mergedAt` and take `headRefName` as the branch.
@@ -23,7 +23,7 @@ Resolve `<worktree>` — the branch's path — from `git worktree list --porcela
 **Step 3 — Verify the worktree has no uncommitted work:**
 - `git -C <worktree> status --porcelain`
 - **Known-safe leftovers (do NOT prompt about these — silently allow + use `--force` in Step 5):**
-  - Any untracked path that is a **symlink `/kit:start-ticket` `wire-worktree` created** back into the main checkout. Those are setup artifacts, not work. Confirm with `test -L <path>` rather than matching names — the set is project-specific.
+  - Any untracked path that is a **symlink `kit:start-ticket` `wire-worktree` created** back into the main checkout. Those are setup artifacts, not work. Confirm with `test -L <path>` rather than matching names — the set is project-specific.
   - In practice that means the secrets, permissions, and dependency links `wire-worktree` wires up — e.g. `?? .claude/settings.local.json`, `?? config/credentials.yml.enc` (Rails), and any vendored `node_modules` symlinks the project needs.
   - Any **deleted tracked path shadowed by one of those symlinks** — an ancestor directory of the entry is itself such a link. A link created *over* a tracked directory hides the files git expects inside it, so git reports them deleted for the worktree's whole life; `wire-worktree` linking Rails' `storage/` produces a permanent ` D storage/.keep`. Same setup artifact as the bullet above, spelled as a deletion rather than an untracked entry, and the one this check would otherwise read as work. Confirm by walking the entry's ancestors up to the worktree root and testing each with `test -L`, never by matching `storage/` or any other name. Restoring the file is not the fix — the checkout writes *through* the link into the main checkout, and the deletion comes straight back.
 - If the porcelain output contains **only** entries from the known-safe set above, treat it as clean and proceed silently. Mark `--force` as required for Step 5 and continue.

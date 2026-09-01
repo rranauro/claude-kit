@@ -31,7 +31,7 @@ any that applies to the path you're working in):
   recipe that also unlinks a dev proxy is the common case, and skipping it
   leaves a dangling link nothing will ever clean up.
 - **provisions** — `yes` means create also installs dependencies and wires
-  runtime files. Then `/kit:start-ticket`'s `wire-worktree` must be **skipped
+  runtime files. Then `kit:start-ticket`'s `wire-worktree` must be **skipped
   entirely**, not merged with — re-symlinking on top of a real install is how
   you get a `node_modules` symlink pointing at a directory the project just
   populated for real.
@@ -91,7 +91,7 @@ With no project convention, this suite owns the layout:
 
 Inside the repo, never as a sibling of the main checkout. Create with
 `git worktree add .claude/worktrees/<branch> -b <branch> origin/main`, then run
-`/kit:start-ticket`'s `wire-worktree` to link the gitignored files the app needs to
+`kit:start-ticket`'s `wire-worktree` to link the gitignored files the app needs to
 boot.
 
 ## The sweep rule
