@@ -51,7 +51,7 @@ Delegated to `kit:start-ticket` `safety-check` through `worktree-paths`. Both en
 - **Resuming** (the common case) — `safety-check` finds an existing worktree on an `<issue>-*` branch and offers Resume. Take it. The worktree is already provisioned; do not re-run `wire-worktree`.
 - **Starting fresh** — no worktree matches the issue prefix. `kit:start-ticket` creates one off `origin/main` and wires it.
 
-Skip `kit:start-ticket` `plan-implementation` entirely. A cleanup ticket has no settled architecture to hand off, and **do not invoke `/kit:architect` for the epic itself** — that's what `file-ticket` is for, per split-out item. If a `plan` artifact happens to exist, read it as context and move on — the cache file only, and don't spend a `gh` round trip going after the comment when one isn't there.
+Skip `kit:start-ticket` `plan-implementation` entirely. A cleanup ticket has no settled architecture to hand off, and **do not invoke `/kit:architect` for the epic itself** — that's what `file-ticket` is for, per split-out item. If a `plan` artifact happens to exist, read it as context and move on — through `kit:ticket-artifacts`, cache then comment, like every other read of it. A cleanup ticket is a poor reason to invent a second read path: a fresh worktree or clone has no cache, and "no local file" is not "no plan".
 
 ### Confirm the work is all in one place
 
