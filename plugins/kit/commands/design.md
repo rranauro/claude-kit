@@ -4,7 +4,8 @@ model: opus
 
 Design how to build something whose problem is already settled: compare approaches, pressure-test the choice, and write the durable plan.
 
-**Arguments:** `$ARGUMENTS` — a GitHub issue number or URL, or a free-text description of the work.
+**Arguments:** `$ARGUMENTS` — a GitHub issue number or URL, or a free-text
+description of the work. A trailing `unattended` token runs the mode below.
 
 ## Precondition
 
@@ -50,6 +51,94 @@ for is the same defect wearing the other sign.
 If the argument is an issue number or URL, read the issue first. It is the
 statement of the problem; do not re-litigate it here.
 
+## Unattended mode
+
+`unattended` is passed by a caller that knows nobody is watching — today
+`/kit:run-ticket`, reaching a ticket with no stored plan. **Never infer it.** A
+quiet session is not an absent user, and a design that decided rather than asked
+is expensive to undo once it is the stored authorization.
+
+Every step below still runs. What changes is that the two places this command
+turns to the user — the incremental discussion in step 3, the confirmation in
+step 4 — become a decision recorded in the plan, and the cases neither can settle
+**park** rather than ask. `/kit:run-ticket` owns what a park is; reuse it exactly
+rather than inventing a second stopping shape.
+
+### What has to be true before you design anything
+
+Three preconditions. Any one missing, park without designing — say which:
+
+1. **An issue.** A local plan file has no comment to store, no label to read, and
+   nothing to park against.
+2. **A kind saying acceptance is machine-assertable** — `bug`,
+   `improve-codebase`, `technical-debt` in the canonical vocabulary. A
+   `user-experience` ticket parks: its acceptance is someone looking at the
+   result, and no unattended pass can stand in for that. **An absent kind parks
+   too** — unclassified is not a default, and inferring one here would be this
+   command granting itself the permission the label exists to give.
+3. **Acceptance criteria in the body, and what is out of scope.** This is the
+   load-bearing one. Attended, the user is what holds the design honest; here it
+   is the criteria, and a design with nothing to be wrong against is not safer
+   for having been unattended — it is only unreviewed.
+
+### Where the human went
+
+- **Step 3 decides instead of discussing.** Still 2-3 approaches, still scored on
+  `kit:rails-codebase-design`, still carrying the `initialize` line and return
+  types into the comparison. Then take the one the axis scores highest and write
+  the comparison into the plan. Approaches that tie on the axis are the park
+  below, not a coin toss.
+- **Step 4's grilling becomes the park detector.** Run it exactly as written —
+  state what the direction commits to — but answer each assertion against the
+  acceptance criteria, the project's rules, and the code you read in step 1. Most
+  resolve; that is the normal outcome and it is the same outcome attended. **An
+  assertion that none of those three can settle is the interrupt.** This is the
+  whole safety mechanism: the pass that existed to catch the decision nobody
+  argued about now catches the decision nobody *can* argue about, because nobody
+  is here.
+- **Step 4's `kit:domain-modeling` handoff records, never writes.** A glossary
+  entry or an ADR is a repository edit, and a term nobody argued is worse than no
+  term. Note the candidate in the plan under its own heading and leave it for a
+  human. The exception is a park: a design that has to **redefine or rename an
+  existing glossary entry** is changing vocabulary other tickets are written in,
+  and that is not yours.
+- **Step 5 stores the plan the same way, and says how it was made.** Open the
+  stored `plan` with `Designed unattended — the approach below was decided, not
+  confirmed.` and keep a `## Decided without confirmation` section listing the
+  choices a human would have been asked about. The plan is what authorizes
+  implementation, so a reader has to be able to tell an authorization someone
+  granted from one that was derived.
+- **Nothing labels, and nothing asks.** No `ready-for-agent` — that is a human's
+  claim that a ticket is safe to pick up, and this pass cannot make it. No
+  `kit-hold` question, because there is nobody to answer it; leave the label as
+  triage set it. No `kit-blocked-by` marker either, not even the empty form:
+  `/kit:run-ticket` refuses to write one for the reason that applies here too —
+  writing it is granting yourself permission to start.
+
+### Park on
+
+- **Scope.** Widening, narrowing, or splitting all need the user's agreement when
+  attended, and that requirement does not weaken because they are away.
+- **A genuine either/or.** Two approaches the axis scores level, differing in
+  something observable — a public interface, a migration's shape, what the user
+  sees. Say what each commits to and let them pick.
+- **A constraint the criteria do not bound.** Security, tenancy, anything
+  destructive, a migration needing production reconciled. `/kit:run-ticket`
+  already refuses these downstream; reaching one at design time is the earlier,
+  cheaper stop.
+- **A ticket that is unbuildable as written**, or criteria that turn out not to
+  be testable once the code is open.
+
+### Never park on
+
+The absence of a preference. A passing remark about future work. A better
+boundary you can see but the ticket does not need. "The user might want to weigh
+in" — they might, always, which is why that is not a test. Park costs a human's
+attention and this whole scheme is an argument that their attention is worth
+spending on design; spending it on a decision the plan already answers is the
+waste, and deciding silently to keep the run going is the failure the gates
+existed to prevent.
+
 ## 1 — Ground
 
 Read the code that will actually change, and the project's conventions
@@ -84,7 +173,8 @@ when comparing. Neither one produces the design.
   approach.
 - Reference how similar problems are already solved in this codebase.
 - Discuss incrementally. Don't dump everything at once — respond to the user's
-  reactions.
+  reactions. Unattended, there are none: decide on the axis and write the
+  comparison into the plan.
 
 ## 4 — Confirm the choice
 
@@ -201,7 +291,8 @@ just settled produces something you have to look at rather than something a test
 asserts.
 
 Only ask when there is an issue to label; a plan written to a local file has no
-PR coming.
+PR coming. In unattended mode, do not ask and do not answer — leave the label as
+triage set it.
 
 ## Never
 
@@ -209,3 +300,4 @@ PR coming.
 - Re-open the problem statement. That's `/kit:architect`.
 - Manufacture a scope decision out of a passing remark. Park it instead.
 - Skip the grilling pass because the direction looks obvious.
+- Enter unattended mode on your own reading of the session. A caller passes it.
