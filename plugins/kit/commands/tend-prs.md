@@ -78,7 +78,8 @@ Then it asks whether anything is left that needs judgment, and starts a model on
 if so. Three things trip that gate, each mapping to a step below:
 
 - reviews have landed and there is no triage marker → `Step 4` has a round to close
-- a check is failing and the PR is not yet escalated → `Step 5` has one escalation to record
+- a check is failing and the PR is not yet escalated → `Step 4b` has a repair to
+  attempt, or `Step 5` an escalation to record
 - the marker is present but auto-merge is off → `Step 5`'s stranding case
 
 **The gate over-approximates on purpose, and it is not your classification.** It
@@ -341,6 +342,75 @@ here to prevent — inverted.
 
 ---
 
+## Step 4b · `repair` — Try the red check before escalating it
+
+A failing required check used to be an escalation outright. For work whose
+acceptance a machine can assert, that spends a human interrupt on something the
+CI log already explains — so this step attempts the fix first, and escalates only
+when it cannot.
+
+**Read the ticket's kind before anything else.** The PR body carries
+`Closes #<issue>`; the issue carries exactly one kind label.
+
+- `bug`, `improve-codebase`, `technical-debt` — repair is allowed.
+- `user-experience` — escalate as before. Its acceptance is someone looking at
+  the result, so a green suite was never the thing standing between this PR and
+  merge, and a fix that turns the suite green tells you nothing about whether the
+  PR is right.
+- **No kind, or no `Closes` line** — escalate. Both are the same statement: this
+  pass cannot tell what would make the PR correct.
+
+### Is the failure the PR's, or the world's?
+
+Read the failing job — `gh run view <run-id> --log-failed`. Two populations, and
+they take opposite actions:
+
+- **Infrastructure.** A timeout, a runner or network error, a dependency
+  fetch that failed, a check that never started. `gh run rerun --failed`,
+  **once**, and stop for this firing — the next one sees the result. Editing code
+  to answer a flake is how a suite quietly stops meaning anything.
+- **The change's own.** An assertion failing in code this PR touched. That is a
+  repair.
+
+**A failure in code the PR did not touch is neither.** It means `main` is red, or
+something landed underneath this branch. Escalate and say so — a PR is the wrong
+place to fix a broken `main`, and an agent that "fixes" it there hides the
+breakage in an unrelated review.
+
+### The repair
+
+Fix the production code, in the worktree, then run that single failing example
+and confirm it goes green before pushing. `/kit:review-copilot` owns the commit
+and push mechanics; this step decides only what changes.
+
+**Never change the assertion to match the behavior.** A spec written from a
+ticket's acceptance criteria *is* the criteria in executable form, and editing it
+converts a failed acceptance into a passing one without anybody deciding to. If
+the spec looks wrong, that is an escalation and one of the most valuable this
+pass produces — the plan and the criteria disagree, and only a human settles
+which is right.
+
+### Two attempts, then it is not a repair
+
+Count attempts in the triage marker:
+
+```
+<!-- kit-repair: 2 -->
+```
+
+Increment it on each push this step makes, and **escalate at 2 rather than making
+a third**. A red check the second fix did not clear is a symptom of something the
+log is not saying, and a loop of push-CI-red-push burns a CI run and a model
+context per turn while looking like progress. The count lives on the PR because
+the pass that made attempt one is long gone by the time attempt two fires.
+
+A rerun is not an attempt — it changes nothing. Count it separately, and only
+rerun a given check once:
+
+```
+<!-- kit-rerun: 1 -->
+```
+
 ## Step 5 · `merge-policy` — Auto-merge by default, escalate by exception
 
 **This step runs against every open PR that is neither `held`, `escalated`, nor
@@ -364,7 +434,9 @@ itself stays GitHub's to perform once checks pass.
   rejected. A gate that never ran is not a gate that passed, and unattended it is
   the likelier of the two — a scheduled job inherits no login shell, so a missing
   runtime looks like an environment note rather than a red build.
-- `gh pr checks <N>` already shows a failing required check.
+- `gh pr checks <N>` shows a failing required check that `Step 4b` did not
+  clear — it was not repairable, the kind did not allow it, or two attempts were
+  spent. A check `Step 4b` is still working is not an escalation yet.
 
 An escalated PR is recorded as such on the PR itself, via the `<!-- kit-escalated -->`
 line in Step 4's marker, so later firings classify it `escalated`, leave it alone,
