@@ -162,7 +162,7 @@ implementer can't tell which line cost an hour of discussion and which was typed
 in passing. Leave it out. If a substrate really does need naming, mark it
 provisional and say what would change it.
 
-Tell the user the plan will be picked up by `/kit:start-ticket`. If you were
+Tell the user the plan will be picked up by `kit:start-ticket`. If you were
 invoked by `/kit:triage`, say nothing about handoff and return — it has its own
 publish step to finish, including the hold question below.
 
@@ -171,7 +171,7 @@ check the issue carries a blocking-edge marker** — `<!-- kit-blocked-by: -->`,
 empty if nothing blocks it, or with the comma-separated issue numbers that do.
 Add it if absent; leave an existing one alone.
 
-`/kit:start-next` reads an absent marker as "not part of an epic, leave alone",
+`/kit:run-ticket` reads an absent marker as "not part of an epic, leave alone",
 so a well-briefed labelled ticket without one is skipped silently and looks
 startable the whole time. `/kit:triage` writes it in its own publish step, which
 is why this is only for the standalone path — `kit:to-tickets` owns the format.
@@ -179,7 +179,7 @@ is why this is only for the standalone path — `kit:to-tickets` owns the format
 The marker takes issue numbers only. If the design surfaced a blocker no merge
 will close — a credential, a vendor account, a change in another repo, a decision
 left open — that goes on the issue as the `kit-blocked` label, with the reason in
-the body's "Blocked by" section. `/kit:start-next` skips a `kit-blocked` ticket
+the body's "Blocked by" section. `/kit:run-ticket` skips a `kit-blocked` ticket
 and reports the reason, so the ticket stays labelled and visible rather than
 being withheld.
 

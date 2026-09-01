@@ -165,7 +165,7 @@ premise has been fixed in the meantime is a valid outcome — that's a `drop`.
   section verbatim; that's the context an issue written from scratch would lack.
   Note the issue number back, **delete the pin**.
 - **Do it now** — small, located, and you're in a position to. Route it through
-  whatever session shape applies (`/kit:start-ticket` for its own branch,
+  whatever session shape applies (`kit:start-ticket` for its own branch,
   `/kit:polish-ticket`'s `triage` if you're already on a cleanup branch).
   **Delete the pin** once the work is committed, not when it's started.
 - **Drop it** — no longer real, already fixed, or the user decides against it.

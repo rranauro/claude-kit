@@ -1,11 +1,16 @@
 ---
-model: sonnet
+name: start-ticket
+description: Take a GitHub issue to a wired worktree with its plan verified — the clean-main check, the worktree off origin/main, the gitignored runtime files a fresh worktree lacks, and the qualification test that decides whether the approach is settled. Use when an orchestrator needs a ticket set up for implementation.
 ---
 
-Start work on a GitHub issue by reading it, creating a worktree off `origin/main`, and planning the implementation.
+# Start Ticket
+
+Take a GitHub issue to the point where implementation can begin: read it, create a worktree off `origin/main`, wire up what a fresh worktree lacks, and confirm the approach is settled.
+
+**This is shared mechanism, not an entry point.** `/kit:run-ticket` and `/kit:ship-ticket` both invoke it and both carry the ticket further; running it alone stops at a wired worktree, which is strictly less than either. It is a skill rather than a command for that reason.
 
 **Arguments:** $ARGUMENTS
-The argument should be a GitHub issue number (e.g., `/kit:start-ticket 42`) or a GitHub issue URL.
+The argument should be a GitHub issue number (e.g., `kit:start-ticket 42`) or a GitHub issue URL.
 
 Each step below carries a stable id in backticks (`safety-check`, `wire-worktree`,
 …). Those ids are the handle other commands reference — `/kit:ship-ticket` and
@@ -129,9 +134,9 @@ changes.
 
 **Step 10 · `plan-implementation` — Confirm the approach is already settled:**
 
-What this step needs is a **settled approach** — the why, the chosen shape, the
-rejected alternatives, and how you'll know it's done. It does not care which of
-two artifacts carries that. Take whichever you have:
+What this step needs is a **plan** — the why, the chosen shape, and the
+alternatives it beat. It does not care where that is stored, only that it exists
+as something a reader can point at. Two forms count:
 
 - **A stored plan**, read through `kit:ticket-artifacts` — the cache at
   `<worktree>/plans/<issue-number>-plan.md` if it's there, otherwise the marked
@@ -139,52 +144,60 @@ two artifacts carries that. Take whichever you have:
   reads. Never conclude there is no plan from a missing file: the file is the
   cache and the comment is the store, and a fresh clone, a rebuilt worktree, or
   another machine has the second without the first.
-- **A specified issue whose body stands on its own.** A ticket written that way
-  carries the same thing a plan would, and a project that writes them should not
-  be made to produce a second copy. It qualifies on
-  one test, judged from the body and comments `fetch-issue` already fetched — no
-  extra lookups:
+- **A plan written inline in the issue body**, under its own heading. Same
+  artifact, carried in the body rather than a comment — a project that writes its
+  tickets that way should not be made to produce a second copy. What makes it one
+  is the same thing `/kit:triage` looks for: a block a reader can point at and say
+  *this is the agreed approach and these are the alternatives it beat*.
 
-  > It states **testable acceptance criteria** and **what's out of scope**.
+**A body that merely reads as settled is not a plan.** Confidence, a named class,
+a sentence about how it should work — that is an author's intent with nothing
+recording what else was considered or why it lost, so nothing here can tell a
+decision from a first guess. This test used to accept it, and the ticket that
+passed was exactly the one where a choice nobody made got made inside a diff.
+Absent a plan block, fall through to `/kit:design` below.
 
-  A body that describes a problem without saying when it's solved is a ticket,
-  not a brief, and falls through to `/kit:design` below.
+**Acceptance criteria are a separate requirement, not a substitute.** The body
+must still state **testable acceptance criteria** and **what's out of scope** —
+that is the done-ness contract, and the plan does not supply it. Judge it from
+the body and comments `fetch-issue` already fetched; no extra lookups. Missing
+either, say which and stop rather than inferring criteria from the plan: a
+criterion you wrote is one nobody agreed to.
 
-  **The project's AFK-ready triage label (`ready-for-agent` in the canonical
-  vocabulary) is not part of that test.** A label is a claim about the body; the
-  body is the evidence, and the evidence is readable either way. Gating on the
-  label as well sends an issue that answers everything a plan would back to
-  `/kit:design` because nobody applied a sticker — routine on projects where the
-  same person files and implements and never labels their own tickets. Read the
-  label where it exists — checking the project's own label mapping, since the
-  canonical spelling is not the only one — for the freshness dating below and as
-  corroboration. Never withhold qualification for its absence, and don't ask the
-  user to go add it.
+**The project's AFK-ready triage label (`ready-for-agent` in the canonical
+vocabulary) is not part of that test.** A label is a claim about the artifacts;
+the artifacts are the evidence, and the evidence is readable either way. Gating
+on the label as well sends a fully designed issue back to `/kit:design` because
+nobody applied a sticker — routine on projects where the same person files and
+implements and never labels their own tickets. Read the label where it exists —
+checking the project's own label mapping, since the canonical spelling is not the
+only one — for the freshness dating below and as corroboration. Never withhold
+qualification for its absence, and don't ask the user to go add it.
 
-  This is not in tension with `/kit:start-next`, which *does* require the label
-  when it sweeps for startable tickets. There the label is a query filter over
-  work nobody asked for, and picking up an unlabelled issue would mean starting
-  something unbidden. Here a human has already named the issue, so the only
-  question left is whether its body settles the approach.
+This is not in tension with `/kit:run-ticket`, which *does* require the label
+when it sweeps for startable tickets. There the label is a query filter over work
+nobody asked for, and picking up an unlabelled issue would mean starting
+something unbidden. Here a human has already named the issue, so the only
+question left is whether the artifacts are there to read.
 
-  **`kit-blocked` is different, and worth saying out loud once.** It means a
-  human recorded something they must clear before this is started — a credential,
-  a vendor, a decision, a production reconcile. You are not gated on it here,
-  since naming the issue is a human overriding their own flag. But say it before
-  writing any code, quoting the reason from the body's "Blocked by" section, and
-  let them confirm. Never remove the label; that is their statement, not yours.
+**`kit-blocked` is different, and worth saying out loud once.** It means a human
+recorded something they must clear before this is started — a credential, a
+vendor, a decision, a production reconcile. You are not gated on it here, since
+naming the issue is a human overriding their own flag. But say it before writing
+any code, quoting the reason from the body's "Blocked by" section, and let them
+confirm. Never remove the label; that is their statement, not yours.
 
-Judge the issue on that contract alone. Length, formatting, and section headings
-are not the test; a short brief that answers both points qualifies and a long
-narrative that answers neither does not.
+Length, formatting, and section headings are not the test. A three-paragraph plan
+that names the rejected alternative qualifies; a long narrative that never made a
+choice does not.
 
-**If both exist, read both — the stored plan wins on conflict.** It is the later,
-more specific artifact. Say so rather than silently picking, because a
-contradiction between them usually means the issue was re-scoped after the plan
-was written, and that's worth a sentence to the user. (Cache-versus-comment is a
-different question, and `kit:ticket-artifacts` settles it: the comment wins.)
+**If a plan block is inline in the body *and* a `plan` comment exists, the comment
+wins** — it is the store, and the body is a copy of it. Say so rather than picking
+silently; a genuine contradiction usually means the issue was re-scoped after the
+plan was written, and that is worth a sentence to the user. (Cache-versus-comment
+is a different question, and `kit:ticket-artifacts` settles it the same way.)
 
-**If either artifact is present**, read it and treat its *reasoning* as settled — the why, the chosen approach, the rejected alternatives, and the acceptance criteria. Do NOT relitigate those decisions or re-derive the approach from scratch; that's what the `/kit:design` session already did.
+**If the plan is present**, read it and treat its *reasoning* as settled — the why, the chosen approach, the rejected alternatives, and the acceptance criteria. Do NOT relitigate those decisions or re-derive the approach from scratch; that's what the `/kit:design` session already did.
 - After reading it, **ask the user before doing any verification work**: "Is this still fresh — written recently, and nothing relevant has changed in the codebase since?"
   - **Yes (fresh):** Skip the anchor-verification pass. Present a brief summary and ask whether to proceed or adjust — no file lookups needed.
   - **No (may be stale, or unsure):** Run the anchor-verification pass below.
@@ -196,18 +209,19 @@ different question, and `kit:ticket-artifacts` settles it: the comment wins.)
 - Note: the more concrete file/line detail an artifact asserts, the *more* verification it needs, not less — there's more surface to have gone stale. A well-written brief names interfaces and behavior rather than paths precisely so there is less to rot; verify what it *does* name.
 - Present a summary and the verification result, then ask the user whether to proceed or adjust.
 
-**If neither is present**, do NOT improvise an ad-hoc plan and do NOT start implementing. The ticket has no settled approach yet, so the required next step is to **invoke the `/kit:design` skill** before proceeding.
+**If no plan is present**, do NOT improvise an ad-hoc plan and do NOT start implementing. The ticket has no settled approach yet, so the required next step is to **invoke the `/kit:design` skill** before proceeding.
 - Run `/kit:design` with this issue number. The issue states the problem; `/kit:design`'s job is the *how* — placement, approaches, the grilling pass, and the durable handoff artifact.
 - It stores the plan itself, via `kit:ticket-artifacts` — the marked comment on the issue plus the `$MAIN/plans/<issue-number>-plan.md` mirror. Don't write either file here.
-- Once it's written, re-enter this step at the **"If either artifact is present"** branch above: present the summary, run the anchor-verification pass, and ask the user whether to proceed or adjust before any implementation.
+- Once it's written, re-enter this step at the **"If the plan is present"** branch above: present the summary, run the anchor-verification pass, and ask the user whether to proceed or adjust before any implementation.
 - **An unspecified issue is not a failure of the issue.** Falling through to here is the normal path for a ticket filed as a lean problem statement, which is how `/kit:architect` writes them. Don't report it as something missing or push the user to go back and rewrite the ticket.
 
 **Step 11 · `placement-check` — Placement check (only if the work adds or moves a class):**
 
-**If `/kit:ship-ticket` invoked this command, skip this step entirely.** Its `tdd`
-phase owns the placement check and runs it there, next to the code being
-written — where a different answer can still change the file cheaply. Running it
-here too just asks the same question twice, several gates apart.
+**If `/kit:ship-ticket` or `/kit:run-ticket` invoked this command, skip this step
+entirely.** Their implementation phase owns the placement check and runs it there,
+next to the code being written — where a different answer can still change the
+file cheaply. Running it here too just asks the same question twice, several gates
+apart.
 
 If the agreed approach introduces a new model, concern, service, or PORO — or
 relocates behavior between them — run the `kit:behavior-placement` skill before
@@ -228,17 +242,28 @@ worktree path (`$WT/.claude/skills/behavior-placement/`), not the main checkout.
 This command stops here, with a wired worktree and an accepted plan. It writes no
 code.
 
-**If `/kit:ship-ticket` invoked this command**, it is already at its `tdd` phase —
-say nothing about handoff and return. Do not suggest re-invoking it; that
-restarts the orchestrator from `clean-check`.
+**If `/kit:ship-ticket` or `/kit:run-ticket` invoked this command**, it is already
+at its implementation step — say nothing about handoff and return. Do not suggest
+re-invoking either; that restarts the caller from its first step.
 
-**If the user ran this command directly**, tell them what they have and what
-comes next:
+**`/kit:run-ticket` also overrides Step 10's questions**, since nobody is there to
+answer them. It says which, and what each becomes. Follow its table over the
+prose above when it is the caller.
 
-> "Worktree `<worktree>` is ready on `<branch-name>`, plan accepted. Run
-> `/kit:ship-ticket <issue-number>` to implement it — TDD, simplify pass, PR,
-> automated review, merge, cleanup. It will detect this worktree and resume from
-> the implementation phase rather than recreating anything.
+**If the user ran this command directly**, they have taken the long way round.
+`/kit:run-ticket <issue>` runs these same steps and keeps going — worktree,
+verification, TDD, simplify, PR — and `/kit:ship-ticket <issue>` does the same
+with its gates on. Stopping at a wired worktree is a strictly smaller outcome
+than either, so say which one they probably wanted before reporting state.
+
+Then tell them what they have:
+
+> "Worktree `<worktree>` is ready on `<branch-name>`, plan accepted.
+>
+> `/kit:run-ticket <issue-number>` takes it the rest of the way unattended;
+> `/kit:ship-ticket <issue-number>` does the same and stops at its gates. Either
+> detects this worktree and resumes from implementation rather than recreating
+> anything.
 >
 > Or implement here yourself, and reach for `/kit:commit` and
 > `/kit:new-pull-request` when you're ready."

@@ -60,7 +60,7 @@ Iterate until the user approves the breakdown.
 Publish the approved tickets. **How** depends on the tracker `/setup-matt-pocock-skills` configured — the tickets are the same either way, only the shape of the blocking edges changes:
 
 - **Local files** → write one file per ticket under `.scratch/<feature-slug>/issues/<NN>-<slug>.md`, numbered from `01` in dependency order (blockers first). Each file's "Blocked by" lists the numbers/titles it depends on. Use the per-ticket file template below — one ticket per file, never a single combined file.
-- **A real issue tracker (GitHub, Linear, …)** → publish one issue per ticket in dependency order (blockers first) so each ticket's blocking edges can reference real identifiers. Use the platform's native blocking / sub-issue relationship where it has one; otherwise set each ticket's "Blocked by" to the blocking issues. Apply the `ready-for-agent` triage label unless instructed otherwise — the tickets are agent-grabbable by construction.
+- **A real issue tracker (GitHub, Linear, …)** → publish one issue per ticket in dependency order (blockers first) so each ticket's blocking edges can reference real identifiers. Use the platform's native blocking / sub-issue relationship where it has one; otherwise set each ticket's "Blocked by" to the blocking issues. **Do not apply the `ready-for-agent` label here** — 5c hands each ticket to `/kit:triage`, which owns that decision and the hold question that goes with it. (Local change — see 5c.)
 
 Work the **frontier**: any ticket whose blockers are all done. For a purely linear chain that means top to bottom.
 
@@ -70,7 +70,7 @@ Do NOT close or modify any parent issue.
 
 ### 5a. Make the edges machine-readable
 
-`/kit:start-next` picks up these tickets as their blockers merge, so it has to read the edges without a human having named the issue. Prose cannot carry that: a bare `#123` appears in ordinary issue text all the time, and a wrong match starts work whose dependency has not landed.
+`/kit:run-ticket` picks up these tickets as their blockers merge, so it has to read the edges without a human having named the issue. Prose cannot carry that: a bare `#123` appears in ordinary issue text all the time, and a wrong match starts work whose dependency has not landed.
 
 On a tracker, every ticket gets this line in its body, in addition to the prose "Blocked by" section:
 
@@ -82,7 +82,7 @@ Issue numbers only, comma-separated, no `#`. **A ticket with no blockers gets th
 
 The marker is authoritative and the prose is for humans. Write both and keep them agreeing.
 
-**Only ticket edges belong in the marker.** It is satisfied by each number being closed, so a blocker no merge can close — a credential, a vendor account, a change in another repo, a decision still open — has no expressible form here. Write that one in the prose "Blocked by" section and put `kit-blocked` on the issue; `/kit:start-next` skips a `kit-blocked` ticket and reports the prose reason. Never write a non-numeric token into the marker.
+**Only ticket edges belong in the marker.** It is satisfied by each number being closed, so a blocker no merge can close — a credential, a vendor account, a change in another repo, a decision still open — has no expressible form here. Write that one in the prose "Blocked by" section and put `kit-blocked` on the issue; `/kit:run-ticket` skips a `kit-blocked` ticket and reports the prose reason. Never write a non-numeric token into the marker.
 
 This needs two passes, since a ticket cannot cite a number that does not exist yet: create every issue first, collect the numbers, then edit each one to add its marker.
 
@@ -92,9 +92,36 @@ Before publishing, check the edges for a cycle. Two tickets that block each othe
 
 Add an **Out of scope** section to each issue, alongside the acceptance criteria.
 
-`/kit:start-ticket` `plan-implementation` accepts an issue in place of a stored plan only when it carries *both* testable acceptance criteria and stated scope boundaries. Criteria alone do not qualify it. A ticket missing the boundary falls through to `/kit:design` when an agent picks it up, which stalls the epic to ask a human for a decision this session already made.
+`kit:start-ticket` `plan-implementation` accepts an issue in place of a stored plan only when it carries *both* testable acceptance criteria and stated scope boundaries. Criteria alone do not qualify it. A ticket missing the boundary falls through to `/kit:design` when an agent picks it up, which stalls the epic to ask a human for a decision this session already made.
 
 It also does the job the section is named for: an agent implementing a narrow slice will otherwise fix adjacent things it notices, and the review round is a poor place to discover that.
+
+### 5c. Triage each ticket
+
+The tickets are published with edges but no plan. A ticket in that state is
+*specified* and not *settled*: `/kit:triage`'s own test asks for a plan artifact,
+and the acceptance criteria this skill writes are not one. Left there, the design
+pass happens later — inside whichever session picks the ticket up, by whoever is
+around, one ticket at a time.
+
+So finish the job here. Walk the tickets in dependency order and run
+`/kit:triage <n>` on each. The conversation that produced this breakdown is the
+most informed anyone will be about these tickets, and triage is where that
+context becomes a stored plan, a label, and a hold decision.
+
+Order matters and it is the same order as publishing: a blocker's design
+constrains what its dependents can assume. Triaging a dependent first means
+designing against a shape that may not survive its blocker's own pass.
+
+Expect triage to skip its own steps 2–3 rarely, if at all — this skill grilled
+the *boundary*, which is not the mechanism. That is the pass being useful, not
+redundant. If the set is large enough that designing every ticket now is more
+than the user wants to spend, triage the frontier — the tickets with no open
+blockers — and say which ones you left, rather than labelling the rest.
+
+Nothing downstream repairs a skipped pass. `/kit:run-ticket` picks up only
+labelled tickets, so an untriaged one is invisible to the loop and an unlabelled
+epic simply stalls at whichever slice never got here.
 
 <local-ticket-template>
 

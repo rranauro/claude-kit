@@ -17,7 +17,7 @@ Use it when the issue is a catch-all: "smooth the rough edges before launch", "p
 Do **not** use it for a scoped issue with one agreed change — that's `/kit:ship-ticket`.
 
 Constituent skills:
-- `/kit:start-ticket` — `safety-check` through `worktree-paths`
+- `kit:start-ticket` — `safety-check` through `worktree-paths`
 - `/kit:commit` — once per accepted fix
 - `kit:writing-tickets` — for anything split out
 - `kit:behavior-placement` — before any fix that adds or moves a class
@@ -46,12 +46,12 @@ Keep any free-text remainder — the user often names the existing worktree path
 
 ## Step 2 · `locate-work` — Find the worktree, or create it
 
-Delegated to `/kit:start-ticket` `safety-check` through `worktree-paths`. Both entry paths route through it:
+Delegated to `kit:start-ticket` `safety-check` through `worktree-paths`. Both entry paths route through it:
 
 - **Resuming** (the common case) — `safety-check` finds an existing worktree on an `<issue>-*` branch and offers Resume. Take it. The worktree is already provisioned; do not re-run `wire-worktree`.
-- **Starting fresh** — no worktree matches the issue prefix. `/kit:start-ticket` creates one off `origin/main` and wires it.
+- **Starting fresh** — no worktree matches the issue prefix. `kit:start-ticket` creates one off `origin/main` and wires it.
 
-Skip `/kit:start-ticket` `plan-implementation` entirely. A cleanup ticket has no settled architecture to hand off, and **do not invoke `/kit:architect` for the epic itself** — that's what `file-ticket` is for, per split-out item. If a `plan` artifact happens to exist, read it as context and move on — the cache file only, and don't spend a `gh` round trip going after the comment when one isn't there.
+Skip `kit:start-ticket` `plan-implementation` entirely. A cleanup ticket has no settled architecture to hand off, and **do not invoke `/kit:architect` for the epic itself** — that's what `file-ticket` is for, per split-out item. If a `plan` artifact happens to exist, read it as context and move on — the cache file only, and don't spend a `gh` round trip going after the comment when one isn't there.
 
 ### Confirm the work is all in one place
 
@@ -60,7 +60,7 @@ Resuming is where this ticket leaks. Before accepting the worktree, verify:
 1. `git -C <worktree> status` — clean? Uncommitted changes from a prior session are either work-in-progress the user forgot or a fix that was never committed. Show them and ask which.
 2. `git -C <worktree> log --oneline origin/main..HEAD` — the fixes landed so far. This list *is* your memory of the ticket; read it before asking the user what's been done.
 3. `git log --oneline origin/main..HEAD` **in the main checkout** — must be empty. Anything here is a fix that landed on the wrong branch.
-4. `git worktree list` — exactly one worktree for this issue number. A second is the trap `/kit:start-ticket` warns about: the dev server boots in the stale one and fixes read as "not working".
+4. `git worktree list` — exactly one worktree for this issue number. A second is the trap `kit:start-ticket` warns about: the dev server boots in the stale one and fixes read as "not working".
 
 Report the commit list back to the user as the resume summary, then enter `intake`.
 
@@ -136,7 +136,7 @@ Do not batch several unrelated fixes into one commit. The branch's value as a re
 
 ## Step 7 · `file-ticket` — Split the bigger ones out
 
-Use the `kit:writing-tickets` skill. State the problem and the desired outcome; do not freeze an implementation — the implementer re-explores the code at `/kit:start-ticket` time, and frozen detail rots.
+Use the `kit:writing-tickets` skill. State the problem and the desired outcome; do not freeze an implementation — the implementer re-explores the code at `kit:start-ticket` time, and frozen detail rots.
 
 Carry across what only this session knows: the reproduction, the located cause if you found one, and the alternatives you considered. That context is expensive to recover and is the reason the ticket is worth filing rather than just remembering.
 

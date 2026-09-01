@@ -145,7 +145,7 @@ directory if needed, and write to
 slug for what was scanned (`plans/architecture-review-themes-2026-08-23.html`).
 Same-day reruns over the same area overwrite; a different area gets its own file.
 
-`plans/` is gitignored and symlinked into every worktree by `/kit:start-ticket`,
+`plans/` is gitignored and symlinked into every worktree by `kit:start-ticket`,
 so the report survives the session without landing in the repo. Add `/plans` to
 `.gitignore` if it isn't there already. Never write the report to `$TMPDIR` or
 any other path outside the project — a hashed temp path is unrecoverable the

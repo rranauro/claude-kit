@@ -44,7 +44,7 @@ the "which copy is newer" question disappear: there is one copy.
 Mirror the same body to `plans/<issue-number>-<kind>.md` at the repository root
 of the **main checkout** — resolve it with `git rev-parse --show-toplevel`, never
 a hardcoded path, and `mkdir -p` it. `/plans` belongs in `.gitignore`; add it if
-it isn't there. `/kit:start-ticket` symlinks the directory into every worktree,
+it isn't there. `kit:start-ticket` symlinks the directory into every worktree,
 so a worktree reads and writes the same cache as the checkout that owns it.
 
 Write both in the same step, always. A command that writes only the comment

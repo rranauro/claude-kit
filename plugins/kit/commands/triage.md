@@ -9,7 +9,7 @@ list the open issues that are not yet agent-ready and work them one at a time.
 
 ## What this is for
 
-`/kit:start-ticket` qualifies an issue as settled when its body states testable
+`kit:start-ticket` qualifies an issue as settled when its body states testable
 acceptance criteria and what's out of scope. `/kit:design` stores the reasoning
 behind that — but reasoning is not acceptance criteria, and nothing else in the
 workflow brings the *body* up to the bar. So the agent-ready path is reachable
@@ -50,16 +50,27 @@ It's settled when **both** hold, judged from the body and comments you already
 read:
 
 1. The body states **testable acceptance criteria** and **what's out of scope** —
-   the same test `/kit:start-ticket` applies, so passing it means the ticket is
+   the same test `kit:start-ticket` applies, so passing it means the ticket is
    already implementable.
-2. The approach has been through a design pass — a stored `plan` artifact exists
-   (`kit:ticket-artifacts` finds it, cache or comment), or the body itself records
-   the direction and the alternatives rejected.
+2. A **plan artifact** exists — the marked `plan` comment that
+   `kit:ticket-artifacts` resolves from the cache or the issue, or the same
+   content written inline in the body under its own heading. Either form counts;
+   what makes it an artifact is that a reader can point at the block and say
+   *this is the agreed approach and these are the alternatives it beat*.
+
+**Direction in the body is not a plan.** A ticket that reads as confident, names
+a class, or gestures at how it should work has recorded an author's intent, not a
+decision — nothing says what else was considered or why it lost, so nothing
+downstream can tell a settled choice from a first guess. Judging that by feel is
+what made this test too loose to act on: an artifact is present or it isn't, and
+a strong-sounding body is exactly the case that used to pass and shouldn't. If
+the direction is genuinely settled, step 3 costs little and produces the block
+that says so.
 
 Criterion 1 alone is not enough. A well-written ticket can state crisp criteria
 over a decision nobody has made — an either/or in the body, or a criterion
 conditional on an answer ("if X is chosen, then…"). That ticket *qualifies* for
-`/kit:start-ticket` and will still be decided unilaterally by whoever implements
+`kit:start-ticket` and will still be decided unilaterally by whoever implements
 it, in a diff, with nothing recording that a choice was made. It is precisely
 what this command exists for. Send it to step 2.
 
@@ -128,13 +139,13 @@ need the user's approval:
 
 **Bring the issue body up to the bar.** The brief is reasoning; the body has to
 state **testable acceptance criteria** and **what is out of scope**. That pair is
-the whole of `/kit:start-ticket`'s qualification test — an issue missing either
+the whole of `kit:start-ticket`'s qualification test — an issue missing either
 falls back to `/kit:design` when it's picked up, which is exactly the round trip
 this command exists to prevent. Write outcomes in domain vocabulary and keep
 substrate out of them; `kit:writing-tickets` owns that.
 
 Say in the body that only the acceptance criteria are binding. Without it,
-`/kit:start-ticket` reads the whole body as settled and won't relitigate a
+`kit:start-ticket` reads the whole body as settled and won't relitigate a
 direction that was a guess.
 
 **Write the blocking-edge marker.** Every ticket this command publishes gets
@@ -150,7 +161,7 @@ owns the format; follow it exactly, and write the prose "Blocked by" section
 alongside it so a human reads the same thing the marker says.
 
 The empty form is not a formality, and omitting it is the failure this step
-exists to prevent. `/kit:start-next` reads **absent** as "not part of an epic,
+exists to prevent. `/kit:run-ticket` reads **absent** as "not part of an epic,
 leave alone" — so a ticket with a perfect brief and the label still gets skipped,
 silently, and looks startable the whole time. Present-and-empty is what says
 "startable now".
@@ -166,7 +177,7 @@ line means two answers to one question, and nothing downstream picks a winner.
 Say what you changed and why.
 
 **The marker holds issue numbers and nothing else.** It is read mechanically —
-`/kit:start-next` satisfies it by checking that each number is closed — so a
+`/kit:run-ticket` satisfies it by checking that each number is closed — so a
 blocker it cannot close is not expressible there. A credential that has not been
 issued, a vendor account in review, a change landing in another repo, a decision
 you have not made: those go to the `kit-blocked` label below, with the reason in
@@ -180,18 +191,18 @@ or the project's own mapping where it differs.
 Be clear with the user about what the label does, because it is narrower and
 heavier than "this ticket is vetted":
 
-- It is *not* what makes the issue qualify for `/kit:start-ticket`. That reads
+- It is *not* what makes the issue qualify for `kit:start-ticket`. That reads
   the body; the label is corroboration and a staleness date.
 - It does *not* route the work or choose who implements. `/kit:ship-ticket`
   never reads it.
-- Its one behavioral effect is that **`/kit:start-next` will select this ticket**
+- Its one behavioral effect is that **`/kit:run-ticket` will select this ticket**
   — it is the filter deciding what gets picked up, without anyone naming the
   issue.
 
 So the question to put is not "is this ready?" but "is this safe for an agent to
 pick up on its own?" Those come apart.
 
-**A blocking dependency is not a reason to withhold the label.** `/kit:start-next`
+**A blocking dependency is not a reason to withhold the label.** `/kit:run-ticket`
 only picks up a ticket whose `kit-blocked-by` marker is fully closed, so the edge
 already holds it back. Withholding as well is redundant, and it defeats the
 mechanism: a labelled ticket becomes startable the moment its blocker merges,
@@ -220,7 +231,7 @@ claim for a ticket that is designed and merely waiting. Two cases:
 
 Both are `ready-for-agent` **and** `kit-blocked` — `gh issue edit <n> --add-label
 kit-blocked` — with the reason written into the body's "Blocked by" section.
-`/kit:start-next` skips a `kit-blocked` ticket and reports it by name with that
+`/kit:run-ticket` skips a `kit-blocked` ticket and reports it by name with that
 reason, and never removes the label; clearing it is your statement that the thing
 is actually cleared. The difference from withholding is that the ticket stays
 visible and becomes startable the moment you drop one label, rather than needing
@@ -277,7 +288,7 @@ usually obvious from the criteria you just wrote.
 
 An agent-ready issue is designed to sit in the queue, so its brief ages in a way
 a plan written an hour ago does not. Nothing here can prevent that, and
-`/kit:start-ticket` already re-verifies anchors before implementing. Don't add a
+`kit:start-ticket` already re-verifies anchors before implementing. Don't add a
 freshness claim to the body that will itself go stale — the label's application
 date is the timestamp, and that command knows to read it.
 
