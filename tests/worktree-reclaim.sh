@@ -391,6 +391,30 @@ assert_has "$(cat "$SANDBOX/remove-was-called" 2>/dev/null || echo)" "alpha" \
 assert_missing_path "$MAIN/.claude/worktrees/alpha" "the worktree is gone"
 end_sandbox
 
+# ========================================================================
+# AC2/AC3 · The same test, reachable by any other caller that deletes a
+#           branch. `tend-prs.sh` carried a third copy of the escalation this
+#           ticket removes, and now asks here instead.
+# ========================================================================
+
+new_sandbox "the accounting seam other callers use"
+add_worktree alpha
+received="$(tip alpha)"
+pr_fixture alpha 11 MERGED "$received"
+if "$SCRIPT" --repo "$MAIN" --account alpha >/dev/null 2>&1
+then ok "--account exits 0 when GitHub has the tip"
+else bad "--account exits 0 when GitHub has the tip"; fi
+
+echo more > "$MAIN/.claude/worktrees/alpha/extra.txt"
+git -C "$MAIN/.claude/worktrees/alpha" add -A
+git -C "$MAIN/.claude/worktrees/alpha" commit -qm "never pushed"
+out="$("$SCRIPT" --repo "$MAIN" --account alpha 2>&1)"
+if [ $? -eq 0 ]
+then bad "--account exits non-zero once the tip moves past the PR"
+else ok "--account exits non-zero once the tip moves past the PR"; fi
+assert_has "$out" "unaccounted	alpha" "and says so on stdout"
+end_sandbox
+
 # --- summary ------------------------------------------------------------
 
 echo

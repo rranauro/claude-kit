@@ -211,12 +211,14 @@ sandbox across sessions. Ask:
 
 > "Review worktree `pr-<n>-review` is still on disk. Remove it, or keep it?"
 
-On explicit approval, follow `/kit:cleanup-worktree`'s semantics — the project's
-remove command if it has one, otherwise `git worktree remove [--force]` plus a
-sweep of the path for the runtime files git leaves behind, then
-`git worktree prune` — and finally `git branch -D pr-<n>-review`
-(the local review branch was never merged; `-d` will refuse it, and that refusal
-carries no information here).
+On explicit approval, run `/kit:worktree-gc pr-<n>-review`. It removes the
+worktree with the project's own command where there is one, sweeps the runtime
+files git leaves behind, and prunes.
+
+Expect it to **keep** the branch and say so. A review branch was never pushed and
+has no PR, so nothing accounts for its tip — which is the correct answer for a
+branch whose commits exist nowhere else. Delete it yourself once you are finished
+with the review.
 
 The artifacts under `<main-checkout>/reviews/pr-<n>/` are **not** touched by
 worktree removal. That's the point of writing them there. Remove that directory

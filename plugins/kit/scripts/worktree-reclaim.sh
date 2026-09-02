@@ -7,6 +7,12 @@
 #   worktree-reclaim.sh [--repo DIR] [--target BRANCH|PATH] [--act]
 #                       [--layout owned|project] [--remove-cmd CMD]
 #                       [--worktree-root DIR]
+#   worktree-reclaim.sh [--repo DIR] --account BRANCH
+#
+# --account answers the branch question alone and exits 0 only when GitHub
+# accounts for the tip. It is the seam for any other caller that deletes a
+# branch, so there is one implementation of the test rather than a copy per
+# caller — which is the shape that produced the defect in the first place.
 #
 # Records:
 #   verdict<TAB>branch<TAB>path<TAB>reclaim|reclaim-keep-branch|hold<TAB>free-reason<TAB>branch-reason
@@ -24,6 +30,7 @@ act=0
 layout="owned"
 remove_cmd=""
 worktree_root=""
+account_only=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -33,6 +40,7 @@ while [ $# -gt 0 ]; do
     --layout)        layout="$2"; shift 2 ;;
     --remove-cmd)    remove_cmd="$2"; shift 2 ;;
     --worktree-root) worktree_root="$2"; shift 2 ;;
+    --account)       account_only="$2"; shift 2 ;;
     *) echo "worktree-reclaim: unknown argument: $1" >&2; exit 2 ;;
   esac
 done
@@ -197,6 +205,14 @@ else:
       ACCOUNTED="no"; ACC_REASON="PR #$num is $state, not a terminal state" ;;
   esac
 }
+
+if [ -n "$account_only" ]; then
+  account_branch "$account_only"
+  if [ "$ACCOUNTED" = "yes" ]; then
+    emit accounted "$account_only" "$ACC_REASON"; exit 0
+  fi
+  emit unaccounted "$account_only" "$ACC_REASON"; exit 1
+fi
 
 # --- acting -------------------------------------------------------------
 

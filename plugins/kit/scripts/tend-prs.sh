@@ -341,7 +341,7 @@ reclaim_daemons() {
 
 survey_worktree() {
   local wt="$1" branch="$2" leftovers="" line code file procs
-  # Known-safe leftovers, per /kit:cleanup-worktree Step 3: setup symlinks back
+  # Known-safe leftovers, per kit:worktree-reclaim: setup symlinks back
   # into the main checkout. They arrive in two spellings — untracked for a link
   # that adds a path, deleted for one laid *over* a tracked directory (Rails'
   # storage/ shadowing storage/.keep). Both are wiring, neither is work.
@@ -399,7 +399,7 @@ run_idle_survey() {
 
 # --- Teardown requests --------------------------------------------------------
 # Removing a worktree is the other half of the problem the idle survey solved,
-# and it splits the same way. `/kit:cleanup-worktree` Step 5 sweeps the husk
+# and it splits the same way. kit:worktree-reclaim sweeps the husk
 # `git worktree remove` leaves behind with `chmod -R u+w` and `rm -rf`, and the
 # kit's grant denies `rm:*` on purpose — this is a scheduled job deleting
 # directories with nobody watching, and that deny is the one entry standing
@@ -423,7 +423,7 @@ run_idle_survey() {
 REMOVAL_REQUEST="$(mktemp -t tend-prs-removals)" || {
   echo "error: could not create removal request file" >&2; exit 1; }
 
-# Everything `/kit:cleanup-worktree` Steps 5-7 do, for one worktree git has
+# Everything kit:worktree-reclaim does to reclaim a path, for one worktree git has
 # already confirmed is its own. Ordered so a failure stops that worktree rather
 # than half-finishing it: the branch delete and the husk sweep only run once the
 # `worktree remove` has actually succeeded.
@@ -452,17 +452,20 @@ teardown_worktree() {
   fi
   [ -d "$wt" ] && log "teardown: husk remains at ${wt} after sweep"
 
-  # Safe delete first. A squash-merge leaves the branch's commits out of main's
-  # ancestry, so git refuses -d on work that is genuinely merged; the agent only
-  # nominates worktrees whose PR it verified MERGED, which is what makes -D the
-  # right escalation rather than a guess.
+  # A verified-MERGED PR is not on its own a licence to delete the branch: the
+  # local tip can carry commits made after the merge, and those produce the
+  # identical `git branch -d` refusal a squash-merge does. Ask which one this is
+  # rather than escalating to -D on the assumption it is the squash.
   if [ -n "$branch" ] && [ "$branch" != "unknown" ]; then
-    if git -C "$MAIN_CHECKOUT" branch -d "$branch" 2>/dev/null; then
-      log "teardown: removed ${wt} and deleted branch ${branch}"
-    elif git -C "$MAIN_CHECKOUT" branch -D "$branch" 2>/dev/null; then
-      log "teardown: removed ${wt} and force-deleted squash-merged branch ${branch}"
+    if "$(dirname "$0")/worktree-reclaim.sh" --repo "$MAIN_CHECKOUT" \
+         --account "$branch" >/dev/null 2>&1; then
+      if git -C "$MAIN_CHECKOUT" branch -D "$branch" 2>/dev/null; then
+        log "teardown: removed ${wt} and deleted branch ${branch}"
+      else
+        log "teardown: removed ${wt}; branch ${branch} could not be deleted"
+      fi
     else
-      log "teardown: removed ${wt}; branch ${branch} could not be deleted"
+      log "teardown: removed ${wt}; kept branch ${branch} — GitHub does not account for its tip"
     fi
   else
     log "teardown: removed ${wt} (no branch resolved)"
@@ -507,8 +510,8 @@ perform_teardown() {
   if [ "$removed" -gt 0 ]; then
     git -C "$MAIN_CHECKOUT" worktree prune 2>/dev/null
     # Remote-tracking refs for branches GitHub deleted on merge. Step 7 of
-    # cleanup-worktree; it needs no worktree of its own, but it is pointless to
-    # run when nothing was actually removed.
+    # It needs no worktree of its own, but it is pointless to run when nothing
+    # was actually removed.
     git -C "$MAIN_CHECKOUT" remote prune origin 2>/dev/null
   fi
   log "teardown: ${removed} removed, ${refused} refused/skipped"
@@ -533,7 +536,7 @@ worktree_for_branch() {
     /^branch /  { if ($2 == want) { print path; exit } }'
 }
 
-# `/kit:cleanup-worktree` Step 6's first half, and the standing request that main
+# The standing request that main
 # actually carry the merges this pass just cleaned up after.
 #
 # Every guard here is about not being the thing that loses work: it touches main

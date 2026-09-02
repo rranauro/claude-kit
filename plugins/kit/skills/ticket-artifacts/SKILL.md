@@ -10,7 +10,7 @@ Three artifacts in this suite outlive the session that produced them: the
 result. They were stored three different ways — a comment, a gitignored file, a
 file inside a worktree — with three different recovery paths and a hand-written
 tiebreak for when two copies disagreed. The walkthrough had no recovery path at
-all: `/kit:cleanup-worktree` deleted it at exactly the moment someone might want
+all: reclaiming the worktree deleted it at exactly the moment someone might want
 to re-run the walk.
 
 This skill is the one rule. **An artifact about an issue is stored on the issue.**

@@ -52,6 +52,27 @@ The finished PR must be walked in the running app before it merges. Lives on the
 issue and is transcribed onto the PR. Independent of kind.
 _Avoid_: hold, do-not-merge
 
+### Reclaiming a worktree
+
+**Verdict**:
+What a reclaim pass concluded about one worktree, combining three independent
+answers into an action: `reclaim`, `reclaim-keep-branch`, or `hold`.
+_Avoid_: status, eligible, stale
+
+**Free**:
+The worktree holds nothing but its checkout and the setup symlinks that wired
+it — no uncommitted work, no lock. Freeness decides the directory and nothing
+else; a checkout is restorable in one command, so losing one costs nothing a
+branch still holds.
+_Avoid_: idle, clean, abandoned
+
+**Accounted**:
+GitHub has received the branch's exact tip — a merged or closed PR whose
+`headRefOid` equals it, or, absent any PR, a tip present on a remote ref. The
+only test that separates a squash-merge from work that was never pushed, which
+are identical from the local side. Unaccounted branches are kept and reported.
+_Avoid_: merged, safe to delete
+
 ### States a command produces
 
 **Park**:

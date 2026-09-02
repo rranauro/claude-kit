@@ -249,7 +249,7 @@ would mean proving a held worktree idle in order to then not touch it.
    output. No worktree for the branch → notify and skip; the fixes have to be
    made somewhere, and this command does not create worktrees.
 2. **Read the verdict.** Two questions decide it — whether the worktree holds
-   uncommitted work (applying `/kit:cleanup-worktree` `Step 3`'s known-safe rule
+   uncommitted work (applying `kit:worktree-reclaim`'s known-safe rule
    in full, both halves) and whether a process has its cwd inside it. Where the
    answers come from depends on who is running:
    - **Unattended**, `tend-prs.sh` surveys every linked worktree in plain bash
@@ -282,7 +282,7 @@ the grant genuinely cannot express it, and the answer is the one
 outside the grant, and hands in what it found. A verdict computed seconds before
 the pass starts is the same guarantee a check run inside it would give.
 
-Step 3 replaces **both** of `/kit:cleanup-worktree`'s gates, and it is the same
+Step 3 replaces **both** of the old per-ticket cleanup's gates, and it is the same
 verdict answering them:
 
 - Its `Step 4` asks the user whether the branch is checked out elsewhere. That
@@ -459,15 +459,14 @@ verification walk that outlives the merge still needs the worktree it is walking
 in. `labels` is fetched on this query for that reason, not just the open one.
 
 For each remaining match that passes `idle-check`, delegate to
-`/kit:cleanup-worktree <branch>` — it verifies merge
-state itself, stops per-directory daemons, removes the worktree, sweeps the husk,
-syncs `main`, and deletes the branch.
+`/kit:worktree-gc <branch>` — it removes the worktree, sweeps the husk, and
+deletes the branch only where GitHub accounts for its tip. Sync `main` yourself
+afterwards; that is not part of reclaiming a worktree.
 
-Its `Steps 3 and 4` are replaced by `idle-check`, per Step 3 — that verdict
-answers both, and re-deriving either is what stalls a pass. Every other gate in
-it stays: a worktree the survey reports `busy` for uncommitted work still stops
-that one cleanup, and that is the behavior you want from something deleting
-directories unattended.
+Its freeness test is replaced by `idle-check`, per Step 3 — that verdict answers
+it, and re-deriving it is what stalls a pass. Every other gate stays: a worktree
+the survey reports `busy` for uncommitted work still stops that one cleanup, and
+that is the behavior you want from something deleting directories unattended.
 
 **Unattended, this entire step is the runner's and none of it is yours.** It has
 already run by the time you start. Do not query merged PRs, do not nominate a
@@ -483,19 +482,19 @@ starting a model to discover that cost a context per pass to accomplish nothing.
 See `## What the runner does before you`.
 
 Two parts of it genuinely could not stay here anyway, which is what made the
-split obvious. `Step 5`'s husk sweep needs `rm`, and the grant denies `rm`
+split obvious. The husk sweep needs `rm`, and the grant denies `rm`
 deliberately — a scheduled job composing a path to delete recursively, with
-nobody watching, is the one thing worth keeping out of reach. And `Step 6`'s
-branch delete has to happen *after* the worktree is gone, because git refuses to
-delete a branch that is still checked out in one.
+nobody watching, is the one thing worth keeping out of reach. And the branch
+delete has to happen *after* the worktree is gone, because git refuses to delete
+a branch that is still checked out in one.
 
 **Attended, do the whole step yourself** exactly as written above — you have the
 permissions, and a person is there to answer the gates.
 
-Do **not** delegate to `/kit:worktree-gc` here. It refuses to remove anything
-without confirmation by design, and it sweeps orphan directories — neither
-belongs in an unattended pass. It stays the human-run periodic catch for whatever
-this command skipped.
+A bare `/kit:worktree-gc` with no target is a different thing from the targeted
+call above: it sweeps every worktree and every orphan directory, and it asks
+before removing. Neither belongs in an unattended pass. It stays the human-run
+periodic catch for whatever this command skipped.
 
 ---
 
