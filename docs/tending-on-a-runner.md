@@ -21,9 +21,12 @@ saying so.
 
 ## The gate must read `kit-hold` before it acts
 
-A PR labelled `kit-hold` is waiting for someone to walk it in the running app,
-and the label is on the PR before CI ever finishes — `/kit:new-pull-request`
-transcribes it from the issue at creation time. A gate that does not check it
+A PR labelled `kit-hold` is one a person is in charge of, and the label is
+usually on the PR before CI ever finishes — `/kit:new-pull-request` transcribes
+it from the issue at creation time. It can also arrive later:
+`/kit:review-copilot` writes it when someone declines auto-merge at its prompt,
+which is the only record that the decline happened. Without the gate honouring
+it, the next firing re-enables the thing they just declined. A gate that does not check it
 merges the one PR a human deliberately asked to see first, and does so within
 minutes. Skip a held PR entirely: do not triage it, do not enable auto-merge,
 and never remove the label, which is a human's to clear.

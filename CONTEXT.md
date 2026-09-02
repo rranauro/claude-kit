@@ -61,8 +61,11 @@ lets a CI gate decide without a call per PR.
 _Avoid_: reviewed, done, addressed
 
 **kit-hold**:
-The finished PR must be walked in the running app before it merges. Lives on the
-issue and is transcribed onto the PR. Independent of kind.
+The finished PR does not merge on its own — a person is in charge of it. Usually
+because it must be walked in the running app first; also because someone declined
+auto-merge and means to merge it themselves. Set at triage on the issue and
+transcribed onto the PR, or written straight onto the PR when the decision is
+made after it exists. Cleared only by a person. Independent of kind.
 _Avoid_: hold, do-not-merge
 
 ### Reclaiming a worktree

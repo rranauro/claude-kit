@@ -214,7 +214,27 @@ Otherwise, ask the user before enabling:
 - On approval, run `gh pr merge <PR#> --auto --squash` (use the PR number resolved in Step 1).
 - If the command errors because auto-merge is already enabled or the PR is already merged, that's fine — report and continue.
 - If it errors because auto-merge is disabled in repo settings, say so and let the user merge from the GitHub UI; do not fall back to a local merge.
-- If the user declines, stop — they'll merge when ready.
+- **If the user declines, record it as `kit-hold` on the PR**, then stop:
+
+  ```
+  gh pr edit <PR#> --add-label kit-hold
+  ```
+
+  Declining is a decision, and until it is written down it survives only as long
+  as this session. A CI gate enables auto-merge on any triaged, green PR it has
+  not been told to leave alone, so an unrecorded decline is reversed by the next
+  firing and GitHub merges the PR you just held back. This is the same pattern
+  `/kit:new-pull-request` uses — a human answered a prompt, and the command
+  records the answer where the next reader will find it.
+
+  Say that you wrote it, and say how to undo it: `gh pr edit <PR#> --remove-label
+  kit-hold` hands control back, after which the PR is judged on its evidence
+  again — triaged, green and unheld, which the gate will act on.
+
+  **Only this branch writes the label, and only attended.** Unattended has no
+  prompt to decline, so it has no decision to transcribe; it escalates instead,
+  and `## Unattended` owns what that means. Nothing here ever *removes*
+  `kit-hold` — clearing it is the human's statement, the same as on an issue.
 - On success, tell the user: "Auto-merge enabled — PR will merge when required CI checks pass."
 
 **Arguments:** $ARGUMENTS
