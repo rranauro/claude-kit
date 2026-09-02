@@ -303,42 +303,26 @@ why the runner removes with `--force` and you do not need to flag it.
 
 ## Step 4 · `triage` — Address the review round
 
-For each `untriaged` PR that passed `idle-check`, invoke `/kit:review-copilot <N>`
-via the Skill tool, operating against that PR's worktree path.
+For each `untriaged` PR that passed `idle-check`, invoke
+`/kit:review-copilot <N> unattended` via the Skill tool, operating against that
+PR's worktree path.
 
 It already does the whole job — fetches both reviewers, verifies every finding
 against the code, applies or skips by its own policy, runs the project's gates,
 commits with the per-item reasoning in the body, and pushes. Do not re-implement
-or second-guess any of it. Tell it this is an unattended `/kit:tend-prs` run so
-its `enable-auto-merge` step follows `merge-policy` below instead of prompting.
+or second-guess any of it.
 
-`/kit:review-copilot`'s own `Step 8` says to stop without enabling auto-merge when
-this command invoked it. That is a handoff, not the end of the pass: it stops
-*that* command precisely so `merge-policy` below can own the decision. Continue to
-Step 5.
+**`unattended` closes the round too.** Its own `## Unattended` section writes the
+`<!-- kit-triaged -->` marker and applies the merge decision for the PR it just
+triaged — auto-merge on a clean triage, `<!-- kit-escalated -->` in that same
+comment otherwise. It holds the per-item reasoning both answers come from, so
+asking for the summary back and re-deriving them here would spend a second pass
+to reach the same place. Do not write the marker yourself and do not re-decide
+the merge for a PR it just handled.
 
-Then write the marker, whatever the outcome:
-
-```
-gh pr comment <N> --body "<!-- kit-triaged -->
-<the Step 5 summary review-copilot produced>"
-```
-
-One comment serves as both the durable record on the PR and `classify`'s
-idempotency signal. Post it even when nothing was fixed — *especially* then.
-
-When `merge-policy` escalates, the marker carries a second line naming why:
-
-```
-gh pr comment <N> --body "<!-- kit-triaged -->
-<!-- kit-escalated: gates could not be run (bundle exec rspec: command not found) -->
-<the Step 5 summary review-copilot produced>"
-```
-
-Write the escalation reason into the marker in the same comment, not a later one.
-A pass that posts the triage marker and then dies before recording *why* it was
-escalating leaves a PR that looks merely triaged, which is the stranding this is
-here to prevent — inverted.
+What it does **not** do is repair a failing check — that is not a review finding,
+and it escalates on one rather than attempting it. `Step 4b` below is where the
+attempt lives, and it runs before this step for exactly that reason.
 
 ---
 
@@ -413,10 +397,16 @@ rerun a given check once:
 
 ## Step 5 · `merge-policy` — Auto-merge by default, escalate by exception
 
-**This step runs against every open PR that is neither `held`, `escalated`, nor
-`awaiting-review`** — the one triaged a minute ago in Step 4 and the one triaged
-three firings back alike. Skip any whose `autoMergeRequest` from `inventory` is
-already non-null; there is nothing to do and nothing to report.
+**This step is for the PRs `Step 4` did not just handle** — the one triaged three
+firings back and left green with auto-merge off, the one whose check has since
+gone red. A PR triaged in this pass already had both answers applied by
+`/kit:review-copilot unattended`; re-deciding it here would be a second opinion
+formed without the per-item reasoning. Skip any whose `autoMergeRequest` from
+`inventory` is already non-null; there is nothing to do and nothing to report.
+
+The rules below are the same rules that command's `## Unattended` section
+applies. They are stated here because this step reaches PRs no triage pass is
+still holding — if the two ever disagree, that section is the one that decided.
 
 On a clean triage, run `gh pr merge <N> --auto --squash`. With a single review
 round there is nothing further to wait for, and leaving it off just means the PR
