@@ -7,3 +7,4 @@ reviews/
 
 # Worktrees created by /kit commands
 .claude/worktrees/
+.claude/settings.local.json
