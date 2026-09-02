@@ -2,7 +2,7 @@
 model: sonnet
 ---
 
-Review and address automated PR review feedback one finding at a time — **GitHub Copilot** (inline + top-level review) and the **Claude Opus headless review** posted by the `pr-review-on-create.sh` hook. Each finding is verified against the actual code before it is acted on, and overlapping findings on the same `(path, line)` are merged into one bucket — agreement across reviewers is called out as a stronger signal.
+Review and address automated PR review feedback one finding at a time — **GitHub Copilot** (inline + top-level review), and the **Claude review** posted by `/kit:start-review` where someone has run one. Each finding is verified against the actual code before it is acted on, and overlapping findings on the same `(path, line)` are merged into one bucket — agreement across reviewers is called out as a stronger signal.
 
 > **There is no per-item user prompt.** Verification is empirical, not interactive: findings are checked against the code and applied or skipped automatically (Step 3), and the user's review point is the summary in Step 5 plus the commit body that records every decision.
 
@@ -18,7 +18,7 @@ Pull from these sources in parallel:
 
 - **Copilot inline:** `gh api repos/{owner}/{repo}/pulls/{number}/comments --jq '.[] | select(.user.login | test("copilot|github-actions"; "i")) | {source: "copilot-inline", id, path, line, body, diff_hunk}'`
 - **Copilot top-level review:** `gh api repos/{owner}/{repo}/pulls/{number}/reviews --jq '.[] | select(.user.login | test("copilot|github-actions"; "i")) | {source: "copilot-review", id, state, body}'`
-- **Claude headless review:** `gh api repos/{owner}/{repo}/issues/{number}/comments --jq '.[] | select(.body | startswith("<!-- claude-pr-review -->")) | {source: "claude-review", id, body}'` — note this hits the **issues** endpoint (PR-level comments), not pulls/comments. The Claude reviewer posts under the human user's gh account, so the `<!-- claude-pr-review -->` HTML marker (set by the `pr-review-on-create.sh` hook, wherever you registered it) is the authoritative way to find it. It may be absent if the headless run hasn't posted yet or found nothing; treat it like any empty source.
+- **Claude review:** `gh api repos/{owner}/{repo}/issues/{number}/comments --jq '.[] | select(.body | startswith("<!-- claude-pr-review -->")) | {source: "claude-review", id, body}'` — note this hits the **issues** endpoint (PR-level comments), not pulls/comments. The reviewer posts under the human user's gh account, so the `<!-- claude-pr-review -->` HTML marker (set by `scripts/pr-review.sh`) is the authoritative way to find it. Nothing posts it automatically, so it is absent unless someone ran `/kit:start-review`; treat that like any empty source.
 
 > **Match logins case-insensitively** (the `"i"` flag is required). Copilot's *inline* comments are authored by login `Copilot` (capital C), while its top-level review bot is `copilot-pull-request-reviewer[bot]` (lowercase). Without `"i"` the inline pass silently returns nothing — the most important findings get missed.
 
@@ -30,7 +30,7 @@ The Claude review arrives as a single marker comment (`<!-- claude-pr-review -->
 - Bullets under `### Inline findings` start with `` **`<path>:<line>`** — <finding> `` — parse `(path, line, finding-text)` from each.
 - Bullets under `### General notes` (or anything outside `### Inline findings`) are top-level observations; treat them as one collective general item (`claude-review-general`) with the section text as the body.
 
-If the `<!-- claude-pr-review -->` comment is not present (the headless run hasn't posted yet or found nothing), there are no marker-comment findings to merge beyond Copilot's; skip straight to the bucket build with only Copilot inline entries.
+If the `<!-- claude-pr-review -->` comment is not present (nobody ran `/kit:start-review`, or it found nothing), there are no marker-comment findings to merge beyond Copilot's; skip straight to the bucket build with only Copilot inline entries.
 
 Build a dedup map keyed by `(path, line)`:
 - For each Copilot inline comment, add to bucket `(path, line)` with `source: "copilot-inline"`.
@@ -87,7 +87,7 @@ All items are processed without stopping for approval. The summary in Step 5 is 
 
   Use the four categories from Step 3.3, add the minor/non-minor scope label, and tag each line with the source(s). **Include skipped items too** — the durable record of "we considered this and decided not to act" is the point. If Step 6 delegates to `/kit:commit`, pass this body as the intended message rather than letting `/kit:commit` draft its own.
 - If no fixes were made (all comments skipped/ignored), do NOT create a commit. The evaluation summary lives only in the conversation; there is nothing to push.
-- **Report the summary back to your caller in a form it can act on**, naming explicitly whether any **non-minor** item was skipped. `/kit:tend-prs` `merge-policy` branches on exactly that: a skipped non-minor item is the difference between enabling auto-merge and escalating to the user. Do not bury it in prose counts.
+- **Report the summary back to your caller in a form it can act on**, naming explicitly whether any **non-minor** item was skipped. The merge decision branches on exactly that: a skipped non-minor item is the difference between enabling auto-merge and escalating to the user. Do not bury it in prose counts.
 
 **Step 6 — Quality gates (if any fixes were made):**
 - Run the /kit:commit skill
@@ -119,15 +119,10 @@ made. Auto-merge stays off until this point precisely because CI often goes gree
 before the reviewers post.
 
 **If this skill was invoked by `/kit:ship-ticket`, stop here.** That command
-hands its open PR to `/kit:tend-prs` with auto-merge deliberately off; enabling
-it here would merge a PR nobody has triaged.
+opens its PR with auto-merge deliberately off and leaves it to the CI gate;
+enabling it here would merge a PR nobody has triaged.
 
-**If this skill was invoked by `/kit:tend-prs`, stop here too** — but for the
-opposite reason. That command runs unattended, so there is no one to ask; it owns
-the decision in its `merge-policy` step and applies it from the summary you just
-reported. Do not prompt, and do not enable auto-merge yourself.
-
-In both cases "stop here" ends *this* skill, not the caller's run. Return the
+"Stop here" ends *this* skill, not the caller's run. Return the
 Step 5 summary and let the caller continue — a pass that treats this as the end of
 its own work leaves the PR triaged with auto-merge never enabled, which is the one
 state nothing downstream is watching for.
@@ -186,8 +181,8 @@ the merge stays GitHub's to perform once checks pass.
   never ran is not a gate that passed, and unattended that is the likelier of the
   two.
 - `gh pr checks <N>` shows a failing required check. **Repairing it is not your
-  job** — a red check is not a review finding, and the attempt belongs to
-  `/kit:tend-prs` `Step 4b`, where a person is nearby. Escalate and say so.
+  job** — a red check is not a review finding, and repairing one belongs in a
+  session with a person nearby. Escalate and say so.
 
 An escalation goes in the *same* comment as the marker, never a later one — a
 pass that posts the marker and then dies leaves a PR that reads as merely

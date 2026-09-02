@@ -31,13 +31,16 @@ ticket it closes.
 
 **Reviewing became the bottleneck.** Once construction got cheap, review was what
 ate my time. GitHub is the substrate here, so the workflow automates that phase
-where it can: the `pr-review-on-create` hook fires a review the moment a PR opens,
-and `/kit:tend-prs` triages what comes back — on a loop, with nobody watching.
+where it can: Copilot reviews the PR the moment it opens, and a CI gate triages
+what comes back through `/kit:review-copilot` — with nobody watching.
 
-**Two models see different things.** Running more than one reviewer over the same
-diff turns up bugs and inconsistencies uncannily well, and it happens before any
-human reviewer engages. They stop requesting changes for things a bot would have
-caught, and spend their attention on in-app testing instead.
+**A bot review before a human one changes what humans do.** Findings verified
+against the code land while the PR is still warm, so reviewers stop requesting
+changes for things a bot would have caught and spend their attention on in-app
+testing instead. `/kit:start-review` runs a second reviewer over the same diff
+when a change is worth it — two models see different things — but on demand,
+because a reviewer that fires only on one machine is not one the workflow can
+depend on.
 
 ## What the orchestration adds
 
@@ -54,8 +57,8 @@ Techniques are the easy part. Everything between them is where the workflow live
   plan, clear context, and run `kit:start-ticket` on it immediately — a clean
   window to implement in, against the repo the plan was written for. Storing it
   on the issue is what makes the boundary crossable by someone other than you:
-  another machine, a scheduled run, a second developer, a worktree that has since
-  been deleted. The store crosses that boundary rather than banking decisions: `kit:start-ticket` asks whether the plan is still fresh and, when
+  another machine, a second developer, a CI runner, a worktree that has since been
+  deleted. The store crosses that boundary rather than banking decisions: `kit:start-ticket` asks whether the plan is still fresh and, when
   it isn't, verifies the plan's anchors against the repo before proceeding. A plan
   that sat a week is a prescription written against code that has moved — the same
   argument that keeps solutions out of tickets.
@@ -70,10 +73,10 @@ Techniques are the easy part. Everything between them is where the workflow live
   actual code before acting on it — a "missing nil check" on a provably non-nil
   path gets classified and dropped, not applied. Every decision, including the
   rejections, lands in the commit body so the reasoning is durable in git rather
-  than lost in a chat log. The second reviewer is coverage, not redundancy — and
-  when two land on the same line independently, that corroboration is the
-  strongest signal you get. Still a signal to verify, not a verdict: agreement
-  makes a finding more likely to be real, never certain.
+  than lost in a chat log. Verification is what makes a finding actionable, which
+  is why one automated reviewer is enough: where a second one has been run by
+  hand, two landing on the same line independently makes a finding more likely to
+  be real, never certain.
 
 ## The ideas behind it
 

@@ -38,10 +38,10 @@ skill owns the five phases and the one substitution that separates the modes —
 gate is a question attended, a rule-or-park unattended. Do not reproduce its
 phases here.
 
-`/kit:tend-prs` is what happens after the open PR: it triages the review round,
-enables auto-merge, and removes the worktree once it lands. Between them, what is
-left for you is designing the tickets whose result someone has to look at,
-answering the parks, and walking the PRs that carry `kit-hold`.
+What happens after the open PR happens on CI — `kit:ticket-loop` `hand-off` says
+what, and Step 0 of the next invocation reclaims the worktree once the PR lands.
+What is left for you is designing the tickets whose result someone has to look
+at, answering the parks, and walking the PRs that carry `kit-hold`.
 
 ---
 
@@ -231,7 +231,8 @@ failed. A sweep nobody is told about is worse than no sweep — running it where
 person is watching is the whole reason it sits in this command, and a report that
 drops the line gives that up while still doing the work.
 
-From here `/kit:tend-prs` takes over.
+From here the CI gate takes over. Nothing runs on this machine until you invoke
+this command again.
 
 **A backlog sweep still takes one ticket per firing**, and a label narrows one
 rather than turning it into a queue. `/loop 20m /kit:ship-ticket unattended` is how you work

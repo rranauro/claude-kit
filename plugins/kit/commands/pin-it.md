@@ -138,10 +138,10 @@ resurface the stale ones for triage.
 
 If the directory is empty or missing, say so in one line. Don't create it.
 
-`/kit:tend-prs` `report` prints the same count — outstanding, and stale by name
-— on every firing. That's the passive half: `list` is what you run when you
-remember pins exist, and the tend-prs line is what tells you when you don't. It
-only counts; triage happens here, in a session with someone in it.
+`list` is the only thing that surfaces a pin — nothing counts them for you on a
+schedule. That is why the staleness flag is worth printing: the drawer opens only
+when someone remembers it exists, so the one time it does open has to say which
+pins have been sitting there.
 
 ---
 

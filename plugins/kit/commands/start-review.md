@@ -101,9 +101,8 @@ the log is, then go finish wiring the worktree.
 
 ## Step 4 · `collect-review` — Get the review
 
-**First check whether one already exists.** On your own PRs the
-`pr-review-on-create` hook posts it as a PR comment marked
-`<!-- claude-pr-review -->`:
+**First check whether one already exists.** A previous run of this command posts
+its review on your own PRs as a comment marked `<!-- claude-pr-review -->`:
 
 ```
 gh pr view <n> --json comments \

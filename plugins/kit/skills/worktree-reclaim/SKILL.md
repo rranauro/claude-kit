@@ -41,8 +41,7 @@ GitHub could not be reached, the branch stays and is reported.
 argument and the alternatives it beat; do not re-derive it here.
 
 Any other caller that deletes a branch asks the same way, through
-`worktree-reclaim.sh --account <branch>`. That seam is deduplicated; freeness and
-path reclaim are not yet — `tend-prs.sh` still carries its own copy of both.
+`worktree-reclaim.sh --account <branch>`.
 
 ## Phases
 
