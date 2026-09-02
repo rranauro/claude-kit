@@ -23,10 +23,10 @@ disagree about where the queue comes from.
 
 Two flags modify it:
 
-- **`--all`** makes a label the queue rather than a filter over one sweep: every
-  open issue carrying it, lowest number first. It needs a label — bare `--all` is
-  a usage error, because an unbounded queue over the whole backlog is the one
-  selection whose typo costs a worktree and a PR per open issue.
+- **`--all`** makes a label the queue rather than a filter over one sweep. It
+  needs a label — bare `--all` is a usage error, because an unbounded queue over
+  the whole backlog is the one selection whose typo costs a worktree and a PR per
+  open issue.
 - **`--dry-run`** resolves the selection, reports it, and stops. Nothing is
   created, nothing is removed, and no ticket is started.
 
