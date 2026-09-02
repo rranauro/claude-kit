@@ -19,16 +19,28 @@ What the runner gives up is the repair of a red check. That is deliberate:
 repairing a check is not review triage, and a red PR is visible without anything
 saying so.
 
-## One automated reviewer, not two
+## The gate must read `kit-hold` before it acts
 
-Copilot is the only reviewer that fires on its own. `/kit:review-copilot` still
-merges overlapping findings across sources and calls agreement a stronger signal,
-and with one source that half of it never fires — a real loss, taken knowingly.
-The second reviewer it used to merge with ran headless from a hook on a
-particular laptop, and a reviewer that only runs when one machine is awake is not
-one anybody can rely on. `plugins/kit/scripts/pr-review.sh` still exists and
-`/kit:start-review` still runs it on demand; nothing fires it automatically. The
-decision and the alternative it beat are in
+A PR labelled `kit-hold` is waiting for someone to walk it in the running app,
+and the label is on the PR before CI ever finishes — `/kit:new-pull-request`
+transcribes it from the issue at creation time. A gate that does not check it
+merges the one PR a human deliberately asked to see first, and does so within
+minutes. Skip a held PR entirely: do not triage it, do not enable auto-merge,
+and never remove the label, which is a human's to clear.
+
+## The round is closed by a marker, not by the run that closed it
+
+`/kit:review-copilot` posts `<!-- kit-triaged -->` (or `<!-- kit-escalated -->`)
+as a PR comment carrying its summary, and that comment is the only record that
+the round is closed. `workflow_run` fires again on every subsequent push, so a
+gate that does not look for the marker first re-triages a round already
+answered — paying for a model to reach the same conclusion, and stacking a
+second summary comment on the PR saying so.
+
+## One automated reviewer
+
+Copilot is the only reviewer that fires on its own; `/kit:start-review` runs a
+second one on demand. Why that trade was taken, and the alternative it beat, is
 [ADR 0003](adr/0003-one-automated-reviewer.md).
 
 ## Every act GitHub attributes needs a user credential

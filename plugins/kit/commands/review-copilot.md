@@ -2,7 +2,7 @@
 model: sonnet
 ---
 
-Review and address automated PR review feedback one finding at a time — **GitHub Copilot** (inline + top-level review), and the **Claude review** posted by `/kit:start-review` where someone has run one. Each finding is verified against the actual code before it is acted on, and overlapping findings on the same `(path, line)` are merged into one bucket — agreement across reviewers is called out as a stronger signal. Copilot is the only source that arrives on its own, so on most PRs that merging finds nothing to merge; the verification in Step 3 is what makes a finding actionable either way.
+Review and address automated PR review feedback one finding at a time — **GitHub Copilot** (inline + top-level review), and the **Claude review** posted by `/kit:start-review` where someone has run one. Each finding is verified against the actual code before it is acted on, and overlapping findings on the same `(path, line)` are merged into one bucket — agreement across reviewers is called out as a stronger signal.
 
 > **There is no per-item user prompt.** Verification is empirical, not interactive: findings are checked against the code and applied or skipped automatically (Step 3), and the user's review point is the summary in Step 5 plus the commit body that records every decision.
 
@@ -30,7 +30,7 @@ The Claude review arrives as a single marker comment (`<!-- claude-pr-review -->
 - Bullets under `### Inline findings` start with `` **`<path>:<line>`** — <finding> `` — parse `(path, line, finding-text)` from each.
 - Bullets under `### General notes` (or anything outside `### Inline findings`) are top-level observations; treat them as one collective general item (`claude-review-general`) with the section text as the body.
 
-If the `<!-- claude-pr-review -->` comment is not present (the headless run hasn't posted yet or found nothing), there are no marker-comment findings to merge beyond Copilot's; skip straight to the bucket build with only Copilot inline entries.
+If the `<!-- claude-pr-review -->` comment is not present (nobody ran `/kit:start-review`, or it found nothing), there are no marker-comment findings to merge beyond Copilot's; skip straight to the bucket build with only Copilot inline entries.
 
 Build a dedup map keyed by `(path, line)`:
 - For each Copilot inline comment, add to bucket `(path, line)` with `source: "copilot-inline"`.

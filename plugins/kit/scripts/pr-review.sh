@@ -1,14 +1,12 @@
 #!/usr/bin/env bash
 # Review a GitHub PR with a headless `claude -p` session.
 #
-# Single source of truth for the PR-review prompt. Three entry points:
-#   1. a PostToolUse hook on `gh pr create` — your own PRs, posts a PR comment
-#   2. /kit:start-review                    — colleague PRs, file output only
-#   3. manual re-run after pushing fixes    — second pass on updated HEAD
+# Single source of truth for the PR-review prompt. Two entry points, both asked
+# for by a person — nothing fires this on its own:
+#   1. /kit:start-review                 — colleague PRs, file output only
+#   2. manual re-run after pushing fixes — second pass on updated HEAD
 #
 # Inside a Claude session the path is "${CLAUDE_PLUGIN_ROOT}/scripts/pr-review.sh".
-# The hook resolves it relative to its own location, so it works whether the
-# plugin came from the marketplace cache or a local clone.
 #
 # Usage: pr-review.sh [options] <pr-url-or-number>
 #

@@ -138,6 +138,11 @@ resurface the stale ones for triage.
 
 If the directory is empty or missing, say so in one line. Don't create it.
 
+`list` is the only thing that surfaces a pin — nothing counts them for you on a
+schedule. That is why the staleness flag is worth printing: the drawer opens only
+when someone remembers it exists, so the one time it does open has to say which
+pins have been sitting there.
+
 ---
 
 ## Mode 3 · resurface (`<slug>`)

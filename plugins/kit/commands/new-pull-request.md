@@ -77,11 +77,11 @@ PR looks identical to an ignored one:
 Print the PR URL so the user can review it.
 
 **Step 4a · `start-polling` — Say what happens next, don't poll:**
-GitHub Copilot reviews PRs automatically and usually takes a minute or two, and the CI gate fires when CI finishes. Waiting for either here would hold the session open to do work that needs nobody present.
+Copilot reviews the PR within a minute or two, and the CI gate fires when CI finishes. Waiting for either here would hold the session open to do work that needs nobody present.
 
 Tell the user:
 
-> "PR #<N> is open. Copilot reviews it shortly, and the CI gate triages the findings and merges it from there — nothing to start."
+> "PR #<N> is open. Copilot reviews it shortly, and the CI gate takes it from there — nothing to start."
 
 If the PR is held, say that instead, per the `kit-hold` wording above.
 

@@ -233,11 +233,10 @@ This skill ends at an open PR with auto-merge off, and that is the whole handoff
 nothing local picks it up, and there is nothing for the user to start.
 
 Copilot posts its review a minute or so after `gh pr create`, and when CI
-finishes, the consuming project's `workflow_run` gate takes the PR from there —
-it calls `/kit:review-copilot <N> unattended` to triage the findings and push the
-fixes, then enables auto-merge unless something warrants attention. A PR carrying
-`kit-hold` is skipped and waits for the walkthrough. The kit's
-`docs/tending-on-a-runner.md` says what that gate is and what it needs.
+finishes, the project's `workflow_run` gate takes the PR from there — it calls
+`/kit:review-copilot <N> unattended` to triage the findings and push the fixes,
+then enables auto-merge unless something warrants attention. A PR carrying
+`kit-hold` is skipped and waits for its walkthrough.
 
 Waiting here for any of that would hold a session open for an indeterminate
 stretch to watch work that needs nobody present.
@@ -247,8 +246,8 @@ Attended, tell the user:
 > "PR #<N> is open with auto-merge off. Copilot reviews within a minute or two,
 > and the CI gate triages and merges it from there — nothing to start."
 
-Then stop. The worktree stays until the PR merges; `kit:worktree-reclaim`
-reclaims it on the next sweep.
+Then stop. The worktree stays while the PR is open; the reclaim sweep at the top
+of the next `/kit:ship-ticket` takes it once the PR has merged.
 
 ---
 
