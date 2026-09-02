@@ -28,9 +28,11 @@ every cleanup.
 
 ## What this means for garbage collection
 
-Declaring the layout also narrows what `/kit:worktree-gc` will sweep. Under the
-built-in layout the directory holds nothing but worktrees, so anything git no
-longer names is garbage. Under a sibling layout like `../<repo>-<branch>`, the
+Declaring the layout also narrows what a reclaim pass will sweep — whether it was
+asked for with `/kit:worktree-gc` or ran on its own at the top of
+`/kit:ship-ticket`, which is where worktrees get reclaimed without anyone
+remembering to. Under the built-in layout the directory holds nothing but
+worktrees, so anything git no longer names is garbage. Under a sibling layout like `../<repo>-<branch>`, the
 same diff would propose deleting unrelated repositories that happen to share the
 parent — so gc falls back to sweeping only paths it removed in that run, and says
 so.

@@ -18,7 +18,7 @@ the prefix comes from the `name` field in `plugins/kit/.claude-plugin/plugin.jso
 
 | Command | What it does |
 |---|---|
-| `/kit:ship-ticket` | Orchestrates the rest: worktree, plan, TDD, a simplify pass, PR. Takes the issue numbers you name; or a label, which narrows the sweep without replacing its rules; or nothing, and picks the next epic ticket whose blocking edges have all closed — lowest number first. A trailing `unattended` replaces every gate with a rule; where a rule cannot decide — the plan's anchors have moved, no plan exists, the work won't converge — it **parks**, which is the only way it stops and what makes `/loop` over it safe. Skips any ticket already carrying `kit-blocked`, reported by name with its reason. |
+| `/kit:ship-ticket` | Orchestrates the rest: a reclaim sweep, then worktree, plan, TDD, a simplify pass, PR. Opens by reclaiming dead worktrees in a subagent — once per invocation, ahead of the queue, and even when it goes on to take no ticket; what it reclaimed and held is the first line of the report, and a sweep that fails never stops a ticket starting. Takes the issue numbers you name; or a label, which narrows the backlog sweep without replacing its rules; or nothing, and picks the next epic ticket whose blocking edges have all closed — lowest number first. A trailing `unattended` replaces every gate with a rule; where a rule cannot decide — the plan's anchors have moved, no plan exists, the work won't converge — it **parks**, which is the only way it stops and what makes `/loop` over it safe. Skips any ticket already carrying `kit-blocked`, reported by name with its reason. |
 | `/kit:polish-ticket` | Runs a catch-all polish ticket. The user reports problems one at a time; each is triaged into an inline fix on the branch or its own filed ticket. |
 | `/kit:commit` | Focused commit with a real message. Reads the project's test, lint, and security gates from `CLAUDE.md`/manifest/CI and runs them on what changed. |
 | `/kit:new-pull-request` | Opens a PR with a closing keyword wired to the issue. |
@@ -37,7 +37,7 @@ the prefix comes from the `name` field in `plugins/kit/.claude-plugin/plugin.jso
 
 | Command | What it does |
 |---|---|
-| `/kit:worktree-gc [target]` | Reclaims worktrees — one named target, or a sweep of all of them. Removes a worktree when it is free, and deletes its branch only where GitHub accounts for the tip. Sweeps the untracked husks `git worktree remove` leaves behind. |
+| `/kit:worktree-gc [target]` | Reclaims worktrees by hand — one named target, or a sweep of all of them. The same sweep runs on its own at the top of every `/kit:ship-ticket`; this is how you ask for one in between. Removes a worktree when it is free, and deletes its branch only where GitHub accounts for the tip. Sweeps the untracked husks `git worktree remove` leaves behind. |
 | `/kit:triage-memory-run` | The same pass for auto-memory. Bins every memory as stale, workflow, duplicate, or unclassified, then clears it down — moving what's worth keeping into an on-demand `WORKFLOW.md` and archiving before deleting. `--dry-run` reports what you'd get back and what you'd lose, without writing anything. |
 
 ## Skills

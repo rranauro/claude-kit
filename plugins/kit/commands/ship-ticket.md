@@ -32,15 +32,47 @@ Run it from the main checkout.
 token decides *whether it asks*. Naming a ticket does not skip the gates, and
 running unattended does not change what may be picked up.
 
-**The loop itself is `kit:ticket-loop`.** This command owns selection and nothing
-else; that skill owns the five phases and the one substitution that separates the
-modes — a gate is a question attended, a rule-or-park unattended. Do not
-reproduce its phases here.
+**The loop itself is `kit:ticket-loop`.** This command owns only what happens once
+per invocation, before any ticket exists: the reclaim sweep, then selection. That
+skill owns the five phases and the one substitution that separates the modes — a
+gate is a question attended, a rule-or-park unattended. Do not reproduce its
+phases here.
 
 `/kit:tend-prs` is what happens after the open PR: it triages the review round,
 enables auto-merge, and removes the worktree once it lands. Between them, what is
 left for you is designing the tickets whose result someone has to look at,
 answering the parks, and walking the PRs that carry `kit-hold`.
+
+---
+
+## Step 0 · `reclaim` — Clear the dead worktrees first
+
+Before anything is selected or prepared, reclaim the worktrees this project has
+accumulated. Invoke `kit:worktree-reclaim` through the **Agent tool**, unattended
+and with no target, so it sweeps and asks nothing.
+
+**Once per invocation, ahead of the whole queue** — not once per ticket. Naming
+several tickets sweeps a single time before any of them is taken. It also runs
+when selection goes on to take nothing: over an empty or fully blocked backlog
+the sweep is the whole outcome rather than a preamble to one.
+
+**Running here is what excludes the worktree this run will create.** Step 0
+precedes selection, so that worktree does not exist yet and there is nothing to
+exclude. Inside `kit:ticket-loop` or `kit:start-ticket` the exclusion would have
+to be written down, and both are shared mechanism — a sweep added there lands on
+every caller they have, at per-ticket cardinality.
+
+**In a subagent, so the survey stays out of this session.** A verdict line per
+worktree is exactly the inventory that crowds out the ticket the session is
+actually for. What comes back is what was reclaimed and what was skipped with
+reasons; nothing else.
+
+**Best-effort.** A sweep that fails is one line in the report and selection
+proceeds — nothing about reclaim may stop a ticket from starting. The accepted
+cost, so nobody rediscovers it as a defect: a sweep that keeps failing degrades
+to today's behaviour, where nothing is reclaimed at all.
+
+Carry the agent's answer into Step 3 rather than acting on it here.
 
 ---
 
@@ -63,7 +95,7 @@ Report every skip by name, work the rest in the order given, and take each one
 through Step 2 before starting the next. A park on one ticket does not stop the
 queue.
 
-**With a label, sweep as normal over the issues carrying it.** Add it to the
+**With a label, sweep the backlog as normal over the issues carrying it.** Add it to the
 query — `gh issue list --state open --label ready-for-agent --label <given>` —
 and apply every rule below unchanged. The label you passed is an **additional**
 filter, never a substitute for `ready-for-agent`: that label is what says a human
@@ -106,10 +138,12 @@ ticket, and this is the one. Run it again if you want the next. Issue numbers ar
 the way to ask for several at once.
 
 If nothing is startable, say which tickets are waiting and on what, in one line
-each, and stop. Attended, that report is an offer: name one and this command
-takes it, because naming is what clears rule 1. Unattended it is the whole
-outcome, and a useful one — it tells you whether the epic is blocked on a merge,
-on a person, or on nothing at all.
+each, then give Step 3's sweep line and stop — Step 0 already ran, and this exit
+is the one place its report would otherwise be lost. Attended, that report is an
+offer: name one and this command takes it, because naming is what clears rule 1.
+Unattended it is the whole outcome, and a useful one — it tells you whether the
+epic is blocked on a merge, on a person, or on nothing at all, and what the sweep
+got back in the meantime.
 
 ### `kit-blocked` — waiting on a person, not a merge
 
@@ -191,10 +225,16 @@ decision each one is waiting on.
 **Split the parked list by what would clear it.** `kit:park` states the bins;
 apply them rather than listing every park as one problem.
 
+**Lead with the sweep**, in one line: what Step 0 reclaimed, and what it held or
+skipped, with the reason. Say it when the sweep reclaimed nothing, and when it
+failed. A sweep nobody is told about is worse than no sweep — running it where a
+person is watching is the whole reason it sits in this command, and a report that
+drops the line gives that up while still doing the work.
+
 From here `/kit:tend-prs` takes over.
 
-**A sweep still takes one ticket per firing**, and a label narrows a sweep rather
-than turning it into one. `/loop 20m /kit:ship-ticket unattended` is how you work
+**A backlog sweep still takes one ticket per firing**, and a label narrows one
+rather than turning it into a queue. `/loop 20m /kit:ship-ticket unattended` is how you work
 the backlog, and one ticket per firing is what keeps a park visible between
 firings rather than buried in a run that kept going. Explicit issue numbers are
 the exception, and they are bounded by the list you typed.
