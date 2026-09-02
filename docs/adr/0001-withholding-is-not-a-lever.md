@@ -2,7 +2,7 @@
 
 Triage used to withhold `ready-for-agent` from a ticket whose brief was not
 settled, on the grounds that an agent would otherwise answer the open design
-question inside a diff. Once `/kit:run-ticket` gained its own design pass, that
+question inside a diff. Once the unattended path gained its own design pass, that
 question became one the run could either settle or park on out loud — so
 withholding bought nothing and cost visibility.
 

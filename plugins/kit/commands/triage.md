@@ -191,7 +191,7 @@ owns the format; follow it exactly, and write the prose "Blocked by" section
 alongside it so a human reads the same thing the marker says.
 
 The empty form is not a formality, and omitting it is the failure this step
-exists to prevent. `/kit:run-ticket` reads **absent** as "not part of an epic,
+exists to prevent. `/kit:ship-ticket` reads **absent** as "not part of an epic,
 leave alone" — so a ticket with a perfect brief and the label still gets skipped,
 silently, and looks startable the whole time. Present-and-empty is what says
 "startable now".
@@ -207,7 +207,7 @@ line means two answers to one question, and nothing downstream picks a winner.
 Say what you changed and why.
 
 **The marker holds issue numbers and nothing else.** It is read mechanically —
-`/kit:run-ticket` satisfies it by checking that each number is closed — so a
+`/kit:ship-ticket` satisfies it by checking that each number is closed — so a
 blocker it cannot close is not expressible there. A credential that has not been
 issued, a vendor account in review, a change landing in another repo, a decision
 you have not made: those go to the `kit-blocked` label below, with the reason in
@@ -224,8 +224,8 @@ Be clear with the user about what the label does, because it is narrower than
 - It is *not* what makes the issue qualify for `kit:start-ticket`. That reads
   the body; the label is corroboration and a staleness date.
 - It is *not* a claim that the brief is settled. The ticket's kind answers that,
-  and `/kit:run-ticket` designs the ticket itself where the kind allows.
-- Its one behavioral effect is that **`/kit:run-ticket` will select this ticket**
+  and `/kit:ship-ticket unattended` designs the ticket itself where the kind allows.
+- Its one behavioral effect is that **a `/kit:ship-ticket` sweep will select this ticket**
   — it is the filter deciding what gets picked up, without anyone naming the
   issue.
 
@@ -240,12 +240,12 @@ unlabelled ticket is invisible to the sweep no matter what has since landed, and
 becomes startable only through a re-triage nobody scheduled. Three shapes of
 "not quite ready", none of them a withhold:
 
-- **A blocking dependency.** `/kit:run-ticket` only picks up a ticket whose
+- **A blocking dependency.** A `/kit:ship-ticket` sweep only picks up a ticket whose
   `kit-blocked-by` marker is fully closed, so the edge already holds it back.
   Record the edge in the marker, then label it — and it starts itself the moment
   its blocker merges.
 - **An unsettled brief.** The design pass parks on it and says so. A kind in the
-  first three means `/kit:run-ticket` designs the ticket rather than parking on a
+  first three means `/kit:ship-ticket unattended` designs the ticket rather than parking on a
   missing plan, and parks in-flight if the design itself cannot be settled; a
   `user-experience` kind parks for its kind. Either way the refusal is visible
   and carries its reason, which withholding does not.
@@ -266,7 +266,7 @@ world will not let it start yet. Two cases:
 
 Both are `ready-for-agent` **and** `kit-blocked` — `gh issue edit <n> --add-label
 kit-blocked` — with the reason written into the body's "Blocked by" section.
-`/kit:run-ticket` skips a `kit-blocked` ticket and reports it by name with that
+`/kit:ship-ticket` skips a `kit-blocked` ticket and reports it by name with that
 reason, and never removes the label; clearing it is your statement that the thing
 is actually cleared. The difference from withholding is that the ticket stays
 visible and becomes startable the moment you drop one label, rather than needing

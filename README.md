@@ -21,11 +21,12 @@ worktrees**; there's nothing to configure and no vocabulary to adopt.
 /kit:architect     talk about the problem, file lean issues
 /kit:design        settle the approach, grill it, store the plan on the issue
 /kit:ship-ticket   TDD → simplify → PR, with gates you answer
-/kit:run-ticket    the same, unattended — parks what it can't decide
+                   … unattended, and it parks what it can't decide
 ```
 
-Both build on the `kit:start-ticket` skill, which wires the worktree and checks
-that a plan actually exists before either writes a line.
+It builds on the `kit:ticket-loop` skill, which is the one place the sequence
+lives, and on `kit:start-ticket` under that, which wires the worktree and checks
+that a plan actually exists before anything writes a line.
 
 Work that arrives rather than work you started enters at `/kit:triage`, which
 grills the ticket's scope before an approach exists and then hands off to

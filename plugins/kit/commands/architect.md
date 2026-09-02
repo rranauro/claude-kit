@@ -77,7 +77,7 @@ slices of one piece of work rather than separate findings that happened to share
 a conversation, offer to hand off to `kit:to-tickets` and invoke it here — it
 reads the conversation it is already in. It owns dependency-ordered publishing
 and the `kit-blocked-by` markers the unattended commands read; issues drafted
-one-by-one below carry no marker, and `/kit:run-ticket` reads an absent marker as
+one-by-one below carry no marker, and `/kit:ship-ticket` reads an absent marker as
 "leave alone", so they look startable and never start. On the handoff path, skip
 the per-ticket `/kit:design` offer below — only the frontier ticket could be
 designed usefully anyway. If the user declines, or the tickets are independent,

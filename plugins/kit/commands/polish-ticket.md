@@ -21,7 +21,7 @@ Constituent skills:
 - `/kit:commit` — once per accepted fix
 - `kit:writing-tickets` — for anything split out
 - `kit:behavior-placement` — before any fix that adds or moves a class
-- `/kit:ship-ticket` — Phase 4b onward, when the branch is ready to land
+- `kit:ticket-loop` — `simplify` onward, when the branch is ready to land
 - `/kit:cleanup-worktree` — after the merge
 
 ---
@@ -165,7 +165,7 @@ The user calls this, not you. A cleanup ticket has no natural end; ask at natura
 
 Landing does **not** require the epic to be finished. A cleanup branch is better shipped in batches than held open for weeks — a long-lived branch drifts from `main` and its review gets unreviewable.
 
-Hand off to `/kit:ship-ticket` starting at Phase 4b (`simplify-pass`) — `clean-check`, `worktree`, `read-plan`, and `tdd` are already done by this skill's loop. So: `/simplify` over the accumulated diff, then `push-and-pr` and `hand-off` — from there `/kit:tend-prs` triages the reviews, enables auto-merge, and cleans up the worktree out of session.
+Hand off to `kit:ticket-loop` starting at its `simplify` phase — `prepare` and `tdd` are already done by this skill's loop. So: `/simplify` over the accumulated diff, then `open-pr` and `hand-off` — from there `/kit:tend-prs` triages the reviews, enables auto-merge, and cleans up the worktree out of session.
 
 Two adjustments for a multi-fix branch:
 
