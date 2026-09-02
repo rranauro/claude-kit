@@ -10,17 +10,30 @@ its gates so you can answer them, or runs the whole thing unattended.
 
 The selection is one of three kinds:
 
-- **Issue numbers** (`/kit:ship-ticket 612 613`) — take exactly those, in the
-  order given. Selection is skipped.
-- **A label** (`/kit:ship-ticket bug`) — sweep as usual, but only over issues
-  carrying it. Selection still happens; you have only narrowed what it may choose
-  from.
-- **Nothing** — sweep the whole backlog and take one.
+- **Issue numbers** (`/kit:ship-ticket 612 613`) — the queue is what you typed,
+  in the order given.
+- **A label** (`/kit:ship-ticket bug`) — narrows the backlog sweep to the issues
+  carrying it, without replacing its rules.
+- **Nothing** — sweeps the whole backlog.
 
-Every token that is digits means numbers; a single non-numeric token is a label.
-**A mix of the two is a usage error** — report it and stop rather than guessing
-which half was meant, since the two kinds disagree about whether selection runs
-at all.
+Every token that is digits means numbers; a single token that is neither digits
+nor dash-prefixed is a label. **A mix of numbers and a label is a usage error** —
+report it and stop rather than guessing which half was meant, since the two kinds
+disagree about where the queue comes from.
+
+Two flags modify it:
+
+- **`--all`** makes a label the queue rather than a filter over one sweep: every
+  open issue carrying it, lowest number first. It needs a label — bare `--all` is
+  a usage error, because an unbounded queue over the whole backlog is the one
+  selection whose typo costs a worktree and a PR per open issue.
+- **`--dry-run`** resolves the selection, reports it, and stops. Nothing is
+  created, nothing is removed, and no ticket is started.
+
+Flags are dash-prefixed and the mode is not. That is two grammars in one command,
+and it is deliberate: a bare `all` would be indistinguishable from a label named
+`all` under the rule above, while `--all` collides with nothing. `unattended`
+stays bare because every invocation already written down spells it that way.
 
 The mode is a trailing `unattended` token (`/kit:ship-ticket 612 unattended`, or
 bare `/kit:ship-ticket unattended` to sweep). Without it this command is
@@ -67,6 +80,10 @@ worktree is exactly the inventory that crowds out the ticket the session is
 actually for. What comes back is what was reclaimed and what was skipped with
 reasons; nothing else.
 
+**`--dry-run` skips this step.** Reclaiming removes worktrees and deletes
+branches, so a dry run that reclaimed would not be dry. Step 1 says what that
+costs the report.
+
 **Best-effort.** A sweep that fails is one line in the report and selection
 proceeds — nothing about reclaim may stop a ticket from starting. The accepted
 cost, so nobody rediscovers it as a defect: a sweep that keeps failing degrades
@@ -76,14 +93,20 @@ Carry the agent's answer into Step 3 rather than acting on it here.
 
 ---
 
-## Step 1 · `select` — Decide what to work
+## Step 1 · `select` — Resolve the arguments to a queue
 
-**With issue numbers given, that is the queue.** Selection is skipped entirely —
-the label and marker rules below are query filters over work nobody asked for,
-and you asked. Do not require `ready-for-agent`, and do not require a
-`kit-blocked-by` marker.
+Selection has one job: turn the arguments into an ordered **queue** of issue
+numbers and a list of **skips**, each carrying the reason it was skipped. Step 2
+works the queue; Step 3 reports both. Three resolvers fill those two lists, one
+per selection kind, and they differ only in where the candidates come from and
+which checks apply.
 
-Two checks still apply, because they are claims about the world rather than about
+### Named numbers — the queue is what you typed
+
+`ready-for-agent` and the `kit-blocked-by` marker are query filters over work
+nobody asked for, and you asked. Neither is required here.
+
+Two checks still apply, because each is a claim about the world rather than about
 labelling:
 
 - **`kit-blocked`** — skip the ticket and report the reason from its "Blocked by"
@@ -91,25 +114,35 @@ labelling:
 - **An open blocker in its marker, if it has one** — skip and say which. The
   dependency has not landed, and that is true no matter who chose the ticket.
 
-Report every skip by name, work the rest in the order given, and take each one
-through Step 2 before starting the next. A park on one ticket does not stop the
-queue.
+Work them in the order given, each one through Step 2 before the next starts. A
+park on one ticket does not stop the queue.
 
-**With a label, sweep the backlog as normal over the issues carrying it.** Add it to the
-query — `gh issue list --state open --label ready-for-agent --label <given>` —
-and apply every rule below unchanged. The label you passed is an **additional**
-filter, never a substitute for `ready-for-agent`: that label is what says a human
-meant this ticket for an agent, and no other label makes that claim. If nothing
-survives, say so and name the label, so an empty result reads as "nothing
-matched" rather than "nothing to do".
-
-**With no arguments, sweep the whole backlog for one.**
-
-Epic tickets filed by `kit:to-tickets` carry their blocking edges as a marker in
-the issue body. This step reads them and finds work that is now unblocked.
+### A label with `--all` — the queue is what the label names
 
 ```
-gh issue list --state open --label ready-for-agent --json number,title,body,labels
+gh issue list --state open --label <given> --json number,title,body,labels
+```
+
+Queue every one of them, lowest number first. This is the resolver above with the
+typing removed, so it requires no label and no marker either — and it adds one
+check the typed form does not:
+
+- **Already started** — an open PR or a live worktree exists for the issue. Skip
+  it and name the PR.
+
+The asymmetry is about who chose the set. Typing nine numbers is knowing what you
+typed; a label derives a set you never read, and a ticket stays open until its PR
+merges. Without this check, running `bug --all` again while the first round is
+still in review starts every one of them a second time.
+
+### A bare label, or nothing — the sweep takes one
+
+A sweep picks up work nobody named, so it reads the labels and the markers that
+say a ticket was meant for an agent. A label narrows what it may choose from and
+changes none of its rules:
+
+```
+gh issue list --state open --label ready-for-agent [--label <given>] --json number,title,body,labels
 ```
 
 A ticket is **startable** when all of these hold:
@@ -130,12 +163,10 @@ A ticket is **startable** when all of these hold:
 3. It does **not** carry the `kit-blocked` label — see below.
 4. No open PR or live worktree already exists for it (it hasn't been started).
 
-If several tickets are startable, take the lowest issue number. Filing order is
-dependency order, so the lowest is the earliest slice.
-
-**One ticket per sweep**, labelled or not. Not a safety bound — you asked for a
-ticket, and this is the one. Run it again if you want the next. Issue numbers are
-the way to ask for several at once.
+**Take the lowest startable issue number, and only that one.** Filing order is
+dependency order, so the lowest is the earliest slice. One per sweep is what the
+resolver is for: you asked for a ticket, and this is the one. `--all` is how you
+ask for the set instead.
 
 If nothing is startable, say which tickets are waiting and on what, in one line
 each, then give Step 3's sweep line and stop — Step 0 already ran, and this exit
@@ -144,6 +175,17 @@ offer: name one and this command takes it, because naming is what clears rule 1.
 Unattended it is the whole outcome, and a useful one — it tells you whether the
 epic is blocked on a merge, on a person, or on nothing at all, and what the sweep
 got back in the meantime.
+
+### `--dry-run` — resolve it and stop
+
+Report the queue in order and every skip with its reason, then stop. Do not
+create a worktree, a branch, a PR, or an issue comment, and do not remove one.
+A trailing `unattended` is moot: a dry run reaches no gate.
+
+**Say that the queue was resolved against the worktrees standing now.** Step 0 is
+skipped here — reclaiming removes worktrees and deletes branches, and a dry run
+that does that is not dry — so a ticket reported as already started may be taken
+by the real run once a stale worktree is reclaimed.
 
 ### `kit-blocked` — waiting on a person, not a merge
 
@@ -192,7 +234,8 @@ it to be picked up:
 
 ```
 3 labelled tickets have no kit-blocked-by marker, so they are not startable in a
-sweep: #41, #43, #47. Add `<!-- kit-blocked-by: -->`, or name one directly.
+sweep: #41, #43, #47. Add `<!-- kit-blocked-by: -->`, name one directly, or take
+the whole label with `--all`.
 ```
 
 Report it as information, not an error, and never add the marker yourself — the
@@ -234,8 +277,9 @@ drops the line gives that up while still doing the work.
 From here the CI gate takes over. Nothing runs on this machine until you invoke
 this command again.
 
-**A backlog sweep still takes one ticket per firing**, and a label narrows one
-rather than turning it into a queue. `/loop 20m /kit:ship-ticket unattended` is how you work
-the backlog, and one ticket per firing is what keeps a park visible between
-firings rather than buried in a run that kept going. Explicit issue numbers are
-the exception, and they are bounded by the list you typed.
+**A backlog sweep still takes one ticket per firing.** `/loop 20m
+/kit:ship-ticket unattended` is how you work an epic that way, and one ticket per
+firing is what keeps a park visible between firings rather than buried in a run
+that kept going. A queue is the other shape — typed numbers, or a label with
+`--all` — bounded by what you named rather than by the firing, and reporting its
+parks together at the end.
