@@ -47,6 +47,13 @@ _Avoid_: blocked, on hold
 A parsed marker in the issue body naming the tickets that must close first. The
 dependency edge; unlike `kit-blocked`, it clears itself when the blocker merges.
 
+**kit-triaged**:
+A review round is closed — every finding verified and applied or skipped.
+Written as a PR comment carrying the summary and any escalation reason, and as a
+label carrying only the fact. The comment is authoritative; the label is what
+lets a CI gate decide without a call per PR.
+_Avoid_: reviewed, done, addressed
+
 **kit-hold**:
 The finished PR must be walked in the running app before it merges. Lives on the
 issue and is transcribed onto the PR. Independent of kind.

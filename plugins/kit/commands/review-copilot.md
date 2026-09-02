@@ -24,6 +24,21 @@ Pull from these sources in parallel:
 
 If all fetched sources are empty, tell the user "No automated review comments found" and stop.
 
+**Step 2.4 · `round-already-closed` — Check whether this round is already closed:**
+
+Look for a `<!-- kit-triaged -->` comment on the PR in what Step 2 already
+fetched — it hits the issues endpoint, so the marker comment is in that result.
+No extra call.
+
+- **Unattended, a present marker means stop.** Report that the round is closed
+  and quote the summary it carries. Copilot reviews on create, so the automatic
+  path has one round to close; running again re-derives an answer already on the
+  PR and stacks a second summary saying so.
+- **Attended, a present marker does not stop you.** A person typing this command
+  is the deliberate re-review. Say the round was already closed and when, then
+  carry on — and at Step 7.5 **update that comment in place** rather than posting
+  a second one.
+
 **Step 2.5 — Parse the marker-comment reviews and dedup overlaps:**
 
 The Claude review arrives as a single marker comment (`<!-- claude-pr-review -->`) in Markdown format. Parse it:
@@ -86,7 +101,7 @@ All items are processed without stopping for approval. The summary in Step 5 is 
   ```
 
   Use the four categories from Step 3.3, add the minor/non-minor scope label, and tag each line with the source(s). **Include skipped items too** — the durable record of "we considered this and decided not to act" is the point. If Step 6 delegates to `/kit:commit`, pass this body as the intended message rather than letting `/kit:commit` draft its own.
-- If no fixes were made (all comments skipped/ignored), do NOT create a commit. The evaluation summary lives only in the conversation; there is nothing to push.
+- If no fixes were made (all comments skipped/ignored), do NOT create a commit — there is nothing to push. The summary still becomes the record at Step 7.5: a round that skipped everything is closed, and a PR cannot otherwise show the difference between that and a round nobody ran.
 - **Report the summary back to your caller in a form it can act on**, naming explicitly whether any **non-minor** item was skipped. The merge decision branches on exactly that: a skipped non-minor item is the difference between enabling auto-merge and escalating to the user. Do not bury it in prose counts.
 
 **Step 6 — Quality gates (if any fixes were made):**
@@ -111,6 +126,67 @@ All items are processed without stopping for approval. The summary in Step 5 is 
   escalate. An unverified push is the one outcome that looks identical to a
   verified one from GitHub.
 
+**Step 7.5 · `close-the-round` — Record that the round is closed:**
+
+Run this **whatever the outcome, and in both modes** — especially when nothing
+was fixed. A round where every finding was verified and skipped is as closed as
+one that pushed a fix, and the PR has no way to show the difference between that
+and a round nobody ran.
+
+This used to live only on the unattended path, which meant a round handled in
+session left no evidence and the next CI firing paid for a model to rediscover
+it. Whoever closes the round writes the record; the caller does not decide.
+
+It sits after the push because the record has to carry the whole outcome: a gate
+that could not run and a rejected push are both escalation reasons, and neither is
+known at Step 5.
+
+Two writes, together:
+
+```
+gh pr comment <N> --body "<!-- kit-triaged -->
+<the Step 5 summary>"
+gh pr edit <N> --add-label kit-triaged
+```
+
+**The comment is authoritative and the label is for the gate.** The comment
+carries the summary and any escalation reason, which is the durable record. The
+label carries only the fact that a round closed, so a CI gate can decide from
+`gh pr list --json labels` — data it already has — instead of paying a call per
+PR to look for a comment. On divergence the comment wins, and a missing label
+with a present comment fails toward waking a model, which is the safe direction.
+
+Create the label once per repo with `gh label create kit-triaged`, or from the
+UI. A repo that has not is not broken: the comment still closes the round, and
+the gate over-approximates by waking a model that finds nothing to do.
+
+**Re-running attended, edit the existing comment rather than posting a second.**
+Step 2.4 already told you it was there. Find it by its marker and edit by id:
+
+```
+gh api --method PATCH repos/{owner}/{repo}/issues/comments/<id> -f body=@<file>
+```
+
+Two summaries on one PR read as two rounds, and the second is the one anybody
+trusts — which is the duplicate this step exists to prevent.
+
+**Escalations go in this same comment**, never a later one. A pass that posts the
+marker and then dies leaves a PR reading as merely triaged, which is this record
+inverted:
+
+```
+gh pr comment <N> --body "<!-- kit-triaged -->
+<!-- kit-escalated: skipped a non-minor optional item -->
+<the Step 5 summary>"
+```
+
+The escalation reason is the one thing only the comment holds — `kit-triaged` is
+on the PR either way, because a gate should skip an escalated PR for the same
+reason it skips a triaged one: what it needs is a person, not another model pass.
+
+`## Unattended` below owns what the escalation *conditions* are, and the merge
+decision that branches on them. This step owns only the record.
+
 **Step 8 · `enable-auto-merge` — Enable auto-merge (gated):**
 
 The first-pass automated reviews have now been triaged, which is the precondition
@@ -127,8 +203,9 @@ Step 5 summary and let the caller continue — a pass that treats this as the en
 its own work leaves the PR triaged with auto-merge never enabled, which is the one
 state nothing downstream is watching for.
 
-**Run unattended, close the round yourself** — see `## Unattended` below, which
-owns the marker and the merge decision. Do not also ask.
+**Run unattended, decide the merge yourself** — see `## Unattended` below, which
+owns that decision. Do not also ask. The record is already written: Step 7.5 does
+that in both modes.
 
 Otherwise, ask the user before enabling:
 
@@ -151,24 +228,14 @@ that looks quiet is not a session with no one in it.
 
 ## Unattended
 
-Attended, this skill hands its summary to a person and stops. Unattended there is
-no person, so the same summary has to be turned into the two things a PR needs
-before anyone looks at it again: a record of what happened, and a decision about
-merging. Both are yours here — you are the only one holding the per-item
-reasoning, and re-deriving it costs another pass.
+A PR needs two things before anyone looks at it again: a record of what happened,
+and a decision about merging. **Step 7.5 already wrote the record**, in both modes
+— that is a fact about the round, and which caller ran it changes nothing. What is
+left here is the decision, which attended belongs to the person and unattended
+belongs to you. You are the only one holding the per-item reasoning, and
+re-deriving it costs another pass.
 
-Do them in this order, and do them whatever the outcome — **especially** when
-nothing was fixed.
-
-**1 · Write the marker.** One comment is both the durable record on the PR and the
-idempotency signal every caller reads to know the round is closed:
-
-```
-gh pr comment <N> --body "<!-- kit-triaged -->
-<the Step 5 summary>"
-```
-
-**2 · Decide the merge.** On a clean triage, `gh pr merge <N> --auto --squash`.
+**Decide the merge.** On a clean triage, `gh pr merge <N> --auto --squash`.
 With a single review round there is nothing further to wait for, and leaving it
 off means the PR sits green until someone notices. Enabling it is idempotent, and
 the merge stays GitHub's to perform once checks pass.
@@ -184,12 +251,6 @@ the merge stays GitHub's to perform once checks pass.
   job** — a red check is not a review finding, and repairing one belongs in a
   session with a person nearby. Escalate and say so.
 
-An escalation goes in the *same* comment as the marker, never a later one — a
-pass that posts the marker and then dies leaves a PR that reads as merely
-triaged, which is this record inverted:
-
-```
-gh pr comment <N> --body "<!-- kit-triaged -->
-<!-- kit-escalated: skipped a non-minor optional item -->
-<the Step 5 summary>"
-```
+An escalation is carried by the comment Step 7.5 writes, in the same body as the
+marker. Hand it the reason before it writes; do not post a later comment saying
+the round escalated after all.
