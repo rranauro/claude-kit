@@ -5,6 +5,9 @@ set -euo pipefail
 # by reading the diff: a shell script that no longer parses, a manifest that is
 # no longer JSON, a skill whose frontmatter stops matching its directory. All
 # three fail at load time in the harness rather than at review time.
+#
+# Shape only, and it stays under a second so it is worth running before every
+# push. Behaviour is asserted in tests/, which CI runs as its own step.
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"

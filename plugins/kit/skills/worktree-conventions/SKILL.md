@@ -57,7 +57,7 @@ blocks. Find the block whose branch matches and take its path. That absolute
 path is what every later Read/Edit/Write targets.
 
 The same lookup finds an *existing* worktree for a branch, which is how
-`/kit:cleanup-worktree`, `/kit:polish-ticket`, `/kit:walkthrough`, and `/kit:ship-ticket` locate
+`kit:worktree-reclaim`, `/kit:polish-ticket`, `/kit:walkthrough`, and `/kit:ship-ticket` locate
 one without knowing the layout.
 
 **Verify the base.** A project's create command commonly cuts the branch from
@@ -79,7 +79,7 @@ raw `git worktree remove` — it already ran one. What it adds around that (prox
 links, generated config, registered subdomains) is precisely the part you cannot
 reconstruct, which is why it exists.
 
-If it names no remove command, remove it yourself per `/kit:cleanup-worktree`.
+If it names no remove command, `kit:worktree-reclaim` removes it.
 
 ## Step 4 — Fallback layout
 

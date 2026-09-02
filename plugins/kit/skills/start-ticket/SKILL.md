@@ -14,7 +14,7 @@ The argument should be a GitHub issue number (e.g., `kit:start-ticket 42`) or a 
 
 Each step below carries a stable id in backticks (`safety-check`, `wire-worktree`,
 …). Those ids are the handle other commands reference — `/kit:ship-ticket` and
-`/kit:cleanup-worktree` both point at steps here. Renumber freely; **never rename an
+`kit:worktree-reclaim` both point at steps here. Renumber freely; **never rename an
 id** without updating the references, and grep for one before you delete its step.
 
 **Step 1 · `parse-issue` — Parse the issue reference:**
@@ -33,7 +33,7 @@ If there are uncommitted changes, STOP and warn the user. Suggest they commit or
 
 **Invariant: one worktree per issue.** Never create a second, suffix-differentiated sibling for the same issue number (e.g. `935-...-scope` alongside `935-...-fields`). Two live worktrees for one issue is a trap — the dev server can be booted in the stale one, hiding the real changes and reading as "my changes aren't showing." Enforce exactly one of:
 - **Resume (default):** Skip `fetch-issue` through `wire-worktree`. Set `<branch-name>` to the existing branch and `<worktree>` to the path git reported, then jump to `worktree-paths` — use that path for all subsequent reads/edits. Do NOT re-run `wire-worktree` (the worktree is already provisioned).
-- **Replace:** Only if the existing worktree is being abandoned/re-scoped. First confirm it's not checked out elsewhere and has no unmerged work worth keeping (an open PR on its branch means keep it — Resume instead). Then remove the old worktree per `/kit:cleanup-worktree` semantics (`git worktree remove [--force]`, sweep the path) **before** creating the new one. The new branch reuses the `<issue-number>-` prefix and may keep the same name — there is no sibling to collide with once the old one is gone.
+- **Replace:** Only if the existing worktree is being abandoned/re-scoped. First confirm it's not checked out elsewhere and has no unmerged work worth keeping (an open PR on its branch means keep it — Resume instead). Then remove the old worktree by running `/kit:worktree-gc <branch>` **before** creating the new one. The new branch reuses the `<issue-number>-` prefix and may keep the same name — there is no sibling to collide with once the old one is gone.
 
 **Step 3 · `fetch-issue` — Fetch the issue:**
 - Run `gh issue view <number>` to read the full issue (title, body, labels, assignees)

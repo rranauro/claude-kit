@@ -32,7 +32,7 @@ either acts on a pin or deletes it.
 checkout**, never the worktree you happen to be standing in.
 
 This is not a detail. Pins are created mid-debug, and mid-debug you are in a
-ticket worktree. A pin written there dies with `/kit:cleanup-worktree` — the
+ticket worktree. A pin written there dies with `/kit:worktree-gc` — the
 requirement evaporates at the exact moment the ticket ships, which is the moment
 you were relying on it to survive. Resolving to the main root also means `list`
 shows every pin no matter which worktree you invoke it from.

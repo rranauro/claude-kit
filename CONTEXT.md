@@ -52,6 +52,24 @@ The finished PR must be walked in the running app before it merges. Lives on the
 issue and is transcribed onto the PR. Independent of kind.
 _Avoid_: hold, do-not-merge
 
+### Reclaiming a worktree
+
+**Verdict**:
+What a reclaim pass concluded about one worktree, combining three independent
+answers into an action: `reclaim`, `reclaim-keep-branch`, or `hold`.
+_Avoid_: status, eligible, stale
+
+**Free**:
+The worktree holds no work — nothing uncommitted, and no lock. Decides the
+directory and nothing else, because a checkout is restorable and a branch is
+not.
+_Avoid_: idle, clean, abandoned, unused
+
+**Accounted**:
+The remote has received the branch's exact tip. The only question that decides
+whether a branch may be deleted, and the only one a local test cannot answer.
+_Avoid_: merged, safe to delete
+
 ### States a command produces
 
 **Park**:

@@ -28,7 +28,7 @@ every cleanup.
 
 ## What this means for garbage collection
 
-Declaring the layout also narrows what `/kit:worktree-gc` will delete. Under the
+Declaring the layout also narrows what `/kit:worktree-gc` will sweep. Under the
 built-in layout the directory holds nothing but worktrees, so anything git no
 longer names is garbage. Under a sibling layout like `../<repo>-<branch>`, the
 same diff would propose deleting unrelated repositories that happen to share the

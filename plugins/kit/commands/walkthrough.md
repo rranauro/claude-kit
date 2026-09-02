@@ -62,9 +62,9 @@ three times only: at `write-artifact`, at `detour`, and at `finish`. A PATCH per
 step puts a network call between every question and the next answer, and nobody
 reads the issue mid-walk.
 
-The comment is what stops the walk dying with the worktree.
-`/kit:cleanup-worktree` used to take the record of what was actually exercised
-with it, at the moment someone was deciding whether to ship anyway.
+The comment is what stops the walk dying with the worktree. Reclaiming one used
+to take the record of what was actually exercised with it, at the moment someone
+was deciding whether to ship anyway.
 
 ```markdown
 # Walkthrough — #1161 Field values render as plain text
