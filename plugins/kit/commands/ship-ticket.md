@@ -64,6 +64,14 @@ Before anything is selected or prepared, reclaim the worktrees this project has
 accumulated. Invoke `kit:worktree-reclaim` through the **Agent tool**, unattended
 and with no target, so it sweeps and asks nothing.
 
+**Wait for the agent to return before Step 1 begins.** The Agent tool returns
+when the sweep is *launched*, not when it is finished, so the sequencing above
+does not hold anything back on its own. Selection reads worktree state too — the
+already-started checks in the `--all` and sweep resolvers both consult
+`git worktree list` — and so does `kit:start-ticket` `safety-check`, which
+decides resume-or-replace from it. A sweep still in flight can reclaim a
+worktree between the moment one of those reads it and the moment it is used.
+
 **Once per invocation, ahead of the whole queue** — not once per ticket. Naming
 several tickets sweeps a single time before any of them is taken. It also runs
 when selection goes on to take nothing: over an empty or fully blocked backlog
@@ -84,12 +92,14 @@ reasons; nothing else.
 branches, so a dry run that reclaimed would not be dry. Step 1 says what that
 costs the report.
 
-**Best-effort.** A sweep that fails is one line in the report and selection
-proceeds — nothing about reclaim may stop a ticket from starting. The accepted
-cost, so nobody rediscovers it as a defect: a sweep that keeps failing degrades
-to today's behaviour, where nothing is reclaimed at all.
+**Best-effort.** A sweep that fails, or that does not return, is one line in the
+report and selection proceeds — nothing about reclaim may stop a ticket from
+starting, and waiting for it may not turn a stuck sweep into a stuck command.
+The accepted cost, so nobody rediscovers it as a defect: a sweep that keeps
+failing degrades to today's behaviour, where nothing is reclaimed at all.
 
-Carry the agent's answer into Step 3 rather than acting on it here.
+Hold the agent's answer from here and use it at Step 3. Nothing between the two
+acts on it.
 
 ---
 
