@@ -28,8 +28,7 @@ the prefix comes from the `name` field in `plugins/kit/.claude-plugin/plugin.jso
 
 | Command | What it does |
 |---|---|
-| `/kit:tend-prs` | The unattended half. One pass over every open PR you own: triage the review round that landed, push the fixes, enable auto-merge, and remove the worktrees whose PRs have merged. Stateless and cold-start safe, so it runs headless on a launchd schedule — see [scheduled tending](scheduled-tending.md). Skips anything you're working in. Reports outstanding `/kit:pin-it` pins so the unread ones surface on their own. |
-| `/kit:review-copilot` | Takes automated review findings one at a time and verifies each against the code before acting, recording the reasoning for every one in the commit body. |
+| `/kit:review-copilot` | The unattended half. Takes automated review findings one at a time and verifies each against the code before acting, recording the reasoning for every one in the commit body. A CI gate calls it with `unattended` once a review has landed on a PR — see [tending on a CI runner](tending-on-a-runner.md). |
 | `/kit:start-review` | The other side of the workflow: a PR arrives and you have to judge it. Checks the branch out in its own worktree, runs the headless reviewer, and walks the app. Assess-only on a colleague's PR; a fix loop on your own. |
 | `/kit:walkthrough` | Verifies a branch in-app one step at a time, against a checklist derived from the issue's acceptance criteria and the diff. The position lives in a file, so a bug found mid-walk detours into triage and returns to the same step. |
 
@@ -79,6 +78,6 @@ nothing machine-specific to edit before use.
 
 **External commands these call.** Beyond the [companion skills](companion-skills.md),
 the workflow invokes `/simplify` (`kit:ticket-loop` `simplify`), `/loop` (drives
-`/kit:tend-prs`), and optionally `/target-debug` (reads the `tickets/` notes
+`/kit:ship-ticket` over the backlog), and optionally `/target-debug` (reads the `tickets/` notes
 `/kit:new-pull-request` writes). Each degrades to a skipped step if you don't have
 it, rather than failing.

@@ -31,13 +31,16 @@ ticket it closes.
 
 **Reviewing became the bottleneck.** Once construction got cheap, review was what
 ate my time. GitHub is the substrate here, so the workflow automates that phase
-where it can: the `pr-review-on-create` hook fires a review the moment a PR opens,
-and `/kit:tend-prs` triages what comes back — on a loop, with nobody watching.
+where it can: Copilot reviews the PR the moment it opens, and a CI gate triages
+what comes back through `/kit:review-copilot` — with nobody watching.
 
-**Two models see different things.** Running more than one reviewer over the same
-diff turns up bugs and inconsistencies uncannily well, and it happens before any
-human reviewer engages. They stop requesting changes for things a bot would have
-caught, and spend their attention on in-app testing instead.
+**A bot review before a human one changes what humans do.** Findings verified
+against the code land while the PR is still warm, so reviewers stop requesting
+changes for things a bot would have caught and spend their attention on in-app
+testing instead. `/kit:start-review` runs a second reviewer over the same diff
+when a change is worth it — two models see different things — but on demand,
+because a reviewer that fires only on one machine is not one the workflow can
+depend on.
 
 ## What the orchestration adds
 

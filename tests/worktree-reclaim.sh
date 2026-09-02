@@ -393,8 +393,7 @@ end_sandbox
 
 # ========================================================================
 # AC2/AC3 · The same test, reachable by any other caller that deletes a
-#           branch. `tend-prs.sh` carried a third copy of the escalation this
-#           ticket removes, and now asks here instead.
+#           branch, so no caller carries its own copy of the escalation.
 # ========================================================================
 
 new_sandbox "the accounting seam other callers use"

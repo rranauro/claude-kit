@@ -1,19 +1,35 @@
 # Tending on a CI runner
 
-`/kit:tend-prs` and its launchd agent assume a laptop: many open PRs, a worktree
-per branch, a log file, `osascript`. A CI runner is a different machine and a
-different pass. What follows is what breaks when the difference is ignored.
+A PR opens with auto-merge off. Copilot reviews it, CI goes green, and a
+`workflow_run` job in the consuming project decides what happens next: a bash
+gate answers the cheap questions, and where a judgement is genuinely needed it
+calls `/kit:review-copilot <N> unattended`. Nothing runs on your laptop, and
+there is nothing to start.
 
-## Call `/kit:review-copilot <N> unattended`, not `/kit:tend-prs`
+What follows is what that setup gets wrong when it is built the obvious way.
 
-A workflow already knows which PR woke it and has that branch checked out, so the
-sweep has nothing to select and the worktree steps have nothing to survey. Point
-the runner at the one command that does the judging, in unattended mode, where it
-writes the triage marker and applies the merge decision itself.
+## Call `/kit:review-copilot <N> unattended`
 
-What the runner gives up by not running the sweep is the repair of a red check.
-That is deliberate: repairing a check is not review triage, and a red PR is
-visible without anything saying so.
+A workflow already knows which PR woke it and has that branch checked out, so
+there is no sweep to run and no worktree to survey. Point the runner at the one
+command that does the judging, in unattended mode, where it writes the triage
+marker and applies the merge decision itself.
+
+What the runner gives up is the repair of a red check. That is deliberate:
+repairing a check is not review triage, and a red PR is visible without anything
+saying so.
+
+## One automated reviewer, not two
+
+Copilot is the only reviewer that fires on its own. `/kit:review-copilot` still
+merges overlapping findings across sources and calls agreement a stronger signal,
+and with one source that half of it never fires — a real loss, taken knowingly.
+The second reviewer it used to merge with ran headless from a hook on a
+particular laptop, and a reviewer that only runs when one machine is awake is not
+one anybody can rely on. `plugins/kit/scripts/pr-review.sh` still exists and
+`/kit:start-review` still runs it on demand; nothing fires it automatically. The
+decision and the alternative it beat are in
+[ADR 0003](adr/0003-one-automated-reviewer.md).
 
 ## Every act GitHub attributes needs a user credential
 
@@ -44,8 +60,8 @@ hand.
 
 Use `workflow_run` on the CI workflow instead. It has one guard of its own: a run
 whose push authenticated as `GITHUB_TOKEN` does not fire it. That guard is the
-same rule as the table above, arriving a third way — a tending pass that pushes
-as the bot never sees its own round return.
+same rule as the table above, arriving a third way — a pass that pushes as the
+bot never sees its own round return.
 
 `workflow_run` only fires from the default branch's copy of the workflow file, so
 a change to the trigger cannot test itself on its own PR.

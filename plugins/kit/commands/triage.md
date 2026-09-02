@@ -305,8 +305,8 @@ hold is in place from the moment the PR exists.
 Ask it here because **here is where the answer is known**. You have just decided
 this is safe for an agent to start alone; whether the result needs walking in the
 running app before it merges is the same judgment, made with the same context in
-front of you. The alternative is finding out later: the agent opens a PR, a
-tending pass fires within minutes, and you are racing a schedule to label
+front of you. The alternative is finding out later: the agent opens a PR, the CI
+gate fires as soon as CI finishes, and you are racing a workflow run to label
 something you already knew would need it.
 
 **Ask it of every kind, and never infer it from one.** A `user-experience`

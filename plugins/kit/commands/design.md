@@ -281,12 +281,12 @@ Hold the PR for in-app verification before it merges? (y/N)
 ```
 
 If yes, `gh issue edit <n> --add-label kit-hold`. `/kit:new-pull-request`
-transcribes it onto the PR, so the hold is in place before a tending pass can
-reach it.
+transcribes it onto the PR, so the hold is in place before the CI gate can reach
+it.
 
 You have just spent a conversation on how this will be built, which is the most
 informed anyone will be about whether the result needs *seeing* before it merges.
-Waiting until the PR exists means racing a scheduled pass with the answer you
+Waiting until the PR exists means racing a workflow run with the answer you
 already had. Default to no — a bare Enter — and say yes when the approach you
 just settled produces something you have to look at rather than something a test
 asserts.

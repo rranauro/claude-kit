@@ -8,7 +8,7 @@
   "plugins": [
     {
       "name": "kit",
-      "description": "End-to-end GitHub ticket workflow. /kit:architect runs the problem conversation and files lean issues; /kit:design settles the how and writes the plan; /kit:ship-ticket drives TDD through PR with gates you answer, or unattended, parking any ticket whose plan no longer holds. Ships an opt-in PostToolUse hook that posts a Claude review on the PRs you open, registered per project.",
+      "description": "End-to-end GitHub ticket workflow. /kit:architect runs the problem conversation and files lean issues; /kit:design settles the how and writes the plan; /kit:ship-ticket drives TDD through PR with gates you answer, or unattended, parking any ticket whose plan no longer holds. Ships an opt-in PreToolUse hook that holds Rails commits to RuboCop and Brakeman, registered per project.",
       "author": {
         "name": "Ron Ranauro"
       },

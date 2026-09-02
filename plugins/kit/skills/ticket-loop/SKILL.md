@@ -6,8 +6,8 @@ description: Carry one named ticket from a wired worktree to an open PR — prep
 # Ticket Loop
 
 One ticket, from the issue to an open PR. `/kit:ship-ticket` invokes this after
-it has decided which ticket; everything downstream of the open PR belongs to
-`/kit:tend-prs`.
+it has decided which ticket; everything downstream of the open PR belongs to the
+CI gate the consuming project runs on `workflow_run`.
 
 **This is shared mechanism, not an entry point.** It takes a ticket someone else
 selected and it stops at an open PR — strictly less than the command that invokes
@@ -221,36 +221,34 @@ strands every ticket whose `kit-blocked-by` marker names this one, because a
 blocker reads as cleared only when its issue closes. `gh pr edit <n> --body` if
 it is absent.
 
-**Leave auto-merge off.** CI is fast and frequently goes green before the
-reviewers post; `--auto` at creation time can merge the PR before anyone reviews
-it. `/kit:tend-prs` sets it after the review round is triaged.
+**Leave auto-merge off.** CI is fast and frequently goes green before the review
+posts; `--auto` at creation time can merge the PR before anyone reviews it. The
+CI gate sets it once the review round is triaged.
 
 ---
 
-## Phase 5 · `hand-off` — Give the PR to the unattended loop
+## Phase 5 · `hand-off` — Leave the PR to CI
 
-This skill ends at an open PR with auto-merge off. Both reviewers post
-asynchronously after `gh pr create` — Copilot within a few minutes, the Claude
-headless review whenever its `claude -p` run finishes. Waiting for that means
-holding a session open for an indeterminate stretch to do work that needs no one
-present.
+This skill ends at an open PR with auto-merge off, and that is the whole handoff:
+nothing local picks it up, and there is nothing for the user to start.
 
-`/kit:tend-prs` does the rest: it catches the review round, triages every finding
-via `/kit:review-copilot`, pushes the fixes, enables auto-merge unless something
-warrants attention, and removes the worktree once GitHub merges. It is stateless
-and sweeps *every* open PR you own, so it does not need to be told about this one.
+Copilot posts its review a minute or so after `gh pr create`, and when CI
+finishes, the consuming project's `workflow_run` gate takes the PR from there —
+it calls `/kit:review-copilot <N> unattended` to triage the findings and push the
+fixes, then enables auto-merge unless something warrants attention. A PR carrying
+`kit-hold` is skipped and waits for the walkthrough. The kit's
+`docs/tending-on-a-runner.md` says what that gate is and what it needs.
+
+Waiting here for any of that would hold a session open for an indeterminate
+stretch to watch work that needs nobody present.
 
 Attended, tell the user:
 
-> "PR #<N> is open with auto-merge off. Reviews land in the next few minutes.
->
-> If `/loop 20m /kit:tend-prs` is already running, this PR is picked up
-> automatically — nothing to do. Otherwise start it, or run `/kit:tend-prs` once
-> by hand after the reviews post."
+> "PR #<N> is open with auto-merge off. Copilot reviews within a minute or two,
+> and the CI gate triages and merges it from there — nothing to start."
 
-Then stop. Do **not** start the loop without being asked: `/loop` binds to a
-session, and silently starting a second one gives the user two sweepers and no
-clear owner.
+Then stop. The worktree stays until the PR merges; `kit:worktree-reclaim`
+reclaims it on the next sweep.
 
 ---
 

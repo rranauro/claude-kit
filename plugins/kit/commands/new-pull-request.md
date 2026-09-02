@@ -55,37 +55,35 @@ URL:
 gh pr edit <pr-number> --add-label kit-hold
 ```
 
-The hold has to be on the PR **before a tending pass can see it**. That pass runs
-on a schedule, so the window between `gh pr create` and the next firing is the
-whole race, and losing it means the PR is triaged and auto-merge is enabled — the
-exact thing the hold was set to prevent, arriving minutes after someone
-deliberately asked for it not to.
+The hold has to be on the PR **before the CI gate can see it**. That gate fires
+on `workflow_run` as soon as CI finishes, so the window between `gh pr create`
+and that run is the whole race, and losing it means the PR is triaged and
+auto-merge is enabled — the exact thing the hold was set to prevent, arriving
+minutes after someone deliberately asked for it not to.
 
 This is not the automation deciding to hold something. A human answered that
 question when the ticket was settled, and this step transcribes the answer onto
-the artifact it was about. `/kit:tend-prs` still never writes this label in
-either direction, which is the rule that matters: a pass cannot clear a hold it
-is subject to.
+the artifact it was about. Nothing unattended ever writes this label in either
+direction, which is the rule that matters: a pass cannot clear a hold it is
+subject to.
 
 Say in the confirmation that the PR is held and how to release it, since a held
 PR looks identical to an ignored one:
 
-> PR #<N> is open and **held** (`kit-hold`) — tending will skip it entirely.
-> Remove the label when you're done verifying, and the next pass picks it up.
+> PR #<N> is open and **held** (`kit-hold`) — the CI gate will skip it entirely.
+> Remove the label when you're done verifying, and it picks up from there.
 
 **Step 4 — Confirm:**
 Print the PR URL so the user can review it.
 
-**Step 4a · `start-polling` — Point at the sweeper, don't poll:**
-GitHub Copilot reviews PRs automatically and usually takes 3–5 minutes; the local Claude headless review can land later still. Waiting for either here would hold the session open to do work that needs nobody present — `/kit:tend-prs` does it out of session, across every open PR at once.
+**Step 4a · `start-polling` — Say what happens next, don't poll:**
+GitHub Copilot reviews PRs automatically and usually takes a minute or two, and the CI gate fires when CI finishes. Waiting for either here would hold the session open to do work that needs nobody present.
 
-Check whether the sweeper is already running (`/loop` reports its active loops). Then tell the user one of:
+Tell the user:
 
-> "PR #<N> is open. `/loop 20m /kit:tend-prs` is already running — it'll triage the reviews, push fixes, and enable auto-merge without you."
+> "PR #<N> is open. Copilot reviews it shortly, and the CI gate triages the findings and merges it from there — nothing to start."
 
-> "PR #<N> is open. Start `/loop 20m /kit:tend-prs` to have the reviews triaged and merged unattended, or run `/kit:tend-prs` once by hand after they post."
-
-Do not start the loop yourself. It binds to the current session, and starting a second one silently leaves two sweepers with no clear owner.
+If the PR is held, say that instead, per the `kit-hold` wording above.
 
 **Step 5 — Save ticket context to `tickets/`:**
 After the PR is created, write a summary file to `tickets/<pr-number>-<branch>.md`. It records why the change was made for whoever debugs it later — `/target-debug` reads these if you have it installed, and they stand on their own if you don't. Add `tickets/` to `.gitignore` if it isn't there already; these are local working notes, not repo content.
