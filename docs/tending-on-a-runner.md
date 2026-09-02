@@ -31,11 +31,25 @@ and never remove the label, which is a human's to clear.
 ## The round is closed by a marker, not by the run that closed it
 
 `/kit:review-copilot` posts `<!-- kit-triaged -->` (or `<!-- kit-escalated -->`)
-as a PR comment carrying its summary, and that comment is the only record that
-the round is closed. `workflow_run` fires again on every subsequent push, so a
-gate that does not look for the marker first re-triages a round already
-answered — paying for a model to reach the same conclusion, and stacking a
-second summary comment on the PR saying so.
+as a PR comment carrying its summary, and adds a `kit-triaged` label alongside it.
+`workflow_run` fires again on every subsequent push, so a gate that does not look
+for the record first re-triages a round already answered — paying for a model to
+reach the same conclusion, and stacking a second summary comment on the PR saying
+so.
+
+**Read the label, not the comment.** The comment is authoritative and carries the
+reasoning, but finding it costs a call per PR, and that cost is paid on every
+firing whether or not there is work — which is the one cost that scales with the
+polling interval rather than with the amount of work. The label is in the PR list
+the gate already fetches. A PR with the comment and no label wakes a model that
+finds the round closed and stops, which is the direction to fail in.
+
+Skip an escalated PR on the same label. An escalation carries `kit-triaged` too,
+because what it needs is a person rather than another model pass.
+
+The round is closed by whoever closed it, not by the runner. A round handled in
+someone's session writes the same record, so a gate that fires afterwards sees it
+and stays quiet.
 
 ## One automated reviewer
 
