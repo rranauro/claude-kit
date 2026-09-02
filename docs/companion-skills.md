@@ -6,7 +6,7 @@ and one of his ideas was replaced outright.
 
 | Forked as | From | What it supplies |
 |---|---|---|
-| `kit:improve-codebase-architecture` | `improve-codebase-architecture` | The scan-and-report `/kit:architect` offers when the topic is "this area feels wrong" rather than a specific question. |
+| `kit:improve-codebase-architecture` | `improve-codebase-architecture` | The scan `/kit:architect` offers when the topic is "this area feels wrong" rather than a specific question, and the one thing that files an `improve-codebase` ticket. |
 | `kit:grilling` | `grilling` | The confirmation pass over a converged direction or a ticket's boundary. |
 | `kit:to-tickets` | `to-tickets` | Cutting an epic into dependency-ordered tracer-bullet tickets. |
 | `kit:domain-modeling` | `domain-modeling` | Writing the glossary and the ADRs, at the three points where the model actually changes — a term argued in `/kit:architect`, a concept named or an alternative rejected in `/kit:design`, and the two artifacts a `kit:improve-codebase-architecture` scan leaves behind. |

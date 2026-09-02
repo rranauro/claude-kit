@@ -1,6 +1,6 @@
 ---
 name: improve-codebase-architecture
-description: Scan a codebase for misshapen objects and present them as a visual HTML report in plans/, ranked strongest to weakest. The report is the deliverable.
+description: Scan a codebase for misshapen objects and present them as a visual HTML report in plans/, ranked strongest to weakest, then file the strongest as tickets under an epic.
 disable-model-invocation: true
 ---
 
@@ -11,9 +11,10 @@ opportunities** — refactors that turn a class a caller must open into one they
 can read from the call site. The aim is legibility for whoever plans the next
 change, human or agent.
 
-**The HTML report is the endpoint.** A run that produces a ranked report and
-stops has succeeded. This command surveys; it does not design, and it does not
-need the user to pick anything for the run to have been worth it.
+**The report is the survey, and the survey is most of the value.** A run that
+produces a ranked report has succeeded. This command surveys; it does not
+design, and it does not need the user to pick anything for the run to have been
+worth it. Its `Strong` band goes on to become tickets — §5, a local addition.
 
 This command is _informed_ by the project's domain model and built on the
 project's own design vocabulary:
@@ -207,18 +208,17 @@ Report the path and the ranking in two or three lines. Then stop. The run is
 complete, and the user may well be done — a survey they read and act on next
 month is the normal outcome.
 
-Offer, in one line each, and only act on what the user picks:
+Offer this for a `Worth exploring` or `Speculative` candidate, and act only if
+the user picks it. §5 takes the `Strong` band:
 
 - **Explore a candidate?** Invoke `kit:grilling` on it: state what it commits
   to — what state the object holds, what moves onto the model, which callers
   change — and get agreement. Then hand to `/kit:design` for the *how*; it
   re-runs placement and shape against the real code and writes the plan. Don't
   walk into design from here on your own.
-- **File one?** `kit:writing-tickets` turns a card into an issue that keeps its
-  problem statement and leaves the mechanism open.
 
-Neither is a step in this command. Nothing further happens without the user
-asking.
+It is an offer rather than a step: a candidate below the top band moves only
+when the user asks.
 
 Two side effects are worth doing inline if the conversation continues:
 
@@ -234,9 +234,59 @@ Two side effects are worth doing inline if the conversation continues:
 `CONTEXT-FORMAT`, ADRs in its `ADR-FORMAT`. Invoke it rather than inventing a
 shape here.
 
+<!-- FORK: everything below this marker is local. Keep it when porting upstream changes. -->
+
+### 5. File the `Strong` band
+
+Turn the top band into work `/kit:ship-ticket` can pick up. This is the only
+part of a run that writes outside `plans/`.
+
+**The badge is the gate.** §1 tells you to cast wide and calls two candidates
+under-searched — right for a survey, and the reason every card must not become a
+ticket. `Strong` converts; the rest stays on the page for §4.
+
+**Name what you are about to file, and take a no.** List the epic and the child
+titles before creating anything. A declined filing leaves the report, which is
+the run succeeding.
+
+**Check the open `improve-codebase` issues first.** A rerun over the same area
+re-derives the same counts, so a candidate one of them already names is reported
+as filed rather than opened again.
+
+#### The epic
+
+One issue per run, labelled `epic` and nothing else. It names the area and the
+date, and lists its children as bare `#123` references — the tracker renders
+each one's open/closed state, so that list stays accurate on its own. A
+checkbox beside them would be a second state, and nothing in the kit ticks one.
+
+Store the ranking on it through `kit:ticket-artifacts`, kind `ranking`. Cite the
+HTML report's path beside it as a local convenience: `plans/` is gitignored, so
+the path is dead from a fresh clone and the comment is what survives.
+
+#### The children
+
+One per surviving candidate, in rank order, each carrying:
+
+- **The `improve-codebase` label.** This scan is the only thing that applies it.
+  `/kit:triage` leaves it alone, because the label records where the finding
+  came from and that is what fixes how its acceptance is asserted.
+- **`<!-- kit-blocked-by: -->`**, present and empty. These findings are
+  independent, and the empty form is what says "startable now".
+- **The card's Cost as the problem, its Solution as the intended shape**, and
+  the constructor line where the card had one.
+- **Acceptance criteria written as the counts that fired** — "arity of 6 gone",
+  "`page` no longer threaded through the three class methods". That is what
+  `improve-codebase` acceptance is, which is why they can be written here.
+- **Out of scope**, naming the neighbouring cards this ticket leaves alone.
+  Someone implementing off a ranked list will otherwise take the next one down.
+
+A child is filed *specified*, not *settled*: the plan artifact and the AFK-ready
+label are `/kit:triage`'s to add.
+
 ## Never
 
-- Make implementation changes. This is a scan and a report.
+- Make implementation changes. This is a scan, a report, and the tickets in §5.
 - Design a candidate in the report. One constructor line is the ceiling.
 - Ship a card that can't name the caller it costs.
 - Score a class down for anything on the not-a-finding list.
