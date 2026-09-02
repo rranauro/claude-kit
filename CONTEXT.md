@@ -37,6 +37,12 @@ Who writes the code. A routing term and nothing else — neither says the brief 
 settled, and neither is a comment on the ticket's quality.
 _Avoid_: reading either as "ready", "vetted", or "approved"
 
+**epic**:
+The parent the slices were cut from. A container with no implementation of its
+own, so `/kit:ship-ticket` never starts one in any resolver, including a name you
+typed. Written by a person, because nothing in the kit files an epic.
+_Avoid_: parent, umbrella, tracking issue
+
 **kit-blocked**:
 The brief is finished and the world is not ready — a credential, a vendor
 account, a decision outside the approach, a step no agent should take alone. Set
