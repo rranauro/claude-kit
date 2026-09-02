@@ -341,7 +341,7 @@ reclaim_daemons() {
 
 survey_worktree() {
   local wt="$1" branch="$2" leftovers="" line code file procs
-  # Known-safe leftovers, per kit:worktree-reclaim: setup symlinks back
+  # Known-safe leftovers: setup symlinks back
   # into the main checkout. They arrive in two spellings — untracked for a link
   # that adds a path, deleted for one laid *over* a tracked directory (Rails'
   # storage/ shadowing storage/.keep). Both are wiring, neither is work.
@@ -423,10 +423,14 @@ run_idle_survey() {
 REMOVAL_REQUEST="$(mktemp -t tend-prs-removals)" || {
   echo "error: could not create removal request file" >&2; exit 1; }
 
-# Everything kit:worktree-reclaim does to reclaim a path, for one worktree git has
-# already confirmed is its own. Ordered so a failure stops that worktree rather
-# than half-finishing it: the branch delete and the husk sweep only run once the
-# `worktree remove` has actually succeeded.
+# A second implementation of what kit:worktree-reclaim's script does, for one
+# worktree git has already confirmed is its own. Only the branch delete asks
+# through that script today; folding the rest of this into it is the obvious
+# next move, and is not this pass's to make.
+#
+# Ordered so a failure stops that worktree rather than half-finishing it: the
+# branch delete and the husk sweep only run once the `worktree remove` has
+# actually succeeded.
 teardown_worktree() {
   local wt="$1" branch="$2"
 
@@ -446,8 +450,10 @@ teardown_worktree() {
   # uploads — some read-only because their writer made them so. Without the
   # chmod the rm partially fails and leaves an orphan directory that VS Code and
   # Finder still show. Both are no-ops when the path is already gone.
+  # u+rwX, not u+w: a directory left non-traversable cannot be descended into to
+  # delete what is under it, so the rm fails on the directory itself.
   if [ -d "$wt" ]; then
-    chmod -R u+w "$wt" 2>/dev/null
+    chmod -R u+rwX "$wt" 2>/dev/null
     rm -rf "$wt" 2>/dev/null
   fi
   [ -d "$wt" ] && log "teardown: husk remains at ${wt} after sweep"

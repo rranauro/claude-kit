@@ -11,9 +11,9 @@ one skill. An optional target selects a single worktree; no argument sweeps.
 **The mechanical half is not written here.** `scripts/worktree-reclaim.sh` in
 this plugin does the inventory, the verdicts, and the acting, because those are
 deterministic and a paragraph of instructions cannot be asserted against a
-throwaway repository. `tests/worktree-reclaim.sh` in this repo is where the
-behaviour is pinned. What this skill owns is the judgement the script cannot
-make and the report a person reads.
+throwaway repository. `tests/worktree-reclaim.sh` is where the behaviour is
+pinned. What this skill owns is the judgement the script cannot make and the
+report a person reads.
 
 ## Two decisions, two tests
 
@@ -26,60 +26,51 @@ unattended, with no age threshold and no prompt — and it is why a branch that
 never had a pull request is no longer the one category that cannot clear itself.
 Its directory goes; its branch is a separate question.
 
-**A branch is deleted only where GitHub accounts for its tip.** Not because the
-safe test is hard, but because the old code never asked. A `git branch -d`
-refusal has two causes that are identical from the local side:
+So **freeness is about work, not about occupancy.** Uncommitted changes hold a
+worktree, and so does a `git worktree lock`, which is somebody saying out loud
+that they are in there. A shell or an editor sitting in the directory does not:
+what it would lose is a checkout that comes back in one command, and treating it
+as a hold would defer every sweep behind a terminal somebody forgot to close.
+Lock the worktree if you need it kept.
 
-- a squash-merge, whose original commits are unreachable from every remote ref
-  because squashing made a new commit, and
-- work that was committed and never pushed.
-
-`git rev-list <branch> --not --remotes` cannot separate them either, for the same
-reason. Only the side that received the push can. So the script asks: a merged or
-closed PR whose `headRefOid` equals the local tip means GitHub received exactly
-this tip. A local tip ahead of it means commits GitHub has never seen. A branch
-with no PR at all falls back to whether its tip is on a remote ref. Where the
-answer is no — including when GitHub could not be reached — the branch stays and
-is reported.
+**A branch is deleted only where GitHub accounts for its tip** — a merged or
+closed PR whose `headRefOid` equals the local tip, or, for a branch that never
+had a PR, a tip present on a remote ref. Where the answer is no, including when
+GitHub could not be reached, the branch stays and is reported.
+`docs/adr/0002-branch-deletion-is-gated-on-remote-accounting.md` carries the
+argument and the alternatives it beat; do not re-derive it here.
 
 Any other caller that deletes a branch asks the same way, through
-`worktree-reclaim.sh --account <branch>`. One implementation of the test; a copy
-per caller is the shape that produced the defect.
+`worktree-reclaim.sh --account <branch>`. That seam is deduplicated; freeness and
+path reclaim are not yet — `tend-prs.sh` still carries its own copy of both.
 
 ## Phases
 
-`layout` → `inventory` → `verdicts` → `act` → `report`. A target skips
-`inventory`. Attended stops after `verdicts` and asks; unattended continues into
-`act`.
+`layout` → `inventory` → `verdicts` → `act` → `report`.
 
 ### 1 · `layout` — who owns worktrees here
 
-Run `kit:worktree-conventions`. Two of its answers change what happens next, and
-one is a safety constraint rather than a preference:
+Run `kit:worktree-conventions`. Two of its answers become flags:
 
-- **A remove command.** If the project has one, pass it as `--remove-cmd`. It is
-  invoked as `<cmd> <branch> <path>` in place of `git worktree remove`, never
-  after it. What it does around the removal — unlinking a dev proxy, dropping a
-  registered subdomain, deleting generated config — is precisely the part that
-  cannot be reconstructed afterwards.
-- **Who chose the layout.** Pass `--layout owned` with `--worktree-root` only for
-  this suite's own `.claude/worktrees/`. Everything else is `--layout project`,
-  and the script then refuses to list a directory it did not place. A project
-  layout is frequently a sibling of the main checkout, which puts worktrees in
-  the same parent as unrelated repositories; a directory diff there proposes
-  deleting somebody else's work, and the proposal looks entirely plausible.
+- **A remove command**, passed as `--remove-cmd`. It is invoked as
+  `<cmd> <branch> <path>` and **replaces** `git worktree remove` rather than
+  preceding it — Step 3 of that skill says why.
+- **Its sweep rule**, which decides whether you may name a `--worktree-root`.
+  Pass one only for a directory holding nothing but worktrees this suite placed;
+  the root is the assertion, and without it the script lists no directory at all.
+  Read the rule there rather than guessing — it is the difference between
+  sweeping husks and proposing to delete somebody else's repository.
 
 **Per-directory daemons are not this skill's business.** Which daemons a checkout
 runs is a property of the project, and the kit cannot verify a list it holds on
 the project's behalf. A project that needs a language server or test daemon
-stopped does it in its own remove command — the seam `kit:worktree-conventions`
-already defines.
+stopped does it in its own remove command.
 
 ### 2 · `inventory` and 3 · `verdicts` — run the script
 
 ```
 scripts/worktree-reclaim.sh --repo <main-checkout> [--target <branch|path>] \
-  --layout <owned|project> [--worktree-root <dir>] [--remove-cmd <cmd>]
+  [--worktree-root <dir>] [--remove-cmd <cmd>]
 ```
 
 Without `--act` it changes nothing and prints one `verdict` record per worktree:
@@ -98,14 +89,7 @@ made of.
 proceed — all of them, or a chosen subset. A `hold` line is not filler: it is how
 someone notices they left work in a worktree they had forgotten about.
 
-**Unattended, pass `--act`** and do not ask. The script never reads stdin. It
-removes each free worktree, sweeps whatever survives the removal, deletes only
-accounted branches, and prunes git's bookkeeping.
-
-Deleting a branch unattended is a genuine widening of what the kit does without
-supervision. It is safe here because the test is a positive check against the
-remote rather than an inference from a local refusal — and unsafe the moment
-anyone reintroduces the inference.
+**Unattended, pass `--act`** and do not ask. The script never reads stdin.
 
 ### 5 · `report`
 
@@ -116,9 +100,8 @@ Say what happened, from the records rather than from what you expected:
 - `branch-kept` — **name every one, with its reason.** A branch holding commits
   GitHub never received is the outcome this whole design exists to produce, and
   it is worthless if nobody is told. These accumulate silently otherwise.
-- `held` — with the reason. A worktree someone is working in, or one locked.
+- `held` — with the reason.
 - `orphan` — husks git had stopped tracking.
 
-Under `--layout project`, say that the sweep was limited to paths this run
-removed. Someone who believes every husk was found, when only some were, is worse
-off than someone who knows where to look.
+If no `--worktree-root` was passed, say that husks were not swept and why, so
+nobody reads a clean report as "there are none".

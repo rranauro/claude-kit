@@ -60,17 +60,14 @@ answers into an action: `reclaim`, `reclaim-keep-branch`, or `hold`.
 _Avoid_: status, eligible, stale
 
 **Free**:
-The worktree holds nothing but its checkout and the setup symlinks that wired
-it — no uncommitted work, no lock. Freeness decides the directory and nothing
-else; a checkout is restorable in one command, so losing one costs nothing a
-branch still holds.
-_Avoid_: idle, clean, abandoned
+The worktree holds no work — nothing uncommitted, and no lock. Decides the
+directory and nothing else, because a checkout is restorable and a branch is
+not.
+_Avoid_: idle, clean, abandoned, unused
 
 **Accounted**:
-GitHub has received the branch's exact tip — a merged or closed PR whose
-`headRefOid` equals it, or, absent any PR, a tip present on a remote ref. The
-only test that separates a squash-merge from work that was never pushed, which
-are identical from the local side. Unaccounted branches are kept and reported.
+The remote has received the branch's exact tip. The only question that decides
+whether a branch may be deleted, and the only one a local test cannot answer.
 _Avoid_: merged, safe to delete
 
 ### States a command produces

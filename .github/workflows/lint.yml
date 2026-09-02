@@ -13,3 +13,7 @@ jobs:
       # The checks live in scripts/lint.sh rather than inline here, so a
       # contributor can run exactly what CI runs before pushing.
       - run: ./scripts/lint.sh
+      # Separate step, not appended to lint.sh: this one builds a throwaway
+      # repository per case and takes ~20s, and the shape checks above are worth
+      # keeping fast enough to run before every push.
+      - run: ./tests/worktree-reclaim.sh

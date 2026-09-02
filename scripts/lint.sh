@@ -5,6 +5,9 @@ set -euo pipefail
 # by reading the diff: a shell script that no longer parses, a manifest that is
 # no longer JSON, a skill whose frontmatter stops matching its directory. All
 # three fail at load time in the harness rather than at review time.
+#
+# Shape only, and it stays under a second so it is worth running before every
+# push. Behaviour is asserted in tests/, which CI runs as its own step.
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
@@ -65,19 +68,6 @@ for skill in plugins/kit/skills/*/; do
 
   [ "$this_failed" -eq 1 ] || echo "  ok   $md"
 done
-
-echo "==> worktree-reclaim behaviour"
-# Builds a throwaway repository per case with `gh` stubbed on PATH. It is the
-# only check here that asserts behavior rather than shape, because the branch
-# test it covers is one where reading the code cannot tell you whether it is
-# right — a squash-merge and unpushed work look identical until something asks.
-if bash tests/worktree-reclaim.sh > /tmp/worktree-reclaim-lint.$$ 2>&1; then
-  echo "  ok   $(tail -1 /tmp/worktree-reclaim-lint.$$)"
-else
-  fail "tests/worktree-reclaim.sh"
-  cat /tmp/worktree-reclaim-lint.$$ >&2
-fi
-rm -f /tmp/worktree-reclaim-lint.$$
 
 echo
 if [ "$failed" -eq 0 ]; then

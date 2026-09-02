@@ -152,7 +152,7 @@ leave_unreadable_husk() { # branch
 }
 
 run() { # args... -> runs the script against $MAIN with stdin closed
-  "$SCRIPT" --repo "$MAIN" --layout owned \
+  "$SCRIPT" --repo "$MAIN" \
             --worktree-root "$MAIN/.claude/worktrees" "$@" </dev/null 2>&1
 }
 
@@ -183,7 +183,7 @@ assert_has "$sweep_verdict" "reclaim" "setup-artifact leftovers do not read as w
 assert_lacks "$sweep_verdict" "hold" "a symlink over a tracked dir is not uncommitted work"
 
 # A named target touches only its target.
-out="$(run --target beta --act)"
+run --target beta --act >/dev/null
 assert_missing_path "$MAIN/.claude/worktrees/beta" "a named target is reclaimed"
 assert_present_path "$MAIN/.claude/worktrees/alpha" "a named target leaves every other worktree alone"
 end_sandbox
@@ -226,7 +226,7 @@ end_sandbox
 new_sandbox "AC2 closed PR counts"
 add_worktree alpha
 pr_fixture alpha 11 CLOSED "$(tip alpha)"
-out="$(run --act)"
+run --act >/dev/null
 assert_branch_gone alpha "a closed PR whose head matches the tip accounts for it"
 end_sandbox
 
@@ -234,7 +234,7 @@ new_sandbox "AC2 open PR does not count"
 add_worktree alpha
 push_branch alpha
 pr_fixture alpha 11 OPEN "$(tip alpha)"
-out="$(run --act)"
+run --act >/dev/null
 assert_branch_kept alpha "an open PR is not a terminal state, so the branch stays"
 end_sandbox
 
@@ -293,7 +293,7 @@ end_sandbox
 new_sandbox "AC4 no PR but the tip is on a remote ref"
 add_worktree alpha
 push_branch alpha
-out="$(run --act)"
+run --act >/dev/null
 assert_missing_path "$MAIN/.claude/worktrees/alpha" "the directory is reclaimed"
 assert_branch_gone alpha "a tip present on a remote ref accounts for the branch"
 end_sandbox
@@ -357,15 +357,15 @@ assert_missing_path "$MAIN/.claude/worktrees/999-orphan" "a husk git does not na
 assert_has "$out" "orphan	$MAIN/.claude/worktrees/999-orphan" "the orphan is reported"
 end_sandbox
 
-new_sandbox "AC6 a project layout never diffs a directory it did not place"
+new_sandbox "AC6 without a declared root, no directory is ever listed"
 add_worktree alpha
 push_branch alpha
 pr_fixture alpha 11 MERGED "$(tip alpha)"
 mkdir -p "$MAIN/.claude/worktrees/someone-elses-repo"
 echo precious > "$MAIN/.claude/worktrees/someone-elses-repo/data"
-out="$("$SCRIPT" --repo "$MAIN" --layout project --act </dev/null 2>&1)"
+out="$("$SCRIPT" --repo "$MAIN" --act </dev/null 2>&1)"
 assert_present_path "$MAIN/.claude/worktrees/someone-elses-repo" \
-  "a project layout leaves unlisted directories untouched"
+  "an undeclared root leaves unlisted directories untouched"
 assert_lacks "$out" "orphan	" "and proposes no orphans it cannot vouch for"
 end_sandbox
 
@@ -384,7 +384,7 @@ echo "\$@" > "$SANDBOX/remove-was-called"
 git -C "$MAIN" worktree remove --force "\$2"
 GH
 chmod +x "$SANDBOX/bin/project-remove"
-out="$("$SCRIPT" --repo "$MAIN" --layout project --remove-cmd project-remove --act </dev/null 2>&1)"
+"$SCRIPT" --repo "$MAIN" --remove-cmd project-remove --act </dev/null >/dev/null 2>&1
 assert_present_path "$SANDBOX/remove-was-called" "the project's remove command ran"
 assert_has "$(cat "$SANDBOX/remove-was-called" 2>/dev/null || echo)" "alpha" \
   "and was handed the branch"
