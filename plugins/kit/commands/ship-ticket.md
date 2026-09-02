@@ -116,9 +116,11 @@ which checks apply.
 `ready-for-agent` and the `kit-blocked-by` marker are query filters over work
 nobody asked for, and you asked. Neither is required here.
 
-Two checks still apply, because each is a claim about the world rather than about
-labelling:
+Three checks still apply, because each is a claim about the ticket or the world
+rather than a routing sticker:
 
+- **`epic`** — skip it and say so. There is nothing in a container to implement,
+  so naming one is a mistake rather than permission. See below.
 - **`kit-blocked`** — skip the ticket and report the reason from its "Blocked by"
   section. Naming a ticket is not clearing the flag.
 - **An open blocker in its marker, if it has one** — skip and say which. The
@@ -139,6 +141,10 @@ check the typed form does not:
 
 - **Already started** — an open PR or a live worktree exists for the issue. Skip
   it and name the PR.
+
+It keeps the `epic` and `kit-blocked` checks above. A label sweeps in whatever
+carries it, and an epic carrying `bug` is exactly the container this resolver
+would otherwise queue.
 
 The asymmetry is about who chose the set. Typing nine numbers is knowing what you
 typed; a label derives a set you never read, and a ticket stays open until its PR
@@ -170,8 +176,9 @@ A ticket is **startable** when all of these hold:
 2. Every issue number in the marker is **closed**. `/kit:new-pull-request` writes
    `Closes #<issue>`, so a merged PR closes its ticket — a closed blocker means
    the work landed on `main`. An empty marker is trivially satisfied.
-3. It does **not** carry the `kit-blocked` label — see below.
-4. No open PR or live worktree already exists for it (it hasn't been started).
+3. It does **not** carry the `epic` label — see below.
+4. It does **not** carry the `kit-blocked` label — see below.
+5. No open PR or live worktree already exists for it (it hasn't been started).
 
 **Take the lowest startable issue number, and only that one.** Filing order is
 dependency order, so the lowest is the earliest slice. One per sweep is what the
@@ -235,18 +242,46 @@ review), #58 (needs the production reconcile decided). Clear with
 If a `kit-blocked` ticket has no reason in its body, say so — a block nobody can
 read is indistinguishable from one left on by accident.
 
-**Name the labelled tickets you skipped for want of a marker, separately.** A
-ticket carrying the AFK-ready label but no `kit-blocked-by` line is the one
-failure a sweep cannot distinguish from a deliberate omission — rule 1 says leave
-it alone, and that is right, but from the outside it is indistinguishable from
-being ignored for no reason. Someone briefed and labelled that ticket expecting
-it to be picked up:
+### `epic` — a container, not a slice
+
+An epic is the parent the slices were cut from. It has no implementation of its
+own, so there is no state of the world in which starting one is right — which is
+what separates it from `kit-blocked`, where the thing being waited on may
+genuinely have cleared and naming the ticket is the human saying so. Skip an
+`epic` ticket in **every** resolver, including a name you typed.
+
+Nothing in the kit writes this label, because nothing in the kit files an epic.
+`kit:to-tickets` cuts the slices and is explicit that it must not modify the
+parent, and `/kit:architect` hands sets to it rather than filing a container. The
+epic is authored by a person, so its label is theirs too — the same arrangement
+as `kit-blocked` and `kit-hold`.
+
+Create it once per repo with `gh label create epic`, or from the UI.
+
+**This command never applies or removes it**, on the same terms as `kit-blocked`.
+Report the skip and move on:
+
+```
+#12 is an epic, so it is a container rather than a ticket and was not started.
+Its slices are what a sweep picks up.
+```
+
+**Name the labelled tickets you skipped for want of a marker, separately, and
+leave the epics out of that list.** A ticket carrying the AFK-ready label but no
+`kit-blocked-by` line is the one failure a sweep cannot distinguish from a
+deliberate omission — rule 1 says leave it alone, and that is right, but from the
+outside it is indistinguishable from being ignored for no reason. Someone briefed
+and labelled that ticket expecting it to be picked up:
 
 ```
 3 labelled tickets have no kit-blocked-by marker, so they are not startable in a
 sweep: #41, #43, #47. Add `<!-- kit-blocked-by: -->`, name one directly, or take
 the whole label with `--all`.
 ```
+
+Every remedy in that line makes the ticket startable, which is the whole reason an
+epic must not reach it — an empty marker on a container is how a parent gets
+handed to `kit:ticket-loop` to implement.
 
 Report it as information, not an error, and never add the marker yourself — the
 edges are a human's call, and an empty marker written here would be this command
@@ -277,6 +312,10 @@ decision each one is waiting on.
 
 **Split the parked list by what would clear it.** `kit:park` states the bins;
 apply them rather than listing every park as one problem.
+
+**An epic is skipped, not parked.** Nothing clears it and nothing is waiting on a
+decision, so it belongs in the skip list with its reason, alongside the tickets
+that were already started.
 
 **Lead with the sweep**, in one line: what Step 0 reclaimed, and what it held or
 skipped, with the reason. Say it when the sweep reclaimed nothing, and when it
