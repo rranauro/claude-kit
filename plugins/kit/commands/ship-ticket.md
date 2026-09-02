@@ -250,10 +250,9 @@ what separates it from `kit-blocked`, where the thing being waited on may
 genuinely have cleared and naming the ticket is the human saying so. Skip an
 `epic` ticket in **every** resolver, including a name you typed.
 
-Nothing in the kit writes this label, because nothing in the kit files an epic.
-`kit:to-tickets` cuts the slices and is explicit that it must not modify the
-parent, and `/kit:architect` hands sets to it rather than filing a container. The
-epic is authored by a person, so its label is theirs too — the same arrangement
+The label is a claim about the ticket's kind, fixed when the ticket is filed —
+by a person, or by a `kit:improve-codebase-architecture` run over the children it
+cut. Selection reads that claim rather than adjudicating it, the same arrangement
 as `kit-blocked` and `kit-hold`.
 
 Create it once per repo with `gh label create epic`, or from the UI.

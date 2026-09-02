@@ -40,7 +40,8 @@ _Avoid_: reading either as "ready", "vetted", or "approved"
 **epic**:
 The parent the slices were cut from. A container with no implementation of its
 own, so `/kit:ship-ticket` never starts one in any resolver, including a name you
-typed. Written by a person, because nothing in the kit files an epic.
+typed. A claim about the ticket's kind, fixed when it is filed — by a person, or
+by a `kit:improve-codebase-architecture` run over the children it cut.
 _Avoid_: parent, umbrella, tracking issue
 
 **kit-blocked**:
