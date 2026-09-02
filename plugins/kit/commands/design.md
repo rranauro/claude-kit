@@ -54,15 +54,16 @@ statement of the problem; do not re-litigate it here.
 ## Unattended mode
 
 `unattended` is passed by a caller that knows nobody is watching — today
-`/kit:run-ticket`, reaching a ticket with no stored plan. **Never infer it.** A
+`/kit:ship-ticket unattended`, reaching a ticket with no stored plan. **Never
+infer it.** A
 quiet session is not an absent user, and a design that decided rather than asked
 is expensive to undo once it is the stored authorization.
 
 Every step below still runs. What changes is that the two places this command
 turns to the user — the incremental discussion in step 3, the confirmation in
 step 4 — become a decision recorded in the plan, and the cases neither can settle
-**park** rather than ask. `/kit:run-ticket` owns what a park is; reuse it exactly
-rather than inventing a second stopping shape.
+**park** rather than ask. Invoke the `kit:park` skill — it owns the stopping
+shape, and a second one invented here would report differently for no reason.
 
 ### What has to be true before you design anything
 
@@ -112,7 +113,7 @@ Three preconditions. Any one missing, park without designing — say which:
   claim that a ticket is safe to pick up, and this pass cannot make it. No
   `kit-hold` question, because there is nobody to answer it; leave the label as
   triage set it. No `kit-blocked-by` marker either, not even the empty form:
-  `/kit:run-ticket` refuses to write one for the reason that applies here too —
+  `/kit:ship-ticket` refuses to write one for the reason that applies here too —
   writing it is granting yourself permission to start.
 
 ### Park on
@@ -123,7 +124,7 @@ Three preconditions. Any one missing, park without designing — say which:
   something observable — a public interface, a migration's shape, what the user
   sees. Say what each commits to and let them pick.
 - **A constraint the criteria do not bound.** Security, tenancy, anything
-  destructive, a migration needing production reconciled. `/kit:run-ticket`
+  destructive, a migration needing production reconciled. `kit:ticket-loop`
   already refuses these downstream; reaching one at design time is the earlier,
   cheaper stop.
 - **A ticket that is unbuildable as written**, or criteria that turn out not to
@@ -261,7 +262,7 @@ check the issue carries a blocking-edge marker** — `<!-- kit-blocked-by: -->`,
 empty if nothing blocks it, or with the comma-separated issue numbers that do.
 Add it if absent; leave an existing one alone.
 
-`/kit:run-ticket` reads an absent marker as "not part of an epic, leave alone",
+`/kit:ship-ticket` reads an absent marker as "not part of an epic, leave alone",
 so a well-briefed labelled ticket without one is skipped silently and looks
 startable the whole time. `/kit:triage` writes it in its own publish step, which
 is why this is only for the standalone path — `kit:to-tickets` owns the format.
@@ -269,7 +270,7 @@ is why this is only for the standalone path — `kit:to-tickets` owns the format
 The marker takes issue numbers only. If the design surfaced a blocker no merge
 will close — a credential, a vendor account, a change in another repo, a decision
 left open — that goes on the issue as the `kit-blocked` label, with the reason in
-the body's "Blocked by" section. `/kit:run-ticket` skips a `kit-blocked` ticket
+the body's "Blocked by" section. `/kit:ship-ticket` skips a `kit-blocked` ticket
 and reports the reason, so the ticket stays labelled and visible rather than
 being withheld.
 

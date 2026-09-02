@@ -2,168 +2,199 @@
 model: opus
 ---
 
-Attended ticket workflow: clean-main check → worktree → TDD → simplify → PR, then hand off to `/kit:tend-prs` for review triage, auto-merge, and cleanup.
+Carry a ticket to an open PR — worktree, plan, TDD, simplify, push. Takes the
+tickets you name, or picks the next one whose blockers have all landed. Stops at
+its gates so you can answer them, or runs the whole thing unattended.
 
-**Arguments:** `$ARGUMENTS` — GitHub issue number (e.g. `/kit:ship-ticket 612`) or issue URL. Required.
+**Arguments:** `$ARGUMENTS` — a selection, and optionally a mode.
 
----
+The selection is one of three kinds:
 
-## What this skill is
+- **Issue numbers** (`/kit:ship-ticket 612 613`) — take exactly those, in the
+  order given. Selection is skipped.
+- **A label** (`/kit:ship-ticket bug`) — sweep as usual, but only over issues
+  carrying it. Selection still happens; you have only narrowed what it may choose
+  from.
+- **Nothing** — sweep the whole backlog and take one.
 
-A thin orchestrator. Each phase delegates to an existing skill. **Do not re-implement** what those skills already cover — invoke them via the Skill tool and pass through arguments. This file is the only place the *sequencing*, *gates*, and *handoffs between phases* live.
+Every token that is digits means numbers; a single non-numeric token is a label.
+**A mix of the two is a usage error** — report it and stop rather than guessing
+which half was meant, since the two kinds disagree about whether selection runs
+at all.
 
-**This skill covers the attended half only — up to an open PR.** Everything after
-that (waiting for the reviewers, triaging findings, enabling auto-merge, removing
-the worktree) needs no one present and belongs to `/kit:tend-prs`, which sweeps
-every open PR on a loop. Don't reintroduce those phases here; a session that has
-to stay alive to finish a ticket is the problem that command exists to solve.
+The mode is a trailing `unattended` token (`/kit:ship-ticket 612 unattended`, or
+bare `/kit:ship-ticket unattended` to sweep). Without it this command is
+attended: it stops at every gate and waits for you.
 
-Constituent skills:
-- `kit:start-ticket` — `clean-check`, `worktree`, `read-plan`
-- `/kit:commit` — invoked inside `tdd` as needed
-- `kit:behavior-placement` — `tdd`, when the change adds or moves a class
-- `/simplify` — `simplify-pass`
-- `/kit:new-pull-request` — `push-and-pr`
-- `/kit:tend-prs` — everything after `hand-off`, out of session
+Run it from the main checkout.
 
----
+**Selection and mode are independent.** The arguments decide *which* ticket; the
+token decides *whether it asks*. Naming a ticket does not skip the gates, and
+running unattended does not change what may be picked up.
 
-## Mandatory constraints
+**The loop itself is `kit:ticket-loop`.** This command owns selection and nothing
+else; that skill owns the five phases and the one substitution that separates the
+modes — a gate is a question attended, a rule-or-park unattended. Do not
+reproduce its phases here.
 
-- **Do not duplicate constituent skill bodies.** If a phase says "run `/kit:commit`", invoke the Skill tool — do not inline its steps.
-- **Halt at every gate.** Gates are explicit user checkpoints (`read-plan` plan approval, `push-and-pr` push approval). Do not skip them in the name of momentum.
-- **Worktree-prefixed paths.** Once `worktree` creates the worktree, every Read/Edit/Write must target the path `kit:start-ticket` `create-worktree` resolved. The tool cwd stays at the main checkout.
-- **Never merge locally.** PRs merge on GitHub only — via `gh pr merge`, never `git merge` into main.
-- **Never run a test directory or the full suite without permission.** Named files and examples only; a path argument with no filename needs an ask. CI runs the full sweep on the PR.
-
----
-
-## Phase 1 · `clean-check` — Clean-main check
-
-Delegated to `kit:start-ticket` `safety-check`. Before invoking, confirm `$ARGUMENTS` is an issue number/URL; if missing, ask the user.
-
----
-
-## Phase 2 · `worktree` — Worktree off `origin/main`
-
-Delegated to `kit:start-ticket` `fetch-issue` through `worktree-paths`. Branch name derives from the issue title: `<issue>-<short-description>`. The user confirms it inside `kit:start-ticket`.
-
-After it returns, you will be operating against the worktree path it resolved.
+`/kit:tend-prs` is what happens after the open PR: it triages the review round,
+enables auto-merge, and removes the worktree once it lands. Between them, what is
+left for you is designing the tickets whose result someone has to look at,
+answering the parks, and walking the PRs that carry `kit-hold`.
 
 ---
 
-## Phase 3 · `read-plan` — Confirm the approach is settled
+## Step 1 · `select` — Decide what to work
 
-Delegated to `kit:start-ticket` `plan-implementation`. It takes the settled approach from either artifact that carries one — the stored `plan`, which `kit:ticket-artifacts` resolves from the local cache or the issue comment, or an issue specified enough to stand as its own brief — asks whether it's still fresh, runs its anchor-verification pass when it isn't, then summarizes and asks whether to proceed. If neither exists, it invokes `/kit:design` scoped to this issue. Do not improvise a plan here, do not require a plan when the issue already says what a plan would, and do not read `plans/` directly — a missing file is not a missing plan.
+**With issue numbers given, that is the queue.** Selection is skipped entirely —
+the label and marker rules below are query filters over work nobody asked for,
+and you asked. Do not require `ready-for-agent`, and do not require a
+`kit-blocked-by` marker.
 
-`kit:start-ticket` `placement-check` skips itself when this skill is the caller, and `handoff` after it is a no-op here. `tdd` below owns the placement check.
+Two checks still apply, because they are claims about the world rather than about
+labelling:
 
-**Gate:** do not start `tdd` until the user has accepted the plan.
+- **`kit-blocked`** — skip the ticket and report the reason from its "Blocked by"
+  section. Naming a ticket is not clearing the flag.
+- **An open blocker in its marker, if it has one** — skip and say which. The
+  dependency has not landed, and that is true no matter who chose the ticket.
+
+Report every skip by name, work the rest in the order given, and take each one
+through Step 2 before starting the next. A park on one ticket does not stop the
+queue.
+
+**With a label, sweep as normal over the issues carrying it.** Add it to the
+query — `gh issue list --state open --label ready-for-agent --label <given>` —
+and apply every rule below unchanged. The label you passed is an **additional**
+filter, never a substitute for `ready-for-agent`: that label is what says a human
+meant this ticket for an agent, and no other label makes that claim. If nothing
+survives, say so and name the label, so an empty result reads as "nothing
+matched" rather than "nothing to do".
+
+**With no arguments, sweep the whole backlog for one.**
+
+Epic tickets filed by `kit:to-tickets` carry their blocking edges as a marker in
+the issue body. This step reads them and finds work that is now unblocked.
+
+```
+gh issue list --state open --label ready-for-agent --json number,title,body,labels
+```
+
+A ticket is **startable** when all of these hold:
+
+1. Its body contains `<!-- kit-blocked-by: ... -->`. No marker means it was not
+   filed as part of an epic — leave it alone. A sweep never picks up an arbitrary
+   `ready-for-agent` ticket, only one whose author declared its edges.
+
+   **The label requirement here is deliberate, and is not the one
+   `kit:start-ticket` `plan-implementation` relaxed.** There a human has already
+   named the issue, so the label merely corroborates a body you can read, and
+   demanding it withholds work over a missing sticker. Here the label is the
+   filter deciding what gets picked up at all, and dropping it would mean
+   starting whatever happens to be open. Do not harmonize the two.
+2. Every issue number in the marker is **closed**. `/kit:new-pull-request` writes
+   `Closes #<issue>`, so a merged PR closes its ticket — a closed blocker means
+   the work landed on `main`. An empty marker is trivially satisfied.
+3. It does **not** carry the `kit-blocked` label — see below.
+4. No open PR or live worktree already exists for it (it hasn't been started).
+
+If several tickets are startable, take the lowest issue number. Filing order is
+dependency order, so the lowest is the earliest slice.
+
+**One ticket per sweep**, labelled or not. Not a safety bound — you asked for a
+ticket, and this is the one. Run it again if you want the next. Issue numbers are
+the way to ask for several at once.
+
+If nothing is startable, say which tickets are waiting and on what, in one line
+each, and stop. Attended, that report is an offer: name one and this command
+takes it, because naming is what clears rule 1. Unattended it is the whole
+outcome, and a useful one — it tells you whether the epic is blocked on a merge,
+on a person, or on nothing at all.
+
+### `kit-blocked` — waiting on a person, not a merge
+
+The marker in rule 2 carries one kind of edge: another ticket, cleared when a PR
+merges and closes it. A machine clears it, which is why a sweep can read it and
+act. Plenty of what actually holds a ticket back is not that shape — a credential
+that has not been issued, a vendor account still in review, a change landing in
+another repo, a decision you have not made, a migration whose production
+reconcile is unwritten. None of those close an issue, so none of them can be
+written as a number, and a ticket waiting on one is fully designed and correctly
+labelled `ready-for-agent`.
+
+`kit-blocked` on the **issue** is how that is said. It is the start-side twin of
+`kit-hold`: same shape, other end of the pipeline. `kit-hold` stops a finished PR
+from merging; `kit-blocked` stops a ready ticket from being started. Both are a
+label read rather than weighed, and both are a human's to write.
+
+Create it once per repo with `gh label create kit-blocked`, or from the UI.
+
+**This command never applies or removes it.** Not to record that you skipped a
+ticket, not because the reason reads as resolved, not because the blocking PR in
+the other repo appears to have merged. Removing it is the human's statement that
+the thing is actually cleared, and selection has no way to verify what it was
+waiting on. The one place the label gets written is a park, and `kit:park` owns
+that.
+
+The reason lives in the issue body's `## Blocked by` section, alongside the
+marker — the prose half of that section already exists for humans, and this is
+what it is for. Read it and quote it when reporting:
+
+```
+2 tickets are ready but blocked on a person: #52 (Stripe account still in
+review), #58 (needs the production reconcile decided). Clear with
+`gh issue edit <n> --remove-label kit-blocked`.
+```
+
+If a `kit-blocked` ticket has no reason in its body, say so — a block nobody can
+read is indistinguishable from one left on by accident.
+
+**Name the labelled tickets you skipped for want of a marker, separately.** A
+ticket carrying the AFK-ready label but no `kit-blocked-by` line is the one
+failure a sweep cannot distinguish from a deliberate omission — rule 1 says leave
+it alone, and that is right, but from the outside it is indistinguishable from
+being ignored for no reason. Someone briefed and labelled that ticket expecting
+it to be picked up:
+
+```
+3 labelled tickets have no kit-blocked-by marker, so they are not startable in a
+sweep: #41, #43, #47. Add `<!-- kit-blocked-by: -->`, or name one directly.
+```
+
+Report it as information, not an error, and never add the marker yourself — the
+edges are a human's call, and an empty marker written here would be this command
+granting itself permission to start the ticket.
 
 ---
 
-## Phase 4 · `tdd` — TDD implementation
+## Step 2 · `implement` — Run the loop
 
-Not delegated — this is the work itself.
+Invoke `kit:ticket-loop` via the Skill tool, once per selected ticket, passing
+the issue number and the mode. It runs `prepare` → `tdd` → `simplify` →
+`open-pr` → `hand-off`, halting at its gates when attended and applying the
+matching rule when not.
 
-Use the project's own test framework and layout — read them from `CLAUDE.md`, the
-manifest, or CI config rather than assuming. The Rails/RSpec form is shown below
-as the worked example; substitute the equivalent for your stack.
-
-**Test placement — extend before adding.** For each requirement in the plan, find the existing test that covers the surface you're touching:
-
-- Modifying an existing method → extend its existing test file. Add a new group/context block, not a new file. *(Rails: `spec/<type>/<name>_spec.rb`, a new `describe`/`context`.)*
-- Adding a new public method to an existing class → same as above; a new group for that method in the existing test file.
-- Adding a brand-new unit (class, module, component) → create a matching new test file. The new file is justified because the production unit is new, not because the behavior is new.
-- Cross-cutting feature with no obvious owner → ask the user where the test belongs before creating one.
-
-Then, per requirement:
-
-1. Write the test (in the file selected above), in the location the project's convention dictates.
-2. Run that single example and confirm it fails as expected — no need to ask permission for targeted runs. *(Rails: `bundle exec rspec <path>:<line>`.)*
-3. Implement the minimal change. Re-run the example; confirm green.
-4. Run the broader test file for regressions — still no need to ask. Naming another *file* is fine; widening to its directory is not, and needs an ask.
-5. When the implementation is complete (or at sensible checkpoints), invoke `/kit:commit` via the Skill tool. Do not push from inside it. If the project registers a commit-time gate hook, expect `/kit:commit` to be blocked and to fix what it reports before retrying — that's the gate working, not a failure.
-
-Apply the project's own rules from `CLAUDE.md` while implementing. This skill does not restate them.
-
-When the change adds or moves a class, run the `kit:behavior-placement` skill before
-writing it — model, value object, or service, and whether the app already
-derives the answer.
+Unattended, where no rule decides, it parks via `kit:park` — the decision goes on
+the issue, `kit-blocked` goes on the label, the worktree and its commits stay put,
+and the queue moves on. **A park inside the loop is already recorded**; carry its
+reason into Step 3 rather than parking again.
 
 ---
 
-## Phase 4b · `simplify-pass` — Simplify pass (before the PR exists)
+## Step 3 · `report` — Say what happened
 
-Specs are green; the PR is not open yet. Invoke `/simplify` via the Skill tool
-on the working diff, then commit any cleanups it applies.
+One paragraph. Which ticket was taken, what the PR number is, whether the plan
+was stored or designed by this run, whether it carries `kit-hold` and so needs
+your walkthrough, and — separately and by name — anything parked, with the
+decision each one is waiting on.
 
-This runs **here, not later**, because cleanups landing now become part of the
-original commits instead of review-response commits — and because the automated
-reviewers that run once the PR opens hunt bugs, not duplication. Reuse,
-over-abstraction, and altitude problems are exactly what they under-report and what costs a
-round-trip when the user catches them by hand.
+**Split the parked list by what would clear it.** `kit:park` states the bins;
+apply them rather than listing every park as one problem.
 
-Do NOT run `/code-review` here. Opening the PR already reviews this diff twice
-(Copilot + the Claude headless hook); a third bug-hunt over the same lines buys nothing.
-`/simplify` is quality-only, which is why it doesn't overlap.
+From here `/kit:tend-prs` takes over.
 
-If `/simplify` proposes a change that contradicts the ticket's agreed approach,
-surface it to the user rather than applying it — this pass tidies the
-implementation, it does not relitigate the design.
-
----
-
-## Phase 5 · `push-and-pr` — Push and open PR (gated)
-
-**Gate before pushing.** Ask the user:
-
-> "Ready to push and open the PR, or do you want to boot the worktree and exercise the change in-app first?"
-
-- If they want to test in-app first: offer `/kit:walkthrough <issue>`, which derives a checklist from the AC and the diff and walks it one step at a time, keeping its position on disk so a bug found mid-walk doesn't lose the place. If they'd rather drive unaided, pause and wait for them to come back and approve.
-- If they approve the push: invoke `/kit:new-pull-request` via the Skill tool.
-
-`/kit:new-pull-request` already includes `Closes #<issue-number>` automatically when the branch starts with the issue number — verify this happened in the PR body it produced. If the closing keyword is missing (e.g. issue was not the branch prefix), edit the PR body with `gh pr edit <N> --body` to add it. The closing keyword in the **body** is what auto-closes the issue; the title prefix doesn't count.
-
-**Do NOT enable auto-merge here.** The initial PR is opened with auto-merge **off**. CI is fast and will frequently go green before Copilot/Claude reviews land — enabling `--auto` at creation time can merge the PR before reviewers post. Auto-merge is set in `auto-merge`, only after the initial review pass has been addressed and pushed.
-
----
-
-## Phase 6 · `hand-off` — Hand the PR to the unattended loop
-
-This skill ends here. The PR is open, auto-merge is deliberately off, and both
-reviewers post asynchronously after `gh pr create` — Copilot within a few
-minutes, the Claude headless review whenever its `claude -p` run finishes.
-Waiting for that inside this session means holding it open for an indeterminate
-stretch to do work that needs no one present.
-
-`/kit:tend-prs` does the rest: it catches the review round, triages every finding
-via `/kit:review-copilot`, pushes the fixes, enables auto-merge unless something
-warrants your attention, and removes the worktree once GitHub merges. It is
-stateless and sweeps *every* open PR you own, so it does not need to be told
-about this one.
-
-Tell the user:
-
-> "PR #<N> is open with auto-merge off. Reviews land in the next few minutes.
->
-> If `/loop 20m /kit:tend-prs` is already running, this PR is picked up
-> automatically — nothing to do. Otherwise start it, or run `/kit:tend-prs` once
-> by hand after the reviews post."
-
-Then stop. Do **not** start the loop from here without being asked: `/loop` binds
-to a session, and silently starting a second one in a session the user is about
-to leave gives them two sweepers and no clear owner.
-
-**Why no polling gate anymore.** Earlier versions polled Copilot for 10 minutes
-from this session, then triaged, merged, and cleaned up in-line — four phases that
-all required the user to still be sitting there. Every one of them is now
-`/kit:tend-prs`'s, which runs whether or not anyone is.
-
----
-
-## Failure / interrupt handling
-
-- If any phase fails (spec won't go green, gates won't pass, push rejected), stop at that phase and surface the state. Do not skip ahead.
-- If the user interrupts mid-skill, the constituent skills' commits and worktree leave the workspace recoverable. Resume by re-invoking the appropriate phase's skill directly (e.g., `/kit:new-pull-request` to pick up at `push-and-pr`).
-- The skill is idempotent at phase boundaries: re-running `/kit:ship-ticket <same-issue>` after partial progress is safe — it will detect the existing worktree and PR.
+**A sweep still takes one ticket per firing**, and a label narrows a sweep rather
+than turning it into one. `/loop 20m /kit:ship-ticket unattended` is how you work
+the backlog, and one ticket per firing is what keeps a park visible between
+firings rather than buried in a run that kept going. Explicit issue numbers are
+the exception, and they are bounded by the list you typed.

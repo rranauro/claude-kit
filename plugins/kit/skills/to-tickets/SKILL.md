@@ -70,7 +70,7 @@ Do NOT close or modify any parent issue.
 
 ### 5a. Make the edges machine-readable
 
-`/kit:run-ticket` picks up these tickets as their blockers merge, so it has to read the edges without a human having named the issue. Prose cannot carry that: a bare `#123` appears in ordinary issue text all the time, and a wrong match starts work whose dependency has not landed.
+`/kit:ship-ticket` picks up these tickets as their blockers merge, so it has to read the edges without a human having named the issue. Prose cannot carry that: a bare `#123` appears in ordinary issue text all the time, and a wrong match starts work whose dependency has not landed.
 
 On a tracker, every ticket gets this line in its body, in addition to the prose "Blocked by" section:
 
@@ -82,7 +82,7 @@ Issue numbers only, comma-separated, no `#`. **A ticket with no blockers gets th
 
 The marker is authoritative and the prose is for humans. Write both and keep them agreeing.
 
-**Only ticket edges belong in the marker.** It is satisfied by each number being closed, so a blocker no merge can close — a credential, a vendor account, a change in another repo, a decision still open — has no expressible form here. Write that one in the prose "Blocked by" section and put `kit-blocked` on the issue; `/kit:run-ticket` skips a `kit-blocked` ticket and reports the prose reason. Never write a non-numeric token into the marker.
+**Only ticket edges belong in the marker.** It is satisfied by each number being closed, so a blocker no merge can close — a credential, a vendor account, a change in another repo, a decision still open — has no expressible form here. Write that one in the prose "Blocked by" section and put `kit-blocked` on the issue; `/kit:ship-ticket` skips a `kit-blocked` ticket and reports the prose reason. Never write a non-numeric token into the marker.
 
 This needs two passes, since a ticket cannot cite a number that does not exist yet: create every issue first, collect the numbers, then edit each one to add its marker.
 
@@ -119,7 +119,7 @@ redundant. If the set is large enough that designing every ticket now is more
 than the user wants to spend, triage the frontier — the tickets with no open
 blockers — and say which ones you left, rather than labelling the rest.
 
-Nothing downstream repairs a skipped pass. `/kit:run-ticket` picks up only
+Nothing downstream repairs a skipped pass. `/kit:ship-ticket` picks up only
 labelled tickets, so an untriaged one is invisible to the loop and an unlabelled
 epic simply stalls at whichever slice never got here.
 

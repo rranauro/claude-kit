@@ -20,15 +20,15 @@ bug and the session turns to fixing it, the walkthrough's position lives only in
 the transcript — buried by the detour, erased by a compaction. This skill moves
 that position onto disk, so resuming is a file read instead of a scroll-back.
 
-Use it when a branch is ready to exercise: `/kit:ship-ticket` Phase 5 offers it
-before the PR is opened. It also stands alone for a re-verification pass.
+Use it when a branch is ready to exercise: `kit:ticket-loop`'s `open-pr` phase
+offers it before the PR is opened. It also stands alone for a re-verification pass.
 
 Do **not** use it as an intake loop for whatever the user happens to notice —
 that's `/kit:polish-ticket`. This skill has a finite list and an end.
 
 Constituent skills:
 - `/kit:polish-ticket` — `intake` through `file-ticket`, for every detour
-- `/kit:ship-ticket` — Phase 5 onward, once the walk finishes
+- `kit:ticket-loop` — `open-pr` onward, once the walk finishes
 
 ---
 
@@ -246,8 +246,8 @@ is about to decide whether to ship anyway.
 
 Then hand back:
 
-- Invoked from `/kit:ship-ticket` Phase 5 → return there, and let the user decide
-  whether the open items block the PR.
+- Invoked from `kit:ticket-loop` `open-pr` → return there, and let the user
+  decide whether the open items block the PR.
 - Invoked standalone → ask whether to land, keep fixing, or stop.
 
 Sync the comment one last time and leave both copies in place. It is the record

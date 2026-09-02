@@ -7,7 +7,7 @@ description: Take a GitHub issue to a wired worktree with its plan verified — 
 
 Take a GitHub issue to the point where implementation can begin: read it, create a worktree off `origin/main`, wire up what a fresh worktree lacks, and confirm the approach is settled.
 
-**This is shared mechanism, not an entry point.** `/kit:run-ticket` and `/kit:ship-ticket` both invoke it and both carry the ticket further; running it alone stops at a wired worktree, which is strictly less than either. It is a skill rather than a command for that reason.
+**This is shared mechanism, not an entry point.** `kit:ticket-loop` invokes it as its first phase and carries the ticket further; running it alone stops at a wired worktree, which is strictly less. It is a skill rather than a command for that reason.
 
 **Arguments:** $ARGUMENTS
 The argument should be a GitHub issue number (e.g., `kit:start-ticket 42`) or a GitHub issue URL.
@@ -174,7 +174,7 @@ checking the project's own label mapping, since the canonical spelling is not th
 only one — for the freshness dating below and as corroboration. Never withhold
 qualification for its absence, and don't ask the user to go add it.
 
-This is not in tension with `/kit:run-ticket`, which *does* require the label
+This is not in tension with `/kit:ship-ticket`, whose sweep *does* require the label
 when it sweeps for startable tickets. There the label is a query filter over work
 nobody asked for, and picking up an unlabelled issue would mean starting
 something unbidden. Here a human has already named the issue, so the only
@@ -217,7 +217,7 @@ is a different question, and `kit:ticket-artifacts` settles it the same way.)
 
 **Step 11 · `placement-check` — Placement check (only if the work adds or moves a class):**
 
-**If `/kit:ship-ticket` or `/kit:run-ticket` invoked this command, skip this step
+**If `kit:ticket-loop` invoked this command, skip this step
 entirely.** Their implementation phase owns the placement check and runs it there,
 next to the code being written — where a different answer can still change the
 file cheaply. Running it here too just asks the same question twice, several gates
@@ -242,26 +242,26 @@ worktree path (`$WT/.claude/skills/behavior-placement/`), not the main checkout.
 This command stops here, with a wired worktree and an accepted plan. It writes no
 code.
 
-**If `/kit:ship-ticket` or `/kit:run-ticket` invoked this command**, it is already
+**If `kit:ticket-loop` invoked this command**, it is already
 at its implementation step — say nothing about handoff and return. Do not suggest
 re-invoking either; that restarts the caller from its first step.
 
-**`/kit:run-ticket` also overrides Step 10's questions**, since nobody is there to
+**`kit:ticket-loop` unattended also overrides Step 10's questions**, since nobody is there to
 answer them. It says which, and what each becomes. Follow its table over the
 prose above when it is the caller.
 
 **If the user ran this command directly**, they have taken the long way round.
-`/kit:run-ticket <issue>` runs these same steps and keeps going — worktree,
-verification, TDD, simplify, PR — and `/kit:ship-ticket <issue>` does the same
-with its gates on. Stopping at a wired worktree is a strictly smaller outcome
-than either, so say which one they probably wanted before reporting state.
+`/kit:ship-ticket <issue>` runs these same steps and keeps going — worktree,
+verification, TDD, simplify, PR — stopping at its gates, or at none of them with
+a trailing `unattended`. Stopping at a wired worktree is a strictly smaller
+outcome, so say so before reporting state.
 
 Then tell them what they have:
 
 > "Worktree `<worktree>` is ready on `<branch-name>`, plan accepted.
 >
-> `/kit:run-ticket <issue-number>` takes it the rest of the way unattended;
-> `/kit:ship-ticket <issue-number>` does the same and stops at its gates. Either
+> `/kit:ship-ticket <issue-number>` takes it the rest of the way, stopping at
+> its gates — add `unattended` and it stops at none of them. Either way it
 > detects this worktree and resumes from implementation rather than recreating
 > anything.
 >

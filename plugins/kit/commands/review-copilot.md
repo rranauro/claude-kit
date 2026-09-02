@@ -118,9 +118,9 @@ for auto-merge — triaging every item counts as "addressed" even when no fixes 
 made. Auto-merge stays off until this point precisely because CI often goes green
 before the reviewers post.
 
-**If this skill was invoked by `/kit:ship-ticket`, stop here.** That skill owns the
-auto-merge decision in its own `auto-merge` phase and will run the gate itself; enabling it
-here would bypass that gate.
+**If this skill was invoked by `/kit:ship-ticket`, stop here.** That command
+hands its open PR to `/kit:tend-prs` with auto-merge deliberately off; enabling
+it here would merge a PR nobody has triaged.
 
 **If this skill was invoked by `/kit:tend-prs`, stop here too** — but for the
 opposite reason. That command runs unattended, so there is no one to ask; it owns

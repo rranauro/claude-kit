@@ -43,7 +43,7 @@ caught, and spend their attention on in-app testing instead.
 
 Techniques are the easy part. Everything between them is where the workflow lives:
 
-- **Sequence and gates.** `/kit:ship-ticket` is an orchestrator, not a technique. It
+- **Sequence and gates.** `kit:ticket-loop` is an orchestrator, not a technique. It
   knows the simplify pass runs *before* the PR exists, that auto-merge stays off
   until the first review round is answered, and that pushing waits for you. The
   ordering is the content — it's what stops you skipping the uncomfortable step
