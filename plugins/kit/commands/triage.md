@@ -47,9 +47,8 @@ mapping owns the strings; the canonical four are `bug`, `improve-codebase`,
 `technical-debt`, and `user-experience`. Two kinds is two answers to one
 question, and nothing downstream picks a winner.
 
-That is a post-condition, not an instruction to apply one. A ticket already
-carrying a kind arrives satisfied, and there is nothing to do; act when it
-carries none, or two.
+That is a post-condition, not an instruction to apply one: act when a ticket
+carries no kind, or two.
 
 The kind is not a topic. It answers one question: **can this ticket's acceptance
 be asserted without a human eye?** A failing test that goes green, a shape count,
