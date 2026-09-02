@@ -49,9 +49,11 @@ differ only in the event they hang off:
 ```
 
 Use an absolute path. `${CLAUDE_PLUGIN_ROOT}` only resolves for hooks a plugin
-registers itself, not for ones you wire up in your own settings — if you
-installed via the marketplace, the scripts are under
-`~/.claude/plugins/marketplaces/claude-kit/plugins/kit/hooks/`.
+registers itself, not for ones you wire up in your own settings. Where the
+scripts sit depends on how the kit reached you: a marketplace install puts them
+under `~/.claude/plugins/marketplaces/claude-kit/plugins/kit/hooks/`, while the
+claude-kit checkout resolves the plugin from its own tree, so there they are
+`plugins/kit/hooks/` under the checkout root.
 
 The `timeout` on the Rails gate is worth keeping: Brakeman scans the whole app
 and the default timeout is not generous enough for a large one. Each script
