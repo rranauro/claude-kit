@@ -91,6 +91,12 @@ All items are processed without stopping for approval. The summary in Step 5 is 
 
 **Step 6 — Quality gates (if any fixes were made):**
 - Run the /kit:commit skill
+- **Gate what you changed, not the suite.** The push is what CI reads, and CI
+  runs everything again — so a broad local run buys a second copy of an answer
+  already on its way, at this pass's expense rather than the runner's. These
+  gates exist to catch the fix that is obviously wrong before it costs a full CI
+  round and another firing: the specs covering the files you touched, and lint on
+  those files.
 - **A gate that cannot run is a gate that failed.** A missing runtime, a broken
   shim, an interpreter that isn't on `PATH` — none of these mean the fixes are
   fine, they mean nothing checked them. Treat it exactly as a red gate: stop,
@@ -126,6 +132,9 @@ Step 5 summary and let the caller continue — a pass that treats this as the en
 its own work leaves the PR triaged with auto-merge never enabled, which is the one
 state nothing downstream is watching for.
 
+**Run unattended, close the round yourself** — see `## Unattended` below, which
+owns the marker and the merge decision. Do not also ask.
+
 Otherwise, ask the user before enabling:
 
 > "Review findings triaged and pushed. Enable auto-merge (squash) for PR #<N>? GitHub will merge once checks pass."
@@ -138,3 +147,54 @@ Otherwise, ask the user before enabling:
 
 **Arguments:** $ARGUMENTS
 If the user passes a PR number (e.g., `/kit:review-copilot 228`), use that instead of the current branch's PR.
+
+`unattended` alongside the number (`/kit:review-copilot 228 unattended`) says
+nobody is watching. It is passed by a caller and **never inferred** — a session
+that looks quiet is not a session with no one in it.
+
+---
+
+## Unattended
+
+Attended, this skill hands its summary to a person and stops. Unattended there is
+no person, so the same summary has to be turned into the two things a PR needs
+before anyone looks at it again: a record of what happened, and a decision about
+merging. Both are yours here — you are the only one holding the per-item
+reasoning, and re-deriving it costs another pass.
+
+Do them in this order, and do them whatever the outcome — **especially** when
+nothing was fixed.
+
+**1 · Write the marker.** One comment is both the durable record on the PR and the
+idempotency signal every caller reads to know the round is closed:
+
+```
+gh pr comment <N> --body "<!-- kit-triaged -->
+<the Step 5 summary>"
+```
+
+**2 · Decide the merge.** On a clean triage, `gh pr merge <N> --auto --squash`.
+With a single review round there is nothing further to wait for, and leaving it
+off means the PR sits green until someone notices. Enabling it is idempotent, and
+the merge stays GitHub's to perform once checks pass.
+
+**Escalate instead — leave auto-merge off — when any of these hold:**
+
+- You skipped a **non-minor** item: a finding real enough to record and too large
+  to apply alone.
+- The gates failed, could not be run at all, or the push was rejected. A gate that
+  never ran is not a gate that passed, and unattended that is the likelier of the
+  two.
+- `gh pr checks <N>` shows a failing required check. **Repairing it is not your
+  job** — a red check is not a review finding, and the attempt belongs to
+  `/kit:tend-prs` `Step 4b`, where a person is nearby. Escalate and say so.
+
+An escalation goes in the *same* comment as the marker, never a later one — a
+pass that posts the marker and then dies leaves a PR that reads as merely
+triaged, which is this record inverted:
+
+```
+gh pr comment <N> --body "<!-- kit-triaged -->
+<!-- kit-escalated: skipped a non-minor optional item -->
+<the Step 5 summary>"
+```
