@@ -105,6 +105,31 @@ agree with it pays for a second copy of an answer already on the PR.
 
 Answer the cheap questions in bash, and start a model for the one that is left.
 
+## The pass runs under a grant that ships with the kit
+
+Nothing on a runner is interactive, so a permission the pass does not hold is not
+a prompt — it is a denial at the moment it acts. `/kit:review-copilot` spends its
+model turns first and hits the wall last, which reads as a pass that ran, agreed
+with itself, and changed nothing.
+
+`scripts/tending-settings.json` is that grant, and a consuming project's workflow
+merges its own gate commands over it. The split is what makes it reviewable: this
+file says what a tending pass may do in any repo, the project's file adds the test
+and lint commands it runs before pushing, and neither can quietly become the
+other. Deny beats allow in the merged result, so a project can widen the grant and
+cannot unlock what this one refuses.
+
+The grant is easy to mistake for laptop leftovers, because it was written when a
+runner script consumed it and no doc named it. It is not: the workflow reads it by
+path out of the plugin checkout, from a repo that cannot be seen from here. Deleting
+it fails the consuming project's workflow at `jq`, before the pass starts, and the
+error names a file that exists in no repo you are looking at.
+
+`gh pr edit` is allowed rather than denied, because the triage marker and the
+`kit-hold` write above are both labels on the PR. That is the one act in the grant
+that widens over time — every new label this kit writes needs it — so it is the
+line to check when a pass reports a decision it could not record.
+
 ## A plugin is not installed by copying it
 
 Copying a plugin's files into the workspace registers no commands. A pass whose
