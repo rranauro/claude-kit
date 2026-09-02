@@ -1,0 +1,52 @@
+{
+  "_comment": "The permission grant an unattended tending pass runs under. A consuming project's tend-prs workflow merges its own gate commands over this file and hands the result to the action as `settings:`; without it the pass reads everything and writes nothing, so /kit:review-copilot reaches its decision and is denied at the act. Deny beats allow in the merged file, so a project can widen this but cannot unlock anything refused here. Nothing on a runner is interactive: this grant is the whole of what a pass may do with nobody watching, which is why it is a reviewable file rather than a flag.",
+  "permissions": {
+    "allow": [
+      "Read",
+      "Grep",
+      "Glob",
+      "Edit",
+      "Write",
+      "Skill",
+      "TodoWrite",
+      "Bash(gh repo view:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(gh pr checks:*)",
+      "Bash(gh pr comment:*)",
+      "Bash(gh pr merge:*)",
+      "Bash(gh pr edit:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh api:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git show:*)",
+      "Bash(git fetch:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git branch:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
+    ],
+    "deny": [
+      "Bash(gh pr create:*)",
+      "Bash(gh issue create:*)",
+      "Bash(gh issue edit:*)",
+      "Bash(gh issue close:*)",
+      "Bash(gh label:*)",
+      "Bash(git merge:*)",
+      "Bash(git rebase:*)",
+      "Bash(git reset:*)",
+      "Bash(git checkout:*)",
+      "Bash(git switch:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(rm:*)",
+      "WebFetch",
+      "WebSearch"
+    ]
+  }
+}
