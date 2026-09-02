@@ -49,6 +49,7 @@ That's the shape. There are ~15 commands and 11 skills in all; the full list is 
 | [Hooks](docs/hooks.md) | The PR-review and Rails-gate hooks, and how to register them per project |
 | [The reviewer script](docs/pr-review.md) | One shared review prompt behind three entry points |
 | [Scheduled tending](docs/scheduled-tending.md) | Running `/kit:tend-prs` unattended: install, permission grant, `kit-hold`, logs |
+| [Tending on a CI runner](docs/tending-on-a-runner.md) | The same pass on GitHub Actions: which command to call, the credential every act needs, and the trigger that never fires |
 | [Companion skills](docs/companion-skills.md) | The mattpocock/skills the design commands call by name |
 
 ## License
