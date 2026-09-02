@@ -42,10 +42,13 @@ this to get to the interesting part.
 
 ### Assign the kind
 
-A ticket that survives binning gets **exactly one kind label** — the project's
+A ticket **leaves this step carrying exactly one kind label** — the project's
 mapping owns the strings; the canonical four are `bug`, `improve-codebase`,
 `technical-debt`, and `user-experience`. Two kinds is two answers to one
 question, and nothing downstream picks a winner.
+
+That is a post-condition, not an instruction to apply one: act when a ticket
+carries no kind, or two.
 
 The kind is not a topic. It answers one question: **can this ticket's acceptance
 be asserted without a human eye?** A failing test that goes green, a shape count,
@@ -66,6 +69,15 @@ came from is what fixes how acceptance is asserted — the scan states the
 object-shape counts it found, so the change is held to those, while a
 human-surfaced one has only the standing claim that behavior is preserved. Both
 are AFK-eligible. Only the scan applies `improve-codebase`; triage never does.
+
+**So a ticket can arrive already wearing its kind.** One the scan filed carries
+`improve-codebase` before this command ever sees it, and the post-condition is
+met on arrival — leave the label where it is. Do not reach for `technical-debt`
+because the ticket reads as human-surfaced. Nothing on an issue records which
+pass produced it, so the label is the only evidence of provenance there is, and
+rewriting it destroys the distinction the split exists to draw. Read it, the way
+this command already reads `kit-blocked` and `epic`; adjudicating it is not this
+step's job. Every step after this one runs unchanged.
 
 **Kind does not decide `kit-hold`** — see step 4. It decides who has to be
 present while the approach is chosen, not whether the result must be walked.
