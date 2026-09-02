@@ -37,6 +37,12 @@ vocabulary those files read off an issue; `docs/commands.md` lists the surface;
 - **Never commit to `main`.** Feature branch off `origin/main` — `git fetch
   origin main` first so the local ref is not stale — then a PR. PRs are merged on
   GitHub, never locally.
+- **Every PR opens with auto-merge on.** `gh pr merge <N> --auto --squash`
+  immediately after `gh pr create`. `lint` is a required check, so CI is the
+  gate; nothing merges red. Withhold `--auto` only when you want a human to look
+  before it lands, and say in the handoff that you did. The kit's own rule of
+  holding auto-merge off until a review round is triaged is written for repos
+  with a bot reviewer — this one has none, so there is no round to wait for.
 - **Work this repo through its own commands.** `/kit:architect` and
   `/kit:triage` for what to build, `/kit:design` for how, `/kit:ship-ticket` to
   carry it. A change to the workflow that was not made through the workflow has
