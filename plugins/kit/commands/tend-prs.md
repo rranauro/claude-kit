@@ -5,7 +5,17 @@ model: sonnet
 Sweep every open PR you own: triage the automated reviews that have landed, push
 the fixes, enable auto-merge, and clean up the worktrees whose PRs have merged.
 
-**Arguments:** none.
+**Arguments:** `$ARGUMENTS` — optional, a single PR number
+(`/kit:tend-prs 1564`). Given one, **selection is skipped**: classify and act on
+that PR alone, and take no interest in any other. With no argument, sweep every
+open PR as before. More than one number is a usage error — this pass is scoped to
+a queue or to one PR, and a hand-written subset of the queue is neither.
+
+**Name a PR when something already decided which one.** A CI firing knows: its
+gate identified the PR that tripped it and checked out that branch, so sweeping
+the queue re-reads every other open PR to act on one, and the cost of a firing
+grows with the backlog while the work does not. A laptop firing knows nothing,
+and sweeps.
 
 Each firing is one complete, self-contained pass. Run it from the main checkout.
 
@@ -100,6 +110,12 @@ gh pr list --author @me --state open --json number,headRefName,url,title,isDraft
 git worktree list --porcelain
 git fetch origin main
 ```
+
+**With a PR named, the second command is `gh pr view <N> --json` over the same
+fields.** Same picture, one row. Every rule below still applies to it — a named
+PR that turns out to be `held`, `awaiting-review`, or `escalated` is reported and
+left alone exactly as a swept one would be. Naming it says which PR to look at,
+never that it is owed an action.
 
 Skip draft PRs in everything that follows — a draft is work you haven't finished
 handing over.
@@ -312,6 +328,14 @@ commits with the per-item reasoning in the body, and pushes. Do not re-implement
 or second-guess any of it. Tell it this is an unattended `/kit:tend-prs` run so
 its `enable-auto-merge` step follows `merge-policy` below instead of prompting.
 
+**Its gates are the ones covering what it changed, never a sweep of the suite.**
+The push is what CI reads, and CI runs everything again — so a broad local run
+buys a second copy of an answer that is already coming, at the pass's expense
+rather than the runner's. What the local gates are for is the fix that is
+obviously wrong: catching it here costs a few seconds, and catching it in CI
+costs a full round plus the next firing. A gate that cannot run is still a
+failure, per that command's own rule; scoping it does not soften that.
+
 `/kit:review-copilot`'s own `Step 8` says to stop without enabling auto-merge when
 this command invoked it. That is a handoff, not the end of the pass: it stops
 *that* command precisely so `merge-policy` below can own the decision. Continue to
@@ -458,6 +482,12 @@ once and move on — don't retry it every firing.
 
 ## Step 6 · `cleanup` — Remove the worktrees whose PRs have merged
 
+**Skip this step entirely when a PR was named.** It is a sweep over the merged
+queue, and nothing about it belongs to the PR you were pointed at; a named firing
+is scoped, and running it anyway is the cost the argument exists to avoid. On a
+runner it is also moot — one checkout, no worktrees to remove. The next unscoped
+firing does it, and `/kit:worktree-gc` remains the human-run catch.
+
 ```
 gh pr list --author @me --state merged --limit 30 --json number,headRefName,mergedAt,labels
 ```
@@ -518,7 +548,9 @@ naming `kit-hold` explicitly for anything held, since "held by kit-hold" and
 skipped lines matter most — "worktree dirty, left alone" is how you find out this
 command has been quietly declining to help for three days.
 
-A firing where nothing was actionable prints a single line and nothing else.
+A firing where nothing was actionable prints a single line and nothing else. So
+does a named firing whose PR needed nothing — the block reports the PR you were
+pointed at and says what it was, never the queue you did not look at.
 
 **Print it even though nothing is watching.** On a scheduled run this block is
 captured to `~/.claude/logs/tend-prs/<owner>-<repo>.log`, appended across every
