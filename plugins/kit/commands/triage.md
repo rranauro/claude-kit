@@ -59,6 +59,14 @@ here rather than inferred later: kinds 1-3 can be designed with nobody present,
 because their acceptance criteria hold the result to something checkable.
 `user-experience` cannot, and parks for a human at the design pass.
 
+**Two of the four are one subject split by provenance, and that is deliberate.**
+Structural work the `kit:improve-codebase-architecture` scan surfaced is
+`improve-codebase`; structural work a human noticed is `technical-debt`. Where it
+came from is what fixes how acceptance is asserted — the scan states the
+object-shape counts it found, so the change is held to those, while a
+human-surfaced one has only the standing claim that behavior is preserved. Both
+are AFK-eligible. Only the scan applies `improve-codebase`; triage never does.
+
 **Kind does not decide `kit-hold`** — see step 4. It decides who has to be
 present while the approach is chosen, not whether the result must be walked.
 
@@ -210,39 +218,44 @@ the check or is silently dropped.
 **Apply the AFK-ready label** — `ready-for-agent` in the canonical vocabulary,
 or the project's own mapping where it differs.
 
-Be clear with the user about what the label does, because it is narrower and
-heavier than "this ticket is vetted":
+Be clear with the user about what the label does, because it is narrower than
+"this ticket is vetted" and says less than its name suggests:
 
 - It is *not* what makes the issue qualify for `kit:start-ticket`. That reads
   the body; the label is corroboration and a staleness date.
-- It does *not* route the work or choose who implements. `/kit:ship-ticket`
-  never reads it.
+- It is *not* a claim that the brief is settled. The ticket's kind answers that,
+  and `/kit:run-ticket` designs the ticket itself where the kind allows.
 - Its one behavioral effect is that **`/kit:run-ticket` will select this ticket**
   — it is the filter deciding what gets picked up, without anyone naming the
   issue.
 
-So the question to put is not "is this ready?" but "is this safe for an agent to
-pick up on its own?" Those come apart.
+So the label answers one question and only one: **who writes the code?** An agent
+gets `ready-for-agent`; a human gets `ready-for-human`. Everything else a reader
+might expect it to mean is carried by another label.
 
-**A blocking dependency is not a reason to withhold the label.** `/kit:run-ticket`
-only picks up a ticket whose `kit-blocked-by` marker is fully closed, so the edge
-already holds it back. Withholding as well is redundant, and it defeats the
-mechanism: a labelled ticket becomes startable the moment its blocker merges,
-while an unlabelled one is invisible to the sweep no matter what has landed.
-Record the edge in the marker, then label it.
+**Withholding is not a lever.** The pull to withhold is always the same — the
+ticket is not quite ready in some way — and the answer is always the same: label
+it and let the mechanism refuse it, out loud, with the reason attached. An
+unlabelled ticket is invisible to the sweep no matter what has since landed, and
+becomes startable only through a re-triage nobody scheduled. Three shapes of
+"not quite ready", none of them a withhold:
 
-**An unresolved decision is.** The label is what puts the ticket in front of an
-agent in the first place, and `/kit:ship-ticket` treats the brief as the settled
-approach. A ticket that still carries an open design question gets that question
-answered inside a diff, by whichever agent picked it up, rather than by you. That
-is the failure this command exists to prevent, arriving through the back door. Hold the label until the decision is made — and note that this is the
-same evidence step 1 uses to refuse the already-settled short-circuit, so a
-ticket that legitimately reached step 2 for want of a design pass must not leave
-step 4 labelled unless that pass actually happened.
+- **A blocking dependency.** `/kit:run-ticket` only picks up a ticket whose
+  `kit-blocked-by` marker is fully closed, so the edge already holds it back.
+  Record the edge in the marker, then label it — and it starts itself the moment
+  its blocker merges.
+- **An unsettled brief.** The design pass parks on it and says so. A kind in the
+  first three means `/kit:run-ticket` designs the ticket rather than parking on a
+  missing plan, and parks in-flight if the design itself cannot be settled; a
+  `user-experience` kind parks for its kind. Either way the refusal is visible
+  and carries its reason, which withholding does not.
+- **An absent kind.** Also a park, for the same reason — acceptance nobody has
+  characterised cannot be assumed assertable. Assign the kind in step 1; do not
+  compensate for a missing one here.
 
 **Everything else that stands in the way gets the label plus `kit-blocked`.**
-Withholding is a claim that the ticket is *not designed*, and it is the wrong
-claim for a ticket that is designed and merely waiting. Two cases:
+The label still says an agent writes this one; what has changed is that the
+world will not let it start yet. Two cases:
 
 - The ticket waits on something no merge will clear — a credential, a vendor
   account, a change in another repo, a decision that is yours to make and does
@@ -259,9 +272,10 @@ is actually cleared. The difference from withholding is that the ticket stays
 visible and becomes startable the moment you drop one label, rather than needing
 a re-triage nobody scheduled.
 
-So the two levers are not interchangeable. Withhold `ready-for-agent` when the
-*brief* is not finished. Apply `kit-blocked` when the brief is finished and the
-*world* is not ready.
+So the levers are not interchangeable, and only one of them is a refusal.
+`ready-for-human` routes the work to a person. `kit-blocked` says the brief is
+finished and the *world* is not ready. Neither is a comment on the brief — that
+is the design pass's to make, in front of whoever is watching.
 
 Say which of these applies rather than just declining. Confirm the label as its
 own decision rather than folding it into the publish.
