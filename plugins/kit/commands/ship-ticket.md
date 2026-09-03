@@ -64,8 +64,9 @@ naming one would do belong elsewhere:
   output is numbers you hand back here one at a time.
 - **Running several in succession is the caller's job.** Each ticket needs a
   context that carried no previous ticket, so each ticket needs its own process,
-  and nothing inside one invocation can give it that. #101 is the kit's runner
-  for it.
+  and nothing inside one invocation can give it that.
+  `plugins/kit/scripts/ship-startable.sh <label>` is the kit's runner for it —
+  see `docs/shipping-on-a-runner.md`.
 
 A flag that takes a set is this section going unread.
 
@@ -249,4 +250,5 @@ this command again.
 **Every selection takes one ticket, so a backlog is worked one firing at a
 time.** `/loop 20m /kit:ship-ticket unattended` is how you do that by hand, and
 one ticket per firing is what keeps a park visible between firings rather than
-buried in a run that kept going. #101 is the runner that does it without you.
+buried in a run that kept going. `plugins/kit/scripts/ship-startable.sh
+<label>` is the runner that does it without you.
