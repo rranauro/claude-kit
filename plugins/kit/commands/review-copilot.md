@@ -9,7 +9,7 @@ Review and address automated PR review feedback one finding at a time — **GitH
 > Despite the file name, this skill is the single addresser for *all* automated PR review comments. Kept the name for backward compatibility with existing references.
 
 **Step 1 — Find the PR:**
-- Run `gh pr view --json number,url,title` to get the current branch's PR.
+- Run `gh pr view --json number,url,title,labels` to get the current branch's PR. The labels are read again at Step 8 to decide the merge — fetched once here rather than paid for twice.
 - If no PR exists, tell the user and stop.
 
 **Step 2 — Fetch all automated review feedback:**
@@ -269,7 +269,15 @@ left here is the decision, which attended belongs to the person and unattended
 belongs to you. You are the only one holding the per-item reasoning, and
 re-deriving it costs another pass.
 
-**Decide the merge.** On a clean triage, `gh pr merge <N> --auto --squash`.
+**A held PR still gets triaged — a hold only ever withholds the merge.** If the
+labels fetched at Step 1 carry `kit-hold`, run every step above as normal —
+Step 7.5 records the round the same as any other PR's — but skip the merge:
+report the round as triaged and held, and stop. A hold names a PR a person is
+already in charge of merging; this pass does not call `gh pr merge` over that
+decision, and it does not remove the label either — clearing `kit-hold` is the
+human's statement, the same as everywhere else in this file.
+
+**Otherwise, decide the merge.** On a clean triage, `gh pr merge <N> --auto --squash`.
 With a single review round there is nothing further to wait for, and leaving it
 off means the PR sits green until someone notices. Enabling it is idempotent, and
 the merge stays GitHub's to perform once checks pass.

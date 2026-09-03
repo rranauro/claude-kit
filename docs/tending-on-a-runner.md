@@ -19,7 +19,7 @@ What the runner gives up is the repair of a red check. That is deliberate:
 repairing a check is not review triage, and a red PR is visible without anything
 saying so.
 
-## The gate must read `kit-hold` before it acts
+## The gate must read `kit-hold` before it merges, not before it triages
 
 A PR labelled `kit-hold` is one a person is in charge of, and the label is
 usually on the PR before CI ever finishes — `/kit:new-pull-request` transcribes
@@ -28,8 +28,18 @@ it from the issue at creation time. It can also arrive later:
 which is the only record that the decline happened. Without the gate honouring
 it, the next firing re-enables the thing they just declined. A gate that does not check it
 merges the one PR a human deliberately asked to see first, and does so within
-minutes. Skip a held PR entirely: do not triage it, do not enable auto-merge,
-and never remove the label, which is a human's to clear.
+minutes.
+
+The hold only ever withholds the merge. An unreviewed round on a held PR still
+gets triaged — `/kit:review-copilot <N> unattended` runs the same as it would on
+any other PR, verifies the findings, pushes what it fixes, and closes the round
+at Step 7.5 — so a held PR does not sit unread until the person watching it
+opens it themselves. What the hold changes is Step 8: finding `kit-hold` on the
+PR, the pass reports the round as triaged and stops there, and never calls
+`gh pr merge`. The gate has the same rule on its own later firings — a
+`triaged` PR with auto-merge still off is the one place it would otherwise call
+`gh pr merge` itself, and `kit-hold` is what tells it not to. Never remove the
+label; clearing it is a human's to do.
 
 ## The round is closed by a marker, not by the run that closed it
 
