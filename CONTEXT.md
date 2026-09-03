@@ -54,6 +54,13 @@ _Avoid_: blocked, on hold
 A parsed marker in the issue body naming the tickets that must close first. The
 dependency edge; unlike `kit-blocked`, it clears itself when the blocker merges.
 
+**startable**:
+A ticket an agent may pick up unbidden: `ready-for-agent`, its edges declared and
+all closed, carrying neither `epic` nor `kit-blocked`, and not already started.
+`kit:startable-tickets` is the one statement of it, read by `/kit:ship-ticket`'s
+sweep and by `/kit:list`.
+_Avoid_: ready, eligible, available, unblocked
+
 **kit-triaged**:
 A review round is closed — every finding verified and applied or skipped.
 Written as a PR comment carrying the summary and any escalation reason, and as a
