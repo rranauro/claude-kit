@@ -31,16 +31,15 @@ ticket it closes.
 
 **Reviewing became the bottleneck.** Once construction got cheap, review was what
 ate my time. GitHub is the substrate here, so the workflow automates that phase
-where it can: Copilot reviews the PR the moment it opens, and a CI gate triages
-what comes back through `/kit:review-copilot` — with nobody watching.
+where it can: Copilot reviews the PR the moment it opens, a headless Claude
+review does too wherever a project has registered the hook for it, and a CI gate
+triages whatever landed through `/kit:review-copilot` — with nobody watching.
 
 **A bot review before a human one changes what humans do.** Findings verified
 against the code land while the PR is still warm, so reviewers stop requesting
 changes for things a bot would have caught and spend their attention on in-app
-testing instead. `/kit:start-review` runs a second reviewer over the same diff
-when a change is worth it — two models see different things — but on demand,
-because a reviewer that fires only on one machine is not one the workflow can
-depend on.
+testing instead. `/kit:start-review` runs the same review by hand when the hook
+isn't registered, or a second pass over an updated HEAD is worth it.
 
 ## What the orchestration adds
 
@@ -73,10 +72,10 @@ Techniques are the easy part. Everything between them is where the workflow live
   actual code before acting on it — a "missing nil check" on a provably non-nil
   path gets classified and dropped, not applied. Every decision, including the
   rejections, lands in the commit body so the reasoning is durable in git rather
-  than lost in a chat log. Verification is what makes a finding actionable, which
-  is why one automated reviewer is enough: where a second one has been run by
-  hand, two landing on the same line independently makes a finding more likely to
-  be real, never certain.
+  than lost in a chat log. Verification is what makes a finding actionable — the
+  agreement signal on top of it is a bonus, not the load-bearing part: two
+  reviewers landing on the same line independently makes a finding more likely
+  to be real, never certain.
 
 ## The ideas behind it
 

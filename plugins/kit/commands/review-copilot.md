@@ -2,7 +2,7 @@
 model: sonnet
 ---
 
-Review and address automated PR review feedback one finding at a time — **GitHub Copilot** (inline + top-level review), and the **Claude review** posted by `/kit:start-review` where someone has run one. Each finding is verified against the actual code before it is acted on, and overlapping findings on the same `(path, line)` are merged into one bucket — agreement across reviewers is called out as a stronger signal.
+Review and address automated PR review feedback one finding at a time — **GitHub Copilot** (inline + top-level review), and the **Claude review** posted by the `pr-review-on-create` hook or `/kit:start-review`, wherever one of those ran. Each finding is verified against the actual code before it is acted on, and overlapping findings on the same `(path, line)` are merged into one bucket — agreement across reviewers is called out as a stronger signal.
 
 > **There is no per-item user prompt.** Verification is empirical, not interactive: findings are checked against the code and applied or skipped automatically (Step 3), and the user's review point is the summary in Step 5 plus the commit body that records every decision.
 
@@ -18,7 +18,7 @@ Pull from these sources in parallel:
 
 - **Copilot inline:** `gh api repos/{owner}/{repo}/pulls/{number}/comments --jq '.[] | select(.user.login | test("copilot|github-actions"; "i")) | {source: "copilot-inline", id, path, line, body, diff_hunk}'`
 - **Copilot top-level review:** `gh api repos/{owner}/{repo}/pulls/{number}/reviews --jq '.[] | select(.user.login | test("copilot|github-actions"; "i")) | {source: "copilot-review", id, state, body}'`
-- **Claude review:** `gh api repos/{owner}/{repo}/issues/{number}/comments --jq '.[] | select(.body | startswith("<!-- claude-pr-review -->")) | {source: "claude-review", id, body}'` — note this hits the **issues** endpoint (PR-level comments), not pulls/comments. The reviewer posts under the human user's gh account, so the `<!-- claude-pr-review -->` HTML marker (set by `scripts/pr-review.sh`) is the authoritative way to find it. Nothing posts it automatically, so it is absent unless someone ran `/kit:start-review`; treat that like any empty source.
+- **Claude review:** `gh api repos/{owner}/{repo}/issues/{number}/comments --jq '.[] | select(.body | startswith("<!-- claude-pr-review -->")) | {source: "claude-review", id, body}'` — note this hits the **issues** endpoint (PR-level comments), not pulls/comments. The reviewer posts under the human user's gh account, so the `<!-- claude-pr-review -->` HTML marker (set by `scripts/pr-review.sh`) is the authoritative way to find it. It's posted automatically by the `pr-review-on-create` hook wherever a project has registered it, or by a manual `/kit:start-review`; absent either, treat that like any empty source.
 
 > **Match logins case-insensitively** (the `"i"` flag is required). Copilot's *inline* comments are authored by login `Copilot` (capital C), while its top-level review bot is `copilot-pull-request-reviewer[bot]` (lowercase). Without `"i"` the inline pass silently returns nothing — the most important findings get missed.
 
@@ -45,7 +45,7 @@ The Claude review arrives as a single marker comment (`<!-- claude-pr-review -->
 - Bullets under `### Inline findings` start with `` **`<path>:<line>`** — <finding> `` — parse `(path, line, finding-text)` from each.
 - Bullets under `### General notes` (or anything outside `### Inline findings`) are top-level observations; treat them as one collective general item (`claude-review-general`) with the section text as the body.
 
-If the `<!-- claude-pr-review -->` comment is not present (nobody ran `/kit:start-review`, or it found nothing), there are no marker-comment findings to merge beyond Copilot's; skip straight to the bucket build with only Copilot inline entries.
+If the `<!-- claude-pr-review -->` comment is not present (the hook isn't registered for this project, nobody ran `/kit:start-review`, or it found nothing), there are no marker-comment findings to merge beyond Copilot's; skip straight to the bucket build with only Copilot inline entries.
 
 Build a dedup map keyed by `(path, line)`:
 - For each Copilot inline comment, add to bucket `(path, line)` with `source: "copilot-inline"`.

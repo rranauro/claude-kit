@@ -1,5 +1,10 @@
 # One automated reviewer, chosen for always being there
 
+Partially superseded by [ADR 0004](0004-restore-the-pr-review-hook.md): the
+hook this ADR removed was restored once its coverage argument stopped holding.
+The rest of this decision — the scheduling loop it was bundled with staying
+gone — is unchanged.
+
 Two automated reviewers used to see every PR: GitHub Copilot, which fires
 server-side, and a Claude headless review fired by a `PostToolUse` hook the
 moment `gh pr create` returned. `/kit:review-copilot` merged their findings on
@@ -47,5 +52,6 @@ verification step was always what made a finding actionable, and it is unchanged
 The CI gate keys on whether a review exists, and Copilot posts within about a
 minute, so no trigger depends on the removed reviewer.
 
-Restoring a second automated reviewer is a new decision with its own ticket, and
-the second option above is where it starts.
+Restoring a second automated reviewer this way is [ADR 0004](0004-restore-the-pr-review-hook.md).
+Moving the Claude review into CI instead — the second option above — is still
+open if a reviewer independent of any hook registration is ever wanted.
