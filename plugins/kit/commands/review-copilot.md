@@ -121,10 +121,24 @@ All items are processed without stopping for approval. The summary in Step 5 is 
   refusal unless this step insists otherwise.
 
 **Step 7 — Push:**
-- Push the branch to origin — **only if Step 6's gates actually ran and passed.**
-  If they could not run, leave the fixes committed locally, push nothing, and
-  escalate. An unverified push is the one outcome that looks identical to a
-  verified one from GitHub.
+- **Push the branch to origin, whatever Step 6 concluded.** What an escalation
+  withholds is auto-merge, not the commit. Step 8 is where a failed or unrunnable
+  gate stops the round; the push is not that lever, and using it as one loses the
+  work instead of holding it.
+- **A commit this pass does not push may not survive the pass.** On a laptop the
+  worktree persists and "committed locally" means recoverable. On a CI runner the
+  checkout is destroyed with the job, so the same words describe a deleted commit
+  — and the escalation comment then sends a person to a ref that exists nowhere,
+  with no diff to read, having reported the fix as applied. A pass cannot tell
+  which of the two it is running on, so it must assume the one where withholding
+  is destructive.
+- **Say in the escalation that the gates did not run**, and pushing stops being
+  indistinguishable from a verified round: the comment is what tells them apart,
+  and `kit-escalated` keeps the CI gate off the PR either way. It also gets the
+  fix in front of the gate that *can* run it — CI has the toolchain a runner's
+  permission grant or a laptop's missing runtime denied this pass.
+- If the push itself is rejected, that is its own escalation reason below, and
+  the diff belongs in the comment instead — it is the only copy left.
 
 **Step 7.5 · `close-the-round` — Record that the round is closed:**
 
@@ -266,7 +280,8 @@ the merge stays GitHub's to perform once checks pass.
   to apply alone.
 - The gates failed, could not be run at all, or the push was rejected. A gate that
   never ran is not a gate that passed, and unattended that is the likelier of the
-  two.
+  two. The fixes are pushed regardless — see Step 7 — so what this withholds is
+  the merge, and the comment is what marks the round as unverified.
 - `gh pr checks <N>` shows a failing required check. **Repairing it is not your
   job** — a red check is not a review finding, and repairing one belongs in a
   session with a person nearby. Escalate and say so.
