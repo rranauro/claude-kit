@@ -67,8 +67,9 @@ and with no target, so it sweeps and asks nothing.
 **Wait for the agent to return before Step 1 begins.** The Agent tool returns
 when the sweep is *launched*, not when it is finished, so the sequencing above
 does not hold anything back on its own. Selection reads worktree state too — the
-already-started checks in the `--all` and sweep resolvers both consult
-`git worktree list` — and so does `kit:start-ticket` `safety-check`, which
+already-started check in the `--all` resolver consults `git worktree list`, and
+so does `kit:startable-tickets` on the sweep path — and so does
+`kit:start-ticket` `safety-check`, which
 decides resume-or-replace from it. A sweep still in flight can reclaim a
 worktree between the moment one of those reads it and the moment it is used.
 
@@ -120,7 +121,7 @@ Three checks still apply, because each is a claim about the ticket or the world
 rather than a routing sticker:
 
 - **`epic`** — skip it and say so. There is nothing in a container to implement,
-  so naming one is a mistake rather than permission. See below.
+  so naming one is a mistake rather than permission.
 - **`kit-blocked`** — skip the ticket and report the reason from its "Blocked by"
   section. Naming a ticket is not clearing the flag.
 - **An open blocker in its marker, if it has one** — skip and say which. The
@@ -154,44 +155,29 @@ still in review starts every one of them a second time.
 ### A bare label, or nothing — the sweep takes one
 
 A sweep picks up work nobody named, so it reads the labels and the markers that
-say a ticket was meant for an agent. A label narrows what it may choose from and
-changes none of its rules:
-
-```
-gh issue list --state open --label ready-for-agent [--label <given>] --json number,title,body,labels
-```
-
-A ticket is **startable** when all of these hold:
-
-1. Its body contains `<!-- kit-blocked-by: ... -->`. No marker means it was not
-   filed as part of an epic — leave it alone. A sweep never picks up an arbitrary
-   `ready-for-agent` ticket, only one whose author declared its edges.
-
-   **The label requirement here is deliberate, and is not the one
-   `kit:start-ticket` `plan-implementation` relaxed.** There a human has already
-   named the issue, so the label merely corroborates a body you can read, and
-   demanding it withholds work over a missing sticker. Here the label is the
-   filter deciding what gets picked up at all, and dropping it would mean
-   starting whatever happens to be open. Do not harmonize the two.
-2. Every issue number in the marker is **closed**. `/kit:new-pull-request` writes
-   `Closes #<issue>`, so a merged PR closes its ticket — a closed blocker means
-   the work landed on `main`. An empty marker is trivially satisfied.
-3. It does **not** carry the `epic` label — see below.
-4. It does **not** carry the `kit-blocked` label — see below.
-5. No open PR or live worktree already exists for it (it hasn't been started).
+say a ticket was meant for an agent. Invoke `kit:startable-tickets` via the Skill
+tool, passing the given label if there is one — it owns the candidate query and
+the five conditions, and it hands back the startable tickets plus every excluded
+one with its reason. A label narrows what it may choose from and changes none of
+its rules.
 
 **Take the lowest startable issue number, and only that one.** Filing order is
 dependency order, so the lowest is the earliest slice. One per sweep is what the
 resolver is for: you asked for a ticket, and this is the one. `--all` is how you
 ask for the set instead.
 
+Everything else that skill returns is the skip list, which Step 3 reports.
+
 If nothing is startable, say which tickets are waiting and on what, in one line
 each, then give Step 3's sweep line and stop — Step 0 already ran, and this exit
 is the one place its report would otherwise be lost. Attended, that report is an
-offer: name one and this command takes it, because naming is what clears rule 1.
-Unattended it is the whole outcome, and a useful one — it tells you whether the
-epic is blocked on a merge, on a person, or on nothing at all, and what the sweep
-got back in the meantime.
+offer: name one and this command takes it, because naming is what clears the
+marker condition. Unattended it is the whole outcome, and a useful one — it tells
+you whether the epic is blocked on a merge, on a person, or on nothing at all,
+and what the sweep got back in the meantime.
+
+**`/kit:list <label>` answers this without starting anything.** Same rule, same
+skill, so a ticket it names is one this command will take.
 
 ### `--dry-run` — resolve it and stop
 
@@ -203,90 +189,6 @@ A trailing `unattended` is moot: a dry run reaches no gate.
 skipped here — reclaiming removes worktrees and deletes branches, and a dry run
 that does that is not dry — so a ticket reported as already started may be taken
 by the real run once a stale worktree is reclaimed.
-
-### `kit-blocked` — waiting on a person, not a merge
-
-The marker in rule 2 carries one kind of edge: another ticket, cleared when a PR
-merges and closes it. A machine clears it, which is why a sweep can read it and
-act. Plenty of what actually holds a ticket back is not that shape — a credential
-that has not been issued, a vendor account still in review, a change landing in
-another repo, a decision you have not made, a migration whose production
-reconcile is unwritten. None of those close an issue, so none of them can be
-written as a number, and a ticket waiting on one is fully designed and correctly
-labelled `ready-for-agent`.
-
-`kit-blocked` on the **issue** is how that is said. It is the start-side twin of
-`kit-hold`: same shape, other end of the pipeline. `kit-hold` stops a finished PR
-from merging; `kit-blocked` stops a ready ticket from being started. Both are a
-label read rather than weighed, and both are a human's to write.
-
-Create it once per repo with `gh label create kit-blocked`, or from the UI.
-
-**This command never applies or removes it.** Not to record that you skipped a
-ticket, not because the reason reads as resolved, not because the blocking PR in
-the other repo appears to have merged. Removing it is the human's statement that
-the thing is actually cleared, and selection has no way to verify what it was
-waiting on. The one place the label gets written is a park, and `kit:park` owns
-that.
-
-The reason lives in the issue body's `## Blocked by` section, alongside the
-marker — the prose half of that section already exists for humans, and this is
-what it is for. Read it and quote it when reporting:
-
-```
-2 tickets are ready but blocked on a person: #52 (Stripe account still in
-review), #58 (needs the production reconcile decided). Clear with
-`gh issue edit <n> --remove-label kit-blocked`.
-```
-
-If a `kit-blocked` ticket has no reason in its body, say so — a block nobody can
-read is indistinguishable from one left on by accident.
-
-### `epic` — a container, not a slice
-
-An epic is the parent the slices were cut from. It has no implementation of its
-own, so there is no state of the world in which starting one is right — which is
-what separates it from `kit-blocked`, where the thing being waited on may
-genuinely have cleared and naming the ticket is the human saying so. Skip an
-`epic` ticket in **every** resolver, including a name you typed.
-
-The label is a claim about the ticket's kind, fixed when the ticket is filed —
-by a person, or by a `kit:improve-codebase-architecture` run over the children it
-cut. Selection reads that claim rather than adjudicating it, the same arrangement
-as `kit-blocked` and `kit-hold`.
-
-Create it once per repo with `gh label create epic`, or from the UI.
-
-**This command never applies or removes it**, on the same terms as `kit-blocked`.
-Report the skip and move on:
-
-```
-#12 is an epic, so it is a container rather than a ticket and was not started.
-Its slices are what a sweep picks up.
-```
-
-**Name the labelled tickets you skipped for want of a marker, separately, and
-leave the epics out of that list.** A ticket carrying the AFK-ready label but no
-`kit-blocked-by` line is the one failure a sweep cannot distinguish from a
-deliberate omission — rule 1 says leave it alone, and that is right, but from the
-outside it is indistinguishable from being ignored for no reason. Someone briefed
-and labelled that ticket expecting it to be picked up:
-
-```
-3 labelled tickets have no kit-blocked-by marker, so they are not startable in a
-sweep: #41, #43, #47. Add `<!-- kit-blocked-by: -->`, name one directly, or take
-the whole label with `--all`.
-```
-
-Every remedy in that line makes the ticket startable, which is the whole reason an
-epic must not reach it — an empty marker on a container is how a parent gets
-handed to `kit:ticket-loop` to implement.
-
-Report it as information, not an error, and never add the marker yourself — the
-edges are a human's call, and an empty marker written here would be this command
-granting itself permission to start the ticket.
-
----
 
 ## Step 2 · `implement` — Run the loop
 
@@ -314,7 +216,33 @@ apply them rather than listing every park as one problem.
 
 **An epic is skipped, not parked.** Nothing clears it and nothing is waiting on a
 decision, so it belongs in the skip list with its reason, alongside the tickets
-that were already started.
+that were already started:
+
+```
+#12 is an epic, so it is a container rather than a ticket and was not started.
+Its slices are what a sweep picks up.
+```
+
+**Quote a `kit-blocked` reason** from the issue body's `## Blocked by` section,
+and say how it is cleared — the label is a human's to remove, never this
+command's:
+
+```
+2 tickets are ready but blocked on a person: #52 (Stripe account still in
+review), #58 (needs the production reconcile decided). Clear with
+`gh issue edit <n> --remove-label kit-blocked`.
+```
+
+**Name the tickets skipped for want of a marker separately**, as information
+rather than an error, and never add the marker yourself — the edges are a human's
+call, and an empty marker written here would be this command granting itself
+permission to start the ticket:
+
+```
+3 labelled tickets have no kit-blocked-by marker, so they are not startable in a
+sweep: #41, #43, #47. Add `<!-- kit-blocked-by: -->`, name one directly, or take
+the whole label with `--all`.
+```
 
 **Lead with the sweep**, in one line: what Step 0 reclaimed, and what it held or
 skipped, with the reason. Say it when the sweep reclaimed nothing, and when it
