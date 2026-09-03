@@ -25,6 +25,13 @@ the prefix comes from the `name` field in `plugins/kit/.claude-plugin/plugin.jso
 | `/kit:new-pull-request` | Opens a PR with a closing keyword wired to the issue. |
 | `/kit:pin-it` | Parks a requirement that surfaced mid-debug but isn't ready to be discussed — culled to what's expensive to re-derive, saved outside version control at the main checkout so it survives the worktree it was written in. `list` shows what's pinned and flags what's gone stale; a slug brings one back and triages it into an issue, a fix, or a drop. |
 
+`plugins/kit/scripts/ship-startable.sh <label>` is the runner that works a whole
+label without a human re-invoking `/kit:ship-ticket` after every ticket — a
+fresh `claude -p` per ticket, so none of them runs in a context that carried a
+previous one, taken from `/kit:list`'s output rather than parsed from
+ship-ticket's own report. Run it directly in a terminal and leave; see
+`docs/shipping-on-a-runner.md`.
+
 ### Reviewing and merging
 
 | Command | What it does |
