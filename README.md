@@ -33,7 +33,8 @@ grills the ticket's scope before an approach exists and then hands off to
 `/kit:design`.
 
 The PR opens with auto-merge off and nothing left running on your machine.
-Copilot reviews it, and a CI gate in the consuming project calls
+Copilot reviews it, a headless Claude review does too wherever you've
+registered the hook for it, and a CI gate in the consuming project calls
 `/kit:review-copilot` to triage the findings, push the fixes, and merge — see
 [tending on a CI runner](docs/tending-on-a-runner.md).
 
@@ -47,8 +48,8 @@ That's the shape. There are ~13 commands and 15 skills in all; the full list is 
 | [Commands and skills](docs/commands.md) | Every command, what it does, and what the kit assumes about your stack |
 | [Why I built this](docs/why.md) | The reasoning behind the design commands, the review loop, and what orchestration adds over technique |
 | [Worktrees](docs/worktrees.md) | The default layout, and how to delegate to your project's own worktree recipe |
-| [Hooks](docs/hooks.md) | The Rails-gate hook, and how to register it per project |
-| [The reviewer script](docs/pr-review.md) | One shared review prompt behind two entry points |
+| [Hooks](docs/hooks.md) | The PR-review and Rails-gate hooks, and how to register them per project |
+| [The reviewer script](docs/pr-review.md) | One shared review prompt behind three entry points |
 | [Tending on a CI runner](docs/tending-on-a-runner.md) | What happens to a PR after it opens: which command CI calls, the credential every act needs, and the trigger that never fires |
 | [Companion skills](docs/companion-skills.md) | The mattpocock/skills the design commands call by name |
 | [Editing the kit](docs/editing-the-kit.md) | Which half of the payload a restart applies to, and which takes effect the moment you save |

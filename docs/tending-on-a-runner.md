@@ -54,11 +54,16 @@ The round is closed by whoever closed it, not by the runner. A round handled in
 someone's session writes the same record, so a gate that fires afterwards sees it
 and stays quiet.
 
-## One automated reviewer
+## Two automated reviewers, wherever the hook is registered
 
-Copilot is the only reviewer that fires on its own; `/kit:start-review` runs a
-second one on demand. Why that trade was taken, and the alternative it beat, is
-[ADR 0003](adr/0003-one-automated-reviewer.md).
+Copilot fires on every PR regardless. A project that has registered the
+`pr-review-on-create` hook also gets a headless Claude review, posted as a
+comment carrying the `<!-- claude-pr-review -->` marker, at `gh pr create` time
+— `/kit:review-copilot` reads both and treats agreement on the same line as a
+stronger signal. `/kit:start-review` still runs a review on demand regardless
+of whether the hook is registered. Why the hook was removed, restored, and what
+each trade cost, is [ADR 0003](adr/0003-one-automated-reviewer.md) and
+[ADR 0004](adr/0004-restore-the-pr-review-hook.md).
 
 ## Every act GitHub attributes needs a user credential
 
