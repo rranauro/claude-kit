@@ -92,14 +92,18 @@ new_sandbox() {
   mkdir -p "$GH_FIXTURES" "$SANDBOX/bin"
   cat > "$SANDBOX/bin/gh" <<'GH'
 #!/usr/bin/env bash
-# Answers `gh pr list --head <branch> ... --json ...` from a fixture file.
-head=""; prev=""
-for a in "$@"; do
-  [ "$prev" = "--head" ] && head="$a"
-  prev="$a"
-done
-f="$GH_FIXTURES/$head.json"
-[ -f "$f" ] && cat "$f" || echo '[]'
+# Answers `gh api repos/{owner}/{repo}/commits/<sha>/pulls` from a fixture
+# keyed by the queried sha — that is what the real endpoint is keyed on,
+# regardless of any branch name or headRefOid the fixture also carries.
+if [ "$1" = "api" ]; then
+  path="$2"
+  sha="${path#*/commits/}"; sha="${sha%/pulls}"
+  f="$GH_FIXTURES/$sha.json"
+  if [ -f "$f" ]; then cat "$f"; exit 0; fi
+  printf '{"message":"No commit found for SHA: %s","status":"422"}' "$sha"
+  exit 1
+fi
+echo '[]'
 GH
   chmod +x "$SANDBOX/bin/gh"
   export GH_FIXTURES
@@ -124,10 +128,15 @@ add_worktree() { # branch -> creates a worktree with one commit on top of main
 
 push_branch() { git -C "$MAIN" push -q origin "$1"; }
 
-# A PR fixture. state is MERGED/CLOSED/OPEN; oid is the tip GitHub received.
-pr_fixture() { # branch number state oid
+# A PR fixture, keyed on the sha it answers for — the real endpoint is keyed on
+# the commit, not the branch name. state is "open"/"closed" (the REST API's own
+# spelling); merged_at is a quoted ISO timestamp or the literal null. An
+# optional 5th arg sets headRefOid to something other than the queried sha, to
+# prove the new accounting never reads it.
+pr_fixture() { # sha number state merged_at [unrelated_head_ref_oid]
+  local head="${5:-$1}"
   cat > "$GH_FIXTURES/$1.json" <<EOF
-[{"number":$2,"state":"$3","headRefOid":"$4","url":"https://example.test/pull/$2"}]
+[{"number":$2,"state":"$3","merged_at":$4,"headRefOid":"$head","url":"https://example.test/pull/$2"}]
 EOF
 }
 
@@ -164,11 +173,11 @@ run() { # args... -> runs the script against $MAIN with stdin closed
 new_sandbox "AC1 target and sweep agree"
 add_worktree alpha
 push_branch alpha
-pr_fixture alpha 11 MERGED "$(tip alpha)"
+pr_fixture "$(tip alpha)" 11 closed '"2024-01-01T00:00:00Z"'
 wire_setup_artifacts alpha
 add_worktree beta
 push_branch beta
-pr_fixture beta 12 MERGED "$(tip beta)"
+pr_fixture "$(tip beta)" 12 closed '"2024-01-01T00:00:00Z"'
 wire_setup_artifacts beta
 
 # The same worktree, reached both ways. Identical lines is the assertion — a
@@ -191,7 +200,7 @@ end_sandbox
 new_sandbox "AC1 husk sweep"
 add_worktree alpha
 push_branch alpha
-pr_fixture alpha 11 MERGED "$(tip alpha)"
+pr_fixture "$(tip alpha)" 11 closed '"2024-01-01T00:00:00Z"'
 leave_unreadable_husk alpha
 # A husk git no longer names, left non-traversable by whatever wrote it. This is
 # the case a bare `rm -rf` fails on — it cannot descend into the directory to
@@ -216,8 +225,11 @@ add_worktree alpha
 # Deliberately NOT pushed to any remote ref, and main has moved on with an
 # unrelated commit — exactly the shape a squash-merge leaves behind. Every
 # local test (`git branch -d`, `rev-list --not --remotes`) reads this as
-# unmerged; only the PR's headRefOid says GitHub received it.
-pr_fixture alpha 11 MERGED "$(tip alpha)"
+# unmerged. The fixture is keyed on the branch's own tip — what the new code
+# actually queries — and carries a headRefOid that DIFFERS from it (#98): the
+# accounting must reach the right answer without ever reading that field.
+pr_fixture "$(tip alpha)" 11 closed '"2024-01-01T00:00:00Z"' \
+  "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
 out="$(run --act)"
 assert_branch_gone alpha "a squash-merged branch is deleted on GitHub's answer"
 assert_has "$out" "branch-deleted	alpha" "the deletion is reported"
@@ -225,15 +237,15 @@ end_sandbox
 
 new_sandbox "AC2 closed PR counts"
 add_worktree alpha
-pr_fixture alpha 11 CLOSED "$(tip alpha)"
+pr_fixture "$(tip alpha)" 11 closed null
 run --act >/dev/null
-assert_branch_gone alpha "a closed PR whose head matches the tip accounts for it"
+assert_branch_gone alpha "a closed, unmerged PR whose commit GitHub has still accounts for it"
 end_sandbox
 
 new_sandbox "AC2 open PR does not count"
 add_worktree alpha
 push_branch alpha
-pr_fixture alpha 11 OPEN "$(tip alpha)"
+pr_fixture "$(tip alpha)" 11 open null
 run --act >/dev/null
 assert_branch_kept alpha "an open PR is not a terminal state, so the branch stays"
 end_sandbox
@@ -249,13 +261,15 @@ received="$(tip alpha)"
 echo more > "$MAIN/.claude/worktrees/alpha/extra.txt"
 git -C "$MAIN/.claude/worktrees/alpha" add -A
 git -C "$MAIN/.claude/worktrees/alpha" commit -qm "committed but never pushed"
-# The PR merged at the earlier tip. Locally this is the identical refusal a
-# squash-merge produces; the two are separated only by headRefOid.
-pr_fixture alpha 11 MERGED "$received"
+# GitHub received the earlier tip, not this one — the fixture is keyed on
+# $received, so a lookup by the current (moved-on) tip finds nothing. Locally
+# this is the identical refusal a squash-merge produces; the two are now
+# separated by asking about the exact commit at HEAD, not by comparing oids.
+pr_fixture "$received" 11 closed '"2024-01-01T00:00:00Z"'
 out="$(run --act)"
 assert_branch_kept alpha "commits GitHub never received are not destroyed"
 assert_has "$out" "branch-kept	alpha" "the kept branch is reported so it cannot accumulate unseen"
-assert_has "$out" "$received" "the report names the tip GitHub actually has"
+assert_lacks "$out" "ahead of" "the reason never claims an ahead/behind relationship the run did not test"
 end_sandbox
 
 new_sandbox "AC3 unpushed commits with no PR at all"
@@ -306,7 +320,7 @@ end_sandbox
 new_sandbox "AC5 uncommitted work is never eaten"
 add_worktree alpha
 push_branch alpha
-pr_fixture alpha 11 MERGED "$(tip alpha)"
+pr_fixture "$(tip alpha)" 11 closed '"2024-01-01T00:00:00Z"'
 echo "half-finished" >> "$MAIN/.claude/worktrees/alpha/file.txt"
 echo "scratch" > "$MAIN/.claude/worktrees/alpha/notes.md"
 out="$(run --act)"
@@ -319,7 +333,7 @@ end_sandbox
 new_sandbox "AC5 a locked worktree is busy"
 add_worktree alpha
 push_branch alpha
-pr_fixture alpha 11 MERGED "$(tip alpha)"
+pr_fixture "$(tip alpha)" 11 closed '"2024-01-01T00:00:00Z"'
 git -C "$MAIN" worktree lock --reason "running the app" "$MAIN/.claude/worktrees/alpha"
 out="$(run --act)"
 assert_present_path "$MAIN/.claude/worktrees/alpha" "a locked worktree is left alone"
@@ -332,8 +346,10 @@ end_sandbox
 # ========================================================================
 
 new_sandbox "AC6 unattended reports everything"
-add_worktree alpha; push_branch alpha; pr_fixture alpha 11 MERGED "$(tip alpha)"
-add_worktree beta;  push_branch beta;  pr_fixture beta 12 OPEN "$(tip beta)"
+add_worktree alpha; push_branch alpha
+pr_fixture "$(tip alpha)" 11 closed '"2024-01-01T00:00:00Z"'
+add_worktree beta;  push_branch beta
+pr_fixture "$(tip beta)" 12 open null
 add_worktree gamma
 echo dirty > "$MAIN/.claude/worktrees/gamma/dirty.txt"
 # stdin is closed by `run`, so a prompt would fail rather than hang.
@@ -348,7 +364,7 @@ end_sandbox
 new_sandbox "AC6 orphan husks are swept"
 add_worktree alpha
 push_branch alpha
-pr_fixture alpha 11 MERGED "$(tip alpha)"
+pr_fixture "$(tip alpha)" 11 closed '"2024-01-01T00:00:00Z"'
 # A husk from a previous run: a directory git no longer names.
 mkdir -p "$MAIN/.claude/worktrees/999-orphan/tmp"
 echo junk > "$MAIN/.claude/worktrees/999-orphan/tmp/x"
@@ -360,7 +376,7 @@ end_sandbox
 new_sandbox "AC6 without a declared root, no directory is ever listed"
 add_worktree alpha
 push_branch alpha
-pr_fixture alpha 11 MERGED "$(tip alpha)"
+pr_fixture "$(tip alpha)" 11 closed '"2024-01-01T00:00:00Z"'
 mkdir -p "$MAIN/.claude/worktrees/someone-elses-repo"
 echo precious > "$MAIN/.claude/worktrees/someone-elses-repo/data"
 out="$("$SCRIPT" --repo "$MAIN" --act </dev/null 2>&1)"
@@ -377,7 +393,7 @@ end_sandbox
 new_sandbox "AC7 the project's remove command is used"
 add_worktree alpha
 push_branch alpha
-pr_fixture alpha 11 MERGED "$(tip alpha)"
+pr_fixture "$(tip alpha)" 11 closed '"2024-01-01T00:00:00Z"'
 cat > "$SANDBOX/bin/project-remove" <<GH
 #!/usr/bin/env bash
 echo "\$@" > "$SANDBOX/remove-was-called"
@@ -399,7 +415,7 @@ end_sandbox
 new_sandbox "the accounting seam other callers use"
 add_worktree alpha
 received="$(tip alpha)"
-pr_fixture alpha 11 MERGED "$received"
+pr_fixture "$received" 11 closed '"2024-01-01T00:00:00Z"'
 if "$SCRIPT" --repo "$MAIN" --account alpha >/dev/null 2>&1
 then ok "--account exits 0 when GitHub has the tip"
 else bad "--account exits 0 when GitHub has the tip"; fi
