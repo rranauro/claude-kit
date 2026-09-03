@@ -62,8 +62,7 @@ cd "$REPO"
 
 CLAUDE_BIN="$(command -v claude || true)"
 [ -n "$CLAUDE_BIN" ] || CLAUDE_BIN="$HOME/.local/bin/claude"
-[ -x "$CLAUDE_BIN" ] || command -v "$CLAUDE_BIN" >/dev/null 2>&1 || {
-  echo "ship-startable: claude CLI not found" >&2; exit 2; }
+[ -x "$CLAUDE_BIN" ] || { echo "ship-startable: claude CLI not found" >&2; exit 2; }
 command -v gh >/dev/null 2>&1 || { echo "ship-startable: gh CLI not found" >&2; exit 2; }
 
 # --- settings: kit's grant, plus a project's own test/lint commands --------
@@ -150,10 +149,52 @@ trap on_exit EXIT INT TERM
 
 # --- helpers ---------------------------------------------------------------
 
-# Prints "<pr-number> <state>" for the newest PR whose branch starts with
-# "<issue>-", or nothing. Branch-prefix match, never ship-ticket's own report
+# Invokes claude -p with the merged settings, timing and logging the call.
+# Sets TIMED_OUT and TIMED_ELAPSED; what counts as too-fast-to-be-real differs
+# per caller (list_lowest_startable tolerates an empty result if it took real
+# time, ship_one never should), so the floor check stays with the caller.
+run_claude_timed() { # prompt
+  local start end
+  start=$(date +%s)
+  TIMED_OUT="$("$CLAUDE_BIN" -p "$1" --model "$MODEL" --settings "$SETTINGS_FILE" 2>>"$LOG" </dev/null)"
+  end=$(date +%s)
+  TIMED_ELAPSED=$((end - start))
+  printf '%s\n' "$TIMED_OUT" >>"$LOG"
+}
+
+# Prints "<pr-number> <state>" for the PR belonging to issue <n>, or nothing.
+# Resolves the exact branch from `git worktree list --porcelain` first — the
+# convention kit:worktree-conventions documents and worktree-reclaim.sh's own
+# account_branch() relies on — so the common case is one targeted `gh pr list
+# --head` call rather than scanning every PR ever opened. Falls back to a
+# branch-prefix scan only when no live worktree matches (the worktree was
+# already reclaimed by the time this runs), never to ship-ticket's own report
 # text — the same "don't parse the prose" reasoning that motivated #99.
 pr_for_issue() {
+  local n="$1" branch pr_info
+  branch="$(git worktree list --porcelain 2>/dev/null | awk -v n="$n" '
+    /^branch refs\/heads\// {
+      b = $0; sub("^branch refs/heads/", "", b)
+      if (index(b, n "-") == 1) { print b; exit }
+    }')"
+
+  if [ -n "$branch" ]; then
+    pr_info="$(gh pr list --head "$branch" --state all --json number,state --limit 1 2>/dev/null |
+      python3 -c "
+import json, sys
+try:
+    prs = json.load(sys.stdin)
+except Exception:
+    sys.exit(0)
+if prs:
+    print(prs[0]['number'], prs[0]['state'])
+")"
+    if [ -n "$pr_info" ]; then
+      printf '%s\n' "$pr_info"
+      return
+    fi
+  fi
+
   gh pr list --state all --json number,headRefName,state --limit 200 2>/dev/null |
     python3 -c "
 import json, sys
@@ -166,33 +207,30 @@ for pr in prs:
     if pr.get('headRefName', '').startswith(prefix):
         print(pr['number'], pr['state'])
         break
-" "$1"
+" "$n"
 }
 
 # Sets LIST_RESULT (lowest startable issue number, or empty) and LIST_ANOMALY.
 list_lowest_startable() {
-  local out start end elapsed
-  start=$(date +%s)
-  out="$("$CLAUDE_BIN" -p "/kit:list ${LABEL}" --model "$MODEL" --settings "$SETTINGS_FILE" 2>>"$LOG" </dev/null)"
-  end=$(date +%s); elapsed=$((end - start))
-  printf '%s\n' "$out" >>"$LOG"
+  run_claude_timed "/kit:list ${LABEL}"
   LIST_ANOMALY=0
-  if [ "$elapsed" -lt "$MIN_SECONDS" ] && [ -z "$out" ]; then
+  if [ "$TIMED_ELAPSED" -lt "$MIN_SECONDS" ] && [ -z "$TIMED_OUT" ]; then
     LIST_ANOMALY=1
   fi
-  LIST_RESULT="$(printf '%s\n' "$out" | grep -oE '#[0-9]+' | head -1 | tr -d '#')"
+  LIST_RESULT="$(printf '%s\n' "$TIMED_OUT" | grep -oE '#[0-9]+' | head -1 | tr -d '#')"
 }
 
 # Runs one ticket to an open PR (or a park) in its own process. Sets
-# SHIP_OUTCOME to "shipped:<pr>:<state>", "parked", or "anomaly".
+# SHIP_OUTCOME to "shipped:<pr>:<state>:<hold-or-empty>", "parked", or
+# "anomaly". The hold flag matters as much as the PR number does — a PR
+# carrying kit-hold is one the CI gate skips entirely and a human has to
+# walk through, and reporting it the same as an ordinary shipped ticket would
+# bury exactly the PRs the operator most needs to notice.
 ship_one() {
-  local n="$1" out start end elapsed labels pr_info pr_num pr_state
-  start=$(date +%s)
-  out="$("$CLAUDE_BIN" -p "/kit:ship-ticket ${n} unattended" --model "$MODEL" --settings "$SETTINGS_FILE" 2>>"$LOG" </dev/null)"
-  end=$(date +%s); elapsed=$((end - start))
-  printf '%s\n' "$out" >>"$LOG"
+  local n="$1" labels pr_info pr_num pr_state pr_labels hold
 
-  if [ "$elapsed" -lt "$MIN_SECONDS" ]; then
+  run_claude_timed "/kit:ship-ticket ${n} unattended"
+  if [ "$TIMED_ELAPSED" -lt "$MIN_SECONDS" ]; then
     SHIP_OUTCOME="anomaly"
     return
   fi
@@ -208,7 +246,10 @@ ship_one() {
   pr_info="$(pr_for_issue "$n")"
   if [ -n "$pr_info" ]; then
     read -r pr_num pr_state <<<"$pr_info"
-    SHIP_OUTCOME="shipped:${pr_num}:${pr_state}"
+    pr_labels="$(gh pr view "$pr_num" --json labels -q '.labels[].name' 2>/dev/null)"
+    hold=""
+    printf '%s\n' "$pr_labels" | grep -qx kit-hold && hold="hold"
+    SHIP_OUTCOME="shipped:${pr_num}:${pr_state}:${hold}"
     return
   fi
 
@@ -227,12 +268,14 @@ while true; do
   fi
 
   if [ -z "$LIST_RESULT" ]; then
-    still_open=()
-    for pr in "${TRACKED_OPEN_PRS[@]+"${TRACKED_OPEN_PRS[@]}"}"; do
-      state="$(gh pr view "$pr" --json state -q .state 2>/dev/null)"
-      [ "$state" = "OPEN" ] && still_open+=("$pr")
-    done
-    TRACKED_OPEN_PRS=("${still_open[@]+"${still_open[@]}"}")
+    if [ "${#TRACKED_OPEN_PRS[@]}" -gt 0 ]; then
+      open_now="$(gh pr list --state open --json number -q '.[].number' --limit 200 2>/dev/null)"
+      still_open=()
+      for pr in "${TRACKED_OPEN_PRS[@]}"; do
+        printf '%s\n' "$open_now" | grep -qx "$pr" && still_open+=("$pr")
+      done
+      TRACKED_OPEN_PRS=("${still_open[@]+"${still_open[@]}"}")
+    fi
 
     if [ "${#TRACKED_OPEN_PRS[@]}" -eq 0 ]; then
       STOP_REASON="done: nothing startable under '${LABEL}' and nothing this run opened is still open"
@@ -248,10 +291,14 @@ while true; do
   ship_one "$LIST_RESULT"
   case "$SHIP_OUTCOME" in
     shipped:*)
-      IFS=: read -r _ pr_num pr_state <<<"$SHIP_OUTCOME"
-      SHIPPED+=("#${LIST_RESULT} -> PR #${pr_num} (${pr_state})")
+      IFS=: read -r _ pr_num pr_state hold_flag <<<"$SHIP_OUTCOME"
+      if [ "$hold_flag" = "hold" ]; then
+        SHIPPED+=("#${LIST_RESULT} -> PR #${pr_num} (${pr_state}, kit-hold — needs a walkthrough)")
+      else
+        SHIPPED+=("#${LIST_RESULT} -> PR #${pr_num} (${pr_state})")
+      fi
       [ "$pr_state" = "OPEN" ] && TRACKED_OPEN_PRS+=("$pr_num")
-      log "shipped #${LIST_RESULT} as PR #${pr_num}"
+      log "shipped #${LIST_RESULT} as PR #${pr_num}${hold_flag:+ [kit-hold]}"
       ;;
     parked)
       PARKED+=("$LIST_RESULT")
