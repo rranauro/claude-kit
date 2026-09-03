@@ -125,46 +125,64 @@ freeness() { # path
 
 # Why this asks GitHub rather than inferring from a `git branch -d` refusal:
 # docs/adr/0002. Every path that cannot get an answer reports unaccounted.
+#
+# Asks about the bare commit rather than the branch's PR: a squash-merge that
+# deletes its head branch reports a headRefOid that is neither the branch's
+# real tip nor present in the clone, so comparing it to the tip is a proxy the
+# workflow invalidates (#98). GitHub's own commit->PR index answers the ADR's
+# question directly and survives exactly that case, because it is keyed off
+# the commit rather than off what a ref currently reports.
 ACCOUNTED=""; ACC_REASON=""
 account_branch() { # branch
-  local branch="$1" tip json parsed num state oid
+  local branch="$1" tip json parsed num state
   if [ -z "$branch" ]; then
     ACCOUNTED="no"; ACC_REASON="detached HEAD, no branch to account for"; return
   fi
   tip="$(git rev-parse --verify -q "refs/heads/$branch")" || {
     ACCOUNTED="no"; ACC_REASON="no local branch $branch"; return; }
 
-  if ! json="$(gh pr list --head "$branch" --state all \
-                 --json number,state,headRefOid --limit 1 2>/dev/null)"; then
-    ACCOUNTED="no"
-    ACC_REASON="GitHub could not be asked, so tip $tip is unaccounted"
-    return
-  fi
+  # `gh api` writes its JSON body to stdout even on a non-2xx response, so a
+  # nonzero exit needs no separate check here: any failure worth telling apart
+  # from a genuine "no PR" already shows up as a body the parse below cannot
+  # turn into "none" — a "404"/"422" status is the one shape that means
+  # GitHub has never seen this commit; every other shape, including one `gh`
+  # never got an answer for at all (empty stdout), falls to "error" below.
+  json="$(gh api "repos/{owner}/{repo}/commits/$tip/pulls" 2>/dev/null)"
 
   # python3 rather than `gh --jq`, though gh embeds its own jq: keeping the
-  # parse on this side is what lets the test suite answer with a stub `gh` that
-  # only has to cat a fixture.
+  # parse on this side is what lets the test suite answer with a stub `gh`
+  # that only has to cat a fixture. A 404/422 error body (GitHub has never
+  # seen this commit) parses as "none", the same as an empty list — both mean
+  # no PR is associated with this exact commit.
   parsed="$(printf '%s' "$json" | python3 -c '
 import json, sys
 try:
     d = json.load(sys.stdin)
 except Exception:
     print("error"); raise SystemExit
+if isinstance(d, dict):
+    print("none" if str(d.get("status")) in ("404", "422") else "error")
+    raise SystemExit
 if not d:
-    print("none")
+    print("none"); raise SystemExit
+merged = [p for p in d if p.get("merged_at")]
+closed = [p for p in d if p.get("state") == "closed"]
+if merged:
+    print("MERGED", merged[0].get("number", 0))
+elif closed:
+    print("CLOSED", closed[0].get("number", 0))
 else:
-    p = d[0]
-    print(p.get("number", 0), p.get("state", ""), p.get("headRefOid", ""))
+    print("OPEN", d[0].get("number", 0))
 ' 2>/dev/null)"
 
   case "$parsed" in
     ""|error)
       ACCOUNTED="no"
-      ACC_REASON="GitHub's answer could not be read, so tip $tip is unaccounted"
+      ACC_REASON="GitHub could not be asked, so tip $tip is unaccounted"
       return ;;
     none)
-      # No PR ever. The remaining question is whether any remote ref contains
-      # the tip; nothing else can vouch for it.
+      # No PR is associated with this exact commit. The remaining question is
+      # whether any remote ref contains the tip; nothing else can vouch for it.
       if [ -z "$(git rev-list -1 "$tip" --not --remotes 2>/dev/null)" ]; then
         ACCOUNTED="yes"; ACC_REASON="no PR, tip $tip is on a remote ref"
       else
@@ -173,15 +191,10 @@ else:
       return ;;
   esac
 
-  read -r num state oid <<<"$parsed"
+  read -r state num <<<"$parsed"
   case "$state" in
     MERGED|CLOSED)
-      if [ "$oid" = "$tip" ]; then
-        ACCOUNTED="yes"; ACC_REASON="PR #$num $state received tip $tip"
-      else
-        ACCOUNTED="no"
-        ACC_REASON="PR #$num $state at $oid; local tip $tip is ahead of it"
-      fi ;;
+      ACCOUNTED="yes"; ACC_REASON="PR #$num $state, tip $tip received" ;;
     *)
       ACCOUNTED="no"; ACC_REASON="PR #$num is $state, not a terminal state" ;;
   esac
