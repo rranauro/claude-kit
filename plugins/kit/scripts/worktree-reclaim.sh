@@ -134,15 +134,20 @@ freeness() { # path
 # the commit rather than off what a ref currently reports.
 ACCOUNTED=""; ACC_REASON=""
 account_branch() { # branch
-  local branch="$1" tip json code parsed num state
+  local branch="$1" tip json parsed num state
   if [ -z "$branch" ]; then
     ACCOUNTED="no"; ACC_REASON="detached HEAD, no branch to account for"; return
   fi
   tip="$(git rev-parse --verify -q "refs/heads/$branch")" || {
     ACCOUNTED="no"; ACC_REASON="no local branch $branch"; return; }
 
+  # `gh api` writes its JSON body to stdout even on a non-2xx response, so a
+  # nonzero exit needs no separate check here: any failure worth telling apart
+  # from a genuine "no PR" already shows up as a body the parse below cannot
+  # turn into "none" — a "404"/"422" status is the one shape that means
+  # GitHub has never seen this commit; every other shape, including one `gh`
+  # never got an answer for at all (empty stdout), falls to "error" below.
   json="$(gh api "repos/{owner}/{repo}/commits/$tip/pulls" 2>/dev/null)"
-  code=$?
 
   # python3 rather than `gh --jq`, though gh embeds its own jq: keeping the
   # parse on this side is what lets the test suite answer with a stub `gh`
@@ -170,16 +175,10 @@ else:
     print("OPEN", d[0].get("number", 0))
 ' 2>/dev/null)"
 
-  if [ "$code" -ne 0 ] && [ "$parsed" != "none" ]; then
-    ACCOUNTED="no"
-    ACC_REASON="GitHub could not be asked, so tip $tip is unaccounted"
-    return
-  fi
-
   case "$parsed" in
     ""|error)
       ACCOUNTED="no"
-      ACC_REASON="GitHub's answer could not be read, so tip $tip is unaccounted"
+      ACC_REASON="GitHub could not be asked, so tip $tip is unaccounted"
       return ;;
     none)
       # No PR is associated with this exact commit. The remaining question is

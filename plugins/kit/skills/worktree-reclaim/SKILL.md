@@ -33,10 +33,10 @@ what it would lose is a checkout that comes back in one command, and treating it
 as a hold would defer every sweep behind a terminal somebody forgot to close.
 Lock the worktree if you need it kept.
 
-**A branch is deleted only where GitHub accounts for its tip** — a merged or
-closed PR whose `headRefOid` equals the local tip, or, for a branch that never
-had a PR, a tip present on a remote ref. Where the answer is no, including when
-GitHub could not be reached, the branch stays and is reported.
+**A branch is deleted only where GitHub accounts for its tip** — the local tip
+commit is itself associated with a merged or closed PR, or, for a branch that
+never had a PR, the tip is present on a remote ref. Where the answer is no,
+including when GitHub could not be reached, the branch stays and is reported.
 `docs/adr/0002-branch-deletion-is-gated-on-remote-accounting.md` carries the
 argument and the alternatives it beat; do not re-derive it here.
 
