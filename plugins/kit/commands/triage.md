@@ -43,29 +43,40 @@ this to get to the interesting part.
 ### Assign the kind
 
 A ticket **leaves this step carrying exactly one kind label** — the project's
-mapping owns the strings; the canonical four are `bug`, `improve-codebase`,
-`technical-debt`, and `user-experience`. Two kinds is two answers to one
-question, and nothing downstream picks a winner.
+mapping owns the strings; the canonical five are `bug`, `enhancement`,
+`improve-codebase`, `technical-debt`, and `user-experience`. Two kinds is two
+answers to one question, and nothing downstream picks a winner.
 
 That is a post-condition, not an instruction to apply one: act when a ticket
 carries no kind, or two.
 
 The kind is not a topic. It answers one question: **can this ticket's acceptance
-be asserted without a human eye?** A failing test that goes green, a shape count,
-behavior preserved across a refactor — those are yes, and they are the first
-three. A rendered view, an interaction, a thing someone has to look at — that is
-`user-experience`. Subject-matter labels (`cli`, `Security`, `enhancement`, …)
-carry no kind and stack freely alongside it.
+be asserted without a human eye?** A test that goes green — whether the behavior
+is being fixed or added — a shape count, behavior preserved across a refactor:
+those are yes, and they are the first four. A rendered view, an interaction, a
+thing someone has to look at — that is `user-experience`. Subject-matter labels
+(`cli`, `Security`, `performance`, …) carry no kind and stack freely alongside
+it.
 
 This is the switch the unattended design pass reads, which is why it is assigned
-here rather than inferred later: kinds 1-3 can be designed with nobody present,
+here rather than inferred later: kinds 1-4 can be designed with nobody present,
 because their acceptance criteria hold the result to something checkable.
 `user-experience` cannot, and parks for a human at the design pass.
 
-**Two of the four are one subject split by provenance, and that is deliberate.**
-Structural work the `kit:improve-codebase-architecture` scan surfaced is
-`improve-codebase`; structural work a human noticed is `technical-debt`. Where it
-came from is what fixes how acceptance is asserted — the scan states the
+**`bug` and `enhancement` are one assertion split by provenance, and that split
+costs nothing.** Both are accepted by a test written from the criteria going
+green, so the pair records only whether the behavior existed before, and no
+branch downstream reads it. There is deliberately no rule for choosing between
+them: a mislabelling is free, and a rule would imply a cost that does not exist.
+The line that carries weight is `user-experience`, reached for when a ticket's
+*design* needs a human present — on that basis whether the work is a fix or an
+addition.
+
+**`improve-codebase` and `technical-debt` are one subject split by provenance,
+and that is deliberate.** Structural work the
+`kit:improve-codebase-architecture` scan surfaced is `improve-codebase`;
+structural work a human noticed is `technical-debt`. Unlike the pair above, where
+it came from is what fixes how acceptance is asserted — the scan states the
 object-shape counts it found, so the change is held to those, while a
 human-surfaced one has only the standing claim that behavior is preserved. Both
 are AFK-eligible. Only the scan applies `improve-codebase`; triage never does.

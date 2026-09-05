@@ -17,6 +17,13 @@ _Avoid_: type, category, class
 **bug**:
 A kind whose acceptance is a failing test that goes green.
 
+**enhancement**:
+A kind whose acceptance form is `bug`'s — a test written from the acceptance
+criteria that goes green. The two differ only in whether the behavior existed
+before, which is provenance rather than assertion, so nothing downstream
+distinguishes them.
+_Avoid_: feature, new capability
+
 **improve-codebase**:
 A kind whose acceptance is the object-shape counts in
 `kit:rails-codebase-design`. Applied only by the
