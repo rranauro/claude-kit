@@ -69,6 +69,13 @@ label carrying only the fact. The comment is authoritative; the label is what
 lets a CI gate decide without a call per PR.
 _Avoid_: reviewed, triaged, done, addressed
 
+**walkthrough**:
+Someone exercising the finished thing in the running app and reporting what is
+wrong. The only way a set's *integrated* result is judged, since no slice's
+criteria reach it. Both a step in `/kit:walkthrough` and the ticket
+`kit:to-tickets` cuts to hold one.
+_Avoid_: smoke test, QA pass, manual test, demo
+
 **kit-hold**:
 The finished PR does not merge on its own — a person is in charge of it. Usually
 because it must be walked in the running app first; also because someone declined
