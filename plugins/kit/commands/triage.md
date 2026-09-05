@@ -268,9 +268,8 @@ becomes startable only through a re-triage nobody scheduled. Three shapes of
 - **An unsettled brief.** The design pass parks on it and says so. Any kind but
   `user-experience` means `/kit:ship-ticket unattended` designs the ticket rather
   than parking on a missing plan, and parks in-flight if the design itself cannot
-  be settled; a
-  `user-experience` kind parks for its kind. Either way the refusal is visible
-  and carries its reason, which withholding does not.
+  be settled; a `user-experience` kind parks for its kind. Either way the refusal
+  is visible and carries its reason, which withholding does not.
 - **An absent kind.** Also a park, for the same reason — acceptance nobody has
   characterised cannot be assumed assertable. Assign the kind in step 1; do not
   compensate for a missing one here.
