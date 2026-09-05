@@ -103,8 +103,9 @@ without a human eye?**
   ticket's plan. Say that the kind is why the plan could not be derived, and that
   designing it attended is what clears the park — after which every later firing
   carries it like any other kind.
-- **No kind at all** — park. Unclassified is not a default, and choosing one here
-  would be this skill granting itself the permission the label exists to give.
+- **No kind at all, or a kind not named above** — park. Unclassified is not a
+  default, and choosing one here would be this skill granting itself the
+  permission the label exists to give.
 
 The acceptance criteria are what make the first case safe, not the kind label by
 itself. `/kit:design`'s own preconditions require them, so a qualifying kind

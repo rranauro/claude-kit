@@ -51,26 +51,24 @@ That is a post-condition, not an instruction to apply one: act when a ticket
 carries no kind, or two.
 
 The kind is not a topic. It answers one question: **can this ticket's acceptance
-be asserted without a human eye?** A test that goes green — whether the behavior
-is being fixed or added — a shape count, behavior preserved across a refactor:
-those are yes, and they are the first four. A rendered view, an interaction, a
-thing someone has to look at — that is `user-experience`. Subject-matter labels
-(`cli`, `Security`, `performance`, …) carry no kind and stack freely alongside
-it.
+be asserted without a human eye?** A test that goes green, a shape count,
+behavior preserved across a refactor — those are yes. A rendered view, an
+interaction, a thing someone has to look at — that is `user-experience`.
+Subject-matter labels (`cli`, `Security`, `performance`, …) carry no kind and
+stack freely alongside it.
 
 This is the switch the unattended design pass reads, which is why it is assigned
-here rather than inferred later: kinds 1-4 can be designed with nobody present,
-because their acceptance criteria hold the result to something checkable.
-`user-experience` cannot, and parks for a human at the design pass.
+here rather than inferred later: every kind but `user-experience` can be designed
+with nobody present, because its acceptance criteria hold the result to
+something checkable. `user-experience` cannot, and parks for a human at the
+design pass.
 
-**`bug` and `enhancement` are one assertion split by provenance, and that split
-costs nothing.** Both are accepted by a test written from the criteria going
-green, so the pair records only whether the behavior existed before, and no
-branch downstream reads it. There is deliberately no rule for choosing between
-them: a mislabelling is free, and a rule would imply a cost that does not exist.
-The line that carries weight is `user-experience`, reached for when a ticket's
-*design* needs a human present — on that basis whether the work is a fix or an
-addition.
+**`bug` and `enhancement` differ only in provenance, and nothing downstream reads
+the difference.** So there is deliberately no rule for choosing between them: a
+mislabelling is free, and a rule would imply a cost that does not exist. What is
+not free is reaching for either when the ticket's *design* needs a human — an
+addition someone has to look at is `user-experience`, the same as a fix would
+be.
 
 **`improve-codebase` and `technical-debt` are one subject split by provenance,
 and that is deliberate.** Structural work the
@@ -267,9 +265,10 @@ becomes startable only through a re-triage nobody scheduled. Three shapes of
   `kit-blocked-by` marker is fully closed, so the edge already holds it back.
   Record the edge in the marker, then label it — and it starts itself the moment
   its blocker merges.
-- **An unsettled brief.** The design pass parks on it and says so. A kind in the
-  first three means `/kit:ship-ticket unattended` designs the ticket rather than parking on a
-  missing plan, and parks in-flight if the design itself cannot be settled; a
+- **An unsettled brief.** The design pass parks on it and says so. Any kind but
+  `user-experience` means `/kit:ship-ticket unattended` designs the ticket rather
+  than parking on a missing plan, and parks in-flight if the design itself cannot
+  be settled; a
   `user-experience` kind parks for its kind. Either way the refusal is visible
   and carries its reason, which withholding does not.
 - **An absent kind.** Also a park, for the same reason — acceptance nobody has

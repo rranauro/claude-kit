@@ -140,7 +140,7 @@ Use the `kit:writing-tickets` skill. State the problem and the desired outcome; 
 
 Carry across what only this session knows: the reproduction, the located cause if you found one, and the alternatives you considered. That context is expensive to recover and is the reason the ticket is worth filing rather than just remembering.
 
-Label it as the project does (bug vs. enhancement). Reference the cleanup epic so the trail survives, and note the new issue number back to the user.
+Give it a kind as the project spells them; a spin-off is nearly always `bug` or `enhancement`, and nothing downstream turns on which. Reference the cleanup epic so the trail survives, and note the new issue number back to the user.
 
 If the item needs its *how* settled before anyone can implement it, say so and offer `/kit:design` — but as a **separate** invocation for that item, not for the epic. If the *problem itself* is still open, that's `/kit:architect`, likewise separately.
 
