@@ -87,6 +87,30 @@ ancestor_is_symlink() { # worktree relpath
   return 1
 }
 
+# A lock a ship pass took is a lease rather than a permanent hold: the pass
+# that took it cannot release it if it is killed, and a worktree no sweep can
+# ever reclaim is a worse outcome than the race the lock exists to prevent. Only
+# the kit's own reason format expires — a hand-written lock is somebody saying
+# they are in there, and nothing here knows when they will be done.
+KIT_LEASE_HOURS="${KIT_LEASE_HOURS:-12}"
+
+lease_expired() { # reason -> 0 when it is a kit lease past its window
+  case "$1" in "kit:ship "*" since "*) ;; *) return 1 ;; esac
+  # python3 rather than `date`: the -d and -j -f spellings are GNU's and BSD's
+  # respectively, and this runs on both.
+  python3 - "$1" "$KIT_LEASE_HOURS" 2>/dev/null <<'LEASE'
+import datetime, sys
+stamp = sys.argv[1].rsplit(" since ", 1)[1].strip()
+try:
+    taken = datetime.datetime.strptime(stamp, "%Y-%m-%dT%H:%M:%SZ")
+except ValueError:
+    raise SystemExit(1)  # undatable: hold, rather than reclaim on a guess
+taken = taken.replace(tzinfo=datetime.timezone.utc)
+age = (datetime.datetime.now(datetime.timezone.utc) - taken).total_seconds()
+raise SystemExit(0 if age > float(sys.argv[2]) * 3600 else 1)
+LEASE
+}
+
 FREE=""; FREE_REASON=""
 freeness() { # path
   local wt="$1" entry code p admin reason
@@ -99,7 +123,12 @@ freeness() { # path
   admin="$(git -C "$wt" rev-parse --absolute-git-dir 2>/dev/null)"
   if [ -n "$admin" ] && [ -f "$admin/locked" ]; then
     reason="$(tr -d '\n' < "$admin/locked" 2>/dev/null)"
-    FREE="no"; FREE_REASON="locked${reason:+: $reason}"; return
+    if lease_expired "$reason"; then
+      FREE="yes"; FREE_REASON="lease expired: $reason"
+    else
+      FREE="no"; FREE_REASON="locked${reason:+: $reason}"
+    fi
+    return
   fi
   while IFS= read -r -d '' entry; do
     code="${entry:0:2}"
@@ -222,6 +251,9 @@ sweep_dir() { # path
 
 reclaim_path() { # path branch -> 0 when the path is gone
   local path="$1" branch="$2"
+  # Only an expired lease reaches here still locked — a held worktree never gets
+  # this far — and `git worktree remove` refuses a lock however stale it is.
+  git worktree unlock "$path" >/dev/null 2>&1
   if [ -n "$remove_cmd" ]; then
     # The project's own teardown replaces `git worktree remove` rather than
     # preceding it; kit:worktree-conventions Step 3 says why.

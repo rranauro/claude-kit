@@ -236,6 +236,11 @@ CI gate sets it once the review round is closed.
 
 ## Phase 5 · `hand-off` — Leave the PR to CI
 
+**Release the lease first:** `git worktree unlock <worktree>`. `prepare` took it
+so a concurrent sweep would leave this worktree alone while the pass was writing
+in it; the pass is over, so the worktree is an ordinary sweep candidate again and
+the next `/kit:ship-ticket` reclaims it once the PR merges.
+
 This skill ends at an open PR with auto-merge off, and that is the whole handoff:
 nothing local picks it up, and there is nothing for the user to start.
 
@@ -263,6 +268,11 @@ of the next `/kit:ship-ticket` takes it once the PR has merged.
 - **A phase fails** — the spec will not go green, a gate will not pass, the push
   is rejected. Stop at that phase and surface the state attended, park
   unattended. Never skip ahead.
+- **However the pass ends, release the lease** — `git worktree unlock
+  <worktree>` — including on a park. `kit:park` leaves the worktree and its
+  commits in place, and the commits are what survive a later reclaim; holding the
+  directory as well would leave a worktree no sweep can ever take. A resumed pass
+  takes the lease again in `prepare`.
 - **The session is interrupted mid-phase.** The commits and the worktree leave
   the workspace recoverable. Resume by re-invoking the phase's own skill —
   `/kit:new-pull-request` picks up at `open-pr`.
