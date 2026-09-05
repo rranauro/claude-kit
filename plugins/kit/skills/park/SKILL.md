@@ -82,6 +82,7 @@ hides among the others. Split them by the act that clears each:
   ticket changes; something outside it has to.
 - **Waiting on a label** — an absent kind, a missing marker. Seconds of work, and
   it should not be reported next to a decision that needs an afternoon.
-- **Waiting on you specifically** — a `user-experience` ticket parked for its
-  kind. It will park again on every firing until a human designs or judges it,
-  and the report should say so rather than reading as a fixable gap.
+- **Waiting on you specifically** — a `user-experience` ticket with no plan,
+  parked because no unattended pass may derive one for that kind. It parks again
+  on every firing until a human designs it, so name that act: designed attended,
+  the ticket ships unattended thereafter like any other kind.

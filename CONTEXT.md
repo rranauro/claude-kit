@@ -29,8 +29,9 @@ subject as `improve-codebase`, surfaced by a human rather than the scan.
 _Avoid_: refactor, chore
 
 **user-experience**:
-A kind whose acceptance is someone looking at the result. The only kind that
-cannot be designed or judged unattended.
+A kind whose acceptance is someone looking at the result. The only kind whose
+plan an unattended pass may not derive.
+_Avoid_: reading it as a kind that cannot be *run* unattended
 
 **ready-for-agent** / **ready-for-human**:
 Who writes the code. A routing term and nothing else — neither says the brief is
