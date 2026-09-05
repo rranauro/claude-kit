@@ -341,6 +341,70 @@ assert_has "$out" "held	" "the skip is reported"
 end_sandbox
 
 # ========================================================================
+# AC8 · A ship pass owns the worktree it is working in, and that ownership
+#       expires so a killed pass leaves nothing permanently unreclaimable.
+# ========================================================================
+
+# The lock a ship pass takes, aged by hand. Hours back from now, in the reason
+# format `kit:start-ticket` writes.
+ship_lock() { # branch hours-ago
+  local since
+  since="$(python3 -c '
+import datetime, sys
+t = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=float(sys.argv[1]))
+print(t.strftime("%Y-%m-%dT%H:%M:%SZ"))' "$2")"
+  git -C "$MAIN" worktree lock \
+    --reason "kit:ship #119 since $since" "$MAIN/.claude/worktrees/$1"
+}
+
+new_sandbox "AC8 a pass in flight keeps its worktree"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 closed '"2024-01-01T00:00:00Z"'
+ship_lock alpha 0
+out="$(run --act)"
+assert_present_path "$MAIN/.claude/worktrees/alpha" \
+  "a worktree a live pass owns survives a concurrent sweep"
+assert_branch_kept alpha "and so does its branch"
+assert_has "$out" "held	" "the skip is reported"
+assert_has "$out" "kit:ship #119" "with the owner named in the reason"
+end_sandbox
+
+new_sandbox "AC8 a killed pass does not hold its worktree forever"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 closed '"2024-01-01T00:00:00Z"'
+ship_lock alpha 13
+out="$(run --act)"
+assert_missing_path "$MAIN/.claude/worktrees/alpha" \
+  "an expired lease makes the worktree an ordinary candidate again"
+assert_has "$out" "lease expired" "and the report says why it was taken"
+end_sandbox
+
+new_sandbox "AC8 only the kit's own lock expires"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 closed '"2024-01-01T00:00:00Z"'
+git -C "$MAIN" worktree lock --reason "running the app" \
+  "$MAIN/.claude/worktrees/alpha"
+# Age the lock well past the lease window; a hand-written reason has no window.
+out="$(run --act)"
+assert_present_path "$MAIN/.claude/worktrees/alpha" \
+  "a hand-written lock is held however old it is"
+end_sandbox
+
+new_sandbox "AC8 an unreadable timestamp holds rather than reclaims"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 closed '"2024-01-01T00:00:00Z"'
+git -C "$MAIN" worktree lock --reason "kit:ship #119 since yesterday" \
+  "$MAIN/.claude/worktrees/alpha"
+out="$(run --act)"
+assert_present_path "$MAIN/.claude/worktrees/alpha" \
+  "a lease nothing can date is not treated as expired"
+end_sandbox
+
+# ========================================================================
 # AC6 · Running unattended asks nothing and still reports every removal and
 #       every skip.
 # ========================================================================
