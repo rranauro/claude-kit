@@ -87,16 +87,21 @@ or this phase derived it because the ticket's kind says its acceptance can be
 asserted without a human eye. Neither form is manufactured here. Where neither is
 available, park.
 
+**Only a ticket with no resolvable plan reaches this question.** The kind gates
+where the plan comes from, never whether the ticket runs. A `user-experience`
+ticket whose plan a human already settled is carried to a PR like any other kind:
+the eye the kind exists to protect was present when it mattered.
+
 The question is the ticket's kind: **can this ticket's acceptance be asserted
 without a human eye?**
 
 - **`bug`, `improve-codebase`, `technical-debt`** — invoke `/kit:design <number>
   unattended` and continue with the plan it stores. That mode owns what changes
   when nobody is watching; do not reproduce its rules here.
-- **`user-experience`** — park, and say the kind is why. The plan is not what is
-  missing: no unattended pass can stand in for someone looking at the result, so
-  this ticket parks again on every firing, and the report should say so rather
-  than reading as a fixable gap.
+- **`user-experience`** — park, because no unattended pass may derive this
+  ticket's plan. Say that the kind is why the plan could not be derived, and that
+  designing it attended is what clears the park — after which every later firing
+  carries it like any other kind.
 - **No kind at all** — park. Unclassified is not a default, and choosing one here
   would be this skill granting itself the permission the label exists to give.
 
