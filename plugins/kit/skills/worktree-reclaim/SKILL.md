@@ -33,13 +33,12 @@ what it would lose is a checkout that comes back in one command, and treating it
 as a hold would defer every sweep behind a terminal somebody forgot to close.
 Lock the worktree if you need it kept.
 
-**A ship pass locks the worktree it is working in**, because between commits that
-worktree is clean by construction and a concurrent sweep would otherwise take it
-mid-implementation. It writes its reason as `kit:ship #<issue> since <timestamp>`,
-which the script reads as a **lease**: past twelve hours it expires and the
-worktree is free again, since a pass that was killed cannot release its own hold.
-Only that wording expires. A lock somebody wrote by hand holds indefinitely, and
-so does a `kit:ship` lease whose timestamp cannot be read.
+**A ship pass locks the worktree it is working in**, with the reason
+`kit:ship #<issue> since <timestamp>`. The script reads that wording as a
+**lease** and expires it, so a pass that was killed and cannot unlock stops
+holding the worktree — `docs/worktrees.md` says why, and the script's own
+`KIT_LEASE_HOURS` is the window. Every other lock holds until somebody unlocks
+it.
 
 **A branch is deleted only where GitHub accounts for its tip** — the local tip
 commit is itself associated with a merged or closed PR, or, for a branch that

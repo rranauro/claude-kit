@@ -80,11 +80,10 @@ that owns it — which has already resolved paths and is writing against them.
 A lock is how `kit:worktree-reclaim` already hears that somebody is in there, so
 it holds the worktree instead.
 
-The stamp is what makes it a **lease** rather than a hold nobody can release:
-`worktree-reclaim.sh` expires a `kit:ship` reason after twelve hours, so a pass
-that is killed mid-flight stops owning the worktree on its own. Write the reason
-in exactly that shape — a lock in any other wording never expires, and one this
-suite cannot date is held rather than reclaimed.
+The stamp is what makes it a **lease** rather than a hold nobody can release —
+`docs/worktrees.md` carries the argument. Write the reason in exactly that shape:
+a lock in any other wording never expires, and neither does one this suite cannot
+date.
 
 **Releasing it belongs to whoever took the ticket further.** `kit:ticket-loop`
 does it when the pass ends. A worktree this command wired for someone working by
