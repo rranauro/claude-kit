@@ -71,12 +71,13 @@ Three preconditions. Any one missing, park without designing — say which:
 
 1. **An issue.** A local plan file has no comment to store, no label to read, and
    nothing to park against.
-2. **A kind saying acceptance is machine-assertable** — `bug`,
+2. **A kind saying acceptance is machine-assertable** — `bug`, `enhancement`,
    `improve-codebase`, `technical-debt` in the canonical vocabulary. A
    `user-experience` ticket parks: its acceptance is someone looking at the
    result, and no unattended pass can stand in for that. **An absent kind parks
-   too** — unclassified is not a default, and inferring one here would be this
-   command granting itself the permission the label exists to give.
+   too, and so does one this list does not name** — unclassified is not a
+   default, and inferring one here would be this command granting itself the
+   permission the label exists to give.
 3. **Acceptance criteria in the body, and what is out of scope.** This is the
    load-bearing one. Attended, the user is what holds the design honest; here it
    is the criteria, and a design with nothing to be wrong against is not safer

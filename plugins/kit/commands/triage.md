@@ -43,29 +43,38 @@ this to get to the interesting part.
 ### Assign the kind
 
 A ticket **leaves this step carrying exactly one kind label** — the project's
-mapping owns the strings; the canonical four are `bug`, `improve-codebase`,
-`technical-debt`, and `user-experience`. Two kinds is two answers to one
-question, and nothing downstream picks a winner.
+mapping owns the strings; the canonical five are `bug`, `enhancement`,
+`improve-codebase`, `technical-debt`, and `user-experience`. Two kinds is two
+answers to one question, and nothing downstream picks a winner.
 
 That is a post-condition, not an instruction to apply one: act when a ticket
 carries no kind, or two.
 
 The kind is not a topic. It answers one question: **can this ticket's acceptance
-be asserted without a human eye?** A failing test that goes green, a shape count,
-behavior preserved across a refactor — those are yes, and they are the first
-three. A rendered view, an interaction, a thing someone has to look at — that is
-`user-experience`. Subject-matter labels (`cli`, `Security`, `enhancement`, …)
-carry no kind and stack freely alongside it.
+be asserted without a human eye?** A test that goes green, a shape count,
+behavior preserved across a refactor — those are yes. A rendered view, an
+interaction, a thing someone has to look at — that is `user-experience`.
+Subject-matter labels (`cli`, `Security`, `performance`, …) carry no kind and
+stack freely alongside it.
 
 This is the switch the unattended design pass reads, which is why it is assigned
-here rather than inferred later: kinds 1-3 can be designed with nobody present,
-because their acceptance criteria hold the result to something checkable.
-`user-experience` cannot, and parks for a human at the design pass.
+here rather than inferred later: every kind but `user-experience` can be designed
+with nobody present, because its acceptance criteria hold the result to
+something checkable. `user-experience` cannot, and parks for a human at the
+design pass.
 
-**Two of the four are one subject split by provenance, and that is deliberate.**
-Structural work the `kit:improve-codebase-architecture` scan surfaced is
-`improve-codebase`; structural work a human noticed is `technical-debt`. Where it
-came from is what fixes how acceptance is asserted — the scan states the
+**`bug` and `enhancement` differ only in provenance, and nothing downstream reads
+the difference.** So there is deliberately no rule for choosing between them: a
+mislabelling is free, and a rule would imply a cost that does not exist. What is
+not free is reaching for either when the ticket's *design* needs a human — an
+addition someone has to look at is `user-experience`, the same as a fix would
+be.
+
+**`improve-codebase` and `technical-debt` are one subject split by provenance,
+and that is deliberate.** Structural work the
+`kit:improve-codebase-architecture` scan surfaced is `improve-codebase`;
+structural work a human noticed is `technical-debt`. Unlike the pair above, where
+it came from is what fixes how acceptance is asserted — the scan states the
 object-shape counts it found, so the change is held to those, while a
 human-surfaced one has only the standing claim that behavior is preserved. Both
 are AFK-eligible. Only the scan applies `improve-codebase`; triage never does.
@@ -256,11 +265,11 @@ becomes startable only through a re-triage nobody scheduled. Three shapes of
   `kit-blocked-by` marker is fully closed, so the edge already holds it back.
   Record the edge in the marker, then label it — and it starts itself the moment
   its blocker merges.
-- **An unsettled brief.** The design pass parks on it and says so. A kind in the
-  first three means `/kit:ship-ticket unattended` designs the ticket rather than parking on a
-  missing plan, and parks in-flight if the design itself cannot be settled; a
-  `user-experience` kind parks for its kind. Either way the refusal is visible
-  and carries its reason, which withholding does not.
+- **An unsettled brief.** The design pass parks on it and says so. Any kind but
+  `user-experience` means `/kit:ship-ticket unattended` designs the ticket rather
+  than parking on a missing plan, and parks in-flight if the design itself cannot
+  be settled; a `user-experience` kind parks for its kind. Either way the refusal
+  is visible and carries its reason, which withholding does not.
 - **An absent kind.** Also a park, for the same reason — acceptance nobody has
   characterised cannot be assumed assertable. Assign the kind in step 1; do not
   compensate for a missing one here.

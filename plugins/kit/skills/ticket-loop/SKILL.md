@@ -95,15 +95,17 @@ the eye the kind exists to protect was present when it mattered.
 The question is the ticket's kind: **can this ticket's acceptance be asserted
 without a human eye?**
 
-- **`bug`, `improve-codebase`, `technical-debt`** — invoke `/kit:design <number>
-  unattended` and continue with the plan it stores. That mode owns what changes
-  when nobody is watching; do not reproduce its rules here.
+- **`bug`, `enhancement`, `improve-codebase`, `technical-debt`** — invoke
+  `/kit:design <number> unattended` and continue with the plan it stores. That
+  mode owns what changes when nobody is watching; do not reproduce its rules
+  here.
 - **`user-experience`** — park, because no unattended pass may derive this
   ticket's plan. Say that the kind is why the plan could not be derived, and that
   designing it attended is what clears the park — after which every later firing
   carries it like any other kind.
-- **No kind at all** — park. Unclassified is not a default, and choosing one here
-  would be this skill granting itself the permission the label exists to give.
+- **No kind at all, or a kind not named above** — park. Unclassified is not a
+  default, and choosing one here would be this skill granting itself the
+  permission the label exists to give.
 
 The acceptance criteria are what make the first case safe, not the kind label by
 itself. `/kit:design`'s own preconditions require them, so a qualifying kind
