@@ -26,6 +26,23 @@ or drops a registered subdomain is doing something no generic
 `git worktree remove` can reconstruct, and skipping it leaks that resource on
 every cleanup.
 
+## Ownership while a pass is working
+
+Passes run concurrently by design — `plugins/kit/scripts/ship-startable.sh` exists
+to do exactly that — and every one of them sweeps before it selects. A worktree
+another pass created moments ago holds no uncommitted work between commits, so
+freeness alone would hand it to the sweep while its owner is still writing in it.
+
+So a ship pass takes a **lease**: `kit:start-ticket` locks the worktree with the
+reason `kit:ship #<issue> since <timestamp>`, and `kit:ticket-loop` unlocks it
+when the pass ends, whether that is an open PR or a park. Reclaim already holds a
+locked worktree, so nothing coordinates and no operator has to serialise anything.
+
+The timestamp is what keeps a killed pass from owning a worktree forever:
+`worktree-reclaim.sh` treats a `kit:ship` lease older than twelve hours as
+expired. That window is scoped to the kit's own wording — a lock you write by
+hand still holds until you unlock it.
+
 ## What this means for garbage collection
 
 Declaring the layout also narrows what a reclaim pass will sweep — whether it was

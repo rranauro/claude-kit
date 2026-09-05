@@ -32,8 +32,8 @@ If there are uncommitted changes, STOP and warn the user. Suggest they commit or
 > "A worktree for this ticket already exists: `42-add-user-avatar`. Resume it, or replace it with a fresh one?"
 
 **Invariant: one worktree per issue.** Never create a second, suffix-differentiated sibling for the same issue number (e.g. `935-...-scope` alongside `935-...-fields`). Two live worktrees for one issue is a trap — the dev server can be booted in the stale one, hiding the real changes and reading as "my changes aren't showing." Enforce exactly one of:
-- **Resume (default):** Skip `fetch-issue` through `wire-worktree`. Set `<branch-name>` to the existing branch and `<worktree>` to the path git reported, then jump to `worktree-paths` — use that path for all subsequent reads/edits. Do NOT re-run `wire-worktree` (the worktree is already provisioned).
-- **Replace:** Only if the existing worktree is being abandoned/re-scoped. First confirm it's not checked out elsewhere and has no unmerged work worth keeping (an open PR on its branch means keep it — Resume instead). Then remove the old worktree by running `/kit:worktree-gc <branch>` **before** creating the new one. The new branch reuses the `<issue-number>-` prefix and may keep the same name — there is no sibling to collide with once the old one is gone.
+- **Resume (default):** Skip `fetch-issue` through `wire-worktree`. Set `<branch-name>` to the existing branch and `<worktree>` to the path git reported, then jump to `worktree-paths` — use that path for all subsequent reads/edits. Do NOT re-run `wire-worktree` (the worktree is already provisioned). Take the lease on it as `create-worktree` describes: resuming is picking the worktree back up, and a stale lease from the pass that left it does not cover this one.
+- **Replace:** Only if the existing worktree is being abandoned/re-scoped. First confirm it's not checked out elsewhere and has no unmerged work worth keeping (an open PR on its branch means keep it — Resume instead). Then `git worktree unlock <path>` — a reclaim holds a leased worktree however stale the ticket is, so re-scoping wedges against the previous pass's lease — and remove the old worktree by running `/kit:worktree-gc <branch>` **before** creating the new one. The new branch reuses the `<issue-number>-` prefix and may keep the same name — there is no sibling to collide with once the old one is gone.
 
 **Step 3 · `fetch-issue` — Fetch the issue:**
 - Run `gh issue view <number>` to read the full issue (title, body, labels, assignees)
@@ -67,6 +67,28 @@ skipped entirely. Don't decide that here; the skill does.
 - **Otherwise:** `git worktree add .claude/worktrees/<branch-name> -b <branch-name> origin/main`, under this repo — never as a sibling of the main checkout.
 
 Either way, hold the resulting absolute path as `<worktree>`. Everything downstream uses it.
+
+**Then take the lease on it:**
+
+```
+git worktree lock --reason "kit:ship #<issue-number> since $(date -u +%Y-%m-%dT%H:%M:%SZ)" <worktree>
+```
+
+A worktree between commits is clean by construction, so another pass sweeping
+concurrently sees no work to lose and reclaims this one out from under the pass
+that owns it — which has already resolved paths and is writing against them.
+A lock is how `kit:worktree-reclaim` already hears that somebody is in there, so
+it holds the worktree instead.
+
+The stamp is what makes it a **lease** rather than a hold nobody can release:
+`worktree-reclaim.sh` expires a `kit:ship` reason after twelve hours, so a pass
+that is killed mid-flight stops owning the worktree on its own. Write the reason
+in exactly that shape — a lock in any other wording never expires, and one this
+suite cannot date is held rather than reclaimed.
+
+**Releasing it belongs to whoever took the ticket further.** `kit:ticket-loop`
+does it when the pass ends. A worktree this command wired for someone working by
+hand stays leased until they `git worktree unlock` it or the lease runs out.
 
 **Step 8 · `wire-worktree` — Wire up the worktree:**
 

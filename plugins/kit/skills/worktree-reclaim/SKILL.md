@@ -33,6 +33,14 @@ what it would lose is a checkout that comes back in one command, and treating it
 as a hold would defer every sweep behind a terminal somebody forgot to close.
 Lock the worktree if you need it kept.
 
+**A ship pass locks the worktree it is working in**, because between commits that
+worktree is clean by construction and a concurrent sweep would otherwise take it
+mid-implementation. It writes its reason as `kit:ship #<issue> since <timestamp>`,
+which the script reads as a **lease**: past twelve hours it expires and the
+worktree is free again, since a pass that was killed cannot release its own hold.
+Only that wording expires. A lock somebody wrote by hand holds indefinitely, and
+so does a `kit:ship` lease whose timestamp cannot be read.
+
 **A branch is deleted only where GitHub accounts for its tip** — the local tip
 commit is itself associated with a merged or closed PR, or, for a branch that
 never had a PR, the tip is present on a remote ref. Where the answer is no,
@@ -99,7 +107,8 @@ Say what happened, from the records rather than from what you expected:
 - `branch-kept` — **name every one, with its reason.** A branch holding commits
   GitHub never received is the outcome this whole design exists to produce, and
   it is worthless if nobody is told. These accumulate silently otherwise.
-- `held` — with the reason.
+- `held` — with the reason. A `kit:ship` lease here is a pass still working;
+  leave it and say which ticket owns it.
 - `orphan` — husks git had stopped tracking.
 
 If no `--worktree-root` was passed, say that husks were not swept and why, so

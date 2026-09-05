@@ -84,11 +84,17 @@ before pushing.
 ## A crashed ticket needs no cleanup of its own
 
 If a per-ticket call dies partway — the process is killed, the machine sleeps
-— whatever worktree it left behind is exactly what the *next*
+— whatever worktree it left behind is exactly what a later
 `/kit:ship-ticket` call's own Step 0 reclaim sweep picks up, because that
 sweep runs unconditionally at the start of every invocation. The runner
-doesn't track or clean up a dead worktree itself; the next ticket's own
+doesn't track or clean up a dead worktree itself; a later ticket's own
 startup does it for free.
+
+*Later*, not next: the dead pass still holds the lease it took on that worktree
+(`docs/worktrees.md`), and a sweep honours it until it expires. That is the price
+of the lease being what stops a live pass losing its checkout — the two cases
+look identical from outside, and the run that keeps working is the one worth
+protecting. Nothing is lost meanwhile; the worktree is left exactly as it was.
 
 ## The safety valve is a hard cap, not a smarter startable check
 
