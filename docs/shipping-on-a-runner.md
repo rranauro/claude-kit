@@ -38,8 +38,8 @@ reading what the ship-ticket call printed.
 
 An epic where merges are automated has a ticket that's blocked when the list
 is read become startable minutes later, once its blocker's PR closes its review
-round, goes green, and merges. Exiting the first time nothing is startable stops in
-the middle of a dependency chain the run was about to drain. The runner tells
+round, goes green, and merges. Exiting the first time nothing is startable stops
+in the middle of a dependency chain the run was about to drain. The runner tells
 the two cases apart by what it's still waiting on: if any PR it opened this
 run is still open, it polls and tries again: if none are, the epic is
 actually done.

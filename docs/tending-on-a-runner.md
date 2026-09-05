@@ -37,8 +37,8 @@ at Step 7.5 — so a held PR does not sit unread until the person watching it
 opens it themselves. What the hold changes is Step 8: finding `kit-hold` on the
 PR, the pass reports the round as closed and stops there, and never calls
 `gh pr merge`. The gate has the same rule on its own later firings — a
-closed-round PR with auto-merge still off is the one place it would otherwise call
-`gh pr merge` itself, and `kit-hold` is what tells it not to. Never remove the
+closed-round PR with auto-merge still off is the one place it would otherwise
+call `gh pr merge` itself, and `kit-hold` is what tells it not to. Never remove the
 label; clearing it is a human's to do.
 
 ## The round is closed by a marker, not by the run that closed it
@@ -47,7 +47,7 @@ label; clearing it is a human's to do.
 `<!-- kit-escalated -->`) as a PR comment carrying its summary, and adds a
 `kit-review-closed` label alongside it.
 `workflow_run` fires again on every subsequent push, so a gate that does not look
-for the record first re-triages a round already answered — paying for a model to
+for the record first re-runs a round already answered — paying for a model to
 reach the same conclusion, and stacking a second summary comment on the PR saying
 so.
 

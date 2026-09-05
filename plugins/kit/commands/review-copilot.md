@@ -171,8 +171,8 @@ PR to look for a comment. On divergence the comment wins, and a missing label
 with a present comment fails toward waking a model, which is the safe direction.
 
 Create the label once per repo with `gh label create kit-review-closed`, or from
-the UI. A repo that has not is not broken: the comment still closes the round, and
-the gate over-approximates by waking a model that finds nothing to do.
+the UI. A repo that has not is not broken: the comment still closes the round,
+and the gate over-approximates by waking a model that finds nothing to do.
 
 **Re-running attended, edit the existing comment rather than posting a second.**
 Step 2.4 already told you it was there. Find it by its marker and edit by id:
@@ -237,8 +237,8 @@ Otherwise, ask the user before enabling:
 
   Declining is a decision, and until it is written down it survives only as long
   as this session. A CI gate enables auto-merge on any closed-round, green PR it
-  has not been told to leave alone, so an unrecorded decline is reversed by the next
-  firing and GitHub merges the PR you just held back. This is the same pattern
+  has not been told to leave alone, so an unrecorded decline is reversed by the
+  next firing and GitHub merges the PR you just held back. This is the same pattern
   `/kit:new-pull-request` uses — a human answered a prompt, and the command
   records the answer where the next reader will find it.
 
@@ -270,8 +270,8 @@ left here is the decision, which attended belongs to the person and unattended
 belongs to you. You are the only one holding the per-item reasoning, and
 re-deriving it costs another pass.
 
-**A held PR still gets its round closed — a hold only ever withholds the merge.** If the
-labels fetched at Step 1 carry `kit-hold`, run every step above as normal —
+**A held PR still gets its round closed — a hold only ever withholds the merge.**
+If the labels fetched at Step 1 carry `kit-hold`, run every step above as normal —
 Step 7.5 records the round the same as any other PR's — but skip the merge:
 report the round as closed and held, and stop. A hold names a PR a person is
 already in charge of merging; this pass does not call `gh pr merge` over that
