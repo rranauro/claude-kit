@@ -50,6 +50,18 @@ Techniques are the easy part. Everything between them is where the workflow live
   until the first review round is answered, and that pushing waits for you. The
   ordering is the content — it's what stops you skipping the uncomfortable step
   because the code looks fine.
+- **Detection, not prevention, for how a feature turns out.** A ticket's
+  acceptance criteria are asserted on that ticket. Nothing asserts how the
+  slices *compose* — whether the finished feature reads well — because that is
+  not knowable until they exist. The tempting answer is a gate: hold the slices
+  until someone looks. It costs the whole feature's unattended path to buy one
+  verification, and a gate needs a spec, which this class of finding has none of
+  until the feature exists. So `kit:to-tickets` cuts a walkthrough ticket instead
+  — blocked by every slice, routed to a human, its acceptance the walk itself. The
+  slices merge before anyone looks and a bad result is found afterward. That is
+  the trade, taken deliberately: the finding arrives late, and in exchange it
+  arrives at all, on a ticket that continues as a `/kit:polish-ticket` when the
+  walk turns something up.
 - **Handoff across a context boundary.** `/kit:design` stores a plan on the issue
   it belongs to, mirrored into a gitignored `plans/` cache that `kit:start-ticket`
   symlinks into every worktree, so the intended move is to converge, drop the

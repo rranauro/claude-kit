@@ -37,6 +37,8 @@ Break the work into **tracer bullet** tickets.
 
 Give each ticket its **blocking edges** — the other tickets that must complete before it can start. A ticket with no blockers can start immediately.
 
+A set whose *integrated* result needs a human eye gets one more ticket, cut here with the slices. (Local addition — see 3a.)
+
 **Wide refactors are the exception to vertical slicing.** A **wide refactor** is one mechanical change — rename a column, retype a shared symbol — whose **blast radius** fans across the whole codebase, so a single edit breaks thousands of call sites at once and no vertical slice can land green. Don't force it into a tracer bullet; sequence it as **expand–contract**. First expand: add the new form beside the old so nothing breaks. Then migrate the call sites over in batches sized by blast radius (per package, per directory), each batch its own ticket blocked by the expand, keeping CI green batch to batch because the old form still exists. Finally contract: delete the old form once no caller remains, in a ticket blocked by every migrate batch. When even the batches can't stay green alone, keep the sequence but let them share an integration branch that all block a final integrate-and-verify ticket — green is promised only there.
 
 ### 4. Quiz the user
@@ -67,6 +69,60 @@ Work the **frontier**: any ticket whose blockers are all done. For a purely line
 Do NOT close or modify any parent issue.
 
 <!-- FORK: everything below this marker is local. Keep it when porting upstream changes. -->
+
+### 3a. Cut the walkthrough ticket, when the set needs one
+
+A slice's acceptance criteria are asserted on the slice. What none of them can
+assert is how the **composed** feature behaves — whether the steps connect,
+whether it reads well, whether it is worth using — because that is not knowable
+until the slices exist. Gating on it is not available: a gate needs a spec, and
+this class of finding has none until the feature is built. The alternative left
+is to detect it afterward, which needs a ticket to land on. Without one, the only
+way to buy the look is to hold every slice — stopping the whole feature's
+unattended path for one verification at the end.
+
+So cut it here, with the slices, as the last ticket in the set.
+
+**Ask once per set: does the composed behaviour have acceptance only a person
+looking at it can assert?** Where every slice and their composition are
+machine-assertable, there is no walkthrough ticket. That is the common case and
+the default — do not cut one per set as a ritual, because an issue nobody needed
+is an issue somebody has to close.
+
+Where the answer is yes, draft it as a member of the set, so the steps that
+follow carry it like any other ticket:
+
+- **Blocked by every slice.** 5a gives it the `kit-blocked-by` marker naming all
+  of them, so its edges clear themselves as they merge — the same mechanism
+  every other ticket uses, and the reason it is drafted here rather than added
+  once the numbers exist.
+- **Routed to a human, and carrying the kind whose acceptance is a look** —
+  `ready-for-human` and `user-experience` in the canonical vocabulary. The
+  routing is what keeps unattended sweeps off it: `kit:startable-tickets`
+  queries the AFK-ready label, so this ticket is never a candidate. The kind is
+  what makes the second exit below work.
+- **Its acceptance is the walk itself**, not a list of outcomes — *walk the
+  integrated feature and record what is wrong*. The findings do not exist until
+  someone walks it, and criteria written here would be a guess at them.
+
+Apply both labels when you publish it. Unlike the slices, **5c does not triage
+it**: triage turns a specified ticket into a settled one by storing a plan, and
+there is no approach to settle before anyone has looked.
+
+**Write both of its exits into the body**, so whoever picks it up knows where it
+goes:
+
+- Nothing is wrong → close it.
+- The walk found things → paste them into the body as a checklist and flip the
+  routing label from `ready-for-human` to `ready-for-agent`. A body that is a
+  checklist of unrelated outcomes with no single deliverable is the shape
+  `/kit:polish-ticket` describes itself as taking, so the same issue continues
+  as a polish ticket. One issue, two states, no second command.
+
+**It will not show up in `/kit:list`.** That command reads
+`kit:startable-tickets`, which lists AFK-ready work only — the same filter that
+protects this ticket from the sweep hides it from that listing.
+`gh issue list --label ready-for-human` is how a person finds one waiting.
 
 ### 5a. Make the edges machine-readable
 
@@ -118,6 +174,9 @@ the *boundary*, which is not the mechanism. That is the pass being useful, not
 redundant. If the set is large enough that designing every ticket now is more
 than the user wants to spend, triage the frontier — the tickets with no open
 blockers — and say which ones you left, rather than labelling the rest.
+
+The walkthrough ticket from 3a is the exception, and the only one: it is
+published with its labels and left alone.
 
 Nothing downstream repairs a skipped pass. `/kit:ship-ticket` picks up only
 labelled tickets, so an untriaged one is invisible to the loop and an unlabelled
