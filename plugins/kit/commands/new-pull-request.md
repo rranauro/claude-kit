@@ -57,7 +57,7 @@ gh pr edit <pr-number> --add-label kit-hold
 
 The hold has to be on the PR **before the CI gate can see it**. That gate fires
 on `workflow_run` as soon as CI finishes, so the window between `gh pr create`
-and that run is the whole race, and losing it means the PR is triaged and
+and that run is the whole race, and losing it means the PR's round is closed and
 auto-merge is enabled — the exact thing the hold was set to prevent, arriving
 minutes after someone deliberately asked for it not to.
 

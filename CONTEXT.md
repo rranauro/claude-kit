@@ -62,12 +62,12 @@ all closed, carrying neither `epic` nor `kit-blocked`, and not already started.
 sweep and by `/kit:list`.
 _Avoid_: ready, eligible, available, unblocked
 
-**kit-triaged**:
+**kit-review-closed**:
 A review round is closed — every finding verified and applied or skipped.
 Written as a PR comment carrying the summary and any escalation reason, and as a
 label carrying only the fact. The comment is authoritative; the label is what
 lets a CI gate decide without a call per PR.
-_Avoid_: reviewed, done, addressed
+_Avoid_: reviewed, triaged, done, addressed
 
 **kit-hold**:
 The finished PR does not merge on its own — a person is in charge of it. Usually
