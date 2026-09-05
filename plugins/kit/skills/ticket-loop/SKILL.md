@@ -228,7 +228,7 @@ it is absent.
 
 **Leave auto-merge off.** CI is fast and frequently goes green before the review
 posts; `--auto` at creation time can merge the PR before anyone reviews it. The
-CI gate sets it once the review round is triaged.
+CI gate sets it once the review round is closed.
 
 ---
 

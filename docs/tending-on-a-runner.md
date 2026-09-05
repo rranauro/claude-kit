@@ -31,20 +31,21 @@ merges the one PR a human deliberately asked to see first, and does so within
 minutes.
 
 The hold only ever withholds the merge. An unreviewed round on a held PR still
-gets triaged — `/kit:review-copilot <N> unattended` runs the same as it would on
+gets closed — `/kit:review-copilot <N> unattended` runs the same as it would on
 any other PR, verifies the findings, pushes what it fixes, and closes the round
 at Step 7.5 — so a held PR does not sit unread until the person watching it
 opens it themselves. What the hold changes is Step 8: finding `kit-hold` on the
-PR, the pass reports the round as triaged and stops there, and never calls
+PR, the pass reports the round as closed and stops there, and never calls
 `gh pr merge`. The gate has the same rule on its own later firings — a
-`triaged` PR with auto-merge still off is the one place it would otherwise call
+closed-round PR with auto-merge still off is the one place it would otherwise call
 `gh pr merge` itself, and `kit-hold` is what tells it not to. Never remove the
 label; clearing it is a human's to do.
 
 ## The round is closed by a marker, not by the run that closed it
 
-`/kit:review-copilot` posts `<!-- kit-triaged -->` (or `<!-- kit-escalated -->`)
-as a PR comment carrying its summary, and adds a `kit-triaged` label alongside it.
+`/kit:review-copilot` posts `<!-- kit-review-closed -->` (or
+`<!-- kit-escalated -->`) as a PR comment carrying its summary, and adds a
+`kit-review-closed` label alongside it.
 `workflow_run` fires again on every subsequent push, so a gate that does not look
 for the record first re-triages a round already answered — paying for a model to
 reach the same conclusion, and stacking a second summary comment on the PR saying
@@ -57,8 +58,9 @@ polling interval rather than with the amount of work. The label is in the PR lis
 the gate already fetches. A PR with the comment and no label wakes a model that
 finds the round closed and stops, which is the direction to fail in.
 
-Skip an escalated PR on the same label. An escalation carries `kit-triaged` too,
-because what it needs is a person rather than another model pass.
+Skip an escalated PR on the same label. An escalation carries
+`kit-review-closed` too, because what it needs is a person rather than another
+model pass.
 
 The round is closed by whoever closed it, not by the runner. A round handled in
 someone's session writes the same record, so a gate that fires afterwards sees it
@@ -114,9 +116,10 @@ a change to the trigger cannot test itself on its own PR.
 
 A model pass costs money and minutes; a bash job costs seconds. Only one thing on
 a PR needs judgement — a review round nobody has closed, where each finding is
-verified against the code. Enabling auto-merge on a PR already triaged and green
-is not a judgement: the decision was made and recorded, and starting a model to
-agree with it pays for a second copy of an answer already on the PR.
+verified against the code. Enabling auto-merge on a green PR whose round is
+already closed is not a judgement: the decision was made and recorded, and
+starting a model to agree with it pays for a second copy of an answer already on
+the PR.
 
 Answer the cheap questions in bash, and start a model for the one that is left.
 

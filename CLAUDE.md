@@ -41,7 +41,7 @@ vocabulary those files read off an issue; `docs/commands.md` lists the surface;
   immediately after `gh pr create`. `lint` is a required check, so CI is the
   gate; nothing merges red. Withhold `--auto` only when you want a human to look
   before it lands, and say in the handoff that you did. The kit's own rule of
-  holding auto-merge off until a review round is triaged is written for repos
+  holding auto-merge off until a review round is closed is written for repos
   with a bot reviewer — this one has none, so there is no round to wait for.
 - **Work this repo through its own commands.** `/kit:architect` and
   `/kit:triage` for what to build, `/kit:design` for how, `/kit:ship-ticket` to

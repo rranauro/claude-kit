@@ -26,7 +26,7 @@ If all fetched sources are empty, tell the user "No automated review comments fo
 
 **Step 2.4 · `round-already-closed` — Check whether this round is already closed:**
 
-Look for a `<!-- kit-triaged -->` comment on the PR in what Step 2 already
+Look for a `<!-- kit-review-closed -->` comment on the PR in what Step 2 already
 fetched — it hits the issues endpoint, so the marker comment is in that result.
 No extra call.
 
@@ -158,9 +158,9 @@ known at Step 5.
 Two writes, together:
 
 ```
-gh pr comment <N> --body "<!-- kit-triaged -->
+gh pr comment <N> --body "<!-- kit-review-closed -->
 <the Step 5 summary>"
-gh pr edit <N> --add-label kit-triaged
+gh pr edit <N> --add-label kit-review-closed
 ```
 
 **The comment is authoritative and the label is for the gate.** The comment
@@ -170,8 +170,8 @@ label carries only the fact that a round closed, so a CI gate can decide from
 PR to look for a comment. On divergence the comment wins, and a missing label
 with a present comment fails toward waking a model, which is the safe direction.
 
-Create the label once per repo with `gh label create kit-triaged`, or from the
-UI. A repo that has not is not broken: the comment still closes the round, and
+Create the label once per repo with `gh label create kit-review-closed`, or from
+the UI. A repo that has not is not broken: the comment still closes the round, and
 the gate over-approximates by waking a model that finds nothing to do.
 
 **Re-running attended, edit the existing comment rather than posting a second.**
@@ -185,37 +185,38 @@ Two summaries on one PR read as two rounds, and the second is the one anybody
 trusts — which is the duplicate this step exists to prevent.
 
 **Escalations go in this same comment**, never a later one. A pass that posts the
-marker and then dies leaves a PR reading as merely triaged, which is this record
-inverted:
+marker and then dies leaves a PR reading as a clean closed round, which is this
+record inverted:
 
 ```
-gh pr comment <N> --body "<!-- kit-triaged -->
+gh pr comment <N> --body "<!-- kit-review-closed -->
 <!-- kit-escalated: skipped a non-minor optional item -->
 <the Step 5 summary>"
 ```
 
-The escalation reason is the one thing only the comment holds — `kit-triaged` is
-on the PR either way, because a gate should skip an escalated PR for the same
-reason it skips a triaged one: what it needs is a person, not another model pass.
+The escalation reason is the one thing only the comment holds —
+`kit-review-closed` is on the PR either way, because a gate should skip an
+escalated PR for the same reason it skips a closed round: what it needs is a
+person, not another model pass.
 
 `## Unattended` below owns what the escalation *conditions* are, and the merge
 decision that branches on them. This step owns only the record.
 
 **Step 8 · `enable-auto-merge` — Enable auto-merge (gated):**
 
-The first-pass automated reviews have now been triaged, which is the precondition
+The first-pass automated review round is now closed, which is the precondition
 for auto-merge — triaging every item counts as "addressed" even when no fixes were
 made. Auto-merge stays off until this point precisely because CI often goes green
 before the reviewers post.
 
 **If this skill was invoked by `/kit:ship-ticket`, stop here.** That command
 opens its PR with auto-merge deliberately off and leaves it to the CI gate;
-enabling it here would merge a PR nobody has triaged.
+enabling it here would merge a PR whose review round nobody has closed.
 
 "Stop here" ends *this* skill, not the caller's run. Return the
 Step 5 summary and let the caller continue — a pass that treats this as the end of
-its own work leaves the PR triaged with auto-merge never enabled, which is the one
-state nothing downstream is watching for.
+its own work leaves the round closed with auto-merge never enabled, which is the
+one state nothing downstream is watching for.
 
 **Run unattended, decide the merge yourself** — see `## Unattended` below, which
 owns that decision. Do not also ask. The record is already written: Step 7.5 does
@@ -223,7 +224,7 @@ that in both modes.
 
 Otherwise, ask the user before enabling:
 
-> "Review findings triaged and pushed. Enable auto-merge (squash) for PR #<N>? GitHub will merge once checks pass."
+> "Review findings addressed and pushed. Enable auto-merge (squash) for PR #<N>? GitHub will merge once checks pass."
 
 - On approval, run `gh pr merge <PR#> --auto --squash` (use the PR number resolved in Step 1).
 - If the command errors because auto-merge is already enabled or the PR is already merged, that's fine — report and continue.
@@ -235,15 +236,15 @@ Otherwise, ask the user before enabling:
   ```
 
   Declining is a decision, and until it is written down it survives only as long
-  as this session. A CI gate enables auto-merge on any triaged, green PR it has
-  not been told to leave alone, so an unrecorded decline is reversed by the next
+  as this session. A CI gate enables auto-merge on any closed-round, green PR it
+  has not been told to leave alone, so an unrecorded decline is reversed by the next
   firing and GitHub merges the PR you just held back. This is the same pattern
   `/kit:new-pull-request` uses — a human answered a prompt, and the command
   records the answer where the next reader will find it.
 
   Say that you wrote it, and say how to undo it: `gh pr edit <PR#> --remove-label
   kit-hold` hands control back, after which the PR is judged on its evidence
-  again — triaged, green and unheld, which the gate will act on.
+  again — round closed, green and unheld, which the gate will act on.
 
   **Only this branch writes the label, and only attended.** Unattended has no
   prompt to decline, so it has no decision to transcribe; it escalates instead,
@@ -269,10 +270,10 @@ left here is the decision, which attended belongs to the person and unattended
 belongs to you. You are the only one holding the per-item reasoning, and
 re-deriving it costs another pass.
 
-**A held PR still gets triaged — a hold only ever withholds the merge.** If the
+**A held PR still gets its round closed — a hold only ever withholds the merge.** If the
 labels fetched at Step 1 carry `kit-hold`, run every step above as normal —
 Step 7.5 records the round the same as any other PR's — but skip the merge:
-report the round as triaged and held, and stop. A hold names a PR a person is
+report the round as closed and held, and stop. A hold names a PR a person is
 already in charge of merging; this pass does not call `gh pr merge` over that
 decision, and it does not remove the label either — clearing `kit-hold` is the
 human's statement, the same as everywhere else in this file.
