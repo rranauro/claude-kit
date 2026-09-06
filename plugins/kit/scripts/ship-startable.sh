@@ -66,13 +66,16 @@ CLAUDE_BIN="$(command -v claude || true)"
 command -v gh >/dev/null 2>&1 || { echo "ship-startable: gh CLI not found" >&2; exit 2; }
 
 # --- settings: kit's grant, plus a project's own test/lint commands --------
-# The default `--setting-sources` (unset here, so project settings load) is
-# what makes /kit: commands resolve at all: this repo's own tracked
-# .claude/settings.json registers the marketplace and enables the plugin as
-# project config, the same registration every interactive session against
-# this checkout already relies on. --settings below only layers the
-# permission grant on top; it is not what makes the plugin resolve.
+# --settings carries the permission grant only. What makes /kit: commands
+# resolve is --plugin-dir below: print mode does not load the project setting
+# source, so however the plugin reaches an interactive session against the
+# target repo — an inline .claude/ plugin, an enabled marketplace entry — none
+# of it is in scope here, and /kit:list comes back "Unknown command".
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# This script lives in the plugin it has to load, so the plugin root is its
+# own parent — correct from any checkout, with nothing registered anywhere.
+PLUGIN_DIR="$(dirname "$SCRIPT_DIR")"
 BASE_SETTINGS="$SCRIPT_DIR/ship-settings.json"
 SETTINGS_FILE="$(mktemp -t ship-startable-settings.XXXXXX)"
 
@@ -156,7 +159,8 @@ trap on_exit EXIT INT TERM
 run_claude_timed() { # prompt
   local start end
   start=$(date +%s)
-  TIMED_OUT="$("$CLAUDE_BIN" -p "$1" --model "$MODEL" --settings "$SETTINGS_FILE" 2>>"$LOG" </dev/null)"
+  TIMED_OUT="$("$CLAUDE_BIN" -p "$1" --model "$MODEL" \
+    --plugin-dir "$PLUGIN_DIR" --settings "$SETTINGS_FILE" 2>>"$LOG" </dev/null)"
   end=$(date +%s)
   TIMED_ELAPSED=$((end - start))
   printf '%s\n' "$TIMED_OUT" >>"$LOG"
