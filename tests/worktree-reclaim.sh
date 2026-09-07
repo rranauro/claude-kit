@@ -132,11 +132,15 @@ push_branch() { git -C "$MAIN" push -q origin "$1"; }
 # the commit, not the branch name. state is "open"/"closed" (the REST API's own
 # spelling); merged_at is a quoted ISO timestamp or the literal null. An
 # optional 5th arg sets headRefOid to something other than the queried sha, to
-# prove the new accounting never reads it.
-pr_fixture() { # sha number state merged_at [unrelated_head_ref_oid]
-  local head="${5:-$1}"
+# prove the new accounting never reads it, and a 6th carries the PR's labels as
+# a comma-separated list.
+pr_fixture() { # sha number state merged_at [unrelated_head_ref_oid] [labels]
+  local head="${5:-$1}" labels="" name
+  local OLDIFS="$IFS"; IFS=','
+  for name in ${6:-}; do labels="${labels:+$labels,}{\"name\":\"$name\"}"; done
+  IFS="$OLDIFS"
   cat > "$GH_FIXTURES/$1.json" <<EOF
-[{"number":$2,"state":"$3","merged_at":$4,"headRefOid":"$head","url":"https://example.test/pull/$2"}]
+[{"number":$2,"state":"$3","merged_at":$4,"headRefOid":"$head","labels":[$labels],"url":"https://example.test/pull/$2"}]
 EOF
 }
 
@@ -402,6 +406,87 @@ git -C "$MAIN" worktree lock --reason "kit:ship #119 since yesterday" \
 out="$(run --act)"
 assert_present_path "$MAIN/.claude/worktrees/alpha" \
   "a lease nothing can date is not treated as expired"
+end_sandbox
+
+# ========================================================================
+# AC9 · A walkthrough in flight holds the worktree it runs in. The signal is
+#       `kit-hold` on the branch's open PR, and it lapses on its own.
+# ========================================================================
+
+new_sandbox "AC9 a held PR keeps its worktree"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 open null "" kit-hold
+out="$(run --act)"
+assert_present_path "$MAIN/.claude/worktrees/alpha" \
+  "the checkout a walkthrough runs in survives the sweep"
+assert_branch_kept alpha "and so does its branch"
+assert_has "$out" "held	$MAIN/.claude/worktrees/alpha" "the hold is reported"
+assert_has "$out" "kit-hold" "with the label that caused it"
+assert_has "$out" "#11" "and the PR it is waiting on"
+end_sandbox
+
+new_sandbox "AC9 a named target is judged by the same rule"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 open null "" kit-hold
+sweep_verdict="$(run | grep '^verdict	alpha	')"
+target_verdict="$(run --target alpha | grep '^verdict	alpha	')"
+if [ "$sweep_verdict" = "$target_verdict" ]; then ok "naming a held worktree reaches the same verdict"
+else bad "naming a held worktree reaches the same verdict"
+     printf '       sweep:  %s\n       target: %s\n' "$sweep_verdict" "$target_verdict" >&2; fi
+run --target alpha --act >/dev/null
+assert_present_path "$MAIN/.claude/worktrees/alpha" "and naming it does not override the hold"
+end_sandbox
+
+new_sandbox "AC9 the hold lapses when the label comes off"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 open null "" kit-hold
+run --act >/dev/null
+assert_present_path "$MAIN/.claude/worktrees/alpha" "held while the label is on"
+# The only thing that changed is the label — no operator step, no unlock.
+pr_fixture "$(tip alpha)" 11 open null
+run --act >/dev/null
+assert_missing_path "$MAIN/.claude/worktrees/alpha" "and reclaimed once it comes off"
+assert_branch_kept alpha "with the branch still kept, the PR being open"
+end_sandbox
+
+new_sandbox "AC9 the hold lapses when the PR merges"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 open null "" kit-hold
+run --act >/dev/null
+assert_present_path "$MAIN/.claude/worktrees/alpha" "held while the PR is open"
+pr_fixture "$(tip alpha)" 11 closed '"2024-01-01T00:00:00Z"' "" kit-hold
+run --act >/dev/null
+assert_missing_path "$MAIN/.claude/worktrees/alpha" \
+  "a label left on a merged PR describes a walkthrough that is over"
+assert_branch_gone alpha "and the merged branch is deleted as usual"
+end_sandbox
+
+new_sandbox "AC9 an unlabelled open PR is reclaimed as before"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 open null "" needs-review
+out="$(run --act)"
+assert_missing_path "$MAIN/.claude/worktrees/alpha" "another label is not a hold"
+assert_has "$out" "branch-kept	alpha" "and the open PR still keeps its branch"
+end_sandbox
+
+new_sandbox "AC9 a question GitHub cannot answer holds the directory"
+add_worktree alpha
+push_branch alpha
+cat > "$SANDBOX/bin/gh" <<'GH'
+#!/usr/bin/env bash
+echo "error connecting to api.github.com" >&2
+exit 1
+GH
+chmod +x "$SANDBOX/bin/gh"
+out="$(run --act)"
+assert_present_path "$MAIN/.claude/worktrees/alpha" \
+  "a kit-hold that could not be ruled out is not reclaimed against"
+assert_branch_kept alpha "and the branch is kept as it already was"
 end_sandbox
 
 # ========================================================================

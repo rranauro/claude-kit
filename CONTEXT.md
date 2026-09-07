@@ -88,7 +88,8 @@ The finished PR does not merge on its own — a person is in charge of it. Usual
 because it must be walked in the running app first; also because someone declined
 auto-merge and means to merge it themselves. Set at triage on the issue and
 transcribed onto the PR, or written straight onto the PR when the decision is
-made after it exists. Cleared only by a person. Independent of kind.
+made after it exists. Cleared only by a person. Independent of kind. On an open
+PR it also holds the branch's worktree, since the walkthrough runs in it.
 _Avoid_: hold, do-not-merge
 
 ### Reclaiming a worktree

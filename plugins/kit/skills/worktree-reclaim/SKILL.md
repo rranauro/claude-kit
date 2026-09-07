@@ -15,7 +15,7 @@ throwaway repository. `tests/worktree-reclaim.sh` is where the behaviour is
 pinned. What this skill owns is the judgement the script cannot make and the
 report a person reads.
 
-## Two decisions, two tests
+## Two decisions, three tests
 
 **Reclaiming the directory and deleting the branch are separate**, and conflating
 them is what made the old commands frightening.
@@ -39,6 +39,15 @@ Lock the worktree if you need it kept.
 holding the worktree — `docs/worktrees.md` says why, and the script's own
 `KIT_LEASE_HOURS` is the window. Every other lock holds until somebody unlocks
 it.
+
+**A walkthrough in flight holds the directory as well.** `/kit:walkthrough`
+resolves the worktree path and does all its work there, and it is designed to be
+paused between sessions — so at the moment reclaiming would hurt most, nothing is
+locked and nothing is uncommitted. `kit-hold` on the branch's open PR is the
+signal that one is in flight: a person is in charge of that PR, and the CI gate
+already waits for them. The hold lapses on its own when the label comes off or
+the PR reaches a terminal state; where GitHub cannot be reached the label cannot
+be ruled out, so the worktree is held there too.
 
 **A branch is deleted only where GitHub accounts for its tip** — the local tip
 commit is itself associated with a merged or closed PR, or, for a branch that
@@ -82,7 +91,7 @@ scripts/worktree-reclaim.sh --repo <main-checkout> [--target <branch|path>] \
 Without `--act` it changes nothing and prints one `verdict` record per worktree:
 
 ```
-verdict<TAB>branch<TAB>path<TAB><verdict><TAB>free-reason<TAB>branch-reason
+verdict<TAB>branch<TAB>path<TAB><verdict><TAB>directory-reason<TAB>branch-reason
 ```
 
 The verdict is one of `reclaim`, `reclaim-keep-branch`, or `hold`, and the two
@@ -106,8 +115,9 @@ Say what happened, from the records rather than from what you expected:
 - `branch-kept` — **name every one, with its reason.** A branch holding commits
   GitHub never received is the outcome this whole design exists to produce, and
   it is worthless if nobody is told. These accumulate silently otherwise.
-- `held` — with the reason. A `kit:ship` lease here is a pass still working;
-  leave it and say which ticket owns it.
+- `held` — with the reason. A `kit:ship` lease is a pass still working and a
+  `kit-hold` PR is a walkthrough waiting on a person; either way, say which
+  ticket or PR owns it.
 - `orphan` — husks git had stopped tracking.
 
 If no `--worktree-root` was passed, say that husks were not swept and why, so
