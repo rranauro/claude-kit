@@ -17,7 +17,7 @@
 # branch. Why it asks rather than infers: docs/adr/0002.
 #
 # Records:
-#   verdict<TAB>branch<TAB>path<TAB>reclaim|reclaim-keep-branch|hold<TAB>free-reason<TAB>branch-reason
+#   verdict<TAB>branch<TAB>path<TAB>reclaim|reclaim-keep-branch|hold<TAB>directory-reason<TAB>branch-reason
 #   removed<TAB>path            held<TAB>path<TAB>reason
 #   branch-deleted<TAB>branch   branch-kept<TAB>branch<TAB>reason
 #   orphan<TAB>path             swept<TAB>path
@@ -161,9 +161,18 @@ freeness() { # path
 # workflow invalidates (#98). GitHub's own commit->PR index answers the ADR's
 # question directly and survives exactly that case, because it is keyed off
 # the commit rather than off what a ref currently reports.
+#
+# The same answer carries the PR's labels, which is the second question asked
+# here. A `kit-hold` on an open PR says a walkthrough is in flight, and
+# `/kit:walkthrough` does all its work in the worktree — so reclaiming the
+# directory takes the checkout out from under a walk that is paused between
+# sessions. The doctrine that a checkout is cheap to restore holds for whoever
+# was told it went; the walker was not.
+HOLD_REASON=""
 ACCOUNTED=""; ACC_REASON=""
 account_branch() { # branch
   local branch="$1" tip json parsed num state
+  HOLD_REASON=""
   if [ -z "$branch" ]; then
     ACCOUNTED="no"; ACC_REASON="detached HEAD, no branch to account for"; return
   fi
@@ -201,13 +210,16 @@ if merged:
 elif closed:
     print("CLOSED", closed[0].get("number", 0))
 else:
-    print("OPEN", d[0].get("number", 0))
+    held = [p for p in d
+            if any(l.get("name") == "kit-hold" for l in p.get("labels") or [])]
+    print("HELD" if held else "OPEN", (held or d)[0].get("number", 0))
 ' 2>/dev/null)"
 
   case "$parsed" in
     ""|error)
       ACCOUNTED="no"
       ACC_REASON="GitHub could not be asked, so tip $tip is unaccounted"
+      HOLD_REASON="GitHub could not be asked, so a kit-hold could not be ruled out"
       return ;;
     none)
       # No PR is associated with this exact commit. The remaining question is
@@ -224,6 +236,9 @@ else:
   case "$state" in
     MERGED|CLOSED)
       ACCOUNTED="yes"; ACC_REASON="PR #$num $state, tip $tip received" ;;
+    HELD)
+      ACCOUNTED="no"; ACC_REASON="PR #$num is OPEN, not a terminal state"
+      HOLD_REASON="PR #$num is open and carries kit-hold, so a walkthrough is in flight" ;;
     *)
       ACCOUNTED="no"; ACC_REASON="PR #$num is $state, not a terminal state" ;;
   esac
@@ -287,6 +302,15 @@ while IFS=$'\t' read -r path branch; do
   fi
 
   account_branch "$branch"
+  if [ -n "$HOLD_REASON" ]; then
+    emit verdict "$branch" "$path" hold "$HOLD_REASON" "$ACC_REASON"
+    if [ "$act" -eq 1 ]; then
+      emit held "$path" "$HOLD_REASON"
+      emit branch-kept "$branch" "$ACC_REASON"
+    fi
+    continue
+  fi
+
   if [ "$ACCOUNTED" = "yes" ]; then
     emit verdict "$branch" "$path" reclaim "$FREE_REASON" "$ACC_REASON"
   else

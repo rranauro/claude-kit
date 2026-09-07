@@ -43,6 +43,12 @@ The timestamp is what keeps a killed pass from owning a worktree forever:
 expired. That window is scoped to the kit's own wording — a lock you write by
 hand still holds until you unlock it.
 
+The lease ends at the open PR, and for a PR that has to be walked the worktree
+is needed after that — `/kit:walkthrough` runs in it, and keeps its position on
+disk precisely so a walk can be resumed days later. `kit-hold` is what covers
+that stretch: reclaim holds the worktree of any open PR carrying it. Nothing is
+left to take a second lock, and the hold ends when the label or the PR does.
+
 ## What this means for garbage collection
 
 Declaring the layout also narrows what a reclaim pass will sweep — whether it was
