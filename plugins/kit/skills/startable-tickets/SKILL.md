@@ -48,11 +48,13 @@ returned. The other two need data, and both are set-wide questions — asking th
 per candidate is where a sweep's round trips go.
 
 ```
-gh pr list --state open --json number,title,headRefName,body --limit 200
+gh pr list --state open --json number,closingIssuesReferences --limit 200
 git worktree list
 ```
 
-Those two answer condition 5 for every candidate at once.
+Those two answer condition 5 for every candidate at once. The PR listing is read
+for its closing-issue links, per `already-carried` below; asking per candidate
+instead is the round trip this step exists to avoid.
 
 For condition 2, union the issue numbers across every candidate's marker,
 dedupe, and resolve them in **one** query. The candidates are by construction the
@@ -71,7 +73,30 @@ A ticket is **startable** when all of these hold:
    the work landed on `main`. An empty marker is trivially satisfied.
 3. It does **not** carry the `epic` label.
 4. It does **not** carry the `kit-blocked` label.
-5. No open PR and no live worktree names it — it has not been started.
+5. It has not already been carried — no open PR is linked to it under
+   `already-carried` below, and no live worktree names it.
+
+### `already-carried` — when an issue already has its PR
+
+**An issue has already been carried when GitHub links an open PR to it.** The
+link is the `closingIssuesReferences` GitHub resolves from a PR's closing
+keyword — read from the open-PR listing above, never from a branch name and
+never from a command's report text.
+
+It is the same link that makes a merge close the issue, so "already carried" and
+"will close this ticket" cannot disagree; there is one fact and one source. A
+branch name is derived from a title and is not obliged to carry the issue number
+at all — `kit:start-ticket` `branching-strategy` permits bundling onto a branch
+that carries no number — so keying on it misses a PR that plainly exists. A
+regex over PR bodies would re-implement GitHub's own closing-keyword parsing and
+drift from it.
+
+**Open PRs only.** A PR that closed or merged without closing its issue leaves
+the work outstanding, and the ticket is startable.
+
+This rule is cited rather than restated — `/kit:ship-ticket` applies it to a
+directly named ticket, and `plugins/kit/scripts/ship-startable.sh` reads the same
+field. A second copy is a second rule.
 
 **The label requirement in Step 1 is deliberate, and is not the one
 `kit:start-ticket` `plan-implementation` relaxed.** There a human has already
