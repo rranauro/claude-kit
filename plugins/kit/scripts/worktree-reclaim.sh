@@ -161,11 +161,13 @@ freeness() { # path
 # workflow invalidates (#98). GitHub's own commit->PR index answers the ADR's
 # question directly and survives exactly that case, because it is keyed off
 # the commit rather than off what a ref currently reports.
-# A `kit-hold` on the branch's open PR says a person is in charge of it and a
-# walkthrough is in flight — and `/kit:walkthrough` does all its work in the
-# worktree, so reclaiming the directory takes the checkout out from under a walk
-# that is paused between sessions. The doctrine that a checkout is cheap to
-# restore holds for whoever was told it went; the walker was not.
+#
+# The same answer carries the PR's labels, which is the second question asked
+# here. A `kit-hold` on an open PR says a walkthrough is in flight, and
+# `/kit:walkthrough` does all its work in the worktree — so reclaiming the
+# directory takes the checkout out from under a walk that is paused between
+# sessions. The doctrine that a checkout is cheap to restore holds for whoever
+# was told it went; the walker was not.
 HOLD_REASON=""
 ACCOUNTED=""; ACC_REASON=""
 account_branch() { # branch
