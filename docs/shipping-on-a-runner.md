@@ -51,14 +51,12 @@ question `/kit:list` doesn't answer: whether a PR this run already opened is
 still open. The runner tracks that itself, by diffing `gh pr list` state — never
 by reading what the ship-ticket call printed.
 
-It keys on GitHub's own closing-issue link (`kit:startable-tickets`
-`already-carried`), not on the `<issue>-` branch prefix. A branch name is derived
-from an issue title and is not obliged to carry the number at all —
-`kit:start-ticket` `branching-strategy` explicitly permits bundling onto the
-current branch — so a prefix scan misses a PR that plainly exists and the run
-reports an anomaly for a ticket it shipped cleanly. The link is also the fact
-that makes the merge close the issue, so what the runner calls "shipped" and what
-GitHub will act on cannot disagree.
+It keys on GitHub's own closing-issue link, not on the `<issue>-` branch prefix
+— `kit:startable-tickets` `already-carried` is the rule and carries the
+argument. What the branch prefix costs *here* is a run's summary: a PR opened
+from a branch that carries no issue number is invisible to a prefix scan, so a
+ticket the runner shipped cleanly is reported as an anomaly, and the operator
+goes looking for a failure that did not happen.
 
 ## Nothing startable right now is not the same as nothing left to do
 

@@ -151,16 +151,13 @@ rather than a routing sticker:
 - **Already carried** — `kit:startable-tickets` `already-carried` says when it
   is: GitHub links an open PR to the issue. Report that PR's number and stop.
 
-**Ask it here, before Step 2 creates anything.** The sweep already refuses a
-started ticket under condition 5, so a named number is the one path that can
-build a ticket twice and open a second pull request against it — and the thing
-that usually hides that is a surviving worktree being recognised, which is
-`kit:start-ticket` `safety-check`'s business and not this one's. Deciding from
-the link rather than from worktree state is what makes the answer the same
-whether or not a directory survived, and whether or not two runs derive the same
-branch name from the same title. `safety-check`'s resume-or-replace prompt is
-untouched: it exists for a pass that died before opening a PR, and that pass
-reaches it still.
+**Ask it here, before Step 2 creates anything.** A sweep refuses a started
+ticket under condition 5, so a named number is the one path that can build a
+ticket twice and open a second pull request against it. Answering from the link
+rather than from worktree state is what makes the answer hold whether or not a
+directory survived — `kit:start-ticket` `safety-check` is where worktree state
+is reasoned about, and its resume-or-replace prompt is untouched: it exists for
+a pass that died before opening a PR, and that pass reaches it still.
 
 **It is an ordinary outcome, not a park and not a refusal.** Naming an epic is a
 mistake and `kit-blocked` is a flag being overridden; naming a ticket that

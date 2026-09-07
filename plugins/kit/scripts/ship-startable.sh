@@ -168,11 +168,10 @@ run_claude_timed() { # prompt
 
 # Prints "<pr-number> <state>" for the PR belonging to issue <n>, or nothing.
 # Reads GitHub's own closing-issue link, per kit:startable-tickets
-# `already-carried`. Not the branch name: kit:start-ticket branching-strategy
-# permits bundling onto a branch that carries no issue number, and a PR opened
-# from one is invisible to a prefix scan — reported as an anomaly on a run that
-# in fact shipped cleanly. Not ship-ticket's report text either, for the same
-# "don't parse the prose" reasoning that motivated #99.
+# `already-carried`. A branch prefix would miss a PR opened from a branch that
+# carries no issue number and report a cleanly shipped ticket as an anomaly;
+# ship-ticket's own report text is out for the "don't parse the prose" reasoning
+# that motivated #99.
 pr_for_issue() {
   local n="$1"
   gh pr list --state all --json number,state,closingIssuesReferences --limit 200 2>/dev/null |
