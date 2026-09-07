@@ -117,9 +117,9 @@ ready-for-agent + bug
   #52  Reconcile the webhook retry window
   #58  Stop the importer swallowing a 409
 
-<!-- kit:startable:begin -->
-bug: 52 58
-<!-- kit:startable:end -->
+<!-- kit-startable: begin -->
+bug: 52,58
+<!-- kit-startable: end -->
 R
 out="$(run bug)"
 assert_has "$out" "taking #52" "the lowest number on the line is taken"
@@ -133,9 +133,9 @@ startable.
 ready-for-agent + bug
   nothing startable (#52 already has open PR #61)
 
-<!-- kit:startable:begin -->
+<!-- kit-startable: begin -->
 bug:
-<!-- kit:startable:end -->
+<!-- kit-startable: end -->
 R
 out="$(run bug)"
 assert_lacks "$out" "taking #" "a ticket named only to exclude it is not taken"
@@ -157,13 +157,27 @@ reply <<'R'
 ready-for-agent + bg
   no such label — did you mean `bug`?
 
-<!-- kit:startable:begin -->
-<!-- kit:startable:end -->
+<!-- kit-startable: begin -->
+<!-- kit-startable: end -->
 R
 out="$(run bg)"
 assert_lacks "$out" "taking #" "nothing is taken when the label has no line"
 assert_has "$out" "unreadable" "a missing line stops the run"
 assert_lacks "$out" "done: nothing startable" "a missing line does not read as a drained backlog"
+end_sandbox
+
+new_sandbox "a line that is not numbers is unreadable"
+reply <<'R'
+ready-for-agent + bug
+  #52  Reconcile the webhook retry window
+
+<!-- kit-startable: begin -->
+bug: see #52 above
+<!-- kit-startable: end -->
+R
+out="$(run bug)"
+assert_lacks "$out" "taking #" "a number is not dug out of a malformed line"
+assert_has "$out" "unreadable" "a malformed line stops the run"
 end_sandbox
 
 # ------------------------------------------------------------------------

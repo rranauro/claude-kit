@@ -23,20 +23,19 @@ here sleeps between one ticket finishing and the next one starting.
 `/kit:list <label>` exists so a script never has to parse `/kit:ship-ticket`'s
 freeform Step 3 report to learn what's startable — it reads the same
 `kit:startable-tickets` rule the sweep does and prints numbers a caller can
-act on. The channel is the **offer block** `/kit:list` ends its output with: one
-line per label that exists and was named, carrying that label's startable issue
-numbers lowest first, and present-but-empty when the label holds nothing.
+act on. The channel is the **offer block** `/kit:list` ends its output with, and
+that command owns its shape.
 
-The runner reads its own label's line and no other text in the reply, which
-makes three answers distinguishable where two used to be. A line with numbers
-offers them. A line with nothing after the colon is a drained label, and takes
-the quiet nothing-startable path below. A missing block, or a block with no line
-for the label asked about, is a reply the run cannot read: it stops and says so.
-Scanning the whole reply instead conflates all three, and it fails in the worst
-direction — the empty answer is where an explanation is most tempting, so a
-ticket named in order to *exclude* it is exactly the number a scan picks up. A
+The runner reads its own label's line there and no other text in the reply,
+which makes three answers distinguishable where two used to be: a line with
+numbers offers them, a line with nothing after the colon is a drained label, and
+a missing block — or a block with no line for the label asked about — is a reply
+the run cannot read, so it stops and says so. Scanning the whole reply instead
+conflates all three, and it fails in the worst direction: the reply is written by
+a model, the empty answer is where an explanation is most tempting, and a ticket
+named in order to *exclude* it is exactly the number a scan then takes. A
 mistyped label reaches the unreadable stop for the same reason, rather than
-reporting a backlog that was never queried.
+reporting a backlog nobody queried.
 
 Halting a run over a formatting lapse is the deliberate half of that trade: a
 halt carries its reason and can be resumed, where a wrong take opens a second

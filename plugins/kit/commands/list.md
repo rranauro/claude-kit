@@ -57,23 +57,21 @@ The last two lines are different answers, and only one of them is a typo.
 End the output with this block, whatever the prose above it said:
 
 ```
-<!-- kit:startable:begin -->
-bug: 52 58
+<!-- kit-startable: begin -->
+bug: 52,58
 technical-debt:
-<!-- kit:startable:end -->
+<!-- kit-startable: end -->
 ```
 
 One line per label that **exists and was named**: the label exactly as it was
-given, a colon, then its startable issue numbers lowest first, bare and
-space-separated. A label that exists and holds nothing startable gets its line
-with nothing after the colon. A label that does not exist gets no line — that is
-what lets a caller tell a drained label from a typo. With no labels given, the
-block is present and holds no lines.
+given, a colon, then its startable issue numbers lowest first, comma-separated
+and without `#` — the same shape `<!-- kit-blocked-by: -->` already uses, and
+present-and-empty carries the same meaning here. A label that exists and holds
+nothing startable gets its line with nothing after the colon. A label that does
+not exist gets no line, which is what lets a caller tell a drained label from a
+typo. With no labels given, the block is present and holds no lines.
 
-**The block is the contract, so emit it even when there is nothing to offer.**
-`plugins/kit/scripts/ship-startable.sh` reads its own label's line and nothing
-else in the reply, and treats a missing block or a missing line as a reply it
-could not read — it stops the run rather than guessing. That is deliberate: this
-output is written by a model, and the answer most likely to attract an
-explanation is the empty one, where a number named in order to *exclude* it is
-the number a looser reader would take.
+**Emit it even when there is nothing to offer.** A caller reads its own label's
+line and no other part of this reply, so a block you leave out is a reply it
+stops on rather than an empty backlog — `docs/shipping-on-a-runner.md` carries
+why it is built that way.

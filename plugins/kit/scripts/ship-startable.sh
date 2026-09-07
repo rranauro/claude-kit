@@ -215,21 +215,18 @@ for pr in prs:
 }
 
 # Prints the numbers on the offer block's line for <label>, and exits non-zero
-# when the block or that line is absent. Nothing outside the block is read: the
-# reply is written by a model, and the empty answer is exactly where it is most
-# tempting to name the ticket being excluded — which is the number a scan of the
-# whole reply would then take.
+# when the block or that line is absent. Nothing outside the block is read —
+# docs/shipping-on-a-runner.md carries why, and giving that back on a loose
+# parse of the line itself would undo it.
 offer_line() { # reply label
   printf '%s\n' "$1" | awk -v label="$2" '
-    $0 == "<!-- kit:startable:begin -->" { inblock = 1; next }
-    $0 == "<!-- kit:startable:end -->"   { inblock = 0; next }
+    $0 == "<!-- kit-startable: begin -->" { inblock = 1; next }
+    $0 == "<!-- kit-startable: end -->"   { inblock = 0; next }
     inblock {
       line = $0
       sub(/^[[:space:]]+/, "", line)
-      colon = index(line, ":")
-      if (colon == 0) next
-      if (substr(line, 1, colon - 1) != label) next
-      print substr(line, colon + 1)
+      if (index(line, label ":") != 1) next
+      print substr(line, length(label) + 2)
       found = 1
       exit
     }
@@ -255,7 +252,14 @@ list_lowest_startable() {
     LIST_UNREADABLE=1
     return
   fi
-  LIST_RESULT="$(printf '%s\n' "$numbers" | grep -oE '[0-9]+' | head -1)"
+  numbers="${numbers#"${numbers%%[![:space:]]*}"}"
+  LIST_RESULT="${numbers%%[,[:space:]]*}"
+  # Anything but a number where the contract promises one is a line this run
+  # cannot act on, not a number to dig out of it.
+  case "$LIST_RESULT" in
+    "")       ;;
+    *[!0-9]*) LIST_RESULT=""; LIST_UNREADABLE=1 ;;
+  esac
 }
 
 # Runs one ticket to an open PR (or a park) in its own process. Sets
