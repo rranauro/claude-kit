@@ -12,7 +12,8 @@ at a time. This command answers it and stops — creating nothing, starting
 nothing, touching no worktree.
 
 Its whole output is numbers and titles you can hand straight to
-`/kit:ship-ticket <number>`.
+`/kit:ship-ticket <number>` — and, after them, a block a script can read without
+parsing any of the prose.
 
 ## Step 1 — Classify
 
@@ -50,3 +51,27 @@ ready-for-agent + user-experence
 ```
 
 The last two lines are different answers, and only one of them is a typo.
+
+## Step 3 — Emit the offer block
+
+End the output with this block, whatever the prose above it said:
+
+```
+<!-- kit-startable: begin -->
+bug: 52,58
+technical-debt:
+<!-- kit-startable: end -->
+```
+
+One line per label that **exists and was named**: the label exactly as it was
+given, a colon, then its startable issue numbers lowest first, comma-separated
+and without `#` — the same shape `<!-- kit-blocked-by: -->` already uses, and
+present-and-empty carries the same meaning here. A label that exists and holds
+nothing startable gets its line with nothing after the colon. A label that does
+not exist gets no line, which is what lets a caller tell a drained label from a
+typo. With no labels given, the block is present and holds no lines.
+
+**Emit it even when there is nothing to offer.** A caller reads its own label's
+line and no other part of this reply, so a block you leave out is a reply it
+stops on rather than an empty backlog — `docs/shipping-on-a-runner.md` carries
+why it is built that way.
