@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
-# Every acceptance criterion on #122 that lives in the runner is asserted here
-# against a throwaway repository, with `claude` and `gh` stubbed on PATH so the
-# /kit:list reply is a fixture the test holds still.
+# Every acceptance criterion that lives in the runner is asserted here against a
+# throwaway repository, with `claude` and `gh` stubbed on PATH so both the
+# /kit:list reply and the PR listing are fixtures the test holds still.
 #
-# The reply is the point rather than a convenience. The defect is that a reply
-# meaning *take nothing* was read as naming a ticket, so the only test that
-# separates the two feeds in a reply whose prose says one thing and whose offer
-# block says the other.
+# Each is the point rather than a convenience. One defect was that a reply
+# meaning *take nothing* was read as naming a ticket, so the test that separates
+# the two feeds in a reply whose prose says one thing and whose offer block says
+# the other. The other was that a PR was resolved from its branch name, so the
+# test that separates the two feeds in a PR whose branch carries no issue number
+# and whose closing link does.
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SCRIPT="$ROOT/plugins/kit/scripts/ship-startable.sh"
@@ -73,23 +75,32 @@ while [ $# -gt 0 ]; do
 done
 case "$prompt" in
   */kit:list*) cat "$REPLY_FILE" ;;
-  *)           echo "ship-ticket stub ran" ;;
+  # A ship-ticket call that returns instantly is under the script's own
+  # floor and is an anomaly before any PR is looked up, so a test that
+  # asserts on the lookup has to outlast the floor.
+  *)           sleep "${SHIP_STUB_DELAY:-0}"; echo "ship-ticket stub ran" ;;
 esac
 CLAUDE
   chmod +x "$SANDBOX/bin/claude"
 
-  # Nothing here asserts on GitHub state; the stub exists so the script's own
-  # preflight finds a `gh` and its lookups return an empty, well-formed answer.
+  # Answers the PR listing from a fixture and every other lookup with an empty,
+  # well-formed result — enough for the script's preflight, and enough that a
+  # test says nothing about GitHub state it did not set.
   cat > "$SANDBOX/bin/gh" <<'GH'
 #!/usr/bin/env bash
 case "$*" in
-  *--json*) echo '[]' ;;
-  *)        : ;;
+  *"pr list --state all"*) cat "$PR_LIST_FIXTURE" ;;
+  *--json*)                echo '[]' ;;
+  *)                       : ;;
 esac
 GH
   chmod +x "$SANDBOX/bin/gh"
 
-  export REPLY_FILE
+  PR_LIST_FIXTURE="$SANDBOX/pr-list.json"
+  echo '[]' > "$PR_LIST_FIXTURE"
+
+  SHIP_STUB_DELAY=0
+  export REPLY_FILE PR_LIST_FIXTURE SHIP_STUB_DELAY
   export PATH="$SANDBOX/bin:$ORIG_PATH"
   # The script writes its log under $HOME; keep that inside the sandbox.
   export HOME="$SANDBOX"
@@ -102,6 +113,7 @@ end_sandbox() {
 }
 
 reply() { cat > "$REPLY_FILE"; }
+pr_list() { cat > "$PR_LIST_FIXTURE"; }
 
 run() { # args... -> runs the script against $MAIN with stdin closed
   "$SCRIPT" "$@" --repo "$MAIN" --max 1 --poll-seconds 1 </dev/null 2>&1
@@ -178,6 +190,42 @@ R
 out="$(run bug)"
 assert_lacks "$out" "taking #" "a number is not dug out of a malformed line"
 assert_has "$out" "unreadable" "a malformed line stops the run"
+end_sandbox
+
+# ========================================================================
+# AC · An issue's PR is resolved from GitHub's closing link, not its branch.
+# ========================================================================
+
+new_sandbox "a PR whose branch carries no issue number is still found"
+SHIP_STUB_DELAY=6
+reply <<'R'
+<!-- kit-startable: begin -->
+bug: 52
+<!-- kit-startable: end -->
+R
+pr_list <<'J'
+[{"number":61,"state":"OPEN","headRefName":"stop-swallowing-the-409",
+  "closingIssuesReferences":[{"number":52}]}]
+J
+out="$(run bug)"
+assert_has "$out" "shipped #52 as PR #61" "the closing link finds the PR"
+assert_lacks "$out" "ANOMALY" "a clean ship is not reported as an anomaly"
+end_sandbox
+
+new_sandbox "a PR closing a different issue is not claimed"
+SHIP_STUB_DELAY=6
+reply <<'R'
+<!-- kit-startable: begin -->
+bug: 52
+<!-- kit-startable: end -->
+R
+pr_list <<'J'
+[{"number":61,"state":"OPEN","headRefName":"52-reconcile-the-retry-window",
+  "closingIssuesReferences":[{"number":99}]}]
+J
+out="$(run bug)"
+assert_lacks "$out" "shipped #52" "a branch prefix alone does not make it this issue's PR"
+assert_has "$out" "ANOMALY" "a ticket with no PR linked to it is an anomaly"
 end_sandbox
 
 # ------------------------------------------------------------------------

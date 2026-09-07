@@ -139,7 +139,7 @@ where the candidate comes from and which checks apply.
 `ready-for-agent` and the `kit-blocked-by` marker are query filters over work
 nobody asked for, and you asked. Neither is required here.
 
-Three checks still apply, because each is a claim about the ticket or the world
+Four checks still apply, because each is a claim about the ticket or the world
 rather than a routing sticker:
 
 - **`epic`** — refuse it and say so. There is nothing in a container to
@@ -148,6 +148,22 @@ rather than a routing sticker:
   section. Naming a ticket is not clearing the flag.
 - **An open blocker in its marker, if it has one** — refuse and say which. The
   dependency has not landed, and that is true no matter who chose the ticket.
+- **Already carried** — `kit:startable-tickets` `already-carried` says when it
+  is: GitHub links an open PR to the issue. Report that PR's number and stop.
+
+**Ask it here, before Step 2 creates anything.** A sweep refuses a started
+ticket under condition 5, so a named number is the one path that can build a
+ticket twice and open a second pull request against it. Answering from the link
+rather than from worktree state is what makes the answer hold whether or not a
+directory survived — `kit:start-ticket` `safety-check` is where worktree state
+is reasoned about, and its resume-or-replace prompt is untouched: it exists for
+a pass that died before opening a PR, and that pass reaches it still.
+
+**It is an ordinary outcome, not a park and not a refusal.** Naming an epic is a
+mistake and `kit-blocked` is a flag being overridden; naming a ticket that
+already shipped is a fair question with a plain answer. Nothing is written — no
+worktree, no branch, no PR, no issue comment, no label — and there is nothing for
+anyone to clear.
 
 ### A bare label, or nothing — the sweep takes one
 
@@ -183,6 +199,9 @@ everything a sweep excluded and its reason, then stop. Do not create a worktree,
 a branch, a PR, or an issue comment, and do not remove one. A trailing
 `unattended` is moot: a dry run reaches no gate.
 
+The already-carried check is part of that resolution, so a dry run reports the
+open PR and its number exactly as a real run would.
+
 **Say that it was resolved against the worktrees standing now.** Step 0 is
 skipped here — reclaiming removes worktrees and deletes branches, and a dry run
 that does that is not dry — so a ticket reported as already started may be taken
@@ -216,6 +235,13 @@ decision, so it is reported with its reason alongside what a sweep excluded:
 ```
 #12 is an epic, so it is a container rather than a ticket and was not started.
 Its slices are what a sweep picks up.
+```
+
+**A carried ticket is reported with its PR, and nothing else happened:**
+
+```
+#118 already has an open pull request, #131, which closes it. Nothing was
+created and nothing was changed.
 ```
 
 **Quote a `kit-blocked` reason** from the issue body's `## Blocked by` section,
