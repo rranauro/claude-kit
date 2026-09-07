@@ -167,48 +167,24 @@ run_claude_timed() { # prompt
 }
 
 # Prints "<pr-number> <state>" for the PR belonging to issue <n>, or nothing.
-# Resolves the exact branch from `git worktree list --porcelain` first — the
-# convention kit:worktree-conventions documents and worktree-reclaim.sh's own
-# account_branch() relies on — so the common case is one targeted `gh pr list
-# --head` call rather than scanning every PR ever opened. Falls back to a
-# branch-prefix scan only when no live worktree matches (the worktree was
-# already reclaimed by the time this runs), never to ship-ticket's own report
-# text — the same "don't parse the prose" reasoning that motivated #99.
+# Reads GitHub's own closing-issue link, per kit:startable-tickets
+# `already-carried`. Not the branch name: kit:start-ticket branching-strategy
+# permits bundling onto a branch that carries no issue number, and a PR opened
+# from one is invisible to a prefix scan — reported as an anomaly on a run that
+# in fact shipped cleanly. Not ship-ticket's report text either, for the same
+# "don't parse the prose" reasoning that motivated #99.
 pr_for_issue() {
-  local n="$1" branch pr_info
-  branch="$(git worktree list --porcelain 2>/dev/null | awk -v n="$n" '
-    /^branch refs\/heads\// {
-      b = $0; sub("^branch refs/heads/", "", b)
-      if (index(b, n "-") == 1) { print b; exit }
-    }')"
-
-  if [ -n "$branch" ]; then
-    pr_info="$(gh pr list --head "$branch" --state all --json number,state --limit 1 2>/dev/null |
-      python3 -c "
-import json, sys
-try:
-    prs = json.load(sys.stdin)
-except Exception:
-    sys.exit(0)
-if prs:
-    print(prs[0]['number'], prs[0]['state'])
-")"
-    if [ -n "$pr_info" ]; then
-      printf '%s\n' "$pr_info"
-      return
-    fi
-  fi
-
-  gh pr list --state all --json number,headRefName,state --limit 200 2>/dev/null |
+  local n="$1"
+  gh pr list --state all --json number,state,closingIssuesReferences --limit 200 2>/dev/null |
     python3 -c "
 import json, sys
-prefix = sys.argv[1] + '-'
+n = int(sys.argv[1])
 try:
     prs = json.load(sys.stdin)
 except Exception:
     sys.exit(0)
 for pr in prs:
-    if pr.get('headRefName', '').startswith(prefix):
+    if any(ref.get('number') == n for ref in pr.get('closingIssuesReferences') or []):
         print(pr['number'], pr['state'])
         break
 " "$n"

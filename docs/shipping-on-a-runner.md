@@ -48,9 +48,17 @@ happens well after that ticket's own `claude -p` call has already returned.
 
 The same "don't parse the prose" reasoning applies a second time, to a
 question `/kit:list` doesn't answer: whether a PR this run already opened is
-still open. The runner tracks that itself, by diffing `gh pr list` state
-keyed on the `<issue>-` branch prefix `/kit:ship-ticket` created — never by
-reading what the ship-ticket call printed.
+still open. The runner tracks that itself, by diffing `gh pr list` state — never
+by reading what the ship-ticket call printed.
+
+It keys on GitHub's own closing-issue link (`kit:startable-tickets`
+`already-carried`), not on the `<issue>-` branch prefix. A branch name is derived
+from an issue title and is not obliged to carry the number at all —
+`kit:start-ticket` `branching-strategy` explicitly permits bundling onto the
+current branch — so a prefix scan misses a PR that plainly exists and the run
+reports an anomaly for a ticket it shipped cleanly. The link is also the fact
+that makes the merge close the issue, so what the runner calls "shipped" and what
+GitHub will act on cannot disagree.
 
 ## Nothing startable right now is not the same as nothing left to do
 
