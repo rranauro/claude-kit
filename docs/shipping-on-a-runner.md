@@ -23,7 +23,26 @@ here sleeps between one ticket finishing and the next one starting.
 `/kit:list <label>` exists so a script never has to parse `/kit:ship-ticket`'s
 freeform Step 3 report to learn what's startable — it reads the same
 `kit:startable-tickets` rule the sweep does and prints numbers a caller can
-act on. The runner re-asks it every iteration rather than working from a list
+act on. The channel is the **offer block** `/kit:list` ends its output with: one
+line per label that exists and was named, carrying that label's startable issue
+numbers lowest first, and present-but-empty when the label holds nothing.
+
+The runner reads its own label's line and no other text in the reply, which
+makes three answers distinguishable where two used to be. A line with numbers
+offers them. A line with nothing after the colon is a drained label, and takes
+the quiet nothing-startable path below. A missing block, or a block with no line
+for the label asked about, is a reply the run cannot read: it stops and says so.
+Scanning the whole reply instead conflates all three, and it fails in the worst
+direction — the empty answer is where an explanation is most tempting, so a
+ticket named in order to *exclude* it is exactly the number a scan picks up. A
+mistyped label reaches the unreadable stop for the same reason, rather than
+reporting a backlog that was never queried.
+
+Halting a run over a formatting lapse is the deliberate half of that trade: a
+halt carries its reason and can be resumed, where a wrong take opens a second
+pull request against a ticket that already had one.
+
+The runner re-asks it every iteration rather than working from a list
 taken once at the start: a ticket blocked on another one in the same epic
 doesn't become startable until the blocker's PR merges and closes it, which
 happens well after that ticket's own `claude -p` call has already returned.

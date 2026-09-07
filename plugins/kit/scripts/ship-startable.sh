@@ -214,14 +214,48 @@ for pr in prs:
 " "$n"
 }
 
-# Sets LIST_RESULT (lowest startable issue number, or empty) and LIST_ANOMALY.
+# Prints the numbers on the offer block's line for <label>, and exits non-zero
+# when the block or that line is absent. Nothing outside the block is read: the
+# reply is written by a model, and the empty answer is exactly where it is most
+# tempting to name the ticket being excluded — which is the number a scan of the
+# whole reply would then take.
+offer_line() { # reply label
+  printf '%s\n' "$1" | awk -v label="$2" '
+    $0 == "<!-- kit:startable:begin -->" { inblock = 1; next }
+    $0 == "<!-- kit:startable:end -->"   { inblock = 0; next }
+    inblock {
+      line = $0
+      sub(/^[[:space:]]+/, "", line)
+      colon = index(line, ":")
+      if (colon == 0) next
+      if (substr(line, 1, colon - 1) != label) next
+      print substr(line, colon + 1)
+      found = 1
+      exit
+    }
+    END { if (!found) exit 1 }
+  '
+}
+
+# Sets LIST_RESULT (lowest startable issue number, or empty), LIST_ANOMALY, and
+# LIST_UNREADABLE. Empty-with-a-line and no-line-at-all are different answers:
+# the first is a drained label, the second is a reply this run cannot act on,
+# and collapsing them is what let a mistyped label report a drained backlog.
 list_lowest_startable() {
   run_claude_timed "/kit:list ${LABEL}"
   LIST_ANOMALY=0
+  LIST_UNREADABLE=0
+  LIST_RESULT=""
   if [ "$TIMED_ELAPSED" -lt "$MIN_SECONDS" ] && [ -z "$TIMED_OUT" ]; then
     LIST_ANOMALY=1
+    return
   fi
-  LIST_RESULT="$(printf '%s\n' "$TIMED_OUT" | grep -oE '#[0-9]+' | head -1 | tr -d '#')"
+  local numbers
+  if ! numbers="$(offer_line "$TIMED_OUT" "$LABEL")"; then
+    LIST_UNREADABLE=1
+    return
+  fi
+  LIST_RESULT="$(printf '%s\n' "$numbers" | grep -oE '[0-9]+' | head -1)"
 }
 
 # Runs one ticket to an open PR (or a park) in its own process. Sets
@@ -268,6 +302,12 @@ while true; do
   if [ "$LIST_ANOMALY" -eq 1 ]; then
     ANOMALIES+=("/kit:list returned in under ${MIN_SECONDS}s with no output")
     STOP_REASON="stopped: /kit:list did not behave like a resolved plugin command — check plugin registration before retrying"
+    break
+  fi
+
+  if [ "$LIST_UNREADABLE" -eq 1 ]; then
+    ANOMALIES+=("/kit:list answered with no offer block line for '${LABEL}'")
+    STOP_REASON="stopped: /kit:list reply was unreadable — no offer block line for '${LABEL}'; check the label is spelled as it exists and that /kit:list emitted its block"
     break
   fi
 
