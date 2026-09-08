@@ -13,6 +13,7 @@ the prefix comes from the `name` field in `plugins/kit/.claude-plugin/plugin.jso
 | `/kit:architect` | The problem conversation. Explores an idea, questions the premise, looks at how others solve it — and files lean GitHub issues only if the conversation earns them. |
 | `/kit:design` | The *how*, once the *what* is settled. Places the behavior, compares approaches, grills the choice, and stores the plan on the issue it belongs to — where an agent that never had your `plans/` directory can read it. |
 | `/kit:triage` | The lane for work that arrived rather than work you started. Bins an issue (fixed, duplicate, parked, not-a-ticket), grills its *scope* before any approach exists — which adjacent decisions fold in now, and which are their own tickets — then runs `/kit:design` and brings the body up to the bar an unattended agent can pick up from. |
+| `/kit:prune-specs` | Walks the whole spec suite, one subagent per file, applying `kit:rails-load-bearing-specs` — then proves the strongest band with a **witness gate**: break the code a candidate covers, run the examples claiming to cover it, record whether anything went red, and revert with `git checkout --`. Deleting a spec produces a diff that cannot fail, so the gate is what gives an executor a signal at all. Files one `technical-debt` ticket carrying every proven example with its own witness result. Decides; never deletes. |
 
 ### Building it
 
@@ -39,6 +40,7 @@ ship-ticket's own report. Run it directly in a terminal and leave; see
 | `/kit:review-copilot` | The unattended half. Takes automated review findings one at a time and verifies each against the code before acting, recording the reasoning for every one in the commit body. A CI gate calls it with `unattended` once a review has landed on a PR — see [tending on a CI runner](tending-on-a-runner.md). |
 | `/kit:start-review` | The other side of the workflow: a PR arrives and you have to judge it. Checks the branch out in its own worktree, runs the headless reviewer, and walks the app. Assess-only on a colleague's PR; a fix loop on your own. |
 | `/kit:walkthrough` | Verifies a branch in-app one step at a time, against a checklist derived from the issue's acceptance criteria and the diff. The position lives in a file, so a bug found mid-walk detours into triage and returns to the same step. |
+
 
 ### Housekeeping
 
