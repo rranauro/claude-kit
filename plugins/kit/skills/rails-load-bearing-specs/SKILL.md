@@ -163,3 +163,36 @@ Name the code but nothing only this catches, and one of the three categories
 above has to say which and produce its evidence. Fail to name the code at all,
 and nobody has assessed it yet — which is not the same as it having no value,
 and reporting it as a candidate is how a suite loses the examples it needed.
+
+## 4 — What a pass reports
+
+The sections above decide. This one says what comes out, because a pass that
+convicts correctly and then narrates its reasoning has buried the two lines the
+reader came for.
+
+**One line per candidate**, carrying the example's `file:line`, the category that
+fired, and the evidence in a clause:
+
+```
+spec/models/order_spec.rb:412   tautology   stubs #total, asserts #total back
+spec/models/order_spec.rb:518   tautology   matcher restates order.rb:31 validation
+```
+
+Enough to check the call without reading an argument for it. **The evidence is
+withheld, not discarded** — produce the quoted lines when asked for them.
+
+**An example you keep produces no output.** Keeping is the normal case: most
+examples in most files are load-bearing, and section 3 lists the ones that are
+emphatically not candidates. Naming them is the reasoning leaking out — the
+not-a-finding list governs what a pass may claim, never what it reads aloud.
+
+**A category that convicts nothing is silent.** One exception: a candidate set
+aside for want of evidence gets its own line, marked unassessed. That is the
+dead-code category's ordinary outcome away from a runtime witness, and it is a
+finding — the axis declining to convict is exactly what the reader needs to know.
+
+```
+spec/models/order_spec.rb:96    unassessed  no witness for Order#recalculate!, monthly cadence
+```
+
+**A run that convicts nothing says so in one line**, and stops there.
