@@ -184,16 +184,17 @@ gh api --method PATCH repos/{owner}/{repo}/issues/comments/<id> -f body=@<file>
 Two summaries on one PR read as two rounds, and the second is the one anybody
 trusts — which is the duplicate this step exists to prevent.
 
-**An escalation adds a third write, and the reason goes in this same comment**,
-never a later one. A pass that posts the marker and then dies leaves a PR reading
-as a clean closed round, which is this record inverted:
+**An escalation adds one more write, and states its reason in this same
+summary**, never a later comment. A pass that posts the marker and then dies
+leaves a PR reading as a clean closed round, which is this record inverted:
 
 ```
-gh pr comment <N> --body "<!-- kit-review-closed -->
-<the Step 5 summary, saying plainly why this needs a person>"
-gh pr edit <N> --add-label kit-review-closed
 gh pr edit <N> --add-label kit-hold
 ```
+
+Both writes above still happen — the round did close, and a gate should skip an
+escalated PR for the same reason it skips a closed one: what it needs is a
+person, not another model pass.
 
 **`kit-hold` is what survives this pass.** Withholding auto-merge is the absence
 of an action, not a record: a CI gate arms auto-merge on any closed-round, green
@@ -202,21 +203,14 @@ is reversed by the next firing and GitHub merges the thing this pass escalated.
 The label is the one mark on a PR that outlives the session that wrote it, and it
 is the same mark a person's own veto uses — one mechanism, whoever set it.
 
-**The reason stays prose in the comment; the label carries none.** This is the
-split `kit-review-closed` already draws — comment authoritative, label cheap
-enough for a gate to read from `gh pr list --json labels`. Encoding the reason
-into the label name would give the gate a vocabulary to parse and the repo a
-label per reason.
-
-`kit-review-closed` goes on an escalated PR unchanged: the round did close, and
-a gate should skip an escalated PR for the same reason it skips a closed one —
-what it needs is a person, not another model pass.
+The reason stays prose in the summary and the label carries none, which is the
+split `kit-review-closed` already draws. Encoding it into the label name would
+give the gate a vocabulary to parse and the repo a label per reason.
 
 **A later run of this pass finds its own label**, and that is the mechanism
 working rather than the pass tripping over itself. `## Unattended`'s hold check
 sees `kit-hold`, closes the round again, reports it closed and held, and does not
-merge. The escalation persists until a person clears it, which is the whole point
-of writing it down. This pass never removes the label — not even the one it set.
+merge. This pass never removes the label — not even the one it set.
 
 `## Unattended` below owns what the escalation *conditions* are, and the merge
 decision that branches on them. This step owns only the record.
@@ -319,7 +313,4 @@ the merge stays GitHub's to perform once checks pass.
 
 An escalation is carried by the `kit-hold` label Step 7.5 applies, with the reason
 in the same comment body as the marker. Hand it the reason before it writes; do
-not post a later comment saying the round escalated after all. The label is what
-holds the merge once a person has made it a required check, and what makes the PR
-read as awaiting someone from the list alone — leaving auto-merge off does
-neither, and the next gate firing undoes it.
+not post a later comment saying the round escalated after all.
