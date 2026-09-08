@@ -15,8 +15,8 @@ invoking command owns that.
 
 **The unit of a finding is a single `it`.** A spec file is rarely wholly dead,
 and "prune `foo_spec.rb`" is a diff nobody can review — the reader has to
-re-derive the judgement for every example in it. Name the example, quote the
-evidence, and let the file's other examples stand on their own.
+re-derive the judgement for every example in it. Name the example, hold the
+evidence that convicts it, and let the file's other examples stand on their own.
 
 ## 1 — What a load-bearing example looks like
 
@@ -67,8 +67,8 @@ The three shapes:
   one line written twice in two notations. Nothing about the application is
   asserted that the declaration did not already say.
 
-**What convicts:** the setup line and the assertion line, quoted together from
-inside the same example. This category needs nothing outside the file, which is
+**What convicts:** the setup line and the assertion line, together, from inside
+the same example. This category needs nothing outside the file, which is
 why it is first — the reader can check the finding without leaving it.
 
 ### Covers dead code — needs a runtime witness
@@ -117,8 +117,8 @@ stating their requirements, so "no requirement was found for this example"
 convicts exactly the examples whose reason nobody remembers — which are the ones
 worth keeping.
 
-**What convicts:** the artifact and the assertion, quoted side by side, saying
-opposite things.
+**What convicts:** the artifact and the assertion, side by side, saying opposite
+things.
 
 **The finding is that two live statements disagree.** Which one is wrong is a
 person's call, and the code may be the half that changes. Say what disagrees and
@@ -166,33 +166,36 @@ and reporting it as a candidate is how a suite loses the examples it needed.
 
 ## 4 — What a pass reports
 
-The sections above decide. This one says what comes out, because a pass that
-convicts correctly and then narrates its reasoning has buried the two lines the
-reader came for.
+The sections above decide what may be claimed. This one says what is said,
+because a pass that convicts correctly and then narrates its reasoning has
+buried the two lines the reader came for.
 
-**One line per candidate**, carrying the example's `file:line`, the category that
-fired, and the evidence in a clause:
+**The output is one line per convicted example, and nothing else.** Each line
+carries the example's `file:line`, the category that fired, and the evidence in
+a clause:
 
 ```
 spec/models/order_spec.rb:412   tautology   stubs #total, asserts #total back
 spec/models/order_spec.rb:518   tautology   matcher restates order.rb:31 validation
 ```
 
-Enough to check the call without reading an argument for it. **The evidence is
-withheld, not discarded** — produce the quoted lines when asked for them.
+Enough to check the call without reading an argument for it. The full evidence
+the category required still exists and is produced on request — this is what a
+pass volunteers, not what it had to establish.
 
-**An example you keep produces no output.** Keeping is the normal case: most
-examples in most files are load-bearing, and section 3 lists the ones that are
-emphatically not candidates. Naming them is the reasoning leaking out — the
-not-a-finding list governs what a pass may claim, never what it reads aloud.
+Two things join that list, and nothing else does:
 
-**A category that convicts nothing is silent.** One exception: a candidate set
-aside for want of evidence gets its own line, marked unassessed. That is the
-dead-code category's ordinary outcome away from a runtime witness, and it is a
-finding — the axis declining to convict is exactly what the reader needs to know.
+- **An example a category reached and could not convict**, one line, marked
+  unassessed. Away from a runtime witness that is the dead-code category's
+  ordinary outcome, and it is worth saying: the axis declining to convict is
+  what the reader needs to know. An example no category reached is not this —
+  it earns no line.
+- **The sentence "nothing convicted"**, where that is the whole result.
 
 ```
 spec/models/order_spec.rb:96    unassessed  no witness for Order#recalculate!, monthly cadence
 ```
 
-**A run that convicts nothing says so in one line**, and stops there.
+Keeping an example is the normal case and produces no output. Most examples in
+most files are load-bearing, and section 3 lists the ones that are emphatically
+not candidates — reading that list aloud is the reasoning leaking out.
