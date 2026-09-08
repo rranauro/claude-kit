@@ -77,7 +77,7 @@ gate is a question attended, a rule-or-park unattended. Do not reproduce its
 phases here.
 
 The review round closes before the PR leaves draft — `kit:ticket-loop`
-`hand-off` says how — so what is left after it is one CI round, and Step 0 of the
+`hand-off` says how — so what is left after it is CI, and Step 0 of the
 next invocation reclaims the worktree once the PR lands.
 What is left for you is designing the tickets whose result someone has to look
 at, answering the parks, and walking the PRs that carry `kit-hold`.

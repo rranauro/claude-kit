@@ -238,7 +238,7 @@ it is absent.
 
 The PR is open as a draft. Both automated reviews are addressed here, in the
 worktree that already holds the plan and the implementing context, so the PR
-leaves draft already reviewed and one CI round carries it to merge.
+leaves draft already reviewed, and CI carries it to merge from there.
 
 **Do not release the lease yet.** This phase writes fixes and runs the suite in
 the worktree; a sweep reclaiming it mid-write is exactly what the lease prevents.
@@ -297,22 +297,13 @@ gh pr ready <pr-number>
 gh pr merge <pr-number> --auto --squash
 ```
 
-**Unconditionally, consulting no label.** A `kit-hold` PR is not special-cased
-here, and that is only safe where the consuming project enforces the hold as a
-**required check** — a held PR then cannot merge however auto-merge is set, so
-the label stops depending on any pass reading it in time. **A project without
-that check must not adopt this step**: there, auto-merge armed on a held PR
-merges it, which is the thing the hold was set to prevent.
-
 **Arming before the run registers merges the PR against the draft's checks.**
 Marking ready leaves a context already green on the head SHA green, so where a
 project reports the same required contexts for a draft that it does for a ready
 PR — the common shape, since skipping the expensive steps on a draft leaves the
 context's *name* intact — auto-merge evaluates as satisfied the moment it is
 armed, and GitHub merges in the seconds before the `ready_for_review` run creates
-its first check run. What is left on the PR is a green run and a merge, with
-nothing to distinguish a context earned by running the suite from one earned by
-skipping it.
+its first check run.
 
 **The wait is for the run to register, never for it to finish.** One queued check
 run is enough to leave the required contexts unsatisfied, and auto-merge holds
@@ -322,16 +313,18 @@ not a CI round.
 **The snapshot is what makes the poll unambiguous.** `/kit:review-copilot` pushed
 its fixes at step 2 and started a run of its own, so a poll asking merely whether
 anything is pending can be answered by that run and arm against one the
-transition never triggered. An id the first call did not report can only be new.
-Read the head SHA once: nothing pushes between these lines.
-
-Poll rather than sleep. A fixed delay is a bet on GitHub's scheduling latency,
-and a backed-up runner queue loses that bet the same silent way the arming did.
+transition never triggered.
 
 **Arm anyway when 120s passes with no new id**, and say so wherever this phase
 reports. A project that reports nothing on the transition is describing its own
-CI rather than failing here, and the wait cost seconds, so there is nothing to
-escalate.
+CI rather than failing here.
+
+**The arming above consults no label.** A `kit-hold` PR is not special-cased
+here, and that is only safe where the consuming project enforces the hold as a
+**required check** — a held PR then cannot merge however auto-merge is set, so
+the label stops depending on any pass reading it in time. **A project without
+that check must not adopt this step**: there, auto-merge armed on a held PR
+merges it, which is the thing the hold was set to prevent.
 
 **5 · Release the lease:** `git worktree unlock <worktree>`. The pass is over, so
 the worktree is an ordinary sweep candidate again and the next
