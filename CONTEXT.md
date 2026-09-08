@@ -35,8 +35,7 @@ A kind whose acceptance is behavior preserved across the change. The same
 subject as `improve-codebase`, reached by any route but the
 `kit:improve-codebase-architecture` scan — a human noticing, or `/kit:prune-specs`
 filing what it proved. On a prune ticket the acceptance is vacuous, since a
-deletion cannot change behavior; what holds one honest is the witness result
-carried per example.
+deletion cannot change behavior.
 _Avoid_: refactor, chore
 
 **user-experience**:
