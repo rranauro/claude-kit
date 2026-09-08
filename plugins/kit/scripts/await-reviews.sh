@@ -104,44 +104,46 @@ claude_arrived() {
 #
 # Copilot's own review arrives as a check run on the same commit, so counting it
 # here would make CI completion depend on the review this waits to request.
-ci_complete() {
+#
+# The commit is resolved once by the caller: nothing pushes to the branch while
+# this waits, so re-reading it every poll would buy an unchanged answer.
+ci_complete() { # head-sha
   local states
-  states="$(gh api "repos/$REPO/commits/$(head_sha)/check-runs" \
+  states="$(gh api "repos/$REPO/commits/$1/check-runs" \
               --jq ".check_runs[] | select(.name != \"$COPILOT_CHECK\") | .status" \
               2>/dev/null)"
   [ -n "$states" ] || return 1
   ! printf '%s\n' "$states" | grep -qv '^completed$'
 }
 
-head_sha() {
-  gh api "repos/$REPO/pulls/$PR" --jq '.head.sha' 2>/dev/null
-}
-
 SECONDS=0
 
-# Stage 1 — CI. Skipped entirely where the review is already in, which is the
-# case on a re-run against a PR whose round has already closed.
-ci_at=""
+# Stages 1 and 2 — wait for CI, then ask for the review. Both are skipped where
+# the review is already in hand, which is the case on a re-run against a PR
+# whose round has closed, and where the project produces one without being
+# asked.
+#
+# The request has to follow CI completion: firing it earlier is the silent
+# discard described at the top, and reporting the review as missing after a full
+# ceiling is a better failure than a request nobody can tell was lost.
 if [ "$REQUEST" -eq 1 ] && ! copilot_arrived; then
+  sha="$(gh api "repos/$REPO/pulls/$PR" --jq '.head.sha' 2>/dev/null)"
+  ci_at=""
+
   while :; do
-    ci_complete && { ci_at=$SECONDS; break; }
+    ci_complete "$sha" && { ci_at=$SECONDS; break; }
     [ "$SECONDS" -ge "$CEILING" ] && break
     sleep "$POLL"
   done
-fi
 
-# Stage 2 — the request. Only once CI has completed: firing it earlier is the
-# silent discard described at the top, and reporting the review as missing after
-# a full ceiling is a better failure than a request nobody can tell was lost.
-if [ "$REQUEST" -eq 1 ] && [ -n "$ci_at" ]; then
-  if gh api --method POST "repos/$REPO/pulls/$PR/requested_reviewers" \
-       -f "reviewers[]=$COPILOT_SLUG" >/dev/null 2>&1; then
+  if [ -z "$ci_at" ]; then
+    echo "copilot: CI did not complete within ${CEILING}s, so no review was requested"
+  elif gh api --method POST "repos/$REPO/pulls/$PR/requested_reviewers" \
+         -f "reviewers[]=$COPILOT_SLUG" >/dev/null 2>&1; then
     echo "copilot: review requested after CI completed at ${ci_at}s"
   else
     echo "copilot: review request failed — carrying on with what lands"
   fi
-elif [ "$REQUEST" -eq 1 ]; then
-  echo "copilot: CI did not complete within ${CEILING}s, so no review was requested"
 fi
 
 # Stage 3 — the reviews themselves.

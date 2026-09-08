@@ -302,6 +302,7 @@ marker "9001"
 SECONDS=0
 run --ceiling-seconds 20
 assert_at_most "$SECONDS" 5 "returns immediately"
+assert_lacks "$OUT" "CI did not complete" "does not report a CI wait it never made"
 end_sandbox
 
 # --- summary ------------------------------------------------------------
