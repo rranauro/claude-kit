@@ -94,6 +94,15 @@ Cleared only by a person, never by the pass that set it. Independent of kind. On
 an open PR it also holds the branch's worktree, since the walkthrough runs in it.
 _Avoid_: hold, do-not-merge
 
+### Judging a spec
+
+**Load-bearing**:
+A property of a single RSpec example: breaking the production code it covers
+breaks the example. What a pruning pass measures, and the reason it cannot use
+coverage — coverage says the line ran, load-bearing says the suite notices when
+it is wrong.
+_Avoid_: coverage, covered, exercised, tested
+
 ### Reclaiming a worktree
 
 **Verdict**:

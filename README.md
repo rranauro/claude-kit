@@ -38,7 +38,7 @@ registered the hook for it, and a CI gate in the consuming project calls
 `/kit:review-copilot` to triage the findings, push the fixes, and merge — see
 [tending on a CI runner](docs/tending-on-a-runner.md).
 
-That's the shape. There are ~13 commands and 15 skills in all; the full list is in
+That's the shape. There are ~13 commands and 17 skills in all; the full list is in
 [docs/commands.md](docs/commands.md).
 
 ## Documentation
