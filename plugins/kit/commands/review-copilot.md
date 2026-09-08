@@ -134,7 +134,7 @@ All items are processed without stopping for approval. The summary in Step 5 is 
   is destructive.
 - **Say in the escalation that the gates did not run**, and pushing stops being
   indistinguishable from a verified round: the comment is what tells them apart,
-  and `kit-escalated` keeps the CI gate off the PR either way. It also gets the
+  and `kit-hold` keeps the CI gate off the PR either way. It also gets the
   fix in front of the gate that *can* run it — CI has the toolchain a runner's
   permission grant or a laptop's missing runtime denied this pass.
 - If the push itself is rejected, that is its own escalation reason below, and
@@ -184,20 +184,39 @@ gh api --method PATCH repos/{owner}/{repo}/issues/comments/<id> -f body=@<file>
 Two summaries on one PR read as two rounds, and the second is the one anybody
 trusts — which is the duplicate this step exists to prevent.
 
-**Escalations go in this same comment**, never a later one. A pass that posts the
-marker and then dies leaves a PR reading as a clean closed round, which is this
-record inverted:
+**An escalation adds a third write, and the reason goes in this same comment**,
+never a later one. A pass that posts the marker and then dies leaves a PR reading
+as a clean closed round, which is this record inverted:
 
 ```
 gh pr comment <N> --body "<!-- kit-review-closed -->
-<!-- kit-escalated: skipped a non-minor optional item -->
-<the Step 5 summary>"
+<the Step 5 summary, saying plainly why this needs a person>"
+gh pr edit <N> --add-label kit-review-closed
+gh pr edit <N> --add-label kit-hold
 ```
 
-The escalation reason is the one thing only the comment holds —
-`kit-review-closed` is on the PR either way, because a gate should skip an
-escalated PR for the same reason it skips a closed round: what it needs is a
-person, not another model pass.
+**`kit-hold` is what survives this pass.** Withholding auto-merge is the absence
+of an action, not a record: a CI gate arms auto-merge on any closed-round, green
+PR it has not been told to leave alone, so an escalation kept only as a comment
+is reversed by the next firing and GitHub merges the thing this pass escalated.
+The label is the one mark on a PR that outlives the session that wrote it, and it
+is the same mark a person's own veto uses — one mechanism, whoever set it.
+
+**The reason stays prose in the comment; the label carries none.** This is the
+split `kit-review-closed` already draws — comment authoritative, label cheap
+enough for a gate to read from `gh pr list --json labels`. Encoding the reason
+into the label name would give the gate a vocabulary to parse and the repo a
+label per reason.
+
+`kit-review-closed` goes on an escalated PR unchanged: the round did close, and
+a gate should skip an escalated PR for the same reason it skips a closed one —
+what it needs is a person, not another model pass.
+
+**A later run of this pass finds its own label**, and that is the mechanism
+working rather than the pass tripping over itself. `## Unattended`'s hold check
+sees `kit-hold`, closes the round again, reports it closed and held, and does not
+merge. The escalation persists until a person clears it, which is the whole point
+of writing it down. This pass never removes the label — not even the one it set.
 
 `## Unattended` below owns what the escalation *conditions* are, and the merge
 decision that branches on them. This step owns only the record.
@@ -247,10 +266,12 @@ Otherwise, ask the user before enabling:
   kit-hold` hands control back, after which the PR is judged on its evidence
   again — round closed, green and unheld, which the gate will act on.
 
-  **Only this branch writes the label, and only attended.** Unattended has no
-  prompt to decline, so it has no decision to transcribe; it escalates instead,
-  and `## Unattended` owns what that means. Nothing here ever *removes*
-  `kit-hold` — clearing it is the human's statement, the same as on an issue.
+  **This is not the only branch that writes the label.** Step 7.5 writes it too,
+  in either mode, whenever the round escalates — a declined merge and an
+  escalation are the same statement, that a person is in charge of this PR, so
+  they leave the same mark. Nothing anywhere in this file ever *removes*
+  `kit-hold` — clearing it is the human's statement, the same as on an issue, and
+  that rule now guards a label this pass may have set itself.
 - On success, tell the user: "Auto-merge enabled — PR will merge when required CI checks pass."
 
 **Arguments:** $ARGUMENTS
@@ -296,6 +317,9 @@ the merge stays GitHub's to perform once checks pass.
   job** — a red check is not a review finding, and repairing one belongs in a
   session with a person nearby. Escalate and say so.
 
-An escalation is carried by the comment Step 7.5 writes, in the same body as the
-marker. Hand it the reason before it writes; do not post a later comment saying
-the round escalated after all.
+An escalation is carried by the `kit-hold` label Step 7.5 applies, with the reason
+in the same comment body as the marker. Hand it the reason before it writes; do
+not post a later comment saying the round escalated after all. The label is what
+holds the merge once a person has made it a required check, and what makes the PR
+read as awaiting someone from the list alone — leaving auto-merge off does
+neither, and the next gate firing undoes it.

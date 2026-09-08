@@ -50,9 +50,10 @@ label; clearing it is a human's to do.
 
 ## The round is closed by a marker, not by the run that closed it
 
-`/kit:review-copilot` posts `<!-- kit-review-closed -->` (or
-`<!-- kit-escalated -->`) as a PR comment carrying its summary, and adds a
-`kit-review-closed` label alongside it.
+`/kit:review-copilot` posts `<!-- kit-review-closed -->` as a PR comment carrying
+its summary, and adds a `kit-review-closed` label alongside it. Where the round
+escalated, the summary says why and the pass adds `kit-hold` as well — the same
+label a person's own veto uses.
 `workflow_run` fires again on every subsequent push, so a gate that does not look
 for the record first re-runs a round already answered — paying for a model to
 reach the same conclusion, and stacking a second summary comment on the PR saying
