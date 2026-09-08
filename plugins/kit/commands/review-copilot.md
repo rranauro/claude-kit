@@ -209,9 +209,10 @@ for auto-merge — triaging every item counts as "addressed" even when no fixes 
 made. Auto-merge stays off until this point precisely because CI often goes green
 before the reviewers post.
 
-**If this skill was invoked by `/kit:ship-ticket`, stop here.** That command
-opens its PR with auto-merge deliberately off and leaves it to the CI gate;
-enabling it here would merge a PR whose review round nobody has closed.
+**If this skill was invoked by `/kit:ship-ticket`, stop here.** That pass has
+work left on the PR after this round closes — a suite run, and marking a draft
+ready — and it arms auto-merge itself once both are done. Arming it here would
+let the PR merge before either happened.
 
 "Stop here" ends *this* skill, not the caller's run. Return the
 Step 5 summary and let the caller continue — a pass that treats this as the end of

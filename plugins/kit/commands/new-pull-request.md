@@ -14,6 +14,9 @@ Always run `/kit:commit` first and confirm the branch is ready for a pull reques
 - Title: short, imperative, under 72 characters. Captures the primary change.
 - Body: use the format below. Be specific — reference actual files, methods, and config keys.
 - If the branch name starts with a number (e.g., `218-...`), that's the issue number — link it with `Closes #218`.
+- **If the arguments carry a `draft` token, add `--draft`.** A caller asks for
+  that when it intends to close the review round itself before the PR is ready
+  to merge; without the token nothing here changes.
 
 ```
 gh pr create --title "the pr title" --body "$(cat <<'EOF'
@@ -55,12 +58,6 @@ URL:
 gh pr edit <pr-number> --add-label kit-hold
 ```
 
-The hold has to be on the PR **before the CI gate can see it**. That gate fires
-on `workflow_run` as soon as CI finishes, so the window between `gh pr create`
-and that run is the whole race, and losing it means the PR's round is closed and
-auto-merge is enabled — the exact thing the hold was set to prevent, arriving
-minutes after someone deliberately asked for it not to.
-
 This is not the automation deciding to hold something. A human answered that
 question when the ticket was settled, and this step transcribes the answer onto
 the artifact it was about. Nothing unattended ever writes this label in either
@@ -75,15 +72,6 @@ PR looks identical to an ignored one:
 
 **Step 4 — Confirm:**
 Print the PR URL so the user can review it.
-
-**Step 4a · `start-polling` — Say what happens next, don't poll:**
-Copilot reviews the PR within a minute or two, and the CI gate fires when CI finishes. Waiting for either here would hold the session open to do work that needs nobody present.
-
-Tell the user:
-
-> "PR #<N> is open. Copilot reviews it shortly, and the CI gate takes it from there — nothing to start."
-
-If the PR is held, say that instead, per the `kit-hold` wording above.
 
 **Step 5 — Save ticket context to `tickets/`:**
 After the PR is created, write a summary file to `tickets/<pr-number>-<branch>.md`. It records why the change was made for whoever debugs it later — `/target-debug` reads these if you have it installed, and they stand on their own if you don't. Add `tickets/` to `.gitignore` if it isn't there already; these are local working notes, not repo content.
@@ -108,4 +96,6 @@ Format:
 Create the `tickets/` directory if it doesn't exist. Tell the user the file has been saved.
 
 **Arguments:** $ARGUMENTS
-If the user passed arguments, treat them as guidance for the PR title, scope, or target branch (e.g., `/kit:new-pull-request ready for review` → mention readiness in the description).
+A bare `draft` token is read by Step 3 and is not guidance. Anything else is
+guidance for the PR title, scope, or target branch (e.g.,
+`/kit:new-pull-request ready for review` → mention readiness in the description).

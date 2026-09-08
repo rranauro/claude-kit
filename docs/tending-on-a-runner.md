@@ -1,7 +1,14 @@
 # Tending on a CI runner
 
-A PR opens with auto-merge off. Copilot reviews it, CI goes green, and a
-`workflow_run` job in the consuming project decides what happens next: a bash
+**A ship pass closes its own review round.** `kit:ticket-loop` `hand-off` opens
+the PR as a draft, addresses both automated reviews in the worktree it is already
+sitting in, and marks the PR ready with auto-merge on — so a PR that pass opened
+arrives already reviewed and needs nothing from a runner.
+
+This is the fallback, for every PR nobody's ship pass opened: one raised by hand,
+one from a machine that could not run the suite, one whose round timed out. There
+the PR opens with auto-merge off, Copilot reviews it, CI goes green, and a
+`workflow_run` job in the consuming project decides what happens next — a bash
 gate answers the cheap questions, and where a judgement is genuinely needed it
 calls `/kit:review-copilot <N> unattended`. Nothing runs on your laptop, and
 there is nothing to start.

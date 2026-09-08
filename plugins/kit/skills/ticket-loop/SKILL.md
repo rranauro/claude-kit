@@ -44,8 +44,10 @@ this one does not restate it.
   stays at the main checkout.
 - **Never merge locally.** PRs merge on GitHub only.
 - **Never run a test directory or the full suite.** Named files and examples
-  only. Attended, widening needs an ask; unattended it is not yours to take. CI
-  runs the full sweep on the PR.
+  only. Attended, widening needs an ask; unattended it is not yours to take.
+  **The one exception is `hand-off`'s single suite run**, which gates the PR
+  leaving draft rather than gating a change — named there and nowhere else, so
+  the `tdd` and `simplify` phases are unaffected by it.
 - **Apply the project's own rules from `CLAUDE.md`.** This skill does not restate
   them.
 
@@ -213,7 +215,9 @@ at triage, as `kit-hold`, which `/kit:new-pull-request` transcribes onto the PR.
 A held PR gets its reviews and waits for the walkthrough; an unheld one was
 decided not to need one.
 
-Invoke `/kit:new-pull-request` via the Skill tool.
+Invoke `/kit:new-pull-request draft` via the Skill tool. The `draft` token is
+what makes `hand-off` possible: a draft PR still runs CI and still gets both
+reviews, but cannot merge out from under the round this pass is about to close.
 
 **If the plan was written by this run, say so in the PR body** — one line, that
 the approach was designed unattended and the plan comment on the issue carries
@@ -228,38 +232,84 @@ strands every ticket whose `kit-blocked-by` marker names this one, because a
 blocker reads as cleared only when its issue closes. `gh pr edit <n> --body` if
 it is absent.
 
-**Leave auto-merge off.** CI is fast and frequently goes green before the review
-posts; `--auto` at creation time can merge the PR before anyone reviews it. The
-CI gate sets it once the review round is closed.
-
 ---
 
-## Phase 5 · `hand-off` — Leave the PR to CI
+## Phase 5 · `hand-off` — Close the review round, then leave the PR to CI
 
-**Release the lease first:** `git worktree unlock <worktree>`. `prepare` took it
-so a concurrent sweep would leave this worktree alone while the pass was writing
-in it; the pass is over, so the worktree is an ordinary sweep candidate again and
-the next `/kit:ship-ticket` reclaims it once the PR merges.
+The PR is open as a draft. Both automated reviews are addressed here, in the
+worktree that already holds the plan and the implementing context, so the PR
+leaves draft already reviewed and one CI round carries it to merge.
 
-This skill ends at an open PR with auto-merge off, and that is the whole handoff:
-nothing local picks it up, and there is nothing for the user to start.
+**Do not release the lease yet.** This phase writes fixes and runs the suite in
+the worktree; a sweep reclaiming it mid-write is exactly what the lease prevents.
+The unlock is the last step below.
 
-Copilot posts its review a minute or so after `gh pr create`, and when CI
-finishes, the project's `workflow_run` gate takes the PR from there — it calls
-`/kit:review-copilot <N> unattended` to triage the findings and push the fixes,
-then enables auto-merge unless something warrants attention. A PR carrying
-`kit-hold` is skipped and waits for its walkthrough.
+**1 · Wait for both reviews.**
 
-Waiting here for any of that would hold a session open for an indeterminate
-stretch to watch work that needs nobody present.
+```
+plugins/kit/scripts/await-reviews.sh <pr-number>
+```
+
+It waits for CI to complete, requests the Copilot review, then blocks until both
+that review and the `<!-- claude-pr-review -->` marker have landed or its ceiling
+expires. The ordering is the platform's, not a preference — the script's header
+says why, and it is not reproducible by hand.
+
+Its last line names any source that did not arrive. **Carry on with what landed,
+and say which one was missing** wherever this phase reports. A silent partial
+collation is worse than a slow one, and a timed-out source is not an escalation.
+
+Pass `--no-request` where the project still has automatic Copilot review
+enabled; asking as well yields two reviews, the second landing after this round
+has closed.
+
+**2 · Collate and address them.** Invoke `/kit:review-copilot <pr-number>` via
+the Skill tool against the local branch. It triages both sources and pushes what
+it fixes; that push is its own and this phase is built around it, not against it.
+
+**3 · Run the project's full suite, once.** After the fixes, before the PR leaves
+draft. This is the carve-out named in the constraints above, and it is the only
+place in this skill a suite run is permitted.
+
+The suite here gates *readiness*, not a change — which is what separates it from
+`/kit:review-copilot`'s rule of gating what you changed rather than the suite.
+Both are right: that rule scopes a fix's verification, and this run answers a
+different question, whether a PR about to be armed for merge is green as a whole.
+Neither is redundant with the other, and deleting either because it looks like a
+contradiction is the mistake this paragraph exists to prevent.
+
+**Skip it when `git diff origin/main...HEAD` touches only prose.** The whole PR
+diff, not the fixes the review pass just made — otherwise a PR that changed code,
+whose review fixes touched only a comment, skips the suite it needed.
+
+If the suite is red, stop here with the PR still in draft: attended, surface it;
+unattended, `kit:park`. A draft PR is the correct resting place for a failing
+branch, and marking it ready would arm a merge for code known to be broken.
+
+**4 · Mark it ready and enable auto-merge.**
+
+```
+gh pr ready <pr-number>
+gh pr merge <pr-number> --auto --squash
+```
+
+**Unconditionally, consulting no label.** A `kit-hold` PR is not special-cased
+here, and that is only safe where the consuming project enforces the hold as a
+**required check** — a held PR then cannot merge however auto-merge is set, so
+the label stops depending on any pass reading it in time. **A project without
+that check must not adopt this step**: there, auto-merge armed on a held PR
+merges it, which is the thing the hold was set to prevent.
+
+**5 · Release the lease:** `git worktree unlock <worktree>`. The pass is over, so
+the worktree is an ordinary sweep candidate again and the next
+`/kit:ship-ticket` reclaims it once the PR merges.
 
 Attended, tell the user:
 
-> "PR #<N> is open with auto-merge off. Copilot reviews within a minute or two,
-> and the CI gate triages and merges it from there — nothing to start."
+> "PR #<N> is open, reviewed, and ready with auto-merge on — one CI round to
+> merge. <Which review source, if any, did not arrive.>"
 
-Then stop. The worktree stays while the PR is open; the reclaim sweep at the top
-of the next `/kit:ship-ticket` takes it once the PR has merged.
+Then stop. Nothing local picks it up from here.
 
 ---
 
