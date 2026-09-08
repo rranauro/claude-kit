@@ -1,6 +1,6 @@
 ---
 name: rails-load-bearing-specs
-description: The axis for judging whether one RSpec example is load-bearing — the positive definition, the three categories that convict a deletion candidate and the evidence each needs, and what is not a finding. Use when judging a spec file, proposing an example for deletion, or when another skill needs the load-bearing vocabulary.
+description: The axis for judging whether one RSpec example is load-bearing — the positive definition, the three categories that convict a deletion candidate and the evidence each needs, and what is not a finding. Use when pruning a spec suite, when judging whether one example earns its place, or when another skill needs the load-bearing vocabulary.
 ---
 
 # Rails Load-Bearing Specs
@@ -11,7 +11,7 @@ candidate on, and something an adversarial pass can check rather than argue.
 
 `kit:rails-codebase-design` scores the shape of a class. This scores whether the
 suite would notice that class being wrong. Neither decides what to delete; the
-invoking command owns that, and nothing here deletes anything.
+invoking command owns that.
 
 **The unit of a finding is a single `it`.** A spec file is rarely wholly dead,
 and "prune `foo_spec.rb`" is a diff nobody can review — the reader has to
@@ -28,7 +28,7 @@ That is the whole definition, and it is deliberately not coverage. Coverage says
 the line ran. This says the suite *notices*. A line can run under a dozen
 examples and still be free to return anything at all.
 
-Three consequences worth stating, because each is a place the definition gets
+Two consequences worth stating, because each is a place the definition gets
 read too narrowly:
 
 **A wrong value is one way to be wrong; so is a missing effect.** An example
@@ -41,15 +41,15 @@ code that merely passed it along. Name which production code an example holds up
 before judging it; an example with nothing named on the other side has not been
 assessed yet.
 
-**One example is enough.** A second example asserting the same failure adds
-nothing to this axis and subtracts nothing either. Redundancy is a cost
-question, not a load-bearing one, and section 3 sends it elsewhere.
-
 ## 2 — The three categories
 
 Ordered by descending convictability. Each carries its own evidence rule,
 because they are not equally provable and a pass that convicts them all on
 reading is wrong about two of them.
+
+**No category convicts on absence.** An example with no evidence against it is
+unassessed, not a candidate — and saying which of the two it is, every time, is
+what keeps a pass from converting its own unfinished search into a deletion.
 
 ### Tautology — evidence is local and quotable
 
@@ -70,9 +70,6 @@ The three shapes:
 **What convicts:** the setup line and the assertion line, quoted together from
 inside the same example. This category needs nothing outside the file, which is
 why it is first — the reader can check the finding without leaving it.
-
-**What does not convict:** an example that reads as simple. Section 3 says so
-again, because this is where the two get confused.
 
 ### Covers dead code — needs a runtime witness
 
@@ -106,11 +103,8 @@ execute, admissible only when both hold:
   prevent.
 
 How a witness is produced is out of scope here — coverage in CI, a call-site
-tracer, an APM trace, an instrumented deploy all serve. The rule above is what
-the observation must satisfy to be admitted, whatever produced it.
-
-Absent a witness, the example is unassessed, not convicted. Say that rather than
-downgrading it to a weaker finding.
+tracer, an APM trace, an instrumented deploy all serve; the two rules above are
+what admit whatever it produced.
 
 ### Contradicts a stated requirement — the narrow one
 
@@ -118,18 +112,17 @@ The example asserts behavior that a live requirement artifact says is wrong: an
 acceptance criterion, a `CONTEXT.md` definition, an ADR, a specification the
 project actually keeps.
 
-**This category convicts on contradiction, never on absence.** "No requirement
-was found for this example" measures the search, not the example — and most
-repositories hold no artifact stating their requirements, so the examples such a
-search convicts are exactly the ones whose reason nobody remembers. Those are
-the ones worth keeping.
+**Contradiction is the whole category.** Most repositories hold no artifact
+stating their requirements, so "no requirement was found for this example"
+convicts exactly the examples whose reason nobody remembers — which are the ones
+worth keeping.
 
 **What convicts:** the artifact and the assertion, quoted side by side, saying
 opposite things.
 
-**And the finding is not "delete this."** Two live statements disagree; which
-one is wrong is a person's call, and the code may be the half that changes. Say
-what disagrees and stop there.
+**The finding is that two live statements disagree.** Which one is wrong is a
+person's call, and the code may be the half that changes. Say what disagrees and
+stop there.
 
 The cost, accepted deliberately: this category yields almost no deletion
 candidates. That is the category working, not a gap to widen.
@@ -150,10 +143,9 @@ resting only on one of them is not a weaker candidate; it is not a candidate.
   (#4417)"` *is* the requirement artifact. It is the strongest evidence in the
   repository that someone once needed this, and the third category above reads
   it as such.
-- **A characterization spec pinning behavior nobody remembers choosing.** By
-  inspection it is indistinguishable from an example with no requirement behind
-  it, and it is the most expensive kind to lose: it is the record of what the
-  system does, held for the change that is about to alter it.
+- **A characterization spec pinning behavior nobody remembers choosing.** It is
+  the record of what the system does, held for the change about to alter it, and
+  the third category above is written the way it is because of these.
 - **A boundary, nil, or empty case that reads as trivial.** Triviality is not
   tautology. `nil` handling asserts a real branch, and the assertion does not
   restate the setup — the setup is an absence.

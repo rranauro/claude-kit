@@ -98,9 +98,8 @@ _Avoid_: hold, do-not-merge
 
 **Load-bearing**:
 A property of a single RSpec example: breaking the production code it covers
-breaks the example. What a pruning pass measures, and the reason it cannot use
-coverage — coverage says the line ran, load-bearing says the suite notices when
-it is wrong.
+breaks the example. Distinct from coverage, which says only that the line ran.
+`kit:rails-load-bearing-specs` is the one statement of it.
 _Avoid_: coverage, covered, exercised, tested
 
 ### Reclaiming a worktree
