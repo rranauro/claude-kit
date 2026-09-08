@@ -223,9 +223,10 @@ made. Auto-merge stays off until this point precisely because CI often goes gree
 before the reviewers post.
 
 **If this skill was invoked by `/kit:ship-ticket`, stop here.** That pass has
-work left on the PR after this round closes — a suite run, and marking a draft
-ready — and it arms auto-merge itself once both are done. Arming it here would
-let the PR merge before either happened.
+work left on the PR after this round closes — marking a draft ready — and it
+arms auto-merge itself once the run that transition triggers has registered.
+Arming it here would let the PR merge before either happened — while it is still
+a draft, or against the checks the draft earned.
 
 "Stop here" ends *this* skill, not the caller's run. Return the
 Step 5 summary and let the caller continue — a pass that treats this as the end of

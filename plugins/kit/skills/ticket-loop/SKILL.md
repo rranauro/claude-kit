@@ -45,9 +45,8 @@ this one does not restate it.
 - **Never merge locally.** PRs merge on GitHub only.
 - **Never run a test directory or the full suite.** Named files and examples
   only. Attended, widening needs an ask; unattended it is not yours to take.
-  **The one exception is `hand-off`'s single suite run**, which gates the PR
-  leaving draft rather than gating a change — named there and nowhere else, so
-  the `tdd` and `simplify` phases are unaffected by it.
+  No phase is exempt: CI is the merge gate, so nothing here runs the suite to
+  decide whether a PR may leave draft either.
 - **Apply the project's own rules from `CLAUDE.md`.** This skill does not restate
   them.
 
@@ -240,9 +239,9 @@ The PR is open as a draft. Both automated reviews are addressed here, in the
 worktree that already holds the plan and the implementing context, so the PR
 leaves draft already reviewed, and CI carries it to merge from there.
 
-**Do not release the lease yet.** This phase writes fixes and runs the suite in
-the worktree; a sweep reclaiming it mid-write is exactly what the lease prevents.
-The unlock is the last step below.
+**Do not release the lease yet.** This phase writes fixes in the worktree; a
+sweep reclaiming it mid-write is exactly what the lease prevents. The unlock is
+the last step below.
 
 **1 · Wait for both reviews.**
 
@@ -267,26 +266,7 @@ has closed.
 the Skill tool against the local branch. It triages both sources and pushes what
 it fixes; that push is its own and this phase is built around it, not against it.
 
-**3 · Run the project's full suite, once.** After the fixes, before the PR leaves
-draft. This is the carve-out named in the constraints above, and it is the only
-place in this skill a suite run is permitted.
-
-The suite here gates *readiness*, not a change — which is what separates it from
-`/kit:review-copilot`'s rule of gating what you changed rather than the suite.
-Both are right: that rule scopes a fix's verification, and this run answers a
-different question, whether a PR about to be armed for merge is green as a whole.
-Neither is redundant with the other, and deleting either because it looks like a
-contradiction is the mistake this paragraph exists to prevent.
-
-**Skip it when `git diff origin/main...HEAD` touches only prose.** The whole PR
-diff, not the fixes the review pass just made — otherwise a PR that changed code,
-whose review fixes touched only a comment, skips the suite it needed.
-
-If the suite is red, stop here with the PR still in draft: attended, surface it;
-unattended, `kit:park`. A draft PR is the correct resting place for a failing
-branch, and marking it ready would arm a merge for code known to be broken.
-
-**4 · Mark it ready, then arm auto-merge once the transition's run has
+**3 · Mark it ready, then arm auto-merge once the transition's run has
 registered.**
 
 ```
@@ -326,7 +306,7 @@ the label stops depending on any pass reading it in time. **A project without
 that check must not adopt this step**: there, auto-merge armed on a held PR
 merges it, which is the thing the hold was set to prevent.
 
-**5 · Release the lease:** `git worktree unlock <worktree>`. The pass is over, so
+**4 · Release the lease:** `git worktree unlock <worktree>`. The pass is over, so
 the worktree is an ordinary sweep candidate again and the next
 `/kit:ship-ticket` reclaims it once the PR merges.
 

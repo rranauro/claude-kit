@@ -6,7 +6,7 @@ sitting in, and marks the PR ready with auto-merge on — so a PR that pass open
 arrives already reviewed and needs nothing from a runner.
 
 This is the fallback, for every PR nobody's ship pass opened: one raised by hand,
-one from a machine that could not run the suite, one whose round timed out. There
+one whose pass parked before the round closed, one whose round timed out. There
 the PR opens with auto-merge off, Copilot reviews it, CI goes green, and a
 `workflow_run` job in the consuming project decides what happens next — a bash
 gate answers the cheap questions, and where a judgement is genuinely needed it
