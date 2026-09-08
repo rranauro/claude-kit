@@ -13,6 +13,7 @@ the prefix comes from the `name` field in `plugins/kit/.claude-plugin/plugin.jso
 | `/kit:architect` | The problem conversation. Explores an idea, questions the premise, looks at how others solve it — and files lean GitHub issues only if the conversation earns them. |
 | `/kit:design` | The *how*, once the *what* is settled. Places the behavior, compares approaches, grills the choice, and stores the plan on the issue it belongs to — where an agent that never had your `plans/` directory can read it. |
 | `/kit:triage` | The lane for work that arrived rather than work you started. Bins an issue (fixed, duplicate, parked, not-a-ticket), grills its *scope* before any approach exists — which adjacent decisions fold in now, and which are their own tickets — then runs `/kit:design` and brings the body up to the bar an unattended agent can pick up from. |
+| `/kit:prune-specs` | Walks the whole spec suite, one subagent per file, applying `kit:rails-load-bearing-specs`, then **proves** the strongest band by mutation: break the code an example's assertion reaches, run that example, record whether it went red, revert with `git checkout --`. Deleting a spec produces a diff that cannot fail, so the gate is what gives an executor a check at all — applied before the deletion, not after. Not the axis's runtime witness and no substitute for one. Files one `technical-debt` ticket; decides, never deletes. |
 
 ### Building it
 
