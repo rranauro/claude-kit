@@ -94,6 +94,14 @@ Cleared only by a person, never by the pass that set it. Independent of kind. On
 an open PR it also holds the branch's worktree, since the walkthrough runs in it.
 _Avoid_: hold, do-not-merge
 
+### Judging a spec
+
+**Load-bearing**:
+A property of a single RSpec example: breaking the production code it covers
+breaks the example. Distinct from coverage, which says only that the line ran.
+`kit:rails-load-bearing-specs` is the one statement of it.
+_Avoid_: coverage, covered, exercised, tested
+
 ### Reclaiming a worktree
 
 **Verdict**:
