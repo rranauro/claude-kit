@@ -165,7 +165,7 @@ The user calls this, not you. A cleanup ticket has no natural end; ask at natura
 
 Landing does **not** require the epic to be finished. A cleanup branch is better shipped in batches than held open for weeks — a long-lived branch drifts from `main` and its review gets unreviewable.
 
-Hand off to `kit:ticket-loop` starting at its `simplify` phase — `prepare` and `tdd` are already done by this skill's loop. So: `/simplify` over the accumulated diff, then `open-pr` and `hand-off` — from there the CI gate triages the reviews and enables auto-merge out of session.
+Hand off to `kit:ticket-loop` starting at its `simplify` phase — `prepare` and `tdd` are already done by this skill's loop. So: `/simplify` over the accumulated diff, then `open-pr` and `hand-off`, which closes the review round in the worktree and marks the PR ready with auto-merge on.
 
 Two adjustments for a multi-fix branch:
 
