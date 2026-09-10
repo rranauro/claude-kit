@@ -98,8 +98,15 @@ the floor-duration check above is the safety net if that assumption is wrong.
 counterpart for shipping rather than reviewing — it grants `gh pr create`,
 `gh issue edit` (for `kit-blocked` and `kit-hold`), and the git write commands
 a full `kit:ticket-loop` pass needs, on top of everything tending already
-grants. It still denies `gh pr merge`: shipping opens a PR and stops, the CI
-gate decides whether it merges. A consuming project's own `--project-settings`
+grants. It must also grant `gh pr merge` and `gh pr edit`: `kit:ticket-loop`'s
+final phase arms auto-merge itself and the review round writes its labels, so a
+grant that withholds either leaves every shipped PR sitting green and unlabelled
+with nothing downstream watching for it. An earlier split gave the merge to a CI
+gate instead — a consuming project that has not installed one gets no merge at
+all, which is the failure this grant now avoids. Arming is safe here only where
+the project enforces `kit-hold` as a required check, the same precondition
+`kit:ticket-loop` states for the step. A consuming project's own
+`--project-settings`
 file merges its test and lint commands over this one before a run, the same
 split `tending-settings.json` already uses — this file says what shipping a
 ticket may do in any repo, the project's file adds how it verifies a change
