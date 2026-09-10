@@ -97,6 +97,16 @@ Cleared only by a person, never by the pass that set it. Independent of kind. On
 an open PR it also holds the branch's worktree, since the walkthrough runs in it.
 _Avoid_: hold, do-not-merge
 
+**kit-pinned**:
+The PR merged carrying a question nobody has answered — a review finding real
+enough to record that the pass had a reason to skip. Written by the review pass
+alongside a pin holding the discussion, and named for the PR so the diff and the
+round summary are one lookup away. Blocks nothing: it exists so the merged PRs
+with an open question can be listed, which a pin file on one machine cannot do.
+Distinct from **kit-hold**, which stops a merge because something could not be
+established; a pin stops nothing because everything was.
+_Avoid_: deferred, backlog, todo, follow-up
+
 ### Judging a spec
 
 **Load-bearing**:

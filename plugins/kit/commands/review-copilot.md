@@ -102,7 +102,7 @@ All items are processed without stopping for approval. The summary in Step 5 is 
 
   Use the four categories from Step 3.3, add the minor/non-minor scope label, and tag each line with the source(s). **Include skipped items too** — the durable record of "we considered this and decided not to act" is the point. If Step 6 delegates to `/kit:commit`, pass this body as the intended message rather than letting `/kit:commit` draft its own.
 - If no fixes were made (all comments skipped/ignored), do NOT create a commit — there is nothing to push. The summary still becomes the record at Step 7.5: a round that skipped everything is closed, and a PR cannot otherwise show the difference between that and a round nobody ran.
-- **Report the summary back to your caller in a form it can act on**, naming explicitly whether any **non-minor** item was skipped. The merge decision branches on exactly that: a skipped non-minor item is the difference between enabling auto-merge and escalating to the user. Do not bury it in prose counts.
+- **Report the summary back to your caller in a form it can act on**, naming explicitly whether any **non-minor** item was skipped. That is what decides whether the PR gets pinned — `kit-pinned` plus a pin carrying the discussion, per Step 7.5 — and the caller cannot recover it from prose counts. It does not decide the merge: a pinned PR still merges.
 
 **Step 6 — Quality gates (if any fixes were made):**
 - Run the /kit:commit skill
@@ -212,6 +212,28 @@ working rather than the pass tripping over itself. `## Unattended`'s hold check
 sees `kit-hold`, closes the round again, reports it closed and held, and does not
 merge. This pass never removes the label — not even the one it set.
 
+**A skipped non-minor finding is not an escalation, and takes a different
+write.** It is a discussion to have later, not a merge to stop: the pass had a
+reason for skipping, a subsequent pass over the same file often handles it
+transparently, and holding the PR over it strands finished work behind a
+question nobody has scheduled. Pin it instead, and let the merge proceed:
+
+```
+gh pr edit <N> --add-label kit-pinned
+```
+
+Then invoke `/kit:pin-it` via the Skill tool with the finding drafted as its
+subject — the requirement in the reviewer's framing, what the round already
+established about it, and why this pass skipped it. **Title the pin with the PR
+number** so the diff, the round summary and the reviewer's own words are one
+lookup away; a pin that names only the symptom sends its reader back to a
+codebase that has since moved.
+
+`kit-pinned` blocks nothing. It exists so `gh pr list --label kit-pinned` names
+the merged PRs carrying an open question, which a pin file on one machine cannot
+do — and the summary comment above already carries the reasoning, so the label
+stays a filter and never a vocabulary.
+
 `## Unattended` below owns what the escalation *conditions* are, and the merge
 decision that branches on them. This step owns only the record.
 
@@ -295,15 +317,22 @@ already in charge of merging; this pass does not call `gh pr merge` over that
 decision, and it does not remove the label either — clearing `kit-hold` is the
 human's statement, the same as everywhere else in this file.
 
-**Otherwise, decide the merge.** On a clean triage, `gh pr merge <N> --auto --squash`.
-With a single review round there is nothing further to wait for, and leaving it
-off means the PR sits green until someone notices. Enabling it is idempotent, and
+**Otherwise, decide the merge.** On a triage that escalated nothing — including
+one that pinned a skipped finding — `gh pr merge <N> --auto --squash`. With a
+single review round there is nothing further to wait for, and leaving it off
+means the PR sits green until someone notices. Enabling it is idempotent, and
 the merge stays GitHub's to perform once checks pass.
+
+**A skipped non-minor item does not withhold the merge.** Pin it and merge —
+Step 7.5 owns that write. The reason it is not an escalation is that nothing is
+unverified: the gates ran, the round is closed, and what is left is a question
+whose answer can arrive later, sometimes from a subsequent pass over the same
+code that handles it without anyone asking. The two conditions below are the
+opposite case — each of them means this pass could not establish that the PR is
+sound, and merging on an unestablished claim is what the hold prevents.
 
 **Escalate instead — leave auto-merge off — when any of these hold:**
 
-- You skipped a **non-minor** item: a finding real enough to record and too large
-  to apply alone.
 - The gates failed, could not be run at all, or the push was rejected. A gate that
   never ran is not a gate that passed, and unattended that is the likelier of the
   two. The fixes are pushed regardless — see Step 7 — so what this withholds is
