@@ -105,6 +105,12 @@ mkdir -p "$LOGDIR"
 LOG="$LOGDIR/$(date +%Y%m%d-%H%M%S)-${LABEL}.log"
 log() { printf '%s %s\n' "$(date -u +%FT%TZ)" "$*" | tee -a "$LOG"; }
 
+# Announced before any work, not only in the exit summary: a run killed hard
+# enough to skip the EXIT trap — a closed terminal, a SIGKILL, a machine that
+# slept — leaves an operator with no way to find what it wrote.
+log "log: $LOG"
+log "follow it with: tail -f $LOG"
+
 log "starting: label=${LABEL} repo=${REPO} max=${MAX} poll-seconds=${POLL_SECONDS} model=${MODEL}"
 
 # A per-ticket or list call that returns in under this floor with nothing to
