@@ -274,7 +274,18 @@ One per surviving candidate, in rank order, each carrying:
 - **`<!-- kit-blocked-by: -->`**, present and empty. These findings are
   independent, and the empty form is what says "startable now".
 - **The card's Cost as the problem, its Solution as the intended shape**, and
-  the constructor line where the card had one.
+  the constructor line where the card had one — both under a sentence saying
+  only the acceptance criteria bind, and that the shape is what the scan
+  proposed rather than what the ticket requires. `kit:writing-tickets` requires
+  that sentence of any ticket carrying implementation detail, and this one
+  always does. Without it the shape arrives wearing an authority a read-only
+  scan cannot confer, and gets built.
+- **The Cost and the counts stated as what the scan observed, and a criterion
+  telling the implementer to confirm them before designing against them.** The
+  scan reads; it runs nothing. A miscounted caller or a cascade it did not know
+  was declared reaches the ticket indistinguishable from a fact, and every
+  reader downstream inherits it — the ticket's own premise is the thing least
+  likely to be rechecked.
 - **Acceptance criteria written as the counts that fired** — "arity of 6 gone",
   "`page` no longer threaded through the three class methods". That is what
   `improve-codebase` acceptance is, which is why they can be written here.
@@ -288,6 +299,7 @@ label are `/kit:triage`'s to add.
 
 - Make implementation changes. This is a scan, a report, and the tickets in §5.
 - Design a candidate in the report. One constructor line is the ceiling.
+- File a child whose problem statement asserts the scan's findings as verified.
 - Ship a card that can't name the caller it costs.
 - Score a class down for anything on the not-a-finding list.
 - Propose relocating a file as the finding. Ownership first, layout after.
