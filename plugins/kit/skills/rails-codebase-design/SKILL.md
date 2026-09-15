@@ -228,6 +228,30 @@ wearing one name.
 `initialize` already claimed the signature: either two objects are in here, or
 the state was described wrong.
 
+**The unrelated return types.** Two public methods whose return types have
+nothing in common — `.run` answering a report, `.call` answering a persisted
+record. Two objects are wearing one name, and the differing names are the
+disguise: the doubled name above needs one name twice, and
+`kit:behavior-placement` Check 2's census passes both rows `only here`, since
+neither method computes the other's answer. The pair of types is the whole
+count. Say which of the two is the separate object — the class name predicts one
+of the return types, and the method answering the other is it.
+
+**The same-signature constructors.** Two constructors of the same arity
+returning the same type — `Thing.from_json(str)` and `Thing.from_text(str)`,
+both arity 1, both `-> Thing`. Both are clean, which is why the unearned
+construction above stays quiet, and a caller picking between them by name is
+picking a mode. A mode is an argument. Check 2's census does reach this pair —
+both constructors get rows, each naming the other as forked — and what it cannot
+supply is where that mode goes once the fork collapses to one implementation.
+The shortest path from there is a third class method. It goes in an argument, or
+at the call site: either the decision was the caller's, or the caller could not
+have known which constructor to call.
+
+Those two counts are one rule read from both ends: the public surface is a type
+signature. Same types in and out is a seam that should not be there; different
+types out is one that should.
+
 **The duplicated answer.** A method that recomputes something the application
 already establishes elsewhere forks the definition, and the two copies diverge
 on the first change. Recomputing from a serialized form — HTML, JSON, CSV
