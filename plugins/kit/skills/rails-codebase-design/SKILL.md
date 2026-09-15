@@ -327,6 +327,12 @@ approach down for one of them is wrong.
   they hold is scorable; that they exist is not.
 - **More files is not depth, and neither is fewer.** What a caller has to learn
   is the measure.
+- **A length limit is not a finding, and not the definition of done.** A long
+  class usually is holding something, and section 2 has the counts that name
+  what — so the number is where you start looking, never what you report on its
+  own and never the criterion a proposal is measured against. A refactor that
+  satisfies every count and lands over the limit has succeeded; one that lands
+  under it while satisfying none has not.
 
 The check that settles it: **name the caller it costs, or the change it makes
 harder.** Friction that can name neither is not a finding.

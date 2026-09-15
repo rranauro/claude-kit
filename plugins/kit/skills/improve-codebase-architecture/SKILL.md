@@ -109,6 +109,8 @@ positively require several of them:
 - Callbacks, scopes, concerns, validations, generated methods — the language,
   not a smell.
 - File count in either direction. What a caller has to learn is the measure.
+- A class over a length limit. The number says to run the counts above; on its
+  own it is neither a candidate nor the bar a candidate is measured against.
 - A Stimulus controller that renders what the server calculated. It is complete,
   not thin (§4).
 
