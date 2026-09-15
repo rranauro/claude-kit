@@ -66,61 +66,69 @@ doesn't have yet, and it's the user's claim to make.
 
 ## Check 2 — what does the system already know?
 
-Run this before proposing anything that computes an answer out of existing data,
-and before extending a class that already computes several. Search for a model,
-concern, or schema that already derives it. The reuse that matters here is the
-*derivation*, not the class — a "look for an existing equivalent" habit is about
-code, and it won't fire when the thing to reuse is an answer.
+Run this before proposing anything that computes an answer out of existing data.
+Search for a model, concern, or schema that already derives it. The reuse that
+matters here is the *derivation*, not the class — a "look for an existing
+equivalent" habit is about code, and it won't fire when the thing to reuse is an
+answer.
 
 Re-deriving from a serialized form (HTML, JSON, CSV headers) what the app
 already hydrates forks the definition, and the two copies drift apart on the
 first schema change. If a proposal starts by parsing something, ask what
 populated that something and whether the populated form is still in reach.
 
-**The subject is every derivation in play, and the only thing that varies is how
-many there are** — one for an answer not yet written, one per public method for a
-class already in the tree. An answer you are about to write that something else
-already computes is a **fork** that has not been committed yet: the same
-condition at an earlier moment. So the check reads the same whichever end you
-came in from, and one verdict over a class as a whole is one verdict standing in
-for twenty.
+An answer you are about to write that something else already computes is a
+**fork** that has not been committed yet — the same condition at an earlier
+moment — so the check reads the same whichever end you came in from. The only
+thing that varies is how many answers the subject holds: one when you are
+filtering a single candidate, one per method when the subject is a class already
+in the tree.
 
 ### The census
 
-This check ends in an enumeration. One line per **public method** of the subject:
+This check ends in an enumeration. One line per method the subject holds, or one
+line where the answer has no class yet:
 
 ```
 <method> — <where else this answer is computed, or nothing> — <verdict>
 ```
 
-**Enumerate the public surface, not the subset you judge to be derivations.** A
-reader checks this list for completeness against the class, and they can only do
-that when the list is something they can enumerate themselves. A method that
-derives nothing gets a row saying so, and costs one line.
+**Enumerate the hand-written public surface**, rather than the subset you judge
+to be derivations. A reader checks a list for completeness against a set they can
+enumerate themselves, and the methods written in the file are that set — where
+the methods you picked out are not. Generated accessors, associations and enum
+predicates are the framework's answers rather than the subject's, and stay out of
+the census. A method that derives nothing gets a row saying so, and costs one
+line.
 
 Two verdicts. **`only here`** — nothing else computes this answer. **`forked`** —
-something else does, and the row names it. A `forked` row on an answer not yet
-written reads the same, and means reuse the one that exists.
+something else does, and the row names it. A `forked` row is
+`kit:rails-codebase-design` §2's **duplicated answer**, caught before the code is
+committed rather than after.
 
 **Search two sets, and only these two:** the siblings in the subject's namespace,
 and the collaborators it constructs or holds. Where there is no class yet, those
-are the namespace it would go into and what its `initialize` would take. Callers
-beyond that set belong to Check 3, which enumerates them — so this bound names a
-seam rather than leaving a gap.
+are the namespace it would go into and what its `initialize` would take. Where
+the namespace is flat — `app/models` — the siblings that count are the ones this
+subject associates with or is associated from. Callers beyond that set belong to
+Check 3, which enumerates them.
+
+**Check 3 greps the same method names, so run that scan once.** Its hits inside
+the two sets above answer this check; the rest answer that one.
 
 **A proposal offered before every row carries a verdict is incomplete.** Name the
 rows still outstanding and finish them.
 
 ### A forked row
 
-Collapse the fork to one implementation and run the suite. A failure names the
-input the two copies disagreed on, which is the answer to whether they were ever
-the same derivation, and it arrives faster than reading both. A green run is
-evidence the fork was redundant rather than proof of it: a suite notices what it
-asserts on, so green is one observation about the pair.
+The proposal is to collapse the fork to one implementation and run the suite. A
+failure names the input the two copies disagreed on, which arrives faster than
+reading both. A green run is evidence the fork was redundant rather than proof of
+it — `kit:rails-load-bearing-specs` §1 holds why a suite's silence is an
+observation rather than a clearance.
 
-The census has already named both sites, so this is settled here — inside the
-check, on the spot.
+The census has already named both sites, so that is a recommendation carrying its
+own evidence, and nothing about it is speculative enough to file as a bug.
 
 ## Check 3 — who produces it, who consumes it?
 
@@ -194,7 +202,7 @@ shape: where it is, where it belongs, and which smell gave it away.
 
 ## In a Rails codebase
 
-The two checks above are language-neutral. Where the project is Rails, three
+The three checks above are language-neutral. Where the project is Rails, three
 things sharpen them.
 
 **The namespace carries the data; the child may carry the role.** `Csv`,
@@ -229,7 +237,7 @@ to test in isolation" is not a placement argument in either direction.
 
 ### Front-end modules
 
-The same two checks apply to the JavaScript alongside. A Stimulus controller's
+The same checks apply to the JavaScript alongside. A Stimulus controller's
 declared values and targets are its construction, so ownership is decided the
 same way: state belongs to the module whose element holds it, and a module
 querying or mutating DOM owned by another has taken on state it does not own —
