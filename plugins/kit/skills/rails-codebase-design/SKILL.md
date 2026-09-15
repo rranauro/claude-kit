@@ -228,14 +228,21 @@ wearing one name.
 `initialize` already claimed the signature: either two objects are in here, or
 the state was described wrong.
 
-**The unrelated return types.** Two public methods whose return types have
-nothing in common — `.run` answering a report, `.call` answering a persisted
-record. Two objects are wearing one name, and the differing names are the
-disguise: the doubled name above needs one name twice, and
-`kit:behavior-placement` Check 2's census passes both rows `only here`, since
-neither method computes the other's answer. The pair of types is the whole
-count. Say which of the two is the separate object — the class name predicts one
-of the return types, and the method answering the other is it.
+**The unpredicted return type.** Two public methods, and the class name predicts
+one of their return types. The method answering the other is a separate object
+wearing this one's name, and naming which one is the count.
+`Html::Parameterizer` predicts the in-memory conversion, so the method answering
+with the file paths it wrote is the separate object. That the two types diverge
+is the tell that sends you looking, not the test: `.run` answering a report
+beside `.call` answering a persisted record fires on sight, but two renderings of
+one answer have plenty in common, and a count led by their divergence is a count
+a reader discharges. The differing names are the disguise — the doubled name
+above needs one name twice, and `kit:behavior-placement` Check 2's census passes
+both rows `only here`, since neither method computes the other's answer. **It
+fires from the class**: two return types and a name are the whole of it. Reach
+for Check 3's producer/consumer census when the name predicts both types or
+neither, and again once it fires — the census names the callers that move when
+the object splits.
 
 **The same-signature constructors.** Two constructors of the same arity
 returning the same type — `Thing.from_json(str)` and `Thing.from_text(str)`,
@@ -249,8 +256,8 @@ at the call site: either the decision was the caller's, or the caller could not
 have known which constructor to call.
 
 Those two counts are one rule read from both ends: the public surface is a type
-signature. Same types in and out is a seam that should not be there; different
-types out is one that should.
+signature. Same types in and out is a seam that should not be there; a return
+type the name does not predict is one that should.
 
 **The duplicated answer.** A method that recomputes something the application
 already establishes elsewhere forks the definition, and the two copies diverge
