@@ -66,16 +66,61 @@ doesn't have yet, and it's the user's claim to make.
 
 ## Check 2 — what does the system already know?
 
-Run this before proposing anything that computes a new answer out of existing
-data. Search for a model, concern, or schema that already derives it. The reuse
-that matters here is the *derivation*, not the class — a "look for an existing
-equivalent" habit is about code, and it won't fire when the thing to reuse is an
-answer.
+Run this before proposing anything that computes an answer out of existing data,
+and before extending a class that already computes several. Search for a model,
+concern, or schema that already derives it. The reuse that matters here is the
+*derivation*, not the class — a "look for an existing equivalent" habit is about
+code, and it won't fire when the thing to reuse is an answer.
 
 Re-deriving from a serialized form (HTML, JSON, CSV headers) what the app
 already hydrates forks the definition, and the two copies drift apart on the
 first schema change. If a proposal starts by parsing something, ask what
 populated that something and whether the populated form is still in reach.
+
+**The subject is every derivation in play, and the only thing that varies is how
+many there are** — one for an answer not yet written, one per public method for a
+class already in the tree. An answer you are about to write that something else
+already computes is a **fork** that has not been committed yet: the same
+condition at an earlier moment. So the check reads the same whichever end you
+came in from, and one verdict over a class as a whole is one verdict standing in
+for twenty.
+
+### The census
+
+This check ends in an enumeration. One line per **public method** of the subject:
+
+```
+<method> — <where else this answer is computed, or nothing> — <verdict>
+```
+
+**Enumerate the public surface, not the subset you judge to be derivations.** A
+reader checks this list for completeness against the class, and they can only do
+that when the list is something they can enumerate themselves. A method that
+derives nothing gets a row saying so, and costs one line.
+
+Two verdicts. **`only here`** — nothing else computes this answer. **`forked`** —
+something else does, and the row names it. A `forked` row on an answer not yet
+written reads the same, and means reuse the one that exists.
+
+**Search two sets, and only these two:** the siblings in the subject's namespace,
+and the collaborators it constructs or holds. Where there is no class yet, those
+are the namespace it would go into and what its `initialize` would take. Callers
+beyond that set belong to Check 3, which enumerates them — so this bound names a
+seam rather than leaving a gap.
+
+**A proposal offered before every row carries a verdict is incomplete.** Name the
+rows still outstanding and finish them.
+
+### A forked row
+
+Collapse the fork to one implementation and run the suite. A failure names the
+input the two copies disagreed on, which is the answer to whether they were ever
+the same derivation, and it arrives faster than reading both. A green run is
+evidence the fork was redundant rather than proof of it: a suite notices what it
+asserts on, so green is one observation about the pair.
+
+The census has already named both sites, so this is settled here — inside the
+check, on the spot.
 
 ## Check 3 — who produces it, who consumes it?
 
@@ -114,9 +159,9 @@ because no reasoning was written down.
 
 All three checks end in a proposal, not an action. State it in a few lines: what
 the behavior is, where it should live and under what name, which check decided
-it, the producer/consumer census from Check 3, and — if Check 2 found one — the
-existing derivation you'd reuse instead. Then wait for the user to confirm
-before writing anything.
+it, Check 2's derivation census and Check 3's producer/consumer census, and —
+where a row came back forked — the existing derivation you'd reuse instead.
+Then wait for the user to confirm before writing anything.
 
 Where two namespaces both had a claim, say which one you rejected and why. That
 sentence belongs in the class comment too: the next reader will re-litigate the
