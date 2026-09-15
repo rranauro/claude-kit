@@ -68,8 +68,9 @@ carries a file and a line:
   signatures.
 - **The unearned construction** — an alternate constructor using `allocate`,
   `send(:initialize_…)`, or a mode flag.
-- **The unrelated return types** — two public methods whose return types have
-  nothing in common. Different names, so the doubled name does not cover it.
+- **The unpredicted return type** — two public methods, and the class name
+  predicts only one of their return types. Divergent types are the tell, not the
+  test: two renderings of one answer still fire.
 - **The same-signature constructors** — two constructors of the same arity
   returning the same type.
 - **The duplicated answer** — a method recomputing from a serialized form what
