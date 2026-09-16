@@ -215,6 +215,25 @@ nowhere for it to live.
 **The first-parameter receiver.** A class method whose first parameter is the
 record it operates on is an instance method that never moved onto the instance.
 
+**The borrowed receiver.** An instance method whose body reads no state of its
+host: its arguments and the globals are its whole input. Mirror of the count
+above — that one is behavior that never moved *onto* the instance, this one is
+behavior that never moved *off* it. Both are one rule read from both ends, and
+this end is the one that accumulates silently, because putting it here was
+locally the shortest thing to write and nothing resisted.
+
+Reaching an association merely to construct a collaborator is not reading own
+state. Whoever holds the record already holds the association, so a method that
+opens `Collaborator.new(x, record.site)` is the caller's convenience with a
+receiver attached — the state it works from is the collaborator's.
+
+Count it by enumerating every method against what it reads of `self`: nothing,
+one value it could have been handed, or state only this record holds. The first
+two are the count; the third is the class. This is what names why a class
+reached a length limit with sixty short methods — the length is the symptom, the
+borrowed receivers are the cause, and a split that relocates them into a new
+module carries them instead of landing them.
+
 **Reaching back to the class.** Repeated `self.class.` inside instance methods
 means behavior parked at class level that the instance needs. A handful is
 noise; dozens is one class living as two.

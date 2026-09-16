@@ -50,6 +50,11 @@ that never moved onto the instance. Reserve class level for what genuinely has
 no receiver — scopes, finders, factories. If the first parameter is the
 receiver, make it the receiver.
 
+The mirror happens too: an instance method whose body reads no state of its host
+is behavior that never moved off, parked there because a caller already held
+this object. `kit:rails-codebase-design` §2's borrowed receiver holds the count
+and the enumeration that finds them.
+
 When refactoring: ask **"who owns this state?"** before "where does this file
 go?" — layout follows ownership, and relocating a file to a nicer folder is the
 lowest-value refactor. Put **delete / inline / fold-onto-a-model** on the
