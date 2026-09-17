@@ -30,6 +30,15 @@ whole scheme exists to make rare and to make legible when it happens.
    the body's `## Blocked by` section. A park is the one occasion any command
    writes that label, and it is doing exactly what the label means: a human must
    clear it.
+
+   **In that order, and the second may fail loudly.** Step 1's comment is the
+   question; this label is what keeps a sweep off the ticket until someone
+   answers it. Label a comment that never posted and the ticket is parked
+   against a question nobody can read — so a failed comment means no label, and
+   a park reported as unrecorded. Where the repo has no `kit-blocked` label the
+   write is refused rather than ignored: say so, because a sweep picks the
+   ticket straight back up. `docs/labels.md` is the rule for both, and the repo
+   owner's one-line fix.
 3. **Leave the worktree and any commits in place.** The next attempt resumes
    rather than rebuilds, and a parked ticket with its work-so-far on disk is
    worth more than a clean tree.

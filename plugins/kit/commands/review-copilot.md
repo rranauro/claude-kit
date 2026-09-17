@@ -155,11 +155,11 @@ It sits after the push because the record has to carry the whole outcome: a gate
 that could not run and a rejected push are both escalation reasons, and neither is
 known at Step 5.
 
-Two writes, together:
+Two writes, and the second is conditional on the first:
 
 ```
 gh pr comment <N> --body "<!-- kit-review-closed -->
-<the Step 5 summary>"
+<the Step 5 summary>"          # must succeed — it prints the comment's URL
 gh pr edit <N> --add-label kit-review-closed
 ```
 
@@ -170,9 +170,20 @@ label carries only the fact that a round closed, so a CI gate can decide from
 PR to look for a comment. On divergence the comment wins, and a missing label
 with a present comment fails toward waking a model, which is the safe direction.
 
+**The comment failing means the round did not close.** Do not label, do not
+escalate, and report the round as unrecorded, naming what the comment write
+said. The label is what makes every gate skip this PR, so applying it over a
+summary that never landed is the one state nothing downstream can recover from.
+`docs/labels.md` is the rule and the argument for it.
+
+Read the comment call's own result rather than asking GitHub again. `gh pr
+comment` prints the new comment's URL on success and exits non-zero otherwise,
+so the round has its confirmation without a second call.
+
 Create the label once per repo with `gh label create kit-review-closed`, or from
 the UI. A repo that has not is not broken: the comment still closes the round,
-and the gate over-approximates by waking a model that finds nothing to do.
+and the gate over-approximates by waking a model that finds nothing to do. **Say
+the label did not apply** — `label-write-failed` below is the rule.
 
 **Re-running attended, edit the existing comment rather than posting a second.**
 Step 2.4 already told you it was there. Find it by its marker and edit by id:
@@ -195,6 +206,11 @@ gh pr edit <N> --add-label kit-hold
 Both writes above still happen — the round did close, and a gate should skip an
 escalated PR for the same reason it skips a closed one: what it needs is a
 person, not another model pass.
+
+**An escalation whose summary did not post is not an escalation either.** The
+reason lives in that summary and nowhere else, so a `kit-hold` standing alone
+holds the PR against a reason no one can read. Same rule, same order: no
+comment, no label, and say so.
 
 **`kit-hold` is what survives this pass.** Withholding auto-merge is the absence
 of an action, not a record: a CI gate arms auto-merge on any closed-round, green
@@ -238,6 +254,17 @@ vocabulary.
 
 `## Unattended` below owns what the escalation *conditions* are, and the merge
 decision that branches on them. This step owns only the record.
+
+**Step 7.6 · `label-write-failed` — Say when a mark did not land:**
+
+Every `--add-label` above can be refused — the label does not exist in this repo
+and the grant denies `gh label`. That is not a no-op. Report which label, on
+which PR, and that the decision it stood for is in the summary comment
+regardless, then carry on with the rest of the step.
+
+Leave the label uncreated and let the repo owner run the one command that fixes
+it for good — `docs/labels.md` carries it, and why an unattended pass may not
+mint vocabulary of its own.
 
 **Step 8 · `enable-auto-merge` — Enable auto-merge (gated):**
 

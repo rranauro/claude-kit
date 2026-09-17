@@ -58,6 +58,13 @@ URL:
 gh pr edit <pr-number> --add-label kit-hold
 ```
 
+**If that write is refused, say so and do not print the URL as if the PR were
+held.** The repo may not have the label, and the grant denies `gh label`. A hold
+the gate cannot see is a PR that merges — the exact outcome the human's answer
+ruled out — so report which label failed and that the PR is *not* held until
+someone applies it. `docs/labels.md` carries the fix; never create the label
+yourself.
+
 This is not the automation deciding to hold something. A human answered that
 question when the ticket was settled, and this step transcribes the answer onto
 the artifact it was about. Nothing unattended ever writes this label in either
