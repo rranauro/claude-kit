@@ -127,8 +127,8 @@ what this command exists for. Send it to step 2.
 
 **A route does not satisfy criterion 1.** A criterion only one implementation can
 meet is the author's fix written in the grammar of an outcome, and it is testable
-enough to pass criterion 1 as written — which would route exactly the ticket step
-2 exists to catch straight past it. Send that one to step 2 as well.
+enough to pass criterion 1 as written — so without this clause the ticket step 2
+exists to catch is the one that skips it. Send that one to step 2 as well.
 
 When it is settled, the only thing left is step 4's label decision. Say what you
 found, confirm, apply, stop. Don't re-grill and don't re-run `/kit:design`.
@@ -165,24 +165,21 @@ Two things are in the body, and only one of them is evidence:
 
 Criteria written from the remedy grill as though the premise were settled, so
 the boundary you argue is the boundary of a guess. Read them back against the
-finding alone and ask what else would answer it. The object that answers a
-payload usually already exists somewhere in the codebase, and a remedy that
-builds a second one is what this catches.
+finding alone and ask what else would answer it. What answers a finding is
+often already in the codebase, and a remedy that builds a second one is what
+this catches.
 
 `kit:writing-tickets` owns the test that tells them apart — a criterion is a
 fence, not a route. It applies that test when drafting; this is the reading
 half.
 
 A criterion you re-derive changes what the ticket commits to, so it is a scope
-change and rides the approval this step already carries at the end. Nothing here
-asks the user a second time.
+change and rides the approval this step already carries at the end.
 
 **Authorship is the trigger, not a label.** `kit:to-tickets` says outright that
 it grilled the boundary and not the mechanism before handing you its result, and
 a scan card is the weakest premise rather than a unique one. Every upstream pass
-that wrote criteria is in the same position, so read them all the same way. The
-only ticket that skips this is one whose finding and remedy are both yours,
-argued in this session.
+that wrote criteria is in the same position, so read them all the same way.
 
 Then invoke `kit:grilling` on the ticket's **boundary**, not its approach:
 
