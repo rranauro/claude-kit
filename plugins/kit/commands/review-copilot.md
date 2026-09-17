@@ -159,7 +159,7 @@ Two writes, and the second is conditional on the first:
 
 ```
 gh pr comment <N> --body "<!-- kit-review-closed -->
-<the Step 5 summary>"          # must succeed — it prints the comment's URL
+<the Step 5 summary>"
 gh pr edit <N> --add-label kit-review-closed
 ```
 
@@ -180,10 +180,9 @@ Read the comment call's own result rather than asking GitHub again. `gh pr
 comment` prints the new comment's URL on success and exits non-zero otherwise,
 so the round has its confirmation without a second call.
 
-Create the label once per repo with `gh label create kit-review-closed`, or from
-the UI. A repo that has not is not broken: the comment still closes the round,
-and the gate over-approximates by waking a model that finds nothing to do. **Say
-the label did not apply** — `label-write-failed` below is the rule.
+A repo with no such label is not broken: the comment still closes the round, and
+the gate over-approximates by waking a model that finds nothing to do. **Say the
+label did not apply** — `label-write-failed` below is the rule.
 
 **Re-running attended, edit the existing comment rather than posting a second.**
 Step 2.4 already told you it was there. Find it by its marker and edit by id:
@@ -206,11 +205,6 @@ gh pr edit <N> --add-label kit-hold
 Both writes above still happen — the round did close, and a gate should skip an
 escalated PR for the same reason it skips a closed one: what it needs is a
 person, not another model pass.
-
-**An escalation whose summary did not post is not an escalation either.** The
-reason lives in that summary and nowhere else, so a `kit-hold` standing alone
-holds the PR against a reason no one can read. Same rule, same order: no
-comment, no label, and say so.
 
 **`kit-hold` is what survives this pass.** Withholding auto-merge is the absence
 of an action, not a record: a CI gate arms auto-merge on any closed-round, green
@@ -257,14 +251,15 @@ decision that branches on them. This step owns only the record.
 
 **Step 7.6 · `label-write-failed` — Say when a mark did not land:**
 
-Every `--add-label` above can be refused — the label does not exist in this repo
-and the grant denies `gh label`. That is not a no-op. Report which label, on
-which PR, and that the decision it stood for is in the summary comment
-regardless, then carry on with the rest of the step.
+**Every `--add-label` in this command** — the two above, `kit-pinned` below, and
+the declined-merge hold in Step 8 — can be refused, because the label does not
+exist in this repo and the grant denies `gh label`. Report which label, on which
+PR, and what the unrecorded decision was, then carry on with the rest of the
+step.
 
-Leave the label uncreated and let the repo owner run the one command that fixes
-it for good — `docs/labels.md` carries it, and why an unattended pass may not
-mint vocabulary of its own.
+Leave the label uncreated and let the repo owner run `gh label create <name>`.
+An unattended pass may not mint vocabulary the whole repo then inherits, which
+is why the grant denies it; `docs/labels.md` carries that argument.
 
 **Step 8 · `enable-auto-merge` — Enable auto-merge (gated):**
 
@@ -307,6 +302,14 @@ Otherwise, ask the user before enabling:
   next firing and GitHub merges the PR you just held back. This is the same pattern
   `/kit:new-pull-request` uses — a human answered a prompt, and the command
   records the answer where the next reader will find it.
+
+  **A refused write is the decline being lost, so say it loudly.** If the repo
+  has no `kit-hold` label the edit fails and the paragraph above describes
+  exactly what happens next: the gate finds a closed-round, green, unlabelled PR
+  and merges it. Tell the user the decline was *not* recorded, that the PR will
+  merge on the next firing, and that `gh label create kit-hold` followed by this
+  same edit is what holds it. Step 7.6 is the rule; this is the branch where
+  ignoring it costs a merge nobody authorised.
 
   Say that you wrote it, and say how to undo it: `gh pr edit <PR#> --remove-label
   kit-hold` hands control back, after which the PR is judged on its evidence

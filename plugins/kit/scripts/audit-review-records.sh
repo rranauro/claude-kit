@@ -9,9 +9,10 @@ set -uo pipefail
 # own. `/kit:review-copilot` will not create that state any more, but a repo
 # that ran the earlier version is already in it, and nothing reports it.
 #
-# This is a loop rather than a one-liner because the comment cannot be seen
-# from the PR list: one fetch per labelled PR is the cost of the answer, which
-# is also why no gate pays it on every firing.
+# One call answers it: `gh pr list --json` returns each PR's comments, so the
+# marker is matched inside the same request that finds the labelled PRs. The
+# per-PR fetch this replaced also read only the first page of comments, which
+# reported any busy PR as an orphan on every run.
 
 usage() {
   cat <<'USAGE'
@@ -31,28 +32,33 @@ MARKER="<!-- kit-review-closed -->"
 state="open"
 limit="200"
 
+die() { echo "audit-review-records.sh: $*" >&2; usage >&2; exit 2; }
+
 while [ $# -gt 0 ]; do
+  # A flag whose value is missing must not reach `shift 2` — with one argument
+  # left it shifts nothing, the loop never drains, and a typo reads as a hang.
   case "$1" in
-    --state) state="${2:-}"; shift 2 ;;
-    --limit) limit="${2:-}"; shift 2 ;;
+    --state) [ $# -ge 2 ] || die "--state needs a value"; state="$2"; shift 2 ;;
+    --limit) [ $# -ge 2 ] || die "--limit needs a value"; limit="$2"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
-    *) echo "audit-review-records.sh: unknown argument: $1" >&2; usage >&2; exit 2 ;;
+    *) die "unknown argument: $1" ;;
   esac
 done
 
-# A failed listing must not read as an empty one. Capturing separately from the
-# assignment is what preserves gh's status — `local`/`x=$(…)` would swallow it.
-prs="$(gh pr list --label "$LABEL" --state "$state" --limit "$limit" \
-         --json number --jq '.[].number' 2>&1)"
+# startswith rather than contains: the marker opens the comment's first line,
+# and a summary quoting the marker in its body is not the record.
+rows="$(gh pr list --label "$LABEL" --state "$state" --limit "$limit" \
+          --json number,comments \
+          --jq ".[] | \"\(.number) \([.comments[].body | select(startswith(\"$MARKER\"))] | length)\"" 2>&1)"
 if [ $? -ne 0 ]; then
   echo "audit-review-records.sh: could not list PRs labelled $LABEL" >&2
-  printf '%s\n' "$prs" >&2
+  printf '%s\n' "$rows" >&2
   exit 2
 fi
 
-prs="$(printf '%s\n' "$prs" | grep -E '^[0-9]+$' || true)"
+rows="$(printf '%s\n' "$rows" | grep -E '^[0-9]+ [0-9]+$' || true)"
 
-if [ -z "$prs" ]; then
+if [ -z "$rows" ]; then
   echo "no $state PRs carry $LABEL — nothing to audit"
   exit 0
 fi
@@ -60,21 +66,11 @@ fi
 checked=0
 orphans=()
 
-while IFS= read -r n; do
+while read -r n records; do
   [ -n "$n" ] || continue
   checked=$((checked + 1))
-  # startswith rather than contains: the marker opens the comment's first line,
-  # and a summary quoting the marker in its body is not the record.
-  count="$(gh api "repos/{owner}/{repo}/issues/$n/comments" \
-             --jq "[.[] | select(.body | startswith(\"$MARKER\"))] | length" 2>/dev/null)"
-  # An unreadable PR is reported as an orphan rather than skipped. The whole
-  # point is to over-report: a false name costs one look, a missed one costs
-  # the decision.
-  case "$count" in
-    ''|*[!0-9]*) orphans+=("$n") ;;
-    0)           orphans+=("$n") ;;
-  esac
-done <<< "$prs"
+  [ "$records" -eq 0 ] && orphans+=("$n")
+done <<< "$rows"
 
 if [ "${#orphans[@]}" -eq 0 ]; then
   echo "all $checked $state PRs labelled $LABEL carry their record"

@@ -6,16 +6,10 @@ the reason in that summary, or for a person's decision at triage. `kit-blocked`
 stands for the "Blocked by" section a park wrote. `kit-pinned` stands for an
 observation and the round summary beside it.
 
-Gates read the label, because it arrives in the list they already fetched.
-Nothing downstream reads the record unless the label sends it there. That
-asymmetry is the point — and it is also the whole hazard, because it means a
-label without its record is not a partial success. It is the one state that
-suppresses every later look: the PR reads as handled, no gate re-runs it, and
-what was decided is unrecoverable.
-
-Two rules follow, and both are about writes. How a *reader* should treat the
-split — label for the gate, comment for the reasoning — belongs to
-`tending-on-a-runner.md`.
+A label without its record is therefore not a partial success. It is the one
+state that suppresses every later look: the PR reads as handled, no gate re-runs
+it, and what was decided is unrecoverable. Both rules below are about writes;
+how a *reader* should treat the split is `tending-on-a-runner.md`'s.
 
 ## Write the record, then the mark — and only then
 
@@ -60,7 +54,6 @@ gh label create kit-pinned
 
 A label written before this rule existed left no trace to grep for.
 `plugins/kit/scripts/audit-review-records.sh` names the PRs carrying
-`kit-review-closed` with no record comment — a fetch per labelled PR, which is
-why it is a script nobody runs on a schedule rather than a check a gate pays for
-on every firing. It exits non-zero when it finds one, so it can be wired into a
-gate by a project that wants it.
+`kit-review-closed` with no record comment. It exits non-zero when it finds one,
+and costs one API call whatever the PR count, so a project can wire it into a
+gate rather than remembering to run it.

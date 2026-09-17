@@ -7,8 +7,10 @@ set -uo pipefail
 # whose record is present must never be named, and one whose record is absent
 # must be, with an exit status a gate can branch on.
 #
-# `gh` is stubbed on PATH, because the question is which PRs the script pairs
-# with which comment fetch, not what GitHub returns.
+# `gh` is stubbed on PATH, because the question is how the script bins the
+# answer, not what GitHub returns. One call carries both halves — the PR number
+# and how many of its comments opened with the marker — so the fixture is one
+# line per labelled PR and the stub does no matching of its own.
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SCRIPT="$ROOT/plugins/kit/scripts/audit-review-records.sh"
@@ -53,30 +55,16 @@ new_sandbox() {
   GH_FIXTURES="$SANDBOX/fixtures"
   mkdir -p "$GH_FIXTURES" "$SANDBOX/bin"
 
-  # `pr list` answers from one fixture holding the PR numbers `--jq` would have
-  # left on stdout. The comments endpoint answers per PR, from `record.<n>` —
-  # present means that PR has its marker comment, absent means it does not.
-  # Which file the stub reads is the whole assertion: a script that fetched
-  # comments for the wrong PR would pass every output check and still be wrong.
+  # The stub records the arguments and replays a fixture. It does not run the
+  # `--jq` expression — gh's embedded jq is not reimplementable here — so the
+  # marker match itself is pinned by asserting on the recorded arguments, and
+  # the binning is pinned by the fixture's counts.
   cat > "$SANDBOX/bin/gh" <<'GH'
 #!/usr/bin/env bash
-if [ "$1" = "repo" ]; then echo "owner/repo"; exit 0; fi
 if [ "$1" = "pr" ] && [ "$2" = "list" ]; then
   printf '%s\n' "$*" >> "$GH_FIXTURES/listed"
   [ -f "$GH_FIXTURES/list_fails" ] && { echo "gh: could not list" >&2; exit 1; }
   cat "$GH_FIXTURES/prs" 2>/dev/null
-  exit 0
-fi
-if [ "$1" = "api" ]; then
-  for arg in "$@"; do
-    case "$arg" in
-      */issues/*/comments)
-        n="${arg#*/issues/}"; n="${n%/comments}"
-        printf '%s\n' "$n" >> "$GH_FIXTURES/fetched"
-        if [ -f "$GH_FIXTURES/record.$n" ]; then echo 1; else echo 0; fi
-        exit 0 ;;
-    esac
-  done
   exit 0
 fi
 exit 0
@@ -93,10 +81,9 @@ end_sandbox() {
 
 # --- fixtures -----------------------------------------------------------
 
-# The PR numbers `gh pr list --label kit-review-closed --jq` leaves on stdout.
-labelled()   { printf '%s\n' "$@" > "$GH_FIXTURES/prs"; }
-# Those of them whose marker comment is actually on the PR.
-has_record() { for n in "$@"; do touch "$GH_FIXTURES/record.$n"; done; }
+# What the one `gh pr list --json number,comments --jq` call leaves on stdout:
+# "<pr-number> <how many of its comments opened with the marker>".
+rows() { printf '%s\n' "$@" > "$GH_FIXTURES/prs"; }
 
 run() {
   OUT="$("$SCRIPT" "$@" 2>&1)"
@@ -106,8 +93,7 @@ run() {
 # --- cases --------------------------------------------------------------
 
 new_sandbox "every labelled PR carries its record"
-labelled 11 12
-has_record 11 12
+rows "11 1" "12 1"
 run
 assert_status "$STATUS" 0            "exits clean"
 assert_lacks "$OUT" "#11"            "names no PR"
@@ -116,8 +102,7 @@ assert_has "$OUT" "2"                "reports how many it checked"
 end_sandbox
 
 new_sandbox "a labelled PR with no record is named"
-labelled 11 12 13
-has_record 11 13
+rows "11 1" "12 0" "13 1"
 run
 assert_status "$STATUS" 1            "exits non-zero so a gate can branch on it"
 assert_has "$OUT" "#12"              "names the PR missing its record"
@@ -125,39 +110,64 @@ assert_lacks "$OUT" "#11"            "leaves the intact PRs alone"
 assert_lacks "$OUT" "#13"            "leaves the intact PRs alone"
 end_sandbox
 
-new_sandbox "the record is looked for on the PR that carries the label"
-labelled 42
-has_record 7
+new_sandbox "the record is the marker opening a comment, not appearing in one"
+rows "11 1"
 run
-assert_status "$STATUS" 1            "reports the orphan"
-assert_has "$(cat "$GH_FIXTURES/fetched")" "42" "fetched comments for the labelled PR"
-assert_lacks "$(cat "$GH_FIXTURES/fetched")" "7" "fetched nothing for any other PR"
+# A summary that quotes the marker mid-body is not the record, so the match has
+# to anchor. The expression is gh's to run; what this pins is that the script
+# asked for the anchored form against the marker it documents.
+assert_has "$(cat "$GH_FIXTURES/listed")" "startswith" "anchors the match"
+assert_has "$(cat "$GH_FIXTURES/listed")" "<!-- kit-review-closed -->" "matches the marker it documents"
+end_sandbox
+
+new_sandbox "the record is read in the call that finds the labelled PRs"
+rows "11 1"
+run
+# The per-PR fetch this replaced read only the first page of a PR's comments,
+# so a busy PR was reported as an orphan on every run and never self-cleared.
+assert_has "$(cat "$GH_FIXTURES/listed")" "--json number,comments" "asks for the comments up front"
+assert_status "$(grep -c . "$GH_FIXTURES/listed")" 1 "spends one call, whatever the PR count"
 end_sandbox
 
 new_sandbox "no labelled PRs at all"
-labelled
+rows
 run
 assert_status "$STATUS" 0            "exits clean"
 assert_has "$OUT" "no"               "says there was nothing to check"
-assert_lacks "$(cat "$GH_FIXTURES/fetched" 2>/dev/null || echo)" "#" "fetches no comments"
 end_sandbox
 
-new_sandbox "the state defaults to open and is widened by flag"
-labelled 11
-has_record 11
+new_sandbox "the state defaults to open"
+rows "11 1"
 run
-assert_has "$(cat "$GH_FIXTURES/listed")" "--state open" "defaults to open PRs"
+assert_has "$(cat "$GH_FIXTURES/listed")" "--state open" "audits the PRs a gate still skips"
 end_sandbox
 
 new_sandbox "--state all reaches the PRs already merged in this state"
-labelled 11
-has_record 11
+rows "11 1"
 run --state all
 assert_has "$(cat "$GH_FIXTURES/listed")" "--state all" "passes the state through"
 end_sandbox
 
+new_sandbox "a flag given no value is a usage error, not a spin"
+rows "11 1"
+# `shift 2` with one argument left shifts nothing, so the argument loop never
+# drains and the script never reaches the work. It reads as a hang rather than
+# a mistyped flag, which is the one failure an audit tool cannot afford.
+OUT="$(perl -e 'alarm 5; exec @ARGV' "$SCRIPT" --state 2>&1)"
+STATUS=$?
+assert_status "$STATUS" 2            "exits on the bad argument"
+assert_has "$OUT" "usage"            "says what the arguments are"
+end_sandbox
+
+new_sandbox "an unknown argument is refused rather than ignored"
+rows "11 1"
+run --wat
+assert_status "$STATUS" 2            "does not audit under arguments it did not understand"
+assert_has "$OUT" "--wat"            "names the argument it refused"
+end_sandbox
+
 new_sandbox "a listing that fails is an error, not a clean audit"
-labelled 11
+rows "11 1"
 touch "$GH_FIXTURES/list_fails"
 run
 assert_status "$STATUS" 2            "distinct from both a clean and a dirty audit"
