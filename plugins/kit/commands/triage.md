@@ -324,6 +324,8 @@ world will not let it start yet. Two cases:
 
 Both are `ready-for-agent` **and** `kit-blocked` — `gh issue edit <n> --add-label
 kit-blocked` — with the reason written into the body's "Blocked by" section.
+A refused write means the ticket is startable despite the reason you just wrote,
+so say so rather than moving on.
 `/kit:ship-ticket` skips a `kit-blocked` ticket and reports it by name with that
 reason, and never removes the label; clearing it is your statement that the thing
 is actually cleared. The difference from withholding is that the ticket stays
@@ -359,6 +361,12 @@ Hold the PR for in-app verification before it merges? (y/N)
 If yes, put `kit-hold` on the **issue** — `gh issue edit <n> --add-label
 kit-hold`. `/kit:new-pull-request` transcribes it onto the PR it opens, so the
 hold is in place from the moment the PR exists.
+
+**If that edit is refused, say the hold is not in place.** A repo that has never
+defined `kit-hold` fails this write, and there is then nothing for
+`/kit:new-pull-request` to find and nothing for it to report — the PR opens
+unheld and merges on its own. Ask for `gh label create kit-hold` and this edit
+again; `docs/labels.md` is the rule.
 
 Ask it here because **here is where the answer is known**. You have just decided
 this is safe for an agent to start alone; whether the result needs walking in the

@@ -58,17 +58,28 @@ URL:
 gh pr edit <pr-number> --add-label kit-hold
 ```
 
+**If that write is refused, say so and do not print the URL as if the PR were
+held.** The repo may not have the label, and the grant denies `gh label`. A hold
+the gate cannot see is a PR that merges — the exact outcome the human's answer
+ruled out — so report which label failed and that the PR is *not* held until
+someone applies it. `docs/labels.md` carries the fix; never create the label
+yourself.
+
 This is not the automation deciding to hold something. A human answered that
 question when the ticket was settled, and this step transcribes the answer onto
 the artifact it was about. Nothing unattended ever writes this label in either
 direction, which is the rule that matters: a pass cannot clear a hold it is
 subject to.
 
-Say in the confirmation that the PR is held and how to release it, since a held
-PR looks identical to an ignored one:
+**Only if that edit succeeded**, say in the confirmation that the PR is held and
+how to release it, since a held PR looks identical to an ignored one:
 
 > PR #<N> is open and **held** (`kit-hold`) — the CI gate will skip it entirely.
 > Remove the label when you're done verifying, and it picks up from there.
+
+Where it was refused, say the opposite in its place: the PR is open and **not**
+held, it will merge when checks pass, and `gh label create kit-hold` followed by
+this same edit is what holds it.
 
 **Step 4 — Confirm:**
 Print the PR URL so the user can review it.

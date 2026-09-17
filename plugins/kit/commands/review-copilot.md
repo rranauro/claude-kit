@@ -155,7 +155,7 @@ It sits after the push because the record has to carry the whole outcome: a gate
 that could not run and a rejected push are both escalation reasons, and neither is
 known at Step 5.
 
-Two writes, together:
+Two writes, and the second is conditional on the first:
 
 ```
 gh pr comment <N> --body "<!-- kit-review-closed -->
@@ -170,9 +170,21 @@ label carries only the fact that a round closed, so a CI gate can decide from
 PR to look for a comment. On divergence the comment wins, and a missing label
 with a present comment fails toward waking a model, which is the safe direction.
 
-Create the label once per repo with `gh label create kit-review-closed`, or from
-the UI. A repo that has not is not broken: the comment still closes the round,
-and the gate over-approximates by waking a model that finds nothing to do.
+**The comment failing means the round did not close.** Do not label, do not
+escalate, and report the round as unrecorded, naming what the comment write
+said. The label is what makes every gate skip this PR, so applying it over a
+summary that never landed is the one state nothing downstream can recover from.
+`docs/labels.md` is the rule and the argument for it.
+
+Read the comment call's own result rather than asking GitHub again. `gh pr
+comment` prints the new comment's URL on success and exits non-zero otherwise,
+so the round has its confirmation without a second call.
+
+A repo with no such label is not broken: the comment still closes the round, and
+the gate over-approximates by waking a model that finds nothing to do. **Say the
+mark did not apply, and that the round itself is recorded** — the summary is on
+the PR, so nobody needs to re-run this round to recover what it decided, and
+re-running would stack a second summary. `label-write-failed` below is the rule.
 
 **Re-running attended, edit the existing comment rather than posting a second.**
 Step 2.4 already told you it was there. Find it by its marker and edit by id:
@@ -189,12 +201,26 @@ summary**, never a later comment. A pass that posts the marker and then dies
 leaves a PR reading as a clean closed round, which is this record inverted:
 
 ```
-gh pr edit <N> --add-label kit-hold
+gh pr edit <N> --add-label kit-hold          # escalating: this one goes first
+gh pr edit <N> --add-label kit-review-closed
 ```
 
-Both writes above still happen — the round did close, and a gate should skip an
-escalated PR for the same reason it skips a closed one: what it needs is a
-person, not another model pass.
+Both marks belong on an escalated PR — the round did close, and a gate should
+skip it for the same reason it skips any closed one: what it needs is a person,
+not another model pass.
+
+**On an escalation the hold is written first, and `kit-review-closed` only if it
+landed.** The two marks pull in opposite directions: `kit-hold` stops the merge
+and `kit-review-closed` is what permits it. A gate arms auto-merge on a
+closed-round, green, unheld PR — so a hold that failed while the closed mark
+succeeded is not a partial escalation, it is the escalation reversed, and the
+next firing merges the thing this pass stopped.
+
+If the hold cannot be applied, **leave the round unclosed**: report the
+escalation, say `kit-review-closed` was deliberately withheld, and name
+`gh label create kit-hold` as what fixes it. An unclosed round costs a later
+pass that re-derives this one. That is the price of the only ordering where
+neither failure merges the PR.
 
 **`kit-hold` is what survives this pass.** Withholding auto-merge is the absence
 of an action, not a record: a CI gate arms auto-merge on any closed-round, green
@@ -239,6 +265,18 @@ vocabulary.
 `## Unattended` below owns what the escalation *conditions* are, and the merge
 decision that branches on them. This step owns only the record.
 
+**Step 7.6 · `label-write-failed` — Say when a mark did not land:**
+
+**Every `--add-label` in this command** — the two above, `kit-pinned` below, and
+the declined-merge hold in Step 8 — can be refused, because the label does not
+exist in this repo and the grant denies `gh label`. Report which label, on which
+PR, and what the unrecorded decision was, then carry on with the rest of the
+step.
+
+Leave the label uncreated and let the repo owner run `gh label create <name>`.
+An unattended pass may not mint vocabulary the whole repo then inherits, which
+is why the grant denies it; `docs/labels.md` carries that argument.
+
 **Step 8 · `enable-auto-merge` — Enable auto-merge (gated):**
 
 The first-pass automated review round is now closed, which is the precondition
@@ -281,7 +319,16 @@ Otherwise, ask the user before enabling:
   `/kit:new-pull-request` uses — a human answered a prompt, and the command
   records the answer where the next reader will find it.
 
-  Say that you wrote it, and say how to undo it: `gh pr edit <PR#> --remove-label
+  **A refused write is the decline being lost, so say it loudly.** If the repo
+  has no `kit-hold` label the edit fails and the paragraph above describes
+  exactly what happens next: the gate finds a closed-round, green, unlabelled PR
+  and merges it. Tell the user the decline was *not* recorded, that the PR will
+  merge on the next firing, and that `gh label create kit-hold` followed by this
+  same edit is what holds it. Step 7.6 is the rule; this is the branch where
+  ignoring it costs a merge nobody authorised. Then stop — the confirmation
+  below describes a hold that is not in place.
+
+  **On a successful edit**, say that you wrote it, and say how to undo it: `gh pr edit <PR#> --remove-label
   kit-hold` hands control back, after which the PR is judged on its evidence
   again — round closed, green and unheld, which the gate will act on.
 

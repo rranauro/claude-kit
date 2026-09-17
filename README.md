@@ -50,6 +50,7 @@ That's the shape. There are ~14 commands and 17 skills in all; the full list is 
 | [Worktrees](docs/worktrees.md) | The default layout, and how to delegate to your project's own worktree recipe |
 | [Hooks](docs/hooks.md) | The PR-review and Rails-gate hooks, and how to register them per project |
 | [The reviewer script](docs/pr-review.md) | One shared review prompt behind three entry points |
+| [Labels](docs/labels.md) | Why every label is written after the record it stands for, and what a pass does when it cannot apply one |
 | [Tending on a CI runner](docs/tending-on-a-runner.md) | What happens to a PR after it opens: which command CI calls, the credential every act needs, and the trigger that never fires |
 | [Companion skills](docs/companion-skills.md) | The mattpocock/skills the design commands call by name |
 | [Editing the kit](docs/editing-the-kit.md) | Which half of the payload a restart applies to, and which takes effect the moment you save |
