@@ -264,6 +264,15 @@ already establishes elsewhere forks the definition, and the two copies diverge
 on the first change. Recomputing from a serialized form — HTML, JSON, CSV
 headers — what the application already loaded is the usual case.
 
+A column does this too, and reads as schema rather than as a fork, which is why
+it survives the count as written. A column caching a fact the rows already
+answer — `first_activated_at` beside a child carrying an `active` flag,
+`item_count` beside the items — is one definition stored twice. The tell is at
+the writers, not in the schema: every path that could change the underlying fact
+has to remember to stamp it, so a writer added later arrives carrying a comment
+explaining that it marks the column too. That comment is this count, written
+down instead of acted on.
+
 **The fixed-key hash.** A method returning a hash whose keys are known when the
 method is written is a class that was never named — its keys are the methods it
 would have had. The cost lands at every call site: readers key into it by
