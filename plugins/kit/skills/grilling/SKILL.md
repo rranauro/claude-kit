@@ -134,3 +134,11 @@ confirmations is the signal to stop, not to look harder.
 
 Then report the Parked list, unnumbered, as plain observations. Do not act on
 the design until the user confirms you have reached a shared understanding.
+
+**A parked item that is a claim about the repository goes to the observation
+store.** Reporting it is what the list already does, and a report ends with the
+session — so anything the user did not pick up is lost at the moment the pass
+closes. Invoke the `observations` skill and record it; report the line the
+append prints alongside the list. An item that is a remark about the design, or
+a piece of future work the user named in passing, stays a remark and is reported
+only.

@@ -100,11 +100,11 @@ _Avoid_: hold, do-not-merge
 **kit-pinned**:
 The PR merged carrying a question nobody has answered — a review finding real
 enough to record that the pass had a reason to skip. Written by the review pass
-alongside a pin holding the discussion, and named for the PR so the diff and the
-round summary are one lookup away. Blocks nothing: it exists so the merged PRs
-with an open question can be listed, which a pin file on one machine cannot do.
-Distinct from **kit-hold**, which stops a merge because something could not be
-established; a pin stops nothing because everything was.
+alongside an observation holding the discussion, and named for the PR so the diff
+and the round summary are one lookup away. Blocks nothing: it exists so the
+merged PRs with an open question can be listed, which a store on one machine
+cannot do. Distinct from **kit-hold**, which stops a merge because something
+could not be established; an observation stops nothing because everything was.
 _Avoid_: deferred, backlog, todo, follow-up
 
 ### Judging a spec
@@ -139,6 +139,14 @@ _Avoid_: merged, safe to delete
 An unattended pass stopping at a question only a person can answer, saying which
 question and on what. The sanctioned refusal — visible, reasoned, and resumable.
 _Avoid_: block, fail, skip
+
+**Observation**:
+Something a pass learned while running that the ticket did not ask for, written
+to the store instead of asked. One record carries a claim the repo can
+contradict, the command that tests it, and that command's answer at the time — so
+a later pass re-runs it rather than re-deriving it. Stops nothing and demands
+nobody, which is what separates it from a park.
+_Avoid_: learning, note, finding, pin
 
 **Withhold**:
 Declining to label a ticket so the sweep cannot see it. An anti-pattern: it
