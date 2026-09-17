@@ -227,15 +227,14 @@ state. Whoever holds the record already holds the association, so a method that
 opens `Collaborator.new(x, record.site)` is the caller's convenience with a
 receiver attached — the state it works from is the collaborator's.
 
-An association that *is* the constraint is the exception, and it reads as the
-same shape. Where an identifier arrives from outside — a browser parameter, an
-API payload — and the method resolves it through an association, that
-association is what stops one tenant handing another's record to this one. The
-method reads no state of its host and is still correctly placed, because the
-scoping is the host's own job. The discriminator is what the association is
-being asked for: a collaborator to work *from* is the caller's convenience and
-counts; a constraint on an untrusted id is the record doing what only it can.
-Evicting the second is the count deleting a cross-tenant guard.
+An association that *is* the constraint is the exception. Where an identifier
+arrives from outside — a browser parameter, an API payload — and the method
+resolves it through an association, that association is what stops one tenant
+handing another's record to this one. It reads no state of its host and is
+still correctly placed, because the scoping is the host's own job. The
+discriminator is what the association is asked for: a collaborator to work
+*from* counts, a constraint on an untrusted id is the record doing what only
+it can. Evicting the second is the count deleting a cross-tenant guard.
 
 Count it by enumerating every method against what it reads of `self`: nothing,
 one value it could have been handed, or state only this record holds. The first
