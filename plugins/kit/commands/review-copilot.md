@@ -102,7 +102,7 @@ All items are processed without stopping for approval. The summary in Step 5 is 
 
   Use the four categories from Step 3.3, add the minor/non-minor scope label, and tag each line with the source(s). **Include skipped items too** — the durable record of "we considered this and decided not to act" is the point. If Step 6 delegates to `/kit:commit`, pass this body as the intended message rather than letting `/kit:commit` draft its own.
 - If no fixes were made (all comments skipped/ignored), do NOT create a commit — there is nothing to push. The summary still becomes the record at Step 7.5: a round that skipped everything is closed, and a PR cannot otherwise show the difference between that and a round nobody ran.
-- **Report the summary back to your caller in a form it can act on**, naming explicitly whether any **non-minor** item was skipped. That is what decides whether the PR gets pinned — `kit-pinned` plus a pin carrying the discussion, per Step 7.5 — and the caller cannot recover it from prose counts. It does not decide the merge: a pinned PR still merges.
+- **Report the summary back to your caller in a form it can act on**, naming explicitly whether any **non-minor** item was skipped. That is what decides whether the PR gets pinned — `kit-pinned` plus an observation carrying the discussion, per Step 7.5 — and the caller cannot recover it from prose counts. It does not decide the merge: a pinned PR still merges.
 
 **Step 6 — Quality gates (if any fixes were made):**
 - Run the /kit:commit skill
@@ -216,23 +216,25 @@ merge. This pass never removes the label — not even the one it set.
 write.** It is a discussion to have later, not a merge to stop: the pass had a
 reason for skipping, a subsequent pass over the same file often handles it
 transparently, and holding the PR over it strands finished work behind a
-question nobody has scheduled. Pin it instead, and let the merge proceed:
+question nobody has scheduled. Record it instead, and let the merge proceed:
 
 ```
 gh pr edit <N> --add-label kit-pinned
 ```
 
-Then invoke `/kit:pin-it` via the Skill tool with the finding drafted as its
-subject — the requirement in the reviewer's framing, what the round already
-established about it, and why this pass skipped it. **Title the pin with the PR
-number** so the diff, the round summary and the reviewer's own words are one
-lookup away; a pin that names only the symptom sends its reader back to a
-codebase that has since moved.
+Then invoke the `observations` skill and record the finding, passing `--pr <N>`
+so the diff, the round summary and the reviewer's own words are one lookup away.
+The reviewer's own words are the `claim` — already a statement about a named file
+— and the check is what tests whether that statement still holds. `surfaced` is
+why this pass skipped it, which is the part the next reader cannot re-derive.
 
 `kit-pinned` blocks nothing. It exists so `gh pr list --label kit-pinned` names
-the merged PRs carrying an open question, which a pin file on one machine cannot
-do — and the summary comment above already carries the reasoning, so the label
-stays a filter and never a vocabulary.
+the merged PRs carrying an open question, and that is what carries the finding
+when the store cannot: **on a CI runner the checkout is discarded**, so the
+append is best-effort and the label is the durable half. Apply the label first,
+and report the append's line where it succeeded. The summary comment above
+already carries the reasoning, so the label stays a filter and never a
+vocabulary.
 
 `## Unattended` below owns what the escalation *conditions* are, and the merge
 decision that branches on them. This step owns only the record.

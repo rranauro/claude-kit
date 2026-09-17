@@ -228,7 +228,7 @@ id="$(field 1 id)"
 assert_has "$out" "$id" "the slug is reported so it can be resurfaced"
 assert_has "$out" "names no destination for the Parked list" "the claim is reported"
 assert_has "$out" "1 observation" "the store's size is reported"
-out2="$(record "$MAIN" --claim "docs/commands.md still lists /kit:pin-it")"
+out2="$(record "$MAIN" --claim "docs/commands.md lists no entry for /kit:observe")"
 assert_has "$out2" "2 observations" "and it counts up, so a filling drawer says so"
 end_sandbox
 
@@ -281,21 +281,21 @@ end_sandbox
 
 new_sandbox "list reports every record"
 record "$MAIN" >/dev/null
-record "$MAIN" --claim "docs/commands.md still lists /kit:pin-it" >/dev/null
+record "$MAIN" --claim "docs/commands.md lists no entry for /kit:observe" >/dev/null
 out="$( (cd "$MAIN" && "$SCRIPT" list) 2>&1 )"
 assert_has "$out" "Parked list" "the first claim is listed"
-assert_has "$out" "still lists /kit:pin-it" "the second claim is listed"
+assert_has "$out" "lists no entry for /kit:observe" "the second claim is listed"
 assert_has "$out" "$(field 1 id)" "with the slug that resurfaces it"
 end_sandbox
 
 new_sandbox "list survives a corrupt line and says which"
 record "$MAIN" >/dev/null
 echo 'this is not json' >> "$(store)"
-record "$MAIN" --claim "docs/commands.md still lists /kit:pin-it" >/dev/null
+record "$MAIN" --claim "docs/commands.md lists no entry for /kit:observe" >/dev/null
 out="$( (cd "$MAIN" && "$SCRIPT" list) 2>&1 )"
 assert_status "$?" 0 "one corrupt record does not strand the drawer"
 assert_has "$out" "Parked list" "the record before it still lists"
-assert_has "$out" "still lists /kit:pin-it" "and so does the one after"
+assert_has "$out" "lists no entry for /kit:observe" "and so does the one after"
 assert_has "$out" "unreadable" "the corrupt line is reported"
 end_sandbox
 
@@ -329,14 +329,14 @@ end_sandbox
 
 new_sandbox "drop clears down the records named and keeps the rest"
 record "$MAIN" >/dev/null
-record "$MAIN" --claim "docs/commands.md still lists /kit:pin-it" >/dev/null
+record "$MAIN" --claim "docs/commands.md lists no entry for /kit:observe" >/dev/null
 record "$MAIN" --claim "CONTEXT.md has no entry for an observation" >/dev/null
 gone="$(field 2 id)"
 out="$( (cd "$MAIN" && "$SCRIPT" drop "$gone") 2>&1 )"
 assert_status "$?" 0 "the drop succeeds"
 assert_eq "$(lines)" "2" "only the named record is removed"
 assert_jsonl_valid "and the rewritten store is still valid JSONL"
-assert_lacks "$(cat "$(store)")" "still lists /kit:pin-it" "the dropped claim is gone"
+assert_lacks "$(cat "$(store)")" "lists no entry for /kit:observe" "the dropped claim is gone"
 assert_has "$(cat "$(store)")" "Parked list" "the record before it survives"
 assert_has "$(cat "$(store)")" "no entry for an observation" "and so does the one after"
 end_sandbox

@@ -24,7 +24,7 @@ the prefix comes from the `name` field in `plugins/kit/.claude-plugin/plugin.jso
 | `/kit:polish-ticket` | Runs a catch-all polish ticket. The user reports problems one at a time; each is triaged into an inline fix on the branch or its own filed ticket. |
 | `/kit:commit` | Focused commit with a real message. Reads the project's test, lint, and security gates from `CLAUDE.md`/manifest/CI and runs them on what changed. |
 | `/kit:new-pull-request` | Opens a PR with a closing keyword wired to the issue. |
-| `/kit:pin-it` | Parks a requirement that surfaced mid-debug but isn't ready to be discussed — culled to what's expensive to re-derive, saved outside version control at the main checkout so it survives the worktree it was written in. `list` shows what's pinned and flags what's gone stale; a slug brings one back and triages it into an issue, a fix, or a drop. |
+| `/kit:observe` | Records something that surfaced mid-work as a claim the repo can contradict, the command that tests it, and that command's answer now — appended to a store outside version control at the main checkout, so it survives the worktree it was written in. `list` reports what has accumulated and how full the drawer is; `triage` re-runs every check and clears down what the repo has moved past. |
 
 `plugins/kit/scripts/ship-startable.sh <label>` is the runner that works a whole
 label without a human re-invoking `/kit:ship-ticket` after every ticket — a
