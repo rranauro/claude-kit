@@ -10,9 +10,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The version check diffs against the base branch, which needs a merge
+          # base and a local origin/<base> ref — neither survives a shallow clone.
+          fetch-depth: 0
       # The checks live in scripts/lint.sh rather than inline here, so a
       # contributor can run exactly what CI runs before pushing.
       - run: ./scripts/lint.sh
+      # Its own step rather than part of lint.sh, because lint.sh also runs on
+      # push to main, where there is no base branch to diff against.
+      - if: github.event_name == 'pull_request'
+        run: ./scripts/check-version-bump.sh "${{ github.base_ref }}"
       # Separate step, not appended to lint.sh: this one builds a throwaway
       # repository per case and takes ~20s, and the shape checks above are worth
       # keeping fast enough to run before every push.
@@ -20,3 +28,4 @@ jobs:
       - run: ./tests/await-reviews.sh
       - run: ./tests/ship-startable.sh
       - run: ./tests/observe.sh
+      - run: ./tests/version-bump.sh
