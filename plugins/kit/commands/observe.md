@@ -25,20 +25,11 @@ Where the session holds more than one candidate, say which one you took.
 Recording the wrong thing is worse than recording nothing, because it reads as
 handled.
 
-Then turn it into the three fields the skill's record section defines, in this
-order — each one constrains the next:
-
-1. **The claim** — stated so the repository can contradict it. *"The Parked list
-   has no durable home"* is a sentiment; *"`plugins/kit/skills/grilling/SKILL.md`
-   names no destination for the Parked list"* is a claim.
-2. **The check** — the cheap, local, read-only command that tests that claim.
-   Write it after the claim, and let it push back: a claim no command can test is
-   a claim that has not been stated sharply enough yet.
-3. **What surfaced it** — the thread that exposed it. This is the one field
-   nobody can re-derive from the code later.
-
-Then the `action` — where this should end up, which is a destination rather than
-a plan.
+Then fill the record the skill defines, **claim before check** — that order is
+this command's own, and it is what makes the pair hold. Writing the check second
+lets it push back: a claim no cheap command can test is a claim that has not been
+stated sharply enough yet, and the fix is to sharpen the claim rather than to
+reach for a heavier check.
 
 Append it with `plugins/kit/scripts/observe.sh`, report the line it prints, and
 **return to what you were doing**. The interruption ends here; that is the entire

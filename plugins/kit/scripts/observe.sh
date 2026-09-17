@@ -35,6 +35,8 @@ misuse() { echo "observe.sh: $*" >&2; usage; exit 2; }
 # --git-common-dir points at the *main* repo's .git from inside any worktree.
 # --show-toplevel would put the store in the worktree, where it dies with the
 # ticket that produced it — which is the moment it was relied on to survive.
+# Resolved the long way round rather than with --path-format, which is git 2.31+
+# and this suite runs on whatever git the runner ships.
 common="$(git rev-parse --git-common-dir 2>/dev/null)" \
   || die "not in a git repository"
 case "$common" in
@@ -45,21 +47,24 @@ MAIN_ROOT="$(dirname "$common")"
 STORE="$MAIN_ROOT/.claude/observations.jsonl"
 REL=".claude/observations.jsonl"
 
-# Many projects commit `.claude/`, so a rule in `.gitignore` would itself be a
-# tracked change showing up in every PR diff. `info/exclude` is per-clone and
-# invisible to everyone else. Asked of the main checkout, because that is the
-# tree the store sits in.
+# `.gitignore` would itself be a tracked change in every PR diff of a project
+# that commits `.claude/`. Asked of the main checkout, because that is the tree
+# the store sits in — a worktree's own exclude file would not cover it.
 ensure_excluded() {
   git -C "$MAIN_ROOT" check-ignore -q "$REL" 2>/dev/null && return 0
   mkdir -p "$common/info"
   echo "$REL" >> "$common/info/exclude"
 }
 
-count() { [ -f "$STORE" ] && grep -c . "$STORE" || echo 0; }
+count() { grep -c . "$STORE" 2>/dev/null || echo 0; }
+
+# Run a check where it will be re-run: the main checkout the claim is about,
+# never the worktree the producing pass happens to be standing in.
+run_check() { (cd "$MAIN_ROOT" && bash -c "$1" 2>&1); }
 
 # --- reading ------------------------------------------------------------
 
-# Every reader tolerates a line that will not parse. Nothing validates the store
+# Every mode tolerates a line that will not parse. Nothing validates the store
 # on write except this script, so one corrupt record must not strand the drawer.
 readers() {
   python3 - "$STORE" "$@" <<'PY'
@@ -81,34 +86,29 @@ try:
 except FileNotFoundError:
     pass
 
-def first(text):
-    text = (text or "").strip()
-    return text.splitlines()[0] if text else ""
+def plural(n):
+    return f"{n} observation{'' if n == 1 else 's'}"
 
 if mode == "list":
-    for r in records:
-        print(f"{r.get('id','?')}\t{r.get('at','?')}\t{first(r.get('claim'))}")
-    for n in broken:
-        print(f"unreadable\tline {n}\tskipped")
-    print(f"__count__\t{len(records)}\t{len(broken)}")
-
-elif mode == "ids":
-    for r in records:
-        print(r.get("id", ""))
+    if not records and not broken:
+        print(f"no observations in {path}")
+    else:
+        for r in records:
+            claim = (r.get("claim") or "").strip().splitlines()
+            print(f"{r.get('id','?'):<48}  {r.get('at','?')}  {claim[0] if claim else ''}")
+        print(f"{plural(len(records))} in {path}")
+        if broken:
+            print(f"{len(broken)} unreadable line(s) skipped: "
+                  + ", ".join(map(str, broken)), file=sys.stderr)
 
 elif mode == "checks":
-    # One record per line, tab-separated, so the shell can re-run each check
-    # without re-parsing JSON. Tabs and newlines inside a field would break
-    # that, so the check and the witness go over as JSON strings.
+    # NUL-separated so the shell can re-run each check without re-parsing JSON.
+    # It is the one byte a claim, a command or captured output cannot contain.
     for r in records:
         if want and r.get("id") not in want:
             continue
-        print("\t".join([
-            r.get("id", ""),
-            json.dumps(r.get("claim", "")),
-            json.dumps(r.get("check", "")),
-            json.dumps(r.get("witness", "")),
-        ]))
+        for f in ("id", "claim", "check", "witness"):
+            sys.stdout.write((r.get(f) or "") + "\0")
 
 elif mode == "drop":
     missing = want - {r.get("id") for r in records}
@@ -116,9 +116,8 @@ elif mode == "drop":
         print("missing:" + ",".join(sorted(missing)), file=sys.stderr)
         sys.exit(1)
     for r in records:
-        if r.get("id") in want:
-            continue
-        print(json.dumps(r, ensure_ascii=False))
+        if r.get("id") not in want:
+            print(json.dumps(r, ensure_ascii=False))
 PY
 }
 
@@ -147,38 +146,48 @@ append() {
   [ -n "$surfaced" ] || misuse "--surfaced is required: the thread that exposed it"
   [ -n "$action" ]   || misuse "--action is required: where this should end up"
 
-  local branch repo witness
+  local branch repo
   branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
   repo="$(git config --get remote.origin.url 2>/dev/null \
           | sed -e 's#.*[:/]\([^/]*/[^/]*\)$#\1#' -e 's#\.git$##')"
+  # The kit's own branch layout. A project whose branches are named otherwise
+  # passes --issue, which wins.
   [ -n "$issue" ] || issue="$(printf '%s' "$branch" | sed -n 's/^\([0-9][0-9]*\)-.*/\1/p')"
-
-  # Run it where it will be re-run: the main checkout the claim is about, never
-  # the worktree the producing pass happens to be standing in.
-  witness="$(cd "$MAIN_ROOT" && bash -c "$check" 2>&1)"
 
   ensure_excluded
   mkdir -p "$(dirname "$STORE")"
 
-  local id
-  id="$(OBS_CLAIM="$claim" OBS_TAKEN="$( [ -f "$STORE" ] && readers ids || true )" python3 - <<'PY'
-import os, re
-words = re.sub(r"[^a-z0-9]+", "-", os.environ["OBS_CLAIM"].lower()).strip("-").split("-")
-slug = "-".join(w for w in words if w)[:48].strip("-") or "observation"
-taken = set(filter(None, os.environ["OBS_TAKEN"].splitlines()))
-candidate, n = slug, 1
-while candidate in taken:
-    n += 1
-    candidate = f"{slug}-{n}"
-print(candidate)
-PY
-)"
+  # One interpreter for the whole append: it reads the store for taken slugs,
+  # derives a free one, writes the record, and reports what the caller prints.
+  OBS_STORE="$STORE" OBS_BY="$by" OBS_CLAIM="$claim" OBS_CHECK="$check" \
+  OBS_WITNESS="$(run_check "$check")" OBS_SURFACED="$surfaced" \
+  OBS_ACTION="$action" OBS_REPO="$repo" OBS_BRANCH="$branch" \
+  OBS_ISSUE="$issue" OBS_PR="$pr" \
+  python3 - <<'PY'
+import datetime, json, os, re
 
-  OBS_ID="$id" OBS_BY="$by" OBS_CLAIM="$claim" OBS_CHECK="$check" \
-  OBS_WITNESS="$witness" OBS_SURFACED="$surfaced" OBS_ACTION="$action" \
-  OBS_REPO="$repo" OBS_BRANCH="$branch" OBS_ISSUE="$issue" OBS_PR="$pr" \
-  python3 - >> "$STORE" <<'PY'
-import datetime, json, os
+store = os.environ["OBS_STORE"]
+
+taken, kept = set(), 0
+try:
+    with open(store) as fh:
+        for line in fh:
+            if not line.strip():
+                continue
+            kept += 1
+            try:
+                taken.add(json.loads(line).get("id"))
+            except Exception:
+                pass
+except FileNotFoundError:
+    pass
+
+claim = os.environ["OBS_CLAIM"]
+slug = re.sub(r"[^a-z0-9]+", "-", claim.lower()).strip("-")[:48].strip("-") or "observation"
+obs_id, n = slug, 1
+while obs_id in taken:
+    n += 1
+    obs_id = f"{slug}-{n}"
 
 def num(key):
     v = os.environ.get(key, "").strip()
@@ -191,9 +200,9 @@ LIMIT = 4000
 if len(witness) > LIMIT:
     witness = witness[:LIMIT] + "\n… truncated"
 
-print(json.dumps({
+record = {
     "v": 1,
-    "id": os.environ["OBS_ID"],
+    "id": obs_id,
     "at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d"),
     "by": os.environ["OBS_BY"],
     "ctx": {
@@ -202,48 +211,32 @@ print(json.dumps({
         "branch": os.environ.get("OBS_BRANCH") or None,
         "pr": num("OBS_PR"),
     },
-    "claim": os.environ["OBS_CLAIM"],
+    "claim": claim,
     "check": os.environ["OBS_CHECK"],
     "witness": witness,
     "surfaced": os.environ["OBS_SURFACED"],
     "action": os.environ["OBS_ACTION"],
-}, ensure_ascii=False))
-PY
+}
+with open(store, "a") as fh:
+    fh.write(json.dumps(record, ensure_ascii=False) + "\n")
 
-  local n; n="$(count)"
-  printf 'observed %s — %s\n' "$id" "$claim"
-  printf '%s %s in %s\n' "$n" "$( [ "$n" = 1 ] && echo observation || echo observations )" "$STORE"
+total = kept + 1
+print(f"observed {obs_id} — {claim}")
+print(f"{total} observation{'' if total == 1 else 's'} in {store}")
+PY
 }
 
 # --- the readers --------------------------------------------------------
-
-do_list() {
-  local n=0 broken=0
-  while IFS=$'\t' read -r a b c; do
-    if [ "$a" = "__count__" ]; then n="$b"; broken="$c"; continue; fi
-    printf '%-48s  %s  %s\n' "$a" "$b" "$c"
-  done < <(readers list)
-  if [ "$n" = 0 ] && [ "$broken" = 0 ]; then
-    echo "no observations in $STORE"
-  else
-    printf '%s %s in %s\n' "$n" "$( [ "$n" = 1 ] && echo observation || echo observations )" "$STORE"
-    [ "$broken" = 0 ] || echo "$broken unreadable line(s) skipped" >&2
-  fi
-}
 
 # Re-running the check is what replaces a staleness timer. A witness the repo
 # has moved past means the observation was either acted on or was wrong, and
 # either way it can die without anyone adjudicating it.
 do_recheck() {
-  local any=0
-  while IFS=$'\t' read -r id claim_j check_j witness_j; do
-    [ -n "$id" ] || continue
+  local any=0 id claim check was now
+  while IFS= read -r -d '' id    && IFS= read -r -d '' claim \
+     && IFS= read -r -d '' check && IFS= read -r -d '' was; do
     any=1
-    local claim check was now
-    claim="$(printf '%s' "$claim_j" | python3 -c 'import json,sys; print(json.load(sys.stdin))')"
-    check="$(printf '%s' "$check_j" | python3 -c 'import json,sys; print(json.load(sys.stdin))')"
-    was="$(printf '%s' "$witness_j" | python3 -c 'import json,sys; sys.stdout.write(json.load(sys.stdin))')"
-    now="$(cd "$MAIN_ROOT" && bash -c "$check" 2>&1)"
+    now="$(run_check "$check")"
     if [ "$now" = "$was" ]; then
       printf 'holds  %s  %s\n' "$id" "$claim"
     else
@@ -260,13 +253,13 @@ do_recheck() {
 do_drop() {
   [ $# -gt 0 ] || misuse "drop needs at least one slug"
   [ -f "$STORE" ] || die "no observations in $STORE"
-  local tmp; tmp="$(mktemp "$STORE.XXXXXX")"
-  if ! readers drop "$@" > "$tmp" 2>"$tmp.err"; then
-    local missing; missing="$(sed -n 's/^missing://p' "$tmp.err")"
-    rm -f "$tmp" "$tmp.err"
+  local tmp err; tmp="$(mktemp "$STORE.XXXXXX")"; err="$tmp.err"
+  if ! readers drop "$@" > "$tmp" 2>"$err"; then
+    local missing; missing="$(sed -n 's/^missing://p' "$err")"
+    rm -f "$tmp" "$err"
     die "no such observation: ${missing:-$*}"
   fi
-  rm -f "$tmp.err"
+  rm -f "$err"
   mv "$tmp" "$STORE"
   printf 'dropped %s — %s left\n' "$*" "$(count)"
 }
@@ -275,7 +268,7 @@ do_drop() {
 
 case "${1-}" in
   "")      misuse "nothing to do" ;;
-  list)    shift; do_list "$@" ;;
+  list)    readers list ;;
   recheck) shift; do_recheck "$@" ;;
   drop)    shift; do_drop "$@" ;;
   -h|--help) usage; exit 0 ;;

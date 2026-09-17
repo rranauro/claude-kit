@@ -228,11 +228,11 @@ The reviewer's own words are the `claim` — already a statement about a named f
 — and the check is what tests whether that statement still holds. `surfaced` is
 why this pass skipped it, which is the part the next reader cannot re-derive.
 
-`kit-pinned` blocks nothing. It exists so `gh pr list --label kit-pinned` names
-the merged PRs carrying an open question, and that is what carries the finding
-when the store cannot: **on a CI runner the checkout is discarded**, so the
-append is best-effort and the label is the durable half. Apply the label first,
-and report the append's line where it succeeded. The summary comment above
+**Apply the label before attempting the append**, and report the append's line
+where it succeeded. On a runner the checkout is discarded and the store goes with
+it, which is why the ordering matters — `docs/tending-on-a-runner.md` owns that
+case. `kit-pinned` blocks nothing: it exists so `gh pr list --label kit-pinned`
+names the merged PRs carrying an open question, and the summary comment above
 already carries the reasoning, so the label stays a filter and never a
 vocabulary.
 

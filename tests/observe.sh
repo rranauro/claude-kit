@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
-# Every acceptance criterion on #150 that the append script owns, asserted
-# against a throwaway repository with a linked worktree.
+# What the append script owns, asserted against a throwaway repository with a
+# linked worktree.
 #
 # The store is gitignored and lives outside the repo, so `scripts/lint.sh`
 # cannot reach a single record. A malformed line is therefore unrecoverable and
@@ -42,21 +42,15 @@ assert_eq() { # actual expected label
   else bad "$3"; printf '       expected: %s\n       actual:   %s\n' "$2" "$1" >&2; fi
 }
 
-assert_status() { # actual expected label
-  assert_eq "$1" "$2" "$3"
-}
-
 # --- reading the store --------------------------------------------------
 
-store() { echo "$MAIN/.claude/observations.jsonl"; }
-
-lines() { [ -f "$(store)" ] && wc -l < "$(store)" | tr -d ' ' || echo 0; }
+lines() { grep -c . "$STORE" 2>/dev/null || echo 0; }
 
 # Every line parses as JSON on its own — the one property JSONL has to hold and
 # the one nothing else in this repo can check.
 assert_jsonl_valid() { # label
   local out
-  out="$(python3 - "$(store)" <<'PY' 2>&1
+  out="$(python3 - "$STORE" <<'PY' 2>&1
 import json, sys
 for n, line in enumerate(open(sys.argv[1]), 1):
     if not line.strip():
@@ -73,7 +67,7 @@ PY
 }
 
 field() { # record-index(1-based) dotted-path
-  python3 - "$(store)" "$1" "$2" <<'PY'
+  python3 - "$STORE" "$1" "$2" <<'PY'
 import json, sys
 recs = [json.loads(l) for l in open(sys.argv[1]) if l.strip()]
 v = recs[int(sys.argv[2]) - 1]
@@ -92,18 +86,20 @@ new_sandbox() {
   # and the store's path is compared against both below.
   SANDBOX="$(cd "$(mktemp -d)" && pwd -P)"
   MAIN="$SANDBOX/main"
+  STORE="$MAIN/.claude/observations.jsonl"
 
-  git init -q --bare "$SANDBOX/remote.git"
-  git -C "$SANDBOX/remote.git" symbolic-ref HEAD refs/heads/main
-  git clone -q "$SANDBOX/remote.git" "$MAIN" 2>/dev/null
+  # `git init -b` is 2.28+; this suite builds its sandbox on whatever git the
+  # runner ships, so the default branch is named the long way round. Nothing
+  # here fetches or pushes, so the remote is a URL rather than a repository —
+  # `ctx.repo` is the only thing any test reads off it.
+  git init -q "$MAIN"
   git -C "$MAIN" symbolic-ref HEAD refs/heads/main
   git -C "$MAIN" config user.email test@example.com
   git -C "$MAIN" config user.name "Test"
+  git -C "$MAIN" remote add origin git@github.com:acme/widgets.git
   echo hello > "$MAIN/README.md"
   git -C "$MAIN" add -A
   git -C "$MAIN" commit -qm initial
-  git -C "$MAIN" push -q origin main
-  git -C "$MAIN" remote set-url origin git@github.com:acme/widgets.git
 }
 
 end_sandbox() {
@@ -133,7 +129,7 @@ record() { # cwd extra-args...
 
 new_sandbox "a record carries the claim, its check, and the check's own answer"
 out="$(record "$MAIN" --check "printf 'seven\n'")"
-assert_status "$?" 0 "the append succeeds"
+assert_eq "$?" 0 "the append succeeds"
 assert_eq "$(lines)" "1" "one record is appended"
 assert_jsonl_valid "the record is valid JSON on one line"
 assert_eq "$(field 1 claim)" \
@@ -150,7 +146,7 @@ end_sandbox
 
 new_sandbox "the witness is captured even when the check fails"
 out="$(record "$MAIN" --check "grep -c nothing-matches-this README.md")"
-assert_status "$?" 0 "a check that exits non-zero is still a usable check"
+assert_eq "$?" 0 "a check that exits non-zero is still a usable check"
 assert_eq "$(field 1 witness)" "0" "its output is the witness"
 end_sandbox
 
@@ -261,15 +257,13 @@ end_sandbox
 
 new_sandbox "a record missing a required part is refused"
 for missing in claim check surfaced action by; do
-  args=(--by k --claim c --check "true" --surfaced s --action a)
-  out=""; i=0; filtered=()
-  while [ "$i" -lt "${#args[@]}" ]; do
-    if [ "${args[$i]}" = "--$missing" ]; then i=$((i + 2)); continue; fi
-    filtered+=("${args[$i]}"); i=$((i + 1))
+  args=()
+  for opt in by claim check surfaced action; do
+    [ "$opt" = "$missing" ] || args+=("--$opt" "x")
   done
-  out="$( (cd "$MAIN" && "$SCRIPT" "${filtered[@]}") 2>&1 )"
+  out="$( (cd "$MAIN" && "$SCRIPT" "${args[@]}") 2>&1 )"
   st=$?
-  assert_status "$st" 2 "--$missing omitted is a usage error"
+  assert_eq "$st" 2 "--$missing omitted is a usage error"
   assert_has "$out" "$missing" "and the message names what was missing"
 done
 assert_eq "$(lines)" "0" "nothing half-formed is written"
@@ -290,10 +284,10 @@ end_sandbox
 
 new_sandbox "list survives a corrupt line and says which"
 record "$MAIN" >/dev/null
-echo 'this is not json' >> "$(store)"
+echo 'this is not json' >> "$STORE"
 record "$MAIN" --claim "docs/commands.md lists no entry for /kit:observe" >/dev/null
 out="$( (cd "$MAIN" && "$SCRIPT" list) 2>&1 )"
-assert_status "$?" 0 "one corrupt record does not strand the drawer"
+assert_eq "$?" 0 "one corrupt record does not strand the drawer"
 assert_has "$out" "Parked list" "the record before it still lists"
 assert_has "$out" "lists no entry for /kit:observe" "and so does the one after"
 assert_has "$out" "unreadable" "the corrupt line is reported"
@@ -301,7 +295,7 @@ end_sandbox
 
 new_sandbox "list says so when the store is empty"
 out="$( (cd "$MAIN" && "$SCRIPT" list) 2>&1 )"
-assert_status "$?" 0 "an empty store is not an error"
+assert_eq "$?" 0 "an empty store is not an error"
 assert_has "$out" "no observations" "and says so in one line"
 end_sandbox
 
@@ -333,18 +327,18 @@ record "$MAIN" --claim "docs/commands.md lists no entry for /kit:observe" >/dev/
 record "$MAIN" --claim "CONTEXT.md has no entry for an observation" >/dev/null
 gone="$(field 2 id)"
 out="$( (cd "$MAIN" && "$SCRIPT" drop "$gone") 2>&1 )"
-assert_status "$?" 0 "the drop succeeds"
+assert_eq "$?" 0 "the drop succeeds"
 assert_eq "$(lines)" "2" "only the named record is removed"
 assert_jsonl_valid "and the rewritten store is still valid JSONL"
-assert_lacks "$(cat "$(store)")" "lists no entry for /kit:observe" "the dropped claim is gone"
-assert_has "$(cat "$(store)")" "Parked list" "the record before it survives"
-assert_has "$(cat "$(store)")" "no entry for an observation" "and so does the one after"
+assert_lacks "$(cat "$STORE")" "lists no entry for /kit:observe" "the dropped claim is gone"
+assert_has "$(cat "$STORE")" "Parked list" "the record before it survives"
+assert_has "$(cat "$STORE")" "no entry for an observation" "and so does the one after"
 end_sandbox
 
 new_sandbox "dropping an unknown slug changes nothing"
 record "$MAIN" >/dev/null
 out="$( (cd "$MAIN" && "$SCRIPT" drop no-such-slug) 2>&1 )"
-assert_status "$?" 1 "an unknown slug is an error"
+assert_eq "$?" 1 "an unknown slug is an error"
 assert_eq "$(lines)" "1" "and the store is left as it was"
 end_sandbox
 

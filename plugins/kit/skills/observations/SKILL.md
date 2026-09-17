@@ -24,9 +24,7 @@ and that command's answer at the time.**
 
 That pair is the whole design. Triage becomes *re-run and diff* rather than a
 judgement call: a record whose witness has moved was either acted on or was
-wrong, and it dies without anyone adjudicating it. It is also what makes
-`kit:triage-memory`'s hardest rule cheap — every stale call there needs evidence
-from outside the memory, and here that evidence ships with the entry.
+wrong, and it dies without anyone adjudicating it.
 
 | field | what it carries |
 |---|---|
@@ -82,26 +80,18 @@ can move.
 
 ## Where the store lives
 
-`.claude/observations.jsonl` at the **main checkout**, resolved through `git
-rev-parse --git-common-dir`. An observation is written mid-ticket, and mid-ticket
-you are in a worktree: a record written there dies with `kit:worktree-reclaim`,
-at the exact moment the ticket ships and you were relying on it to survive.
+`.claude/observations.jsonl` at the **main checkout**, outside version control.
+`observe.sh` resolves it; why it is there rather than on the issue is
+`docs/adr/0005-observations-are-stored-outside-the-repo.md`.
 
-It is kept out of version control through `.git/info/exclude` rather than
-`.gitignore`, because many projects commit `.claude/` and an ignore rule would be
-a tracked change in every PR diff.
-
-**A pass whose checkout is discarded records nothing that survives.**
-`/kit:review-copilot unattended` on a CI runner is exactly that case, and
-`kit-pinned` on the PR is what carries the record there instead — the label
-outlives the runner, and `gh pr list --label kit-pinned` names the merged PRs
-carrying an open question.
+The consequence a producer has to act on: **a pass whose checkout is discarded
+records nothing that survives**, so on a runner the durable half is `kit-pinned`
+on the PR. `docs/tending-on-a-runner.md` owns that case.
 
 ## What is not an observation
 
-- **A park.** A park stops the pass and names a decision a person must make
-  before it continues. An observation stops nothing. The two stay disjoint, which
-  is what keeps the interrupt rare.
+- **A park.** A park names a decision a person must make before the pass can
+  continue.
 - **A finding the pass can act on now.** Acting on it is cheaper than recording
   it, and a record of work already done is a record that will be triaged twice.
 - **A ticket.** Where the problem and the desired outcome are both already clear,
