@@ -39,6 +39,31 @@ rots as the repo drifts and becomes noise that has to be decluttered before real
 work can start. A short ticket that survives is worth more than an exhaustive
 one that misleads.
 
+## Name the window when a criterion says "first"
+
+`first`, `already`, `still`, `again`, `no longer` — each names a state over time,
+and each is silent about the window it measures. "Show the welcome notice the
+first time a theme goes live" does not say whether *first* means first ever, or
+first since the site last had none. Both readings satisfy the sentence, and the
+difference is invisible until a user takes the reversing path.
+
+An unnamed window is what turns into a column. The implementer cannot derive an
+answer whose boundaries they were never given, so they store one — a timestamp
+hand-stamped at every path that might be the first — and the ambiguity becomes
+schema, maintained by every future writer that has to remember to stamp it.
+
+Name the window and the storage question usually answers itself, because a
+window the existing rows already bound needs nothing new to hold it.
+
+> "The owner sees the welcome notice the first time a theme goes live" — a
+> column, because nothing says when the count resets.
+> "The owner sees the welcome notice on taking a theme live with none live
+> immediately before" — a read of rows that already say so.
+
+Same outcome for the case everyone had in mind. Only the second says what the
+owner sees after taking their site dark, which is the decision the ticket was
+there to make.
+
 ## Only the acceptance criteria are binding
 
 Everything else in the ticket — the direction, the key decisions, whatever
