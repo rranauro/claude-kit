@@ -19,3 +19,4 @@ jobs:
       - run: ./tests/worktree-reclaim.sh
       - run: ./tests/await-reviews.sh
       - run: ./tests/ship-startable.sh
+      - run: ./tests/observe.sh

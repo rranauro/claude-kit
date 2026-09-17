@@ -56,12 +56,13 @@ escalated, the summary says why and the pass adds `kit-hold` as well — the sam
 label a person's own veto uses.
 
 A round that only skipped a non-minor finding did not escalate. It adds
-`kit-pinned` and writes a pin, and the PR merges: the gates ran and the round
-closed, so nothing about the change is unestablished — what is left is a
+`kit-pinned` and records an observation, and the PR merges: the gates ran and the
+round closed, so nothing about the change is unestablished — what is left is a
 question, and a question that blocks a finished PR is a question that also
 blocks everything queued behind it. Often a later pass over the same code
-answers it with nobody asking. The label is a filter for `gh pr list`, because
-the pin itself lives on one machine and cannot be listed from anywhere else.
+answers it with nobody asking. The label is a filter for `gh pr list`, and on a
+runner it is the only half that survives: the observation store lives in a
+checkout the job discards.
 `workflow_run` fires again on every subsequent push, so a gate that does not look
 for the record first re-runs a round already answered — paying for a model to
 reach the same conclusion, and stacking a second summary comment on the PR saying
