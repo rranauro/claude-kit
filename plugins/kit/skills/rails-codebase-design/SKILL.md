@@ -227,12 +227,27 @@ state. Whoever holds the record already holds the association, so a method that
 opens `Collaborator.new(x, record.site)` is the caller's convenience with a
 receiver attached — the state it works from is the collaborator's.
 
+An association that *is* the constraint is the exception, and it reads as the
+same shape. Where an identifier arrives from outside — a browser parameter, an
+API payload — and the method resolves it through an association, that
+association is what stops one tenant handing another's record to this one. The
+method reads no state of its host and is still correctly placed, because the
+scoping is the host's own job. The discriminator is what the association is
+being asked for: a collaborator to work *from* is the caller's convenience and
+counts; a constraint on an untrusted id is the record doing what only it can.
+Evicting the second is the count deleting a cross-tenant guard.
+
 Count it by enumerating every method against what it reads of `self`: nothing,
 one value it could have been handed, or state only this record holds. The first
 two are the count; the third is the class. This is what names why a class
 reached a length limit with sixty short methods — the length is the symptom, the
 borrowed receivers are the cause, and a split that relocates them into a new
 module carries them instead of landing them.
+
+Landing one is a move before it is an extraction. The method already answers
+about some record, and that record is usually the receiver already waiting for
+it — a new class is what the absence of one buys, not the default response to
+the count.
 
 **Reaching back to the class.** Repeated `self.class.` inside instance methods
 means behavior parked at class level that the instance needs. A handful is
