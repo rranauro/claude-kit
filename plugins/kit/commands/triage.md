@@ -163,8 +163,8 @@ Two things are in the body, and only one of them is evidence:
 - **The remedy** — what the author would do about it. A shape to serve instead,
   a class to extract, a flag to add.
 
-Criteria written from the remedy grill as though the premise were settled, so
-the boundary you argue is the boundary of a guess. Read them back against the
+Grill criteria written from the remedy and you argue the boundary of a guess,
+because the premise arrived already settled. Read them back against the
 finding alone and ask what else would answer it. What answers a finding is
 often already in the codebase, and a remedy that builds a second one is what
 this catches.
