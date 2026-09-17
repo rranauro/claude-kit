@@ -182,7 +182,9 @@ so the round has its confirmation without a second call.
 
 A repo with no such label is not broken: the comment still closes the round, and
 the gate over-approximates by waking a model that finds nothing to do. **Say the
-label did not apply** — `label-write-failed` below is the rule.
+mark did not apply, and that the round itself is recorded** — the summary is on
+the PR, so nobody needs to re-run this round to recover what it decided, and
+re-running would stack a second summary. `label-write-failed` below is the rule.
 
 **Re-running attended, edit the existing comment rather than posting a second.**
 Step 2.4 already told you it was there. Find it by its marker and edit by id:
@@ -199,12 +201,26 @@ summary**, never a later comment. A pass that posts the marker and then dies
 leaves a PR reading as a clean closed round, which is this record inverted:
 
 ```
-gh pr edit <N> --add-label kit-hold
+gh pr edit <N> --add-label kit-hold          # escalating: this one goes first
+gh pr edit <N> --add-label kit-review-closed
 ```
 
-Both writes above still happen — the round did close, and a gate should skip an
-escalated PR for the same reason it skips a closed one: what it needs is a
-person, not another model pass.
+Both marks belong on an escalated PR — the round did close, and a gate should
+skip it for the same reason it skips any closed one: what it needs is a person,
+not another model pass.
+
+**On an escalation the hold is written first, and `kit-review-closed` only if it
+landed.** The two marks pull in opposite directions: `kit-hold` stops the merge
+and `kit-review-closed` is what permits it. A gate arms auto-merge on a
+closed-round, green, unheld PR — so a hold that failed while the closed mark
+succeeded is not a partial escalation, it is the escalation reversed, and the
+next firing merges the thing this pass stopped.
+
+If the hold cannot be applied, **leave the round unclosed**: report the
+escalation, say `kit-review-closed` was deliberately withheld, and name
+`gh label create kit-hold` as what fixes it. An unclosed round costs a later
+pass that re-derives this one. That is the price of the only ordering where
+neither failure merges the PR.
 
 **`kit-hold` is what survives this pass.** Withholding auto-merge is the absence
 of an action, not a record: a CI gate arms auto-merge on any closed-round, green
@@ -309,9 +325,10 @@ Otherwise, ask the user before enabling:
   and merges it. Tell the user the decline was *not* recorded, that the PR will
   merge on the next firing, and that `gh label create kit-hold` followed by this
   same edit is what holds it. Step 7.6 is the rule; this is the branch where
-  ignoring it costs a merge nobody authorised.
+  ignoring it costs a merge nobody authorised. Then stop — the confirmation
+  below describes a hold that is not in place.
 
-  Say that you wrote it, and say how to undo it: `gh pr edit <PR#> --remove-label
+  **On a successful edit**, say that you wrote it, and say how to undo it: `gh pr edit <PR#> --remove-label
   kit-hold` hands control back, after which the PR is judged on its evidence
   again — round closed, green and unheld, which the gate will act on.
 

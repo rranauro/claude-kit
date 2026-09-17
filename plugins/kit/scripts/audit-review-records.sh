@@ -9,10 +9,11 @@ set -uo pipefail
 # own. `/kit:review-copilot` will not create that state any more, but a repo
 # that ran the earlier version is already in it, and nothing reports it.
 #
-# One call answers it: `gh pr list --json` returns each PR's comments, so the
-# marker is matched inside the same request that finds the labelled PRs. The
-# per-PR fetch this replaced also read only the first page of comments, which
-# reported any busy PR as an orphan on every run.
+# One call answers it for almost every PR: `gh pr list --json` returns each PR's
+# comments, so the marker is matched inside the same request that finds the
+# labelled PRs. That comment page is bounded, though, so a PR reporting none is
+# asked again with a paginated fetch before it is named. A false positive here
+# would recur on every run and never self-clear, which is worse than the call.
 
 usage() {
   cat <<'USAGE'
@@ -69,8 +70,30 @@ orphans=()
 while read -r n records; do
   [ -n "$n" ] || continue
   checked=$((checked + 1))
-  [ "$records" -eq 0 ] && orphans+=("$n")
+  [ "$records" -gt 0 ] && continue
+  confirmed="$(gh api --paginate "repos/{owner}/{repo}/issues/$n/comments" \
+                 --jq "[.[] | select(.body | startswith(\"$MARKER\"))] | length" 2>/dev/null \
+               | awk '{t += $1} END {print t + 0}')"
+  # An unreadable PR is named rather than skipped: a false name costs one look,
+  # a missed one costs the decision.
+  case "$confirmed" in
+    ''|*[!0-9]*|0) orphans+=("$n") ;;
+  esac
 done <<< "$rows"
+
+# The listing returns at most --limit rows, so a full page means there may be
+# labelled PRs it never saw. Reporting clean would claim an exhaustiveness this
+# call cannot give.
+truncated=""
+[ "$checked" -ge "$limit" ] && truncated="yes"
+
+if [ -n "$truncated" ] && [ "${#orphans[@]}" -eq 0 ]; then
+  echo "checked $checked PRs labelled $LABEL (state: $state) and found every record,"
+  echo "but the listing was filled to its limit, so PRs beyond it were never read."
+  echo "Re-run with a higher --limit to audit them:"
+  echo "  audit-review-records.sh --state $state --limit $((limit * 2))"
+  exit 2
+fi
 
 if [ "${#orphans[@]}" -eq 0 ]; then
   echo "all $checked PRs labelled $LABEL carry their record (state: $state)"
@@ -85,4 +108,9 @@ echo "${#orphans[@]} of $checked PRs labelled $LABEL carry no record (state: $st
 echo "Each one reads as triaged to every gate. Re-run the round on it, or"
 echo "remove the label so a later pass picks it up:"
 echo "  gh pr edit <n> --remove-label $LABEL"
+if [ -n "$truncated" ]; then
+  echo
+  echo "The listing was filled to its limit, so PRs beyond it were never read."
+  echo "Re-run with --limit $((limit * 2)) to audit them."
+fi
 exit 1

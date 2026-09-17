@@ -71,11 +71,15 @@ the artifact it was about. Nothing unattended ever writes this label in either
 direction, which is the rule that matters: a pass cannot clear a hold it is
 subject to.
 
-Say in the confirmation that the PR is held and how to release it, since a held
-PR looks identical to an ignored one:
+**Only if that edit succeeded**, say in the confirmation that the PR is held and
+how to release it, since a held PR looks identical to an ignored one:
 
 > PR #<N> is open and **held** (`kit-hold`) — the CI gate will skip it entirely.
 > Remove the label when you're done verifying, and it picks up from there.
+
+Where it was refused, say the opposite in its place: the PR is open and **not**
+held, it will merge when checks pass, and `gh label create kit-hold` followed by
+this same edit is what holds it.
 
 **Step 4 — Confirm:**
 Print the PR URL so the user can review it.

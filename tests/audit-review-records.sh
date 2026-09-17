@@ -67,6 +67,18 @@ if [ "$1" = "pr" ] && [ "$2" = "list" ]; then
   cat "$GH_FIXTURES/prs" 2>/dev/null
   exit 0
 fi
+if [ "$1" = "api" ]; then
+  for arg in "$@"; do
+    case "$arg" in
+      */issues/*/comments)
+        n="${arg#*/issues/}"; n="${n%/comments}"
+        printf '%s\n' "$n" >> "$GH_FIXTURES/confirmed"
+        cat "$GH_FIXTURES/confirm.$n" 2>/dev/null || echo 0
+        exit 0 ;;
+    esac
+  done
+  exit 0
+fi
 exit 0
 GH
   chmod +x "$SANDBOX/bin/gh"
@@ -84,6 +96,9 @@ end_sandbox() {
 # What the one `gh pr list --json number,comments --jq` call leaves on stdout:
 # "<pr-number> <how many of its comments opened with the marker>".
 rows() { printf '%s\n' "$@" > "$GH_FIXTURES/prs"; }
+# How many marker comments the paginated confirming fetch finds on PR $1. The
+# listing's comment page is bounded, so a PR reporting none is asked again.
+confirm() { echo "$2" > "$GH_FIXTURES/confirm.$1"; }
 
 run() {
   OUT="$("$SCRIPT" "$@" 2>&1)"
@@ -172,6 +187,36 @@ touch "$GH_FIXTURES/list_fails"
 run
 assert_status "$STATUS" 2            "distinct from both a clean and a dirty audit"
 assert_lacks "$OUT" "no PRs"         "does not report an empty repo it never read"
+end_sandbox
+
+new_sandbox "a PR reporting no record is confirmed before it is named"
+rows "11 1" "12 0"
+confirm 12 1
+run
+# `--json comments` returns a bounded page, so a busy PR can report zero while
+# carrying its marker past the cutoff. Naming it would be a false positive that
+# recurs every run and never self-clears.
+assert_status "$STATUS" 0            "the confirmed record clears it"
+assert_lacks "$OUT" "#12"            "does not name a PR whose marker was past the page"
+assert_has "$(cat "$GH_FIXTURES/confirmed")" "12" "asked again about the PR reporting none"
+assert_lacks "$(cat "$GH_FIXTURES/confirmed")" "11" "spends nothing on the PRs already answered"
+end_sandbox
+
+new_sandbox "a PR with no record anywhere is still named"
+rows "11 0"
+confirm 11 0
+run
+assert_status "$STATUS" 1            "reports the orphan"
+assert_has "$OUT" "#11"              "names it"
+end_sandbox
+
+new_sandbox "a listing filled to the limit is not a clean audit"
+rows "11 1" "12 1"
+run --limit 2
+# Every row the listing could hold came back, so there may be labelled PRs it
+# never saw. Reporting clean here claims an exhaustiveness the call cannot give.
+assert_status "$STATUS" 2            "does not claim an audit it could not finish"
+assert_has "$OUT" "--limit"          "says how to widen it"
 end_sandbox
 
 # --- summary ------------------------------------------------------------
