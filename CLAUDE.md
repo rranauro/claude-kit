@@ -43,6 +43,14 @@ vocabulary those files read off an issue; `docs/commands.md` lists the surface;
   before it lands, and say in the handoff that you did. The kit's own rule of
   holding auto-merge off until a review round is closed is written for repos
   with a bot reviewer — this one has none, so there is no round to wait for.
+- **A change under `plugins/kit/` cuts a version.** `claude plugin update`
+  compares version numbers rather than contents, so a payload that ships under an
+  unchanged version never reaches an installed session — it fails silently, which
+  is why `scripts/check-version-bump.sh` is a required check on every PR. Bump
+  **minor** when the invocable surface moves: a command, skill, or hook added,
+  removed, or renamed, so a consuming project's invocations change. Bump
+  **patch** when prose inside an existing file changes. Everything outside
+  `plugins/kit/` — docs, scripts, tests — ships nothing, so it cuts nothing.
 - **Work this repo through its own commands.** `/kit:architect` and
   `/kit:triage` for what to build, `/kit:design` for how, `/kit:ship-ticket` to
   carry it. A change to the workflow that was not made through the workflow has
