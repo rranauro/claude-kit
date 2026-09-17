@@ -250,8 +250,10 @@ the state was described wrong.
 **The unpredicted return type.** Two public methods, and the class name predicts
 one of their return types. The method answering the other is a separate object
 wearing this one's name, and naming which one is the count.
-`Html::Parameterizer` predicts the in-memory conversion, so the method answering
-with the file paths it wrote is the separate object. That the two types diverge
+Constructed: `Csv::Exporter` predicts the exported rows, so `#rows` answering
+them in memory is the method its name covers, and `#write` answering the file
+paths it created is the separate object. Both still answer something about one
+export, which is the version of this worth stating. That the two types diverge
 is the tell that sends you looking, not the test: `.run` answering a report
 beside `.call` answering a persisted record fires on sight, but two renderings of
 one answer have plenty in common, and a count led by their divergence is a count
