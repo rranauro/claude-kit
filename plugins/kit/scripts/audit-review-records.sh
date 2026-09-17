@@ -59,7 +59,7 @@ fi
 rows="$(printf '%s\n' "$rows" | grep -E '^[0-9]+ [0-9]+$' || true)"
 
 if [ -z "$rows" ]; then
-  echo "no $state PRs carry $LABEL — nothing to audit"
+  echo "no PRs carry $LABEL (state: $state) — nothing to audit"
   exit 0
 fi
 
@@ -73,7 +73,7 @@ while read -r n records; do
 done <<< "$rows"
 
 if [ "${#orphans[@]}" -eq 0 ]; then
-  echo "all $checked $state PRs labelled $LABEL carry their record"
+  echo "all $checked PRs labelled $LABEL carry their record (state: $state)"
   exit 0
 fi
 
@@ -81,7 +81,7 @@ for n in "${orphans[@]}"; do
   echo "#$n — labelled $LABEL with no record comment"
 done
 echo
-echo "${#orphans[@]} of $checked $state PRs labelled $LABEL carry no record"
+echo "${#orphans[@]} of $checked PRs labelled $LABEL carry no record (state: $state)"
 echo "Each one reads as triaged to every gate. Re-run the round on it, or"
 echo "remove the label so a later pass picks it up:"
 echo "  gh pr edit <n> --remove-label $LABEL"
