@@ -68,7 +68,7 @@ commit() { git -C "$MAIN" add -A; git -C "$MAIN" commit -qm "$1"; }
 # Runs the check the way CI does: from the repository root, naming the base
 # branch. Prints combined output; sets `status`.
 run_check() {
-  out="$(cd "$MAIN" && "$SCRIPT" "${1:-main}" 2>&1)"
+  out="$(cd "$MAIN" && "$SCRIPT" main 2>&1)"
   status=$?
 }
 

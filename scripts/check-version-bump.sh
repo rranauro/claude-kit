@@ -14,8 +14,7 @@ BASE="${1:-origin/main}"
 MANIFEST="plugins/kit/.claude-plugin/plugin.json"
 PAYLOAD="plugins/kit/"
 
-ROOT="$(git rev-parse --show-toplevel)" || exit 1
-cd "$ROOT"
+cd "$(git rev-parse --show-toplevel)" || exit 1
 
 die() { echo "  FAIL: $*" >&2; exit 1; }
 
@@ -60,11 +59,10 @@ fi
 # Strictly greater, not merely different: a branch cut before a release carries
 # a version the base has already passed, and merging it walks the published
 # version backwards — the same failure as never bumping at all, pointed the
-# other way.
-highest="$(printf '%s\n%s\n' "$base_version" "$head_version" | sort -V | tail -1)"
-if [ "$head_version" = "$base_version" ] || [ "$highest" != "$head_version" ]; then
-  echo "  FAIL: $(echo "$changed" | wc -l | tr -d ' ') file(s) under $PAYLOAD changed, but" >&2
-  echo "        $MANIFEST is $head_version and $base_ref is $base_version." >&2
+# other way. Equal versions sort to themselves, so one comparison answers both.
+if [ "$(printf '%s\n%s\n' "$base_version" "$head_version" | sort -V | tail -1)" = "$base_version" ]; then
+  echo "  FAIL: $PAYLOAD changed, but $MANIFEST is $head_version" >&2
+  echo "        and $base_ref is already $base_version." >&2
   echo "        Cut a version — minor when the invocable surface moved, patch otherwise." >&2
   exit 1
 fi
