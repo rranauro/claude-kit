@@ -21,11 +21,9 @@ whole scheme exists to make rare and to make legible when it happens.
 ## The protocol
 
 1. **Comment on the issue with the decision it needs.** Run
-   `kit:asking-a-human` over the question first — it is the axis for whether a
-   question is fit to ask, and a park's comment is held to it. Two of its checks
-   decide most comments: the question states a decision in the reader's register
-   rather than the symptom you hit, and it carries the **reach** — the entry
-   points that get to the thing being decided — as its evidence.
+   `kit:asking-a-human` over the question first and write what it passes. That
+   skill is the whole test for whether a question is fit to ask; a park's
+   comment is held to it, and this step adds nothing to it. What one looks like:
 
    > The plan put the design-token table on the asset record; it has since moved
    > to a model of its own. Does the approach still hold there, or does the
@@ -33,10 +31,6 @@ whole scheme exists to make rare and to make legible when it happens.
    >
    > Reach: the theme editor's token panel and the nightly CSS export both read
    > it; nothing else in the repo declares a path to it.
-
-   Where the walk finds nothing, say what you searched and that nothing declares
-   a path — that is a valid park comment and often the more useful one. The axis
-   says why.
 2. **`gh issue edit <n> --add-label kit-blocked`**, with the reason written into
    the body's `## Blocked by` section. A park is the one occasion any command
    writes that label, and it is doing exactly what the label means: a human must
