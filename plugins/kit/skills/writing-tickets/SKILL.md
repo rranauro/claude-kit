@@ -39,6 +39,12 @@ rots as the repo drifts and becomes noise that has to be decluttered before real
 work can start. A short ticket that survives is worth more than an exhaustive
 one that misleads.
 
+This is the ticket-writing form of a rule `kit:asking-a-human` states in
+general — the register belongs to the reader, not to the pass that wrote it.
+There the reader is a person being asked to decide now; here it is a future
+implementer reading a stored artifact, which is why the criterion is what gets
+translated rather than a question.
+
 ## Name the window when a criterion says "first"
 
 `first`, `already`, `still`, `again`, `no longer` — each names a state over time,

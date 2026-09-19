@@ -20,12 +20,17 @@ whole scheme exists to make rare and to make legible when it happens.
 
 ## The protocol
 
-1. **Comment on the issue with the decision it needs**, not the symptom you hit.
-   The reader is deciding, so give them the choice: *"the plan assumes
-   `SiteAsset` owns the token table; it moved to `Css::TokenTable` in #1487 —
-   does the approach still hold, or is the placement now different?"* A comment
-   that only reports what went wrong makes the human re-derive the question
-   before they can answer it.
+1. **Comment on the issue with the decision it needs.** Run
+   `kit:asking-a-human` over the question first and write what it passes. That
+   skill is the whole test for whether a question is fit to ask; a park's
+   comment is held to it, and this step adds nothing to it. What one looks like:
+
+   > The plan put the design-token table on the asset record; it has since moved
+   > to a model of its own. Does the approach still hold there, or does the
+   > placement change with it?
+   >
+   > Reach: the theme editor's token panel and the nightly CSS export both read
+   > it; nothing else in the repo declares a path to it.
 2. **`gh issue edit <n> --add-label kit-blocked`**, with the reason written into
    the body's `## Blocked by` section. A park is the one occasion any command
    writes that label, and it is doing exactly what the label means: a human must
