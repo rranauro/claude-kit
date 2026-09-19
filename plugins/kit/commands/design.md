@@ -179,9 +179,8 @@ when comparing. Neither one produces the design.
   reactions. Unattended, there are none: decide on the axis and write the
   comparison into the plan.
 - **Run `kit:asking-a-human` over anything you put to the user here**, the
-  comparison included. It owns the whole test for whether a question is fit to
-  ask, and its not-a-finding list is what decides when a comparison should not
-  reach the user at all.
+  comparison included, and ask what it passes. Its not-a-finding list is what
+  decides when a comparison should not reach the user at all.
 
 ## 4 — Confirm the choice
 
