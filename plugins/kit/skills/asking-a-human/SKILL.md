@@ -1,6 +1,6 @@
 ---
 name: asking-a-human
-description: The axis for a question a pass puts to a person — the register it is written in, the reach it carries as evidence, and what is not a finding. Use when `kit:park` is writing the question a park stops on, or when another skill needs the reach vocabulary.
+description: The axis for a question a pass puts to a person — the register it is written in, the reach it carries as evidence, and what is not a finding. Use when a pass is about to ask a person to decide — parking the question on an issue, or asking it out loud mid-run — or when another skill needs the reach vocabulary.
 ---
 
 # Asking a Human

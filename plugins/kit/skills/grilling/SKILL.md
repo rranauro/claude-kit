@@ -87,6 +87,12 @@ extend later" without a named next change is not.
 
 Nothing else on the tree is worth a user's time.
 
+**A question that earns its place still has to be fit to ask.** The three
+categories above decide whether a decision exists; `kit:asking-a-human` decides
+whether this one is put in terms its reader can answer, and settles the case
+where a category fires and the question still should not be asked. Run it over
+the question and ask what it passes.
+
 When one does earn it, present the direction and the single best alternative —
 what it buys, what it costs, and which you recommend. Not a menu.
 

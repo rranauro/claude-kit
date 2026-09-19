@@ -37,7 +37,8 @@ If the ticket really is unbuildable as written, the widening costs something
 specific, so it has to be paid for:
 
 - **Tell the user it got wider, as its own question.** Not folded into an
-  approach comparison. They're agreeing to a bigger PR.
+  approach comparison. They're agreeing to a bigger PR, so run
+  `kit:asking-a-human` over that question and ask what it passes.
 - **Write it back to the issue's acceptance criteria.** A widening changes the
   observable outcome, which is the one reason `kit:writing-tickets` allows a
   criterion to be revisited. Skip this and the PR stops matching the ticket it
@@ -177,6 +178,9 @@ when comparing. Neither one produces the design.
 - Discuss incrementally. Don't dump everything at once — respond to the user's
   reactions. Unattended, there are none: decide on the axis and write the
   comparison into the plan.
+- **Run `kit:asking-a-human` over anything you put to the user here**, the
+  comparison included, and ask what it passes. Its not-a-finding list is what
+  decides when a comparison should not reach the user at all.
 
 ## 4 — Confirm the choice
 

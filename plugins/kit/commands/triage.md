@@ -196,7 +196,8 @@ Then invoke `kit:grilling` on the ticket's **boundary**, not its approach:
 
 The output is a settled scope: unchanged, widened, narrowed, or split. **Present
 any scope change to the user before going further.** A widened ticket is a
-commitment to a bigger PR and that is the user's call, not yours.
+commitment to a bigger PR and that is the user's call, not yours — so run
+`kit:asking-a-human` over how you put it and ask what it passes.
 
 If the answer is "split," use `kit:writing-tickets` for the new issues and slice
 them vertically — it owns that decision, don't re-derive the rules here.
@@ -338,7 +339,8 @@ finished and the *world* is not ready. Neither is a comment on the brief — tha
 is the design pass's to make, in front of whoever is watching.
 
 Say which of these applies rather than just declining. Confirm the label as its
-own decision rather than folding it into the publish.
+own decision rather than folding it into the publish — run
+`kit:asking-a-human` over the question that confirms it and ask what it passes.
 
 **Then ask two more questions, in the same breath.** First, is anything holding
 the start?
