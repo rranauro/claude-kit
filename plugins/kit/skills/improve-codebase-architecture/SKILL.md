@@ -99,6 +99,24 @@ every caller it earns its place; if it vanishes, it was a pass-through.
 name neither is not a finding and does not reach the report. This is the closer
 that settles a candidate, and it is also what its card leads with.
 
+**Then name its reach** — the entry points that get to the candidate, which
+`kit:asking-a-human` §2 defines and `CONTEXT.md` carries. The report is put to a
+person to choose from, and the symbol above does not tell them which ways into
+the application are in play, which is the altitude the ranking is judged at.
+Walk the callers outward until each chain terminates outside the codebase, and
+state where it came out.
+
+**Reach never discards a candidate.** Where the walk finds nothing, say that you
+searched and could not determine it, and what you searched — that is a valid
+answer and usually names the defect, because something nothing statically
+declares reaching is reached some other way. The cost above is a filter; the
+reach is disclosure, and a candidate dropped for an undeterminable reach would
+be this scan withholding the finding that mattered most.
+
+**Never weight the entry points.** Listing them is the whole of the evidence.
+Whether any is travelled is the reader's to say, and a candidate ranked up for
+sitting on a "critical path" has asserted what the walk cannot establish.
+
 **Discard, don't weaken, anything on the not-a-finding list** (§3). These are
 this scan's characteristic false positives, and this codebase's conventions
 positively require several of them:
@@ -178,8 +196,8 @@ For each candidate, render a card with:
 - **Files** — which files and classes are involved, with `file:line`
 - **Count** — which count from §2 fired, and its number ("arity of 6"; "three
   class methods threading `page`"; "a hash with four literal keys")
-- **Cost** — the caller it costs, or the change it makes harder. Mandatory; a
-  card without one does not ship
+- **Cost** — both halves §2 requires, the cost then the reach. Mandatory; a card
+  missing either does not ship
 - **Solution** — one sentence on what would change, in the shape it would take:
   fold onto the model, reuse the existing derivation, name the structure
 - **Before / After diagram** — side-by-side, custom-drawn
@@ -287,9 +305,14 @@ One per surviving candidate, in rank order, each carrying:
   that sentence of any ticket carrying implementation detail, and this one
   always does. Without it the shape arrives wearing an authority a read-only
   scan cannot confer, and gets built.
-- **The Cost and the counts stated as what the scan observed, and a criterion
-  telling the implementer to confirm them before designing against them.** The
-  scan reads; it runs nothing. A miscounted caller or a cascade it did not know
+- **The Cost — both halves, the reach with it — and the counts stated as what
+  the scan observed, and a criterion telling the implementer to confirm them
+  before designing against them.** The reach travels into the child for the same
+  reason it goes on the card: re-deriving it is work the scan was better placed
+  to do, and an implementer who has to redo the walk is paying the cost §2
+  exists to spare the reader. Carry an undetermined reach across too, with what
+  was searched — that is a lead, not a blank.
+  The scan reads; it runs nothing. A miscounted caller or a cascade it did not know
   was declared reaches the ticket indistinguishable from a fact, and every
   reader downstream inherits it — the ticket's own premise is the thing least
   likely to be rechecked.
@@ -307,7 +330,8 @@ label are `/kit:triage`'s to add.
 - Make implementation changes. This is a scan, a report, and the tickets in §5.
 - Design a candidate in the report. One constructor line is the ceiling.
 - File a child whose problem statement asserts the scan's findings as verified.
-- Ship a card that can't name the caller it costs.
+- Ship a card whose Cost is missing either half §2 requires.
+- Discard a candidate because its reach could not be determined. §2 says why.
 - Score a class down for anything on the not-a-finding list.
 - Propose relocating a file as the finding. Ownership first, layout after.
 - Write the report anywhere but the repo's `plans/` directory.
