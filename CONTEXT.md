@@ -107,6 +107,22 @@ cannot do. Distinct from **kit-hold**, which stops a merge because something
 could not be established; an observation stops nothing because everything was.
 _Avoid_: deferred, backlog, todo, follow-up
 
+### Asking a human
+
+**Entry point**:
+A path by which work enters the system — an upload, a generated response, an
+external client, a command. Not a caller: a caller is the code symbol that
+invokes something, an entry point is the way in that reaches it. A codebase that
+is not an application has entry points too; its commands are them.
+_Avoid_: use case, call site
+
+**Reach**:
+The entry points a decision touches. The evidence a question put to a person
+carries. Established from the code; whether any of them is travelled is the
+reader's to weigh, and no pass asserts it. `kit:asking-a-human` is the one
+statement of the test it belongs to.
+_Avoid_: impact, blast radius, criticality
+
 ### Judging a spec
 
 **Load-bearing**:
