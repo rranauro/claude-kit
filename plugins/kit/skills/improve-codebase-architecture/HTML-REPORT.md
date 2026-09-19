@@ -69,9 +69,9 @@ Each candidate is one `<article>`:
 - **Files**: monospaced list with `file:line`, `font-mono text-sm`.
 - **Count**: one line, with the number in it — "arity of 6, drawn from 3
   aggregates". The number is the evidence; don't paraphrase it away.
-- **Cost**: both halves §2 requires — the caller or change, then the reach.
-  Rendered prominently, reach on its own line beneath: this is the card's claim,
-  and the reach is what a chooser ranks on. A card missing either does not ship.
+- **Cost**: both halves §2 requires, the cost then the reach. Rendered
+  prominently, reach on its own line beneath: this is the card's claim, and the
+  reach is what a chooser ranks on. A card missing either does not ship.
 - **Before / After diagram**: the centrepiece. Two columns, side by side. See
   patterns below.
 - **Solution**: one sentence. What changes, in the shape it takes — fold onto the

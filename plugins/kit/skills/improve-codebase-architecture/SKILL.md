@@ -99,12 +99,11 @@ every caller it earns its place; if it vanishes, it was a pass-through.
 name neither is not a finding and does not reach the report. This is the closer
 that settles a candidate, and it is also what its card leads with.
 
-**Then name its reach** — the entry points that get to the candidate, which
-`kit:asking-a-human` §2 defines and `CONTEXT.md` carries. The report is put to a
-person to choose from, and the symbol above does not tell them which ways into
-the application are in play, which is the altitude the ranking is judged at.
-Walk the callers outward until each chain terminates outside the codebase, and
-state where it came out.
+**Then name its reach** — the entry points that get to the candidate.
+`kit:asking-a-human` §2 defines the term and owns the walk that establishes it;
+`CONTEXT.md` carries the vocabulary. The report is put to a person to choose
+from, and the symbol above does not tell them which ways into the application
+are in play, which is the altitude the ranking is judged at.
 
 **Reach never discards a candidate.** Where the walk finds nothing, say that you
 searched and could not determine it, and what you searched — that is a valid
@@ -307,15 +306,13 @@ One per surviving candidate, in rank order, each carrying:
   scan cannot confer, and gets built.
 - **The Cost — both halves, the reach with it — and the counts stated as what
   the scan observed, and a criterion telling the implementer to confirm them
-  before designing against them.** The reach travels into the child for the same
-  reason it goes on the card: re-deriving it is work the scan was better placed
-  to do, and an implementer who has to redo the walk is paying the cost §2
-  exists to spare the reader. Carry an undetermined reach across too, with what
-  was searched — that is a lead, not a blank.
-  The scan reads; it runs nothing. A miscounted caller or a cascade it did not know
-  was declared reaches the ticket indistinguishable from a fact, and every
-  reader downstream inherits it — the ticket's own premise is the thing least
-  likely to be rechecked.
+  before designing against them.** The scan reads; it runs nothing. A miscounted
+  caller or a cascade it did not know was declared reaches the ticket
+  indistinguishable from a fact, and every reader downstream inherits it — the
+  ticket's own premise is the thing least likely to be rechecked. The reach
+  travels for the same reason it goes on the card: an implementer redoing the
+  walk is paying the cost §2 exists to spare the reader. An undetermined reach
+  crosses over too, with what was searched — that is a lead, not a blank.
 - **Acceptance criteria written as the counts that fired** — "arity of 6 gone",
   "`page` no longer threaded through the three class methods". That is what
   `improve-codebase` acceptance is, which is why they can be written here.
