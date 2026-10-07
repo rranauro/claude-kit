@@ -10,13 +10,14 @@ usage() {
   cat >&2 <<'EOF'
 usage: check-upstream.sh [skill-name ...] [--fetch] [--stat]
 
-  --fetch  git fetch the upstream repo first, so HEAD reflects the remote
+  --fetch  git fetch each upstream checkout first, so HEAD reflects the remote
   --stat   print a diffstat for each skill that changed
 
   With no skill names, checks every adopted skill.
 
 env:
-  SKILLS_REPO  upstream checkout (default: ~/dev/mattpocock)
+  SKILLS_REPO  upstream checkout for a sidecar that names none
+               (default: ~/dev/mattpocock)
 EOF
   exit 2
 }
@@ -40,21 +41,23 @@ PLUGIN_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DEST_ROOT="$PLUGIN_ROOT/plugins/kit/skills"
 SKILLS_REPO="${SKILLS_REPO:-$HOME/dev/mattpocock}"
 
-[ -d "$SKILLS_REPO/.git" ] || {
-  echo "error: no git repo at $SKILLS_REPO — set SKILLS_REPO to the upstream checkout" >&2
-  exit 1
-}
-
+# Compare against the remote branch: a local checkout can sit behind origin for
+# weeks, and reporting "up to date" off a stale HEAD is the failure that makes
+# this script worthless.
 if $do_fetch; then
-  echo "fetching $SKILLS_REPO..."
-  git -C "$SKILLS_REPO" fetch --quiet origin
-  # Compare against the remote branch: a local checkout can sit behind origin for
-  # weeks, and reporting "up to date" off a stale HEAD is the failure that makes
-  # this script worthless.
   head_ref="origin/HEAD"
 else
   head_ref="HEAD"
 fi
+
+# Several skills share one upstream, so each checkout is fetched once.
+fetched=""
+fetch_once() {
+  case "$fetched" in *"|$1|"*) return 0 ;; esac
+  fetched="$fetched|$1|"
+  echo "fetching $1..."
+  git -C "$1" fetch --quiet origin
+}
 
 field() { sed -n "s/^$1: *//p" "$2" | head -1; }
 
@@ -77,7 +80,17 @@ for dir in "$DEST_ROOT"/*/; do
 
   sha="$(field sha "$sidecar")"
   rel="$(field path "$sidecar")"
+  repo="$(field checkout "$sidecar")"
+  repo="${repo:-$SKILLS_REPO}"
+  case "$repo" in "~"/*) repo="$HOME/${repo#"~/"}" ;; esac
   checked=$((checked + 1))
+
+  if [ ! -d "$repo/.git" ]; then
+    echo "?? $name — no git checkout at $repo (clone it, or set checkout: in UPSTREAM)"
+    stale=$((stale + 1))
+    continue
+  fi
+  $do_fetch && fetch_once "$repo"
 
   if [ -z "$sha" ] || [ -z "$rel" ]; then
     echo "?? $name — UPSTREAM missing sha or path"
@@ -85,8 +98,8 @@ for dir in "$DEST_ROOT"/*/; do
     continue
   fi
 
-  if ! git -C "$SKILLS_REPO" cat-file -e "$sha^{commit}" 2>/dev/null; then
-    echo "?? $name — fork sha $sha not found in $SKILLS_REPO (try --fetch)"
+  if ! git -C "$repo" cat-file -e "$sha^{commit}" 2>/dev/null; then
+    echo "?? $name — fork sha $sha not found in $repo (try --fetch)"
     stale=$((stale + 1))
     continue
   fi
@@ -94,22 +107,22 @@ for dir in "$DEST_ROOT"/*/; do
   # An upstream rename or delete leaves the recorded path matching nothing, so the
   # diff comes back empty and would otherwise read as "no changes" — the exact
   # wrong answer.
-  if ! git -C "$SKILLS_REPO" cat-file -e "$head_ref:$rel" 2>/dev/null; then
+  if ! git -C "$repo" cat-file -e "$head_ref:$rel" 2>/dev/null; then
     echo "!! $name — $rel no longer exists upstream (renamed or removed)"
     stale=$((stale + 1))
     continue
   fi
 
-  if git -C "$SKILLS_REPO" diff --quiet "$sha..$head_ref" -- "$rel"; then
+  if git -C "$repo" diff --quiet "$sha..$head_ref" -- "$rel"; then
     echo "ok $name"
   else
-    count="$(git -C "$SKILLS_REPO" rev-list --count "$sha..$head_ref" -- "$rel")"
+    count="$(git -C "$repo" rev-list --count "$sha..$head_ref" -- "$rel")"
     echo "CHANGED $name — $count commit(s) since $sha"
     changed=$((changed + 1))
     if $show_stat; then
-      git -C "$SKILLS_REPO" diff --stat "$sha..$head_ref" -- "$rel" | sed 's/^/    /'
+      git -C "$repo" diff --stat "$sha..$head_ref" -- "$rel" | sed 's/^/    /'
     fi
-    echo "    git -C $SKILLS_REPO diff $sha..$head_ref -- $rel"
+    echo "    git -C $repo diff $sha..$head_ref -- $rel"
   fi
 done
 
