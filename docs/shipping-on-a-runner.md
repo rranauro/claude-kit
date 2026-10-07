@@ -111,6 +111,9 @@ file merges its test and lint commands over this one before a run, the same
 split `tending-settings.json` already uses — this file says what shipping a
 ticket may do in any repo, the project's file adds how it verifies a change
 before pushing.
+A project that declares a `## Ship gate` in its `CLAUDE.md` grants that command
+there too; the kit never grants it from the declaration, and a run denied it
+parks with the PR still in draft.
 
 ## A crashed ticket needs no cleanup of its own
 

@@ -46,7 +46,9 @@ this one does not restate it.
 - **Never run a test directory or the full suite.** Named files and examples
   only. Attended, widening needs an ask; unattended it is not yours to take.
   No phase is exempt: CI is the merge gate, so nothing here runs the suite to
-  decide whether a PR may leave draft either.
+  decide whether a PR may leave draft either — except the project's declared
+  ship gate, which `hand-off` step 3 runs once and which is the project's
+  widening, not yours.
 - **Apply the project's own rules from `CLAUDE.md`.** This skill does not restate
   them.
 
@@ -266,7 +268,26 @@ has closed.
 the Skill tool against the local branch. It triages both sources and pushes what
 it fixes; that push is its own and this phase is built around it, not against it.
 
-**3 · Mark it ready, then arm auto-merge once the transition's run has
+**3 · Run the project's ship gate, if it declares one.** Look for a `## Ship
+gate` section in the project's `CLAUDE.md`, read as `kit:worktree-conventions`
+reads `## Worktrees`:
+
+```markdown
+## Ship gate
+- run: `bin/ci`
+```
+
+Absent, skip to step 4. Present, run that command once, from `<worktree>`, after
+step 2's push — a gate that posts a status attests the SHA it ran on, so a run
+before the round's last push signs off a head the PR no longer has. Do not commit
+or push between this run and step 4 for the same reason.
+
+**Non-zero keeps the PR in draft.** Skip step 4 entirely — no `gh pr ready`, no
+auto-merge — and go to step 5. Attended, surface the failing output and stop.
+Unattended, park on the failing step; a denied permission is a failure too, and
+names the grant the operator's project settings lack.
+
+**4 · Mark it ready, then arm auto-merge once the transition's run has
 registered.**
 
 ```
@@ -306,7 +327,7 @@ the label stops depending on any pass reading it in time. **A project without
 that check must not adopt this step**: there, auto-merge armed on a held PR
 merges it, which is the thing the hold was set to prevent.
 
-**4 · Release the lease:** `git worktree unlock <worktree>`. The pass is over, so
+**5 · Release the lease:** `git worktree unlock <worktree>`. The pass is over, so
 the worktree is an ordinary sweep candidate again and the next
 `/kit:ship-ticket` reclaims it once the PR merges.
 
