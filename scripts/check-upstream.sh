@@ -85,7 +85,7 @@ for dir in "$DEST_ROOT"/*/; do
   case "$repo" in "~"/*) repo="$HOME/${repo#"~/"}" ;; esac
   checked=$((checked + 1))
 
-  if [ ! -d "$repo/.git" ]; then
+  if ! git -C "$repo" rev-parse --git-dir >/dev/null 2>&1; then
     echo "?? $name — no git checkout at $repo (clone it, or set checkout: in UPSTREAM)"
     stale=$((stale + 1))
     continue
