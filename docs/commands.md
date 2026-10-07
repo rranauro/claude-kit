@@ -88,6 +88,12 @@ isn't marked, that's a bug.
 `kit:start-ticket` resolves paths with `git rev-parse --show-toplevel`, so there's
 nothing machine-specific to edit before use.
 
+**A ship gate is opt-in.** A project whose merge needs a locally posted status — a
+signoff its CI cannot produce — names the command that posts it under
+`## Ship gate` in `CLAUDE.md` (`- run: bin/ci`). `kit:ticket-loop` `hand-off` runs
+it once, after the review round's last push, and a non-zero exit keeps the PR in
+draft. A project without the section never runs its full suite from the loop.
+
 **External commands these call.** Beyond the [companion skills](companion-skills.md),
 the workflow invokes `/simplify` (`kit:ticket-loop` `simplify`), `/loop` (drives
 `/kit:ship-ticket` over the backlog), and optionally `/target-debug` (reads the `tickets/` notes
