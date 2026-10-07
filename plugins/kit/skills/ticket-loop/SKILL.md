@@ -46,9 +46,8 @@ this one does not restate it.
 - **Never run a test directory or the full suite.** Named files and examples
   only. Attended, widening needs an ask; unattended it is not yours to take.
   No phase is exempt: CI is the merge gate, so nothing here runs the suite to
-  decide whether a PR may leave draft either — except the project's declared
-  ship gate, which `hand-off` step 3 runs once and which is the project's
-  widening, not yours.
+  decide whether a PR may leave draft either. The one carve-out is the
+  project's declared ship gate, `hand-off` step 3.
 - **Apply the project's own rules from `CLAUDE.md`.** This skill does not restate
   them.
 
@@ -282,8 +281,7 @@ step 2's push — a gate that posts a status attests the SHA it ran on, so a run
 before the round's last push signs off a head the PR no longer has. Do not commit
 or push between this run and step 4 for the same reason.
 
-**Non-zero keeps the PR in draft.** Skip step 4 entirely — no `gh pr ready`, no
-auto-merge — and go to step 5. Attended, surface the failing output and stop.
+**Non-zero keeps the PR in draft.** Skip step 4 and go to step 5. Attended, surface the failing output and stop.
 Unattended, park on the failing step; a denied permission is a failure too, and
 names the grant the operator's project settings lack.
 
