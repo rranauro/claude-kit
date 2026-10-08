@@ -214,11 +214,16 @@ one design can't improve on.
 
 ## 3 — Design the how
 
-Run `/kit:design` on the settled scope. It stores the plan on the issue on its
-own now — you no longer have to ask it to. It owns grounding in the code, behavior
+Invoke `kit:design` through the Skill tool with the issue number, once the scope
+is settled. It stores the plan on the issue on its own now — you no longer have to ask it to. It owns grounding in the code, behavior
 placement, comparing approaches, and grilling the choice. Do not reimplement any
 of that here, and do not skip it because step 2 made the work feel obvious —
 step 2 grilled the boundary, which is a different question from the mechanism.
+
+**The Skill tool runs it inline in this session, and that is what carries step 2's
+output into it** — the questions you deliberately left for design, and the
+finding-versus-remedy reading of the criteria. None of that is written down
+anywhere, so a design reached any other way starts without it.
 
 ## 4 — Publish
 

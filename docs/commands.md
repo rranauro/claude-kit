@@ -48,6 +48,44 @@ ship-ticket's own report. Run it directly in a terminal and leave; see
 | `/kit:worktree-gc [target]` | Reclaims worktrees by hand — one named target, or a sweep of all of them. The same sweep runs on its own at the top of every `/kit:ship-ticket`; this is how you ask for one in between. Removes a worktree when it is free, and deletes its branch only where GitHub accounts for the tip. Sweeps the untracked husks `git worktree remove` leaves behind. |
 | `/kit:triage-memory-run` | The same pass for auto-memory. Bins every memory as stale, workflow, duplicate, or unclassified, then clears it down — moving what's worth keeping into an on-demand `WORKFLOW.md` and archiving before deleting. `--dry-run` reports what you'd get back and what you'd lose, without writing anything. |
 
+### A command another prompt hands off to needs a `description`
+
+Claude Code merges commands into the same listing as skills, but a command with
+no `description:` in its frontmatter is absent from that listing — and the Skill
+tool accepts only names the listing carries. So a prompt telling the agent to
+invoke an undescribed command produces a refusal and a hand-back asking the user
+to run it themselves, which is the whole handoff lost. Nothing fails loudly: the
+call site reads fine and the refusal comes at run time, with nobody watching — so
+give the command a description in the same change as the handoff.
+
+Reading the command file by path is not the fallback it looks like. `$ARGUMENTS`
+stays unsubstituted and the frontmatter is ignored, so the agent imitates the
+command instead of running it. A handoff reaches its target through the Skill
+tool, under the name the tool takes — `kit:design`, with no leading slash — or it
+does not reach it at all.
+
+**The test is per call site, not a fixed list.** A command needs a description
+when some prompt tells the agent to invoke it; `design`, `commit`,
+`new-pull-request`, `review-copilot` and `worktree-gc` carry one because that is
+true of them today. Adding a handoff is what adds a target, so check the one you
+are writing rather than trusting this sentence to still be exhaustive.
+
+**Naming a command is not handing off to it.** A prompt that offers the user a
+command, or cites one to say where a boundary falls, needs nothing from the
+listing — the slash form is the right spelling there, because a person is who
+reads it. Only an imperative aimed at the agent is a handoff.
+
+A command nothing hands off to has no `description`, deliberately. Those are
+entry points a person invokes by name, and an entry point that self-starts is the
+failure the omission prevents. It is also why each description's "Use when" names
+its callers rather than its topic: being listed is what would otherwise let the
+model reach for the command on a subject nobody handed it.
+
+`disable-model-invocation: true` would guarantee no command self-starts, but it
+also blocks a scheduled task whose prompt *is* the command — which is how
+`/loop 20m /kit:ship-ticket unattended` and `ship-startable.sh` run — so staying
+unlisted is the weaker tool that costs nothing.
+
 ## Skills
 
 | Skill | What it does |

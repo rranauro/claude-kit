@@ -120,10 +120,10 @@ own tracked `.claude/settings.json` (`extraKnownMarketplaces` +
 `enabledPlugins`), the same project-level config that already makes `/kit:`
 commands resolve for every interactive session against that repo. That's
 `claude -p`'s *default* `--setting-sources`, not something the script adds —
-which is also why `[[tend-prs-headless-constraints]]`'s finding that plugin
-commands didn't resolve headlessly doesn't apply directly here: that probe
-used `--setting-sources ''` to isolate a single passed-in grant, and excluding
-project settings is exactly what makes the difference. Still worth a real
+which is also why a probe finding that plugin commands don't resolve headlessly
+doesn't apply here *if it passed* `--setting-sources ''`: that excludes the
+marketplace registration the commands resolve through, so it measures the
+exclusion rather than headless mode. Still worth a real
 smoke test against one ticket before trusting the runner with a whole epic —
 the floor-duration check above is the safety net if that assumption is wrong.
 
