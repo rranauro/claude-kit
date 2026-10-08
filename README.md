@@ -52,7 +52,7 @@ That's the shape. There are ~14 commands and 17 skills in all; the full list is 
 | [The reviewer script](docs/pr-review.md) | One shared review prompt behind three entry points |
 | [Labels](docs/labels.md) | Why every label is written after the record it stands for, and what a pass does when it cannot apply one |
 | [Tending on a CI runner](docs/tending-on-a-runner.md) | What happens to a PR after it opens: which command CI calls, the credential every act needs, and the trigger that never fires |
-| [Companion skills](docs/companion-skills.md) | The mattpocock/skills the design commands call by name |
+| [Companion skills](docs/companion-skills.md) | The upstream skills forked into the kit — mattpocock/skills and humanlayer/skills — and how each fork tracks its upstream |
 | [Editing the kit](docs/editing-the-kit.md) | Which half of the payload a restart applies to, and which takes effect the moment you save |
 
 ## License

@@ -1,0 +1,12 @@
+repo: https://github.com/humanlayer/skills.git
+checkout: ~/dev/humanlayer-skills
+path: plugins/show-me/skills/show-me
+sha: ca7c808
+
+Forked at the sha above. To review what upstream changed since:
+  git -C ~/dev/humanlayer-skills diff ca7c808..HEAD -- plugins/show-me/skills/show-me
+Port what you want by hand, then bump the sha.
+
+LICENSE beside this file is the upstream project's, carried here because its
+terms require the notice to travel with the copy. It governs this directory
+only; the rest of the plugin is under the LICENSE at the repo root.
