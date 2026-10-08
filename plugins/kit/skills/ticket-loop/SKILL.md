@@ -271,8 +271,10 @@ the Skill tool against the local branch. It triages both sources and pushes what
 it fixes; that push is its own and this phase is built around it, not against it.
 
 **3 · Judge the diff's shape.** Invoke `kit:shape-review <pr-number>` through
-the **Agent tool**, so its inventory stays out of this session. Its final message
-is the comment, opening on `<!-- kit-shape-review -->`.
+the **Agent tool**, so its inventory stays out of this session, and **wait for
+it to return** — the Agent tool returns when the work is launched, so reading its
+answer early takes the failed branch below and arms a PR the review would have
+held. Its final message is the comment, opening on `<!-- kit-shape-review -->`.
 
 It runs here because the round's fixes are pushed, so it judges the head that
 will merge (it pushes nothing itself), and auto-merge is not yet armed, so a hold
@@ -296,7 +298,8 @@ cannot lose a race with a green CI.
   poll, which exist only to time the arming.
 
   If either write fails, the PR **stays in draft** — skip to step 6, report
-  which write failed, and say the PR is not held. A draft cannot merge, and it
+  which write failed, and say this pass's hold is not in place — a `kit-hold`
+  transcribed from triage is still there if it was. A draft cannot merge, and it
   is the one hold left when the label is not there to carry it.
 
 **4 · Run the project's ship gate, if it declares one.** Look for a `## Ship
