@@ -97,17 +97,38 @@ KIT_LEASE_HOURS="${KIT_LEASE_HOURS:-12}"
 lease_expired() { # reason -> 0 when it is a kit lease past its window
   case "$1" in "kit:ship "*" since "*) ;; *) return 1 ;; esac
   # python3 rather than `date`: the -d and -j -f spellings are GNU's and BSD's
-  # respectively, and this runs on both.
+  # respectively, and this runs on both. It is also the only portable reader of
+  # a clock that stops while the machine is asleep, there being no /proc here.
   python3 - "$1" "$KIT_LEASE_HOURS" 2>/dev/null <<'LEASE'
-import datetime, sys
-stamp = sys.argv[1].rsplit(" since ", 1)[1].strip()
+import datetime, sys, time
+
+hours = float(sys.argv[2])
+rest = sys.argv[1].rsplit(" since ", 1)[1].strip()
+stamp, _, awake = rest.partition(" awake ")
+
+# The window counts hours of the machine being awake rather than hours on the
+# wall, which is what the `awake` reading measures; docs/worktrees.md says why.
+if awake:
+    try:
+        taken = float(awake)
+    except ValueError:
+        pass  # unreadable: leave the wall timestamp to answer, as before
+    else:
+        # A monotonic reading is boot-relative, so one from before a reboot
+        # measures nothing against this clock — and it reads as the future,
+        # because the reboot restarted the count. A reboot kills every pass, so
+        # such a lease is dead rather than merely old.
+        now = time.monotonic()
+        raise SystemExit(0 if now < taken or now - taken > hours * 3600 else 1)
+
+# No awake reading, or none this can read: the wall timestamp is all there is.
 try:
     taken = datetime.datetime.strptime(stamp, "%Y-%m-%dT%H:%M:%SZ")
 except ValueError:
     raise SystemExit(1)  # undatable: hold, rather than reclaim on a guess
+now = datetime.datetime.now(datetime.timezone.utc)
 taken = taken.replace(tzinfo=datetime.timezone.utc)
-age = (datetime.datetime.now(datetime.timezone.utc) - taken).total_seconds()
-raise SystemExit(0 if age > float(sys.argv[2]) * 3600 else 1)
+raise SystemExit(0 if (now - taken).total_seconds() > hours * 3600 else 1)
 LEASE
 }
 
