@@ -88,9 +88,8 @@ Parks are the useful half of any unattended report — they are the operator's
 queue. Listed as one block they read as one problem, and the cheapest of them
 hides among the others. Split them by the act that clears each:
 
-- **Waiting on an answer** — a decision inside the design, an either/or the axis
-  scores level, a constraint the criteria do not bound. Someone reads the comment
-  and replies.
+- **Waiting on an answer** — a decision inside the design, a constraint the
+  criteria do not bound. Someone reads the comment and replies.
 - **Waiting on the world** — a credential, a vendor account, a change in another
   repo, a migration whose production reconcile is unwritten. Nothing about the
   ticket changes; something outside it has to.

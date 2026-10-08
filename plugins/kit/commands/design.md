@@ -89,8 +89,13 @@ Three preconditions. Any one missing, park without designing — say which:
 - **Step 3 decides instead of discussing.** Still 2-3 approaches, still scored on
   `kit:rails-codebase-design`, still carrying the `initialize` line and return
   types into the comparison. Then take the one the axis scores highest and write
-  the comparison into the plan. Approaches that tie on the axis are the park
-  below, not a coin toss.
+  the comparison into the plan. **A tie is broken, not parked**: take the
+  approach that follows a precedent already in this codebase, else the one with
+  the smaller blast radius. List the other under `## Decided without
+  confirmation`, naming which tiebreak decided. A wrong pick is the shape
+  review's to catch at `kit:ticket-loop` `hand-off`, where a reviewer can see the
+  code. A tie that is really a scope change, an unbounded constraint, or an
+  unbuildable ticket is one of the parks below.
 - **Step 4's grilling becomes the park detector.** Run it exactly as written —
   state what the direction commits to — but answer each assertion against the
   acceptance criteria, the project's rules, and the code you read in step 1. Most
@@ -122,9 +127,6 @@ Three preconditions. Any one missing, park without designing — say which:
 
 - **Scope.** Widening, narrowing, or splitting all need the user's agreement when
   attended, and that requirement does not weaken because they are away.
-- **A genuine either/or.** Two approaches the axis scores level, differing in
-  something observable — a public interface, a migration's shape, what the user
-  sees. Say what each commits to and let them pick.
 - **A constraint the criteria do not bound.** Security, tenancy, anything
   destructive, a migration needing production reconciled. `kit:ticket-loop`
   already refuses these downstream; reaching one at design time is the earlier,
