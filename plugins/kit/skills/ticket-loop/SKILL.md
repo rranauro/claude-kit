@@ -275,14 +275,13 @@ the **Agent tool**, so its inventory stays out of this session. Its final messag
 is the comment, opening on `<!-- kit-shape-review -->`.
 
 It runs here because the round's fixes are pushed, so it judges the head that
-will merge, and auto-merge is not yet armed, so a hold cannot lose a race with a
-green CI. It pushes nothing, so the ship gate's SHA is still the one it judged.
+will merge (it pushes nothing itself), and auto-merge is not yet armed, so a hold
+cannot lose a race with a green CI.
 
-- **`**No shape findings.**`** — post nothing and carry on to step 4. The merge
-  path is today's.
+- **`**No shape findings.**`** — post nothing and carry on to step 4.
 - **No marked comment comes back** — the pass failed. Say so wherever this phase
   reports and carry on as if clean: a hold with no review to give its reason is
-  worse than the shape going unjudged, which is what happened before this step.
+  worse than leaving the shape unjudged.
 - **Findings, attended** — show them and ask whether to post the review and hold
   the PR, or post it and arm auto-merge anyway. Never hold without saying so.
 - **Findings, unattended** — hold it, record first:
@@ -292,14 +291,13 @@ green CI. It pushes nothing, so the ship gate's SHA is still the one it judged.
   gh pr edit <pr-number> --add-label kit-hold     # only if the comment posted
   ```
 
-  The review is the hold's reason, so it lands first — `docs/labels.md` is the
-  rule. A held PR still goes through steps 4 and 5, but step 5 marks it ready
-  and **does not arm auto-merge**: the hold is a person taking charge, and arming
-  hands the merge back to CI.
+  `docs/labels.md` is the rule. A held PR still runs step 4, but step 5 is
+  `gh pr ready <pr-number>` alone — **no auto-merge**, and so no snapshot and no
+  poll, which exist only to time the arming.
 
-  If either write fails, the PR **stays in draft** — skip step 5, report which
-  write failed, and say the PR is not held. A draft cannot merge, and it is the
-  one hold left when the label is not there to carry it.
+  If either write fails, the PR **stays in draft** — skip to step 6, report
+  which write failed, and say the PR is not held. A draft cannot merge, and it
+  is the one hold left when the label is not there to carry it.
 
 **4 · Run the project's ship gate, if it declares one.** Look for a `## Ship
 gate` section in the project's `CLAUDE.md`, read as `kit:worktree-conventions`
