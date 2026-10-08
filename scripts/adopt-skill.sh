@@ -18,7 +18,8 @@ usage: adopt-skill.sh <skill-name> [--force] [--keep-upstream] [--dry-run]
   --dry-run        print what would happen, change nothing
 
 env:
-  SKILLS_REPO  upstream checkout (default: ~/dev/mattpocock)
+  SKILLS_REPO  upstream checkout (default: ~/dev/mattpocock); recorded in the
+               sidecar, so check-upstream.sh finds it again per skill
 EOF
   exit 2
 }
@@ -60,14 +61,16 @@ run() {
   fi
 }
 
-[ -d "$SKILLS_REPO/skills" ] || {
-  echo "error: no skills/ tree at $SKILLS_REPO — set SKILLS_REPO to the upstream checkout" >&2
+toplevel="$(git -C "$SKILLS_REPO" rev-parse --show-toplevel 2>/dev/null)" || {
+  echo "error: no git checkout at $SKILLS_REPO — set SKILLS_REPO to the upstream checkout" >&2
   exit 1
 }
+SKILLS_REPO="$toplevel"
 
-# The upstream tree groups skills into category dirs (engineering/, productivity/,
-# misc/, in-progress/) that get reshuffled over time, so locate by SKILL.md rather
-# than assuming a path. deprecated/ is excluded — adopting a dead skill is a bug.
+# Upstreams lay skills out differently (skills/<category>/<name>,
+# plugins/<plugin>/skills/<name>) and reshuffle them over time, so locate by
+# SKILL.md anywhere in the tree rather than assuming a path. deprecated/ is
+# excluded — adopting a dead skill is a bug.
 # Bash 3.2 is the only bash on stock macOS, so no mapfile/readarray here.
 matches=""
 match_count=0
@@ -76,18 +79,16 @@ while IFS= read -r dir; do
 "
   match_count=$((match_count + 1))
 done < <(
-  find "$SKILLS_REPO/skills" \
-    -mindepth 2 -maxdepth 3 \
-    -type d -name "$name" \
-    -not -path '*/deprecated/*' \
-    -not -path '*/node_modules/*' \
-    -print | sort
+  find "$SKILLS_REPO" \
+    \( -name .git -o -name node_modules -o -name deprecated \) -prune \
+    -o -type f -path "*/$name/SKILL.md" -print |
+    sed 's|/SKILL.md$||' | sort
 )
 
 case $match_count in
   0)
-    echo "error: no skill named '$name' in $SKILLS_REPO/skills" >&2
-    echo "hint: ls $SKILLS_REPO/skills/*/ | less" >&2
+    echo "error: no skill named '$name' in $SKILLS_REPO" >&2
+    echo "hint: find $SKILLS_REPO -name SKILL.md | less" >&2
     exit 1
     ;;
   1) ;;
@@ -100,11 +101,6 @@ esac
 
 src="$(printf '%s' "$matches" | head -1)"
 rel="${src#"$SKILLS_REPO"/}"
-
-[ -f "$src/SKILL.md" ] || {
-  echo "error: $src has no SKILL.md" >&2
-  exit 1
-}
 
 dest="$DEST_ROOT/$name"
 if [ -e "$dest" ] && ! $force; then
@@ -156,16 +152,24 @@ else
   run cp "$license_src" "$dest/LICENSE"
 fi
 
+# Recorded home-relative so the sidecar reads the same on any machine that keeps
+# its checkouts in the same place.
+case "$SKILLS_REPO" in
+  "$HOME"/*) checkout="~${SKILLS_REPO#"$HOME"}" ;;
+  *)         checkout="$SKILLS_REPO" ;;
+esac
+
 if $dry_run; then
   echo "would: write $dest/UPSTREAM"
 else
   cat > "$dest/UPSTREAM" <<EOF
 repo: $upstream_repo
+checkout: $checkout
 path: $rel
 sha: $sha
 
 Forked at the sha above. To review what upstream changed since:
-  git -C \$SKILLS_REPO diff $sha..HEAD -- $rel
+  git -C $checkout diff $sha..HEAD -- $rel
 Port what you want by hand, then bump the sha.
 
 LICENSE beside this file is the upstream project's, carried here because its

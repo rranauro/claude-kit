@@ -17,9 +17,14 @@ here under their own names. `/kit:architect` and `/kit:design` already run the
 grill; reach for `kit:domain-modeling` alongside it when the model itself is what
 the conversation is changing.
 
-Each fork carries an `UPSTREAM` file with the sha it was taken at and the `git
-diff` incantation for reviewing what upstream changed since, plus the upstream
-`LICENSE`. See [commands](commands.md) for what each fork changes. The upstream
+Not every fork is his. `kit:show-me` comes unchanged from [HumanLayer's
+skills][humanlayer]: the visual explainer, user-invoked only.
+
+Each fork carries an `UPSTREAM` file with the sha it was taken at, the local
+checkout it was taken from, and the `git diff` incantation for reviewing what
+upstream changed since, plus the upstream `LICENSE`. `scripts/adopt-skill.sh`
+writes it from whichever checkout `SKILLS_REPO` names, and
+`scripts/check-upstream.sh` checks each fork against its own checkout. See [commands](commands.md) for what each fork changes. The upstream
 copies stay installable and untouched; the commands name the forks explicitly so
 the two never get confused for each other.
 
@@ -73,4 +78,5 @@ is; `kit:domain-modeling` asks what the thing is *called* and whether the
 glossary already answers that. And go read the rest of his suite regardless of whether you use this one.
 
 [pocock]: https://github.com/mattpocock/skills
+[humanlayer]: https://github.com/humanlayer/skills
 [skills-cli]: https://github.com/vercel-labs/skills
