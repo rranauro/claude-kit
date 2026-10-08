@@ -27,38 +27,35 @@ make the fork stop reliably winning.
 ## Installing the upstream suite
 
 Nothing in this plugin depends on it — the forks ship here. To have the rest of
-his suite, install it from a local checkout as a directory marketplace, the same
-way this plugin installs:
+his suite, install it as a plugin whose skills run only when named
+(`/mattpocock-skills:tdd`) and are never picked by the model on its own:
 
 ```
 git clone https://github.com/mattpocock/skills ~/dev/mattpocock
-claude plugin marketplace add ~/dev/mattpocock
+scripts/hide-plugin-skills.sh
+claude plugin marketplace add ~/.claude/local-marketplaces/mattpocock
 claude plugin install mattpocock-skills@mattpocock
 ```
 
-`~/dev/mattpocock` is also the default `SKILLS_REPO` that
-`scripts/adopt-skill.sh` and `scripts/check-upstream.sh` read, so one checkout
-serves the install and the fork review.
+Hidden is the only safe state for it. The plugin installs all of his skills, so
+`mattpocock-skills:grilling`, `:domain-modeling`, `:to-tickets`, and
+`:improve-codebase-architecture` sit beside their `kit:` forks — the overlap
+`adopt-skill.sh` exists to remove, and it cannot remove one skill from inside a
+plugin. `skillOverrides` does not reach plugin skills, so the script sets
+`disable-model-invocation: true` in each `SKILL.md` instead.
 
-Two things break quietly:
-
-- **A pull does not reach the session.** `claude plugin update` compares the
-  version in his `plugin.json`, not the files. Run
-  `claude plugin update mattpocock-skills@mattpocock` after pulling; a pull that
-  did not bump his version changes nothing until one does.
-- **The plugin brings the forked skills back.** It installs all of his skills,
-  so `mattpocock-skills:grilling`, `:domain-modeling`, `:to-tickets`, and
-  `:improve-codebase-architecture` load beside their `kit:` forks — the overlap
-  `adopt-skill.sh` exists to remove, and it cannot remove one skill from inside
-  a plugin. `skillOverrides` does not apply to plugin skills. A
-  `permissions.deny` entry such as `Skill(mattpocock-skills:grilling)` blocks
-  the invocation, but is not documented to drop the description from the
-  listing; disabling the whole plugin is the only control that does.
+It sets it in a second clone, never in `~/dev/mattpocock`. That checkout is the
+default `SKILLS_REPO` that `adopt-skill.sh` copies from and `check-upstream.sh`
+diffs against; patched frontmatter there would ride into every fork. A
+directory marketplace is read in place, so the clone is the live install — to
+take upstream changes, pull `~/dev/mattpocock` and re-run the script, which
+discards its own edits, fast-forwards the clone, and hides again. A new session
+picks it up; there is no `claude plugin update` step.
 
 The [`skills`][skills-cli] CLI (`npx skills add mattpocock/skills`) installs
-loose copies into `~/.agents/skills` instead. `adopt-skill.sh` can retire
-individual copies there, but they are fetched from GitHub and go stale against
-the checkout the fork review reads.
+loose, un-namespaced copies into `~/.agents/skills` instead. `skillOverrides`
+can hide those, but they are fetched from GitHub and go stale against the
+checkout the fork review reads.
 
 ## Why the architecture scan is forked and not called
 
