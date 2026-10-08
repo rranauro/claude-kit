@@ -15,11 +15,9 @@ Always run `/kit:commit` first and confirm the branch is ready for a pull reques
 Invoke `kit:visual-pr` via the Skill tool for the body, passing the issue number
 and `unattended` if the arguments carry it. It is the only body this command
 writes: `kit:visual-review` reads exactly its sections, and a second format is
-a PR the review skill cannot rely on. It also owns the issue reference —
-`Closes #N` when the diff satisfies the issue, `Part of #N` when it does not.
+a PR the review skill cannot rely on. It also writes the issue reference.
 
 - Title: short, imperative, under 72 characters. Captures the primary change.
-- Append the co-author trailer below the body it wrote.
 - **If the arguments carry a `draft` token, add `--draft`.** A caller asks for
   that when it intends to close the review round itself before the PR is ready
   to merge; without the token nothing here changes.
@@ -91,14 +89,14 @@ Format:
 <Bullet list of non-obvious choices made — trade-offs, alternatives rejected, architectural constraints>
 
 ## Files Touched
-<Grouped list of the files the diff changes, by concern>
+<`git diff --stat main...HEAD`, grouped by concern>
 ```
 
 Create the `tickets/` directory if it doesn't exist. Tell the user the file has been saved.
 
 **Arguments:** $ARGUMENTS
 Bare `draft` and `unattended` tokens are read by Step 3 and are not guidance.
-`unattended` is passed by a caller that knows nobody is watching — never infer
-it. Anything else is
+`unattended` is passed by a caller that knows nobody is watching; never infer it.
+Anything else is
 guidance for the PR title, scope, or target branch (e.g.,
 `/kit:new-pull-request ready for review` → mention readiness in the description).

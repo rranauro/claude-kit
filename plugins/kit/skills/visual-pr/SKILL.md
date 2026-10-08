@@ -14,10 +14,9 @@ metadata:
 
 **Arguments:** an issue number, and optionally `unattended`.
 
-A caller that knows nobody is watching passes `unattended` — today
-`/kit:new-pull-request`, invoked by an unattended `kit:ticket-loop` pass. Never
-infer it. Three places below turn to a person; each says what stands in for the
-person when nobody is there, so the body is written without stopping.
+A caller that knows nobody is watching passes `unattended`; never infer it. Each place
+below that would ask a person says what stands in for them, so the body is written without
+stopping.
 
 Use this template for the PR body:
 
@@ -75,9 +74,7 @@ Each section answers one question:
 
 ### Issue reference
 
-Use `Closes #N` when the diff satisfies the issue's acceptance criteria. Merging it closes
-the issue, which is what clears every ticket whose `kit-blocked-by` marker names this one.
-When it doesn't, use `Part of #N` and say in the Gist what is left, so the issue stays open
+Use `Closes #N` when the diff satisfies the issue's acceptance criteria. When it doesn't, use `Part of #N` and say in the Gist what is left, so the issue stays open
 for the rest. Never a bare `#N`: it links the issue but says nothing about whether it is
 done.
 
@@ -85,8 +82,8 @@ done.
 
 Name the core data structure or migration, or say there is none.
 
-When the caller says the plan behind this diff was designed unattended, say so here in one
-line, and point at the plan comment on the issue for the alternatives it beat. The reviewer
+When the issue's `plan` comment opens with `Designed unattended`, say so here in one line,
+and point at that comment for the alternatives it beat. The reviewer
 who reads only the Gist is the one who has to know they are reviewing a derived design.
 
 Add a visual only when it makes the point faster than prose. Pick the smallest view that
@@ -209,8 +206,8 @@ unlikely you will use all of them. Don't overwhelm the reviewer.
 
 ### Acceptance Criteria
 
-Read the linked issue's body, not just its number. Mark each criterion met, partial, or not
-addressed. Say plainly whether the criteria were clear or ambiguous, and how an ambiguity
+Read the linked issue's body and comments, not just its number — the comments carry its
+`plan`. Mark each criterion met, partial, or not addressed. Say plainly whether the criteria were clear or ambiguous, and how an ambiguity
 was resolved.
 
 ### Evidence
@@ -240,8 +237,8 @@ with their yes:
   before driving the browser. On a yes, take them and upload each through a GitHub comment box
   in that same browser session — dropping an image there yields its `user-attachments` URL
   without posting anything, and `gh` cannot upload one — then put each URL in the body,
-  captioned with its criterion. On
-  a no, write "Not captured — declined" and name what each would have shown.
+  captioned with its criterion. On a
+  no, write "Not captured — declined" and name what each would have shown.
 - **Unattended** — never drive the browser. Write "Not captured — opened unattended" and
   name what each screenshot would have shown, so the reviewer knows what to look at
   themselves.
