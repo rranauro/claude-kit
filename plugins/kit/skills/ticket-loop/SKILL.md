@@ -47,7 +47,7 @@ this one does not restate it.
   only. Attended, widening needs an ask; unattended it is not yours to take.
   No phase is exempt: CI is the merge gate, so nothing here runs the suite to
   decide whether a PR may leave draft either. The one carve-out is the
-  project's declared ship gate, `hand-off` step 3.
+  project's declared ship gate, `hand-off` step 4.
 - **Apply the project's own rules from `CLAUDE.md`.** This skill does not restate
   them.
 
@@ -270,7 +270,38 @@ has closed.
 the Skill tool against the local branch. It triages both sources and pushes what
 it fixes; that push is its own and this phase is built around it, not against it.
 
-**3 · Run the project's ship gate, if it declares one.** Look for a `## Ship
+**3 · Judge the diff's shape.** Invoke `kit:shape-review <pr-number>` through
+the **Agent tool**, so its inventory stays out of this session. Its final message
+is the comment, opening on `<!-- kit-shape-review -->`.
+
+It runs here because the round's fixes are pushed, so it judges the head that
+will merge, and auto-merge is not yet armed, so a hold cannot lose a race with a
+green CI. It pushes nothing, so the ship gate's SHA is still the one it judged.
+
+- **`**No shape findings.**`** — post nothing and carry on to step 4. The merge
+  path is today's.
+- **No marked comment comes back** — the pass failed. Say so wherever this phase
+  reports and carry on as if clean: a hold with no review to give its reason is
+  worse than the shape going unjudged, which is what happened before this step.
+- **Findings, attended** — show them and ask whether to post the review and hold
+  the PR, or post it and arm auto-merge anyway. Never hold without saying so.
+- **Findings, unattended** — hold it, record first:
+
+  ```
+  gh pr comment <pr-number> --body-file <the comment>
+  gh pr edit <pr-number> --add-label kit-hold     # only if the comment posted
+  ```
+
+  The review is the hold's reason, so it lands first — `docs/labels.md` is the
+  rule. A held PR still goes through steps 4 and 5, but step 5 marks it ready
+  and **does not arm auto-merge**: the hold is a person taking charge, and arming
+  hands the merge back to CI.
+
+  If either write fails, the PR **stays in draft** — skip step 5, report which
+  write failed, and say the PR is not held. A draft cannot merge, and it is the
+  one hold left when the label is not there to carry it.
+
+**4 · Run the project's ship gate, if it declares one.** Look for a `## Ship
 gate` section in the project's `CLAUDE.md`, read as `kit:worktree-conventions`
 reads `## Worktrees`:
 
@@ -279,16 +310,16 @@ reads `## Worktrees`:
 - run: `bin/ci`
 ```
 
-Absent, skip to step 4. Present, run that command once, from `<worktree>`, after
+Absent, skip to step 5. Present, run that command once, from `<worktree>`, after
 step 2's push — a gate that posts a status attests the SHA it ran on, so a run
 before the round's last push signs off a head the PR no longer has. Do not commit
-or push between this run and step 4 for the same reason.
+or push between this run and step 5 for the same reason.
 
-**Non-zero keeps the PR in draft.** Skip step 4 and go to step 5. Attended, surface the failing output and stop.
+**Non-zero keeps the PR in draft.** Skip step 5 and go to step 6. Attended, surface the failing output and stop.
 Unattended, park on the failing step; a denied permission is a failure too, and
 names the grant the operator's project settings lack.
 
-**4 · Mark it ready, then arm auto-merge once the transition's run has
+**5 · Mark it ready, then arm auto-merge once the transition's run has
 registered.**
 
 ```
@@ -321,14 +352,15 @@ transition never triggered.
 reports. A project that reports nothing on the transition is describing its own
 CI rather than failing here.
 
-**The arming above consults no label.** A `kit-hold` PR is not special-cased
+**The arming above consults no label** — only step 3's outcome, which withholds
+it from a PR this pass held. A `kit-hold` set at triage is not special-cased
 here, and that is only safe where the consuming project enforces the hold as a
 **required check** — a held PR then cannot merge however auto-merge is set, so
 the label stops depending on any pass reading it in time. **A project without
 that check must not adopt this step**: there, auto-merge armed on a held PR
 merges it, which is the thing the hold was set to prevent.
 
-**5 · Release the lease:** `git worktree unlock <worktree>`. The pass is over, so
+**6 · Release the lease:** `git worktree unlock <worktree>`. The pass is over, so
 the worktree is an ordinary sweep candidate again and the next
 `/kit:ship-ticket` reclaims it once the PR merges.
 
@@ -338,6 +370,11 @@ Attended, tell the user:
 > run registered, so the merge waits on it | nothing new registered within 120s,
 > so the merge waits on the checks already on the commit>. <Which review source,
 > if any, did not arrive.>"
+
+or, when step 3 held it:
+
+> "PR #<N> is open, reviewed, ready and held (`kit-hold`) — the shape review
+> posted on it is the reason, and auto-merge is not armed."
 
 Then stop. Nothing local picks it up from here.
 
