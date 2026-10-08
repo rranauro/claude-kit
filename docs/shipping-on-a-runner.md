@@ -129,7 +129,16 @@ with nothing downstream watching for it. An earlier split gave the merge to a CI
 gate instead — a consuming project that has not installed one gets no merge at
 all, which is the failure this grant now avoids. Arming is safe here only where
 the project enforces `kit-hold` as a required check, the same precondition
-`kit:ticket-loop` states for the step. A consuming project's own
+`kit:ticket-loop` states for the step. It must grant `gh pr ready` and the kit's own scripts too. `hand-off`
+takes the PR out of draft with `gh pr ready` before arming, and a pass refused
+it parks with a finished PR left in draft. The scripts are matched by a
+`*/scripts/<name>.sh` wildcard because their path differs by install: relative
+in this repo, an expanded `${CLAUDE_PLUGIN_ROOT}` in a consuming project. A rule
+that mixes `*` with the legacy trailing `:*` matches the `*` literally, which is
+why the two worktree-cleanup rules here match nothing. They are left that way on
+purpose: expanded, `rm -rf .claude/worktrees/*` would also match a path that
+climbs out with `..`.
+A consuming project's own
 `--project-settings`
 file merges its test and lint commands over this one before a run, the same
 split `tending-settings.json` already uses — this file says what shipping a
