@@ -94,9 +94,8 @@ hides among the others. Split them by the act that clears each:
 - **Waiting on the world** — a credential, a vendor account, a change in another
   repo, a migration whose production reconcile is unwritten. Nothing about the
   ticket changes; something outside it has to.
-- **Waiting on a label** — an absent kind, a missing marker. Seconds of work, and
-  it should not be reported next to a decision that needs an afternoon.
-- **Waiting on you specifically** — a `user-experience` ticket with no plan,
-  parked because no unattended pass may derive one for that kind. It parks again
-  on every firing until a human designs it, so name that act: designed attended,
-  the ticket ships unattended thereafter like any other kind.
+- **Waiting on a label** — a missing marker. Seconds of work, and it should not
+  be reported next to a decision that needs an afternoon.
+- **Waiting on the brief** — a ticket with no acceptance criteria, or nothing
+  saying what is out of scope. Name which, in those words; whoever writes it
+  clears the park, and nothing else about the ticket needs to change.

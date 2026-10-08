@@ -85,34 +85,20 @@ and its `handoff` is a no-op here — `tdd` owns the placement check.
 
 **What makes the unattended path safe is the plan, not this file.** A ticket
 reaching `tdd` has one — either a human wrote it and `/kit:triage` published it,
-or this phase derived it because the ticket's kind says its acceptance can be
-asserted without a human eye. Neither form is manufactured here. Where neither is
-available, park.
+or `/kit:design` derived it against the ticket's acceptance criteria. Neither
+form is manufactured here. Where neither is available, park.
 
-**Only a ticket with no resolvable plan reaches this question.** The kind gates
-where the plan comes from, never whether the ticket runs. A `user-experience`
-ticket whose plan a human already settled is carried to a PR like any other kind:
-the eye the kind exists to protect was present when it mattered.
+**Only a ticket with no resolvable plan reaches this question, and it has one
+answer whatever the kind:** invoke `/kit:design <number> unattended` and continue
+with the plan it stores. That mode owns what changes when nobody is watching and
+the preconditions it parks on; do not reproduce either here.
 
-The question is the ticket's kind: **can this ticket's acceptance be asserted
-without a human eye?**
-
-- **`bug`, `enhancement`, `improve-codebase`, `technical-debt`** — invoke
-  `/kit:design <number> unattended` and continue with the plan it stores. That
-  mode owns what changes when nobody is watching; do not reproduce its rules
-  here.
-- **`user-experience`** — park, because no unattended pass may derive this
-  ticket's plan. Say that the kind is why the plan could not be derived, and that
-  designing it attended is what clears the park — after which every later firing
-  carries it like any other kind.
-- **No kind at all, or a kind not named above** — park. Unclassified is not a
-  default, and choosing one here would be this skill granting itself the
-  permission the label exists to give.
-
-The acceptance criteria are what make the first case safe, not the kind label by
-itself. `/kit:design`'s own preconditions require them, so a qualifying kind
-whose body never says what "done" means parks there — correctly, and with a
-better reason than this phase could give.
+**The kind decides whether the PR is held, never whether the ticket runs.** A
+derived plan for a ticket whose acceptance is someone looking at the result —
+`user-experience`, no kind, or a kind other than `bug`, `enhancement`,
+`improve-codebase`, `technical-debt` — gets that look on the PR: `hand-off` step 3
+holds it. A plan a human settled is not held for its kind, because the eye the
+kind exists to protect was present when it mattered.
 
 **Skip the anchor pass for a plan produced by this run.** The table says run it
 always, and that is right for a plan that has aged in a queue. A plan written
@@ -211,9 +197,9 @@ checklist from the AC and the diff and keeps its position on disk. If they would
 rather drive unaided, pause. If they approve, continue.
 
 **Unattended there is no push gate**, because the question is already answered —
-at triage, as `kit-hold`, which `/kit:new-pull-request` transcribes onto the PR.
-A held PR gets its reviews and waits for the walkthrough; an unheld one was
-decided not to need one.
+at triage, as `kit-hold`, which `/kit:new-pull-request` transcribes onto the PR,
+or by the plan and the kind, which `hand-off` step 3 reads. A held PR gets its
+reviews and waits for the walkthrough; an unheld one was decided not to need one.
 
 Invoke `/kit:new-pull-request draft` via the Skill tool, adding `unattended`
 when this pass is. The `draft` token is what makes `hand-off` possible: a draft
@@ -302,6 +288,25 @@ cannot lose a race with a green CI.
   transcribed from triage is still there if it was. A draft cannot merge, and it
   is the one hold left when the label is not there to carry it.
 
+**Then hold it for its kind, if its plan was derived.** Two facts, both already
+on the issue: its `plan` comment opens with `/kit:design`'s `Designed unattended`
+line, and it carries none of `bug`, `enhancement`, `improve-codebase`,
+`technical-debt`. Both true means nobody has looked at a result whose acceptance
+is someone looking, so the PR waits for that look. Read the plan's line rather
+than remembering whether this run designed it: a firing that resumes a stored
+derived plan owes the same hold.
+
+Attended, say so and ask whether to hold. Unattended, hold it, record first:
+
+```
+gh pr comment <pr-number> --body "Held: the plan was designed unattended and this ticket's kind (<kind, or none>) needs someone to look at the result before it merges."
+gh pr edit <pr-number> --add-label kit-hold     # only if the comment posted
+```
+
+A failed write takes the same path as the shape hold's, and a PR held by both
+carries one label and two comments. A machine-assertable kind is never held
+here — its criteria already say what done looks like.
+
 **4 · Run the project's ship gate, if it declares one.** Look for a `## Ship
 gate` section in the project's `CLAUDE.md`, read as `kit:worktree-conventions`
 reads `## Worktrees`:
@@ -374,8 +379,8 @@ Attended, tell the user:
 
 or, when step 3 held it:
 
-> "PR #<N> is open, reviewed, ready and held (`kit-hold`) — the shape review
-> posted on it is the reason, and auto-merge is not armed."
+> "PR #<N> is open, reviewed, ready and held (`kit-hold`) — <the shape review
+> | the kind comment> posted on it is the reason, and auto-merge is not armed."
 
 Then stop. Nothing local picks it up from here.
 
