@@ -39,9 +39,10 @@ deletion cannot change behavior.
 _Avoid_: refactor, chore
 
 **user-experience**:
-A kind whose acceptance is someone looking at the result. The only kind whose
-plan an unattended pass may not derive.
-_Avoid_: reading it as a kind that cannot be *run* unattended
+A kind whose acceptance is someone looking at the result. A ticket with no kind
+is read the same way, since acceptance nobody characterised cannot be assumed
+assertable.
+_Avoid_: reading it as a kind that cannot be *run* or *designed* unattended
 
 **ready-for-agent** / **ready-for-human**:
 Who writes the code. A routing term and nothing else — neither says the brief is
@@ -90,11 +91,12 @@ _Avoid_: smoke test, QA pass, manual test, demo
 The finished PR does not merge on its own — a person is in charge of it. Usually
 because it must be walked in the running app first; also because someone declined
 auto-merge and means to merge it themselves; also because the review pass
-escalated a finding it may not settle alone, or the shape review found one. Set at triage on the issue and
-transcribed onto the PR, or written straight onto the PR when the decision is
-made after it exists — by a person, by the review pass on its own escalation, or
-by `kit:ticket-loop` when the shape review it posted has findings.
-Cleared only by a person, never by the pass that set it. Independent of kind. On
+escalated a finding it may not settle alone, or the shape review found one, or
+the plan was designed unattended for a kind whose acceptance is a look. Set at
+triage on the issue and transcribed onto the PR, or written straight onto the PR
+when the decision is made after it exists — by a person, the review pass, or `kit:ticket-loop`.
+Cleared only by a person, never by the pass that set it. Once applied, it holds
+the same way whatever the kind, and whoever set it. On
 an open PR it also holds the branch's worktree, since the walkthrough runs in it.
 _Avoid_: hold, do-not-merge
 

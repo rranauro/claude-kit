@@ -55,9 +55,10 @@ yourself.
 
 This is not the automation deciding to hold something. A human answered that
 question when the ticket was settled, and this step transcribes the answer onto
-the artifact it was about. Nothing unattended ever writes this label in either
-direction, which is the rule that matters: a pass cannot clear a hold it is
-subject to.
+the artifact it was about. Holds a pass decides for itself are written later, by
+`kit:ticket-loop` `hand-off`, with their reason posted first. Nothing unattended
+ever clears this label, which is the rule that matters: a pass cannot clear a
+hold it is subject to.
 
 **Only if that edit succeeded**, say in the confirmation that the PR is held and
 how to release it, since a held PR looks identical to an ignored one:

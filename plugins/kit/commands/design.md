@@ -68,21 +68,22 @@ shape, and a second one invented here would report differently for no reason.
 
 ### What has to be true before you design anything
 
-Three preconditions. Any one missing, park without designing — say which:
+Two preconditions. Either missing, park without designing, and **name the one
+that failed in the words below** — "no acceptance criteria", not "not ready". A
+named ticket is gated on neither `ready-for-agent` nor its kind, so a park that
+reads as either sends the operator to fix the wrong thing.
 
 1. **An issue.** A local plan file has no comment to store, no label to read, and
    nothing to park against.
-2. **A kind saying acceptance is machine-assertable** — `bug`, `enhancement`,
-   `improve-codebase`, `technical-debt` in the canonical vocabulary. A
-   `user-experience` ticket parks: its acceptance is someone looking at the
-   result, and no unattended pass can stand in for that. **An absent kind parks
-   too, and so does one this list does not name** — unclassified is not a
-   default, and inferring one here would be this command granting itself the
-   permission the label exists to give.
-3. **Acceptance criteria in the body, and what is out of scope.** This is the
+2. **Acceptance criteria in the body, and what is out of scope.** This is the
    load-bearing one. Attended, the user is what holds the design honest; here it
    is the criteria, and a design with nothing to be wrong against is not safer
    for having been unattended — it is only unreviewed.
+
+**The kind is not a precondition.** Every kind is designed here, including none.
+Where the kind's acceptance is a look, the look moves to the PR —
+`kit:ticket-loop` `hand-off` decides that hold, and reads this mode's opening
+line to do it, so write that line exactly.
 
 ### Where the human went
 
