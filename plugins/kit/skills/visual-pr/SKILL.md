@@ -53,9 +53,8 @@ Fixes #<issue_number>   (or `Part of #<issue_number>`)
 
 ## Sections
 
-Skip all preambles and keep prose brief. Most PR descriptions are too long for a human
-reviewer; write for one who reads only the Gist. Use the domain's nouns from
-`docs/Dictionary-of-Nomenclature.md`.
+Skip all preambles and keep prose brief. Most PR descriptions are too long for a human reviewer; write for one who reads only the Gist. Use the domain's nouns from
+`CONTEXT.md`.
 
 Each section answers one question:
 
@@ -221,14 +220,11 @@ The author's visual claim that the change is ready. Caption each image with the 
 criterion it proves; an image that proves no criterion does not belong. Show before and
 after when the change alters something that already existed. Write "None — no visual
 change" only when nothing visual changed — a UX change without screenshots is weak
-evidence, and a reviewer will grade it that way. Use `/pr-screenshots` to capture and attach
-them, but name it and pause for confirmation before invoking it.
+evidence, and a reviewer will grade it that way. If possible, create screenshots to capture and attach them, but name it and pause for confirmation before running the browser.
 
 ### Instructions
 
-How the reviewer validates it for themselves, independent of the Evidence. Numbered steps
-and what they should see when it works. When setup takes more than a minute of data entry,
-point to a paste-able console block in a PR comment rather than listing UI steps.
+How the reviewer validates it for themselves, independent of the Evidence. Numbered steps and what they should see when it works. When setup takes more than a minute of data entry, point to a paste-able console block in a PR comment rather than listing UI steps.
 
 ### Reversibility
 
@@ -246,27 +242,23 @@ Say what undoing the change takes once it is in production, as one of three valu
 Name the value's cause in a sentence; a reviewer should not have to infer why.
 
 The blast radius is the potential impact or scope of the change. Consider all
-possibilities — who or what is hit if this is wrong, and how a failure would show up. List
-every deliberate behaviour change here, so a reviewer does not have to find it.
+possibilities — who or what is hit if this is wrong, and how a failure would show up. List every deliberate behaviour change here, so a reviewer does not have to find it.
 
 ## Output
 
-Read the `## Visual PR and review output` section of `CLAUDE.local.md` at the repo root:
+Read the `## Visual PR and review output` section of `CLAUDE.md` at the repo root:
 
 ```markdown
 ## Visual PR and review output
 - Format: html (the .md is always kept)
-- Location: rx/tmp/reviews/pr-<n>/
+- Location: tmp/reviews/pr-<n>/
 ```
 
-- **Format** — `markdown` or `html`. Always write `visual-pr-body.md`; it is what goes to
-  GitHub. With `html`, also render a preview beside it and open it:
-  `python3 -I <this skill's base directory>/scripts/render_html.py <location>/visual-pr-body.md`.
-- **Location** — the directory, with `<n>` the PR number. It must resolve inside a project
-  directory, never the monorepo root. Before a PR exists, use the branch name for `<n>`.
+- **Format** — `markdown` or `html`. Always write `visual-pr-body.md`; it is what goes to GitHub. With `html`, also render a preview beside it and open it: `python3 -I <this skill's base directory>/scripts/render_html.py <location>/visual-pr-body.md`.
+- **Location** — the directory, with `<n>` the PR number. It must resolve inside a project directory, never the monorepo root. Before a PR exists, use the branch name for `<n>`.
 
 If the section is missing, ask once for both values, offering `markdown` and
-`rx/tmp/reviews/pr-<n>/` as defaults. Then offer to add the section to `CLAUDE.local.md`,
+`tmp/reviews/pr-<n>/` as defaults. Then offer to add the section to `CLAUDE.md`,
 and write it only on a yes. If they decline, use the answers for this run only.
 
 ## Writing to an existing PR

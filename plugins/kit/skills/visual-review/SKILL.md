@@ -8,12 +8,9 @@ metadata:
       url: "https://github.com/mattpocock/skills/blob/013860c/engineering/pr/SKILL.md"
 ---
 
-The reviewer's side of `visual-pr`. Authors will not all use `visual-pr`, so this builds the
-same read from the diff and the linked issue, whatever the description says — and tells the
-reviewer where to drill in and where to trust the automation.
+The reviewer's side of `visual-pr`. Builds the same read from the diff and the linked issue, whatever the description says — and tells the reviewer where to drill in and where to trust the automation.
 
-**You are not a fixer, and you do not post.** Every finding is a pointer for the reviewer to
-look at. Never edit the PR's code, push to its branch, comment, or submit a review.
+**You are not a fixer, and you do not post.** Every finding is a pointer for the reviewer to look at. Never edit the PR's code, push to its branch, comment, or submit a review.
 
 ## Gather
 
@@ -204,12 +201,12 @@ the steps, the user runs `/start-review` or `/walkthrough`; name them and pause,
 
 ## Output
 
-Read the `## Visual PR and review output` section of `CLAUDE.local.md` at the repo root:
+Read the `## Visual PR and review output` section of `CLAUDE.md` at the repo root:
 
 ```markdown
 ## Visual PR and review output
 - Format: html (the .md is always kept)
-- Location: rx/tmp/reviews/pr-<n>/
+- Location: tmp/reviews/pr-<n>/
 ```
 
 - **Format** — `markdown` or `html`. Always write `visual-review.md`. With `html`, also
@@ -219,8 +216,7 @@ Read the `## Visual PR and review output` section of `CLAUDE.local.md` at the re
   directory, never the monorepo root.
 
 If the section is missing, ask once for both values, offering `markdown` and
-`rx/tmp/reviews/pr-<n>/` as defaults. Then offer to add the section to `CLAUDE.local.md`,
+`tmp/reviews/pr-<n>/` as defaults. Then offer to add the section to `CLAUDE.md`,
 and write it only on a yes. If they decline, use the answers for this run only.
 
-Then relay the verdict line and the top finding in chat, with the file path. Don't repeat the
-page.
+Then relay the verdict line and the top finding in chat, with the file path. Don't repeat the page.
