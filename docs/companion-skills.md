@@ -24,20 +24,45 @@ Each fork carries an `UPSTREAM` file with the sha it was taken at, the local
 checkout it was taken from, and the `git diff` incantation for reviewing what
 upstream changed since, plus the upstream `LICENSE`. `scripts/adopt-skill.sh`
 writes it from whichever checkout `SKILLS_REPO` names, and
-`scripts/check-upstream.sh` checks each fork against its own checkout. See [commands](commands.md) for what each fork changes. The upstream
-copies stay installable and untouched; the commands name the forks explicitly so
-the two never get confused for each other.
+`scripts/check-upstream.sh` checks each fork against its own checkout. See
+[commands](commands.md) for what each fork changes. The commands name the forks
+explicitly, so a command never reaches the upstream copy — but the model
+picking a skill on its own sees both descriptions, and two near-twins make the
+fork stop reliably winning.
 
-Install the upstream suite with the [`skills`][skills-cli] CLI:
+## Installing the upstream suite
+
+Nothing in this plugin depends on it — the forks ship here. To have the rest of
+his suite, install it as a plugin whose skills run only when named
+(`/mattpocock-skills:tdd`) and are never picked by the model on its own:
 
 ```
-npx skills add mattpocock/skills
+git clone https://github.com/mattpocock/skills ~/dev/mattpocock
+scripts/hide-plugin-skills.sh
+claude plugin marketplace add ~/.claude/local-marketplaces/mattpocock
+claude plugin install mattpocock-skills@mattpocock
 ```
 
-Claude Code reads global skills from `~/.claude/skills`; the CLI's universal
-target is `~/.agents/skills`. If you install for a non-Claude agent, symlink one
-to the other so Claude Code sees them. Nothing in this plugin depends on that
-install any more — the forks ship with it.
+Hidden is the only safe state for it. The plugin installs all of his skills, so
+`mattpocock-skills:grilling`, `:domain-modeling`, `:to-tickets`, and
+`:improve-codebase-architecture` sit beside their `kit:` forks — the overlap
+`adopt-skill.sh` exists to remove, and it cannot remove one skill from inside a
+plugin. `skillOverrides` does not reach plugin skills, so the script sets
+`disable-model-invocation: true` in each `SKILL.md` instead.
+
+It sets it in a second clone, never in `~/dev/mattpocock`. That checkout is the
+default `SKILLS_REPO` that `adopt-skill.sh` copies from and the one his forks'
+sidecars name for `check-upstream.sh`; patched frontmatter there would ride
+into every fork. A
+directory marketplace is read in place, so the clone is the live install — to
+take upstream changes, pull `~/dev/mattpocock` and re-run the script, which
+discards its own edits, fast-forwards the clone, and hides again. A new session
+picks it up; there is no `claude plugin update` step.
+
+The [`skills`][skills-cli] CLI (`npx skills add mattpocock/skills`) installs
+loose, un-namespaced copies into `~/.agents/skills` instead. `skillOverrides`
+can hide those, but they are fetched from GitHub and go stale against the
+checkout the fork review reads.
 
 ## Why the architecture scan is forked and not called
 
