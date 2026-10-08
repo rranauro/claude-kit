@@ -58,11 +58,10 @@ Subject-matter labels (`cli`, `Security`, `performance`, …) carry no kind and
 stack freely alongside it.
 
 This is the switch an unattended pass reads, which is why it is assigned here
-rather than inferred later. Every kind is designed with nobody present; what the
-kind decides is whether the PR that design produces is held. Every kind but
-`user-experience` has acceptance criteria that hold the result to something
-checkable, so its PR is not held for its kind. `user-experience` has a look as
-its acceptance, so a PR built on an unattended design of one waits for that look.
+rather than inferred later: every kind is designed with nobody present, and a
+`user-experience` kind — or none — holds the PR that design produces for a look
+(`kit:ticket-loop` `hand-off`). Assign one so an assertable ticket is not held
+for want of a label.
 
 **`bug` and `enhancement` differ only in provenance, and nothing downstream reads
 the difference.** So there is deliberately no rule for choosing between them: a
@@ -297,8 +296,8 @@ might expect it to mean is carried by another label.
 ticket is not quite ready in some way — and the answer is always the same: label
 it and let the mechanism refuse it, out loud, with the reason attached. An
 unlabelled ticket is invisible to the sweep no matter what has since landed, and
-becomes startable only through a re-triage nobody scheduled. Three shapes of
-"not quite ready", none of them a withhold:
+becomes startable only through a re-triage nobody scheduled. Two shapes of
+"not quite ready", neither of them a withhold:
 
 - **A blocking dependency.** A `/kit:ship-ticket` sweep only picks up a ticket whose
   `kit-blocked-by` marker is fully closed, so the edge already holds it back.
@@ -306,14 +305,8 @@ becomes startable only through a re-triage nobody scheduled. Three shapes of
   its blocker merges.
 - **An unsettled brief.** `/kit:ship-ticket unattended` designs the ticket
   rather than parking on a missing plan, and parks in-flight if the design itself
-  cannot be settled — naming the precondition, such as missing acceptance
-  criteria, that stopped it. Either way the refusal is visible and carries its
-  reason, which withholding does not.
-- **An absent kind.** Not a refusal at all: acceptance nobody has characterised
-  cannot be assumed assertable, so the ticket is designed and its PR held, as a
-  `user-experience` one would be. Assign the kind in step 1 so an assertable
-  ticket is not held for want of a label; do not compensate for a missing one
-  here.
+  cannot be settled. The refusal is visible and carries its reason, which
+  withholding does not.
 
 **Everything else that stands in the way gets the label plus `kit-blocked`.**
 The label still says an agent writes this one; what has changed is that the
@@ -384,8 +377,8 @@ something you already knew would need it.
 ticket is the obvious candidate for a hold and still often does not need one —
 it may be a dependency inside a suite, with nothing rendered to walk yet. A
 `technical-debt` ticket can need one, when the refactor lands under a view whose
-behavior no test pins. Kind says whether an unattended design's PR waits for a
-look; this question asks what the finished PR needs whoever designed it. They are different judgements and the second is
+behavior no test pins. Kind decides a derived plan's hold; this question is the
+user's, about any PR. They are different judgements and the second is
 the user's.
 
 **Default to no, and keep the question cheap.** Most tickets do not need a hold —

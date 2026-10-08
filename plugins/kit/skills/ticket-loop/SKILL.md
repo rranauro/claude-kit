@@ -93,12 +93,9 @@ answer whatever the kind:** invoke `/kit:design <number> unattended` and continu
 with the plan it stores. That mode owns what changes when nobody is watching and
 the preconditions it parks on; do not reproduce either here.
 
-**The kind decides whether the PR is held, never whether the ticket runs.** A
-derived plan for a ticket whose acceptance is someone looking at the result —
-`user-experience`, no kind, or a kind other than `bug`, `enhancement`,
-`improve-codebase`, `technical-debt` — gets that look on the PR: `hand-off` step 3
-holds it. A plan a human settled is not held for its kind, because the eye the
-kind exists to protect was present when it mattered.
+**The kind decides whether the PR is held, never whether the ticket runs** —
+`hand-off` step 3. A plan a human settled is not held for its kind, because the
+eye the kind exists to protect was present when it mattered.
 
 **Skip the anchor pass for a plan produced by this run.** The table says run it
 always, and that is right for a plan that has aged in a queue. A plan written
@@ -288,24 +285,23 @@ cannot lose a race with a green CI.
   transcribed from triage is still there if it was. A draft cannot merge, and it
   is the one hold left when the label is not there to carry it.
 
-**Then hold it for its kind, if its plan was derived.** Two facts, both already
-on the issue: its `plan` comment opens with `/kit:design`'s `Designed unattended`
-line, and it carries none of `bug`, `enhancement`, `improve-codebase`,
-`technical-debt`. Both true means nobody has looked at a result whose acceptance
-is someone looking, so the PR waits for that look. Read the plan's line rather
-than remembering whether this run designed it: a firing that resumes a stored
-derived plan owes the same hold.
+**Then hold it for its kind, if its plan was derived.** Two facts `prepare`
+already has, so look neither up again: the plan it resolved opens with
+`/kit:design`'s `Designed unattended` line, and the issue's labels carry none of
+`bug`, `enhancement`, `improve-codebase`, `technical-debt`. Both true means
+nobody has looked at a result whose acceptance is someone looking. It is the
+plan's line that decides, not whether this run designed it: a firing that
+resumes a stored derived plan owes the same hold.
 
-Attended, say so and ask whether to hold. Unattended, hold it, record first:
+Hold it exactly as a shape finding is held — asked attended, record first
+unattended, the same failure path — with this as the comment:
 
 ```
-gh pr comment <pr-number> --body "Held: the plan was designed unattended and this ticket's kind (<kind, or none>) needs someone to look at the result before it merges."
-gh pr edit <pr-number> --add-label kit-hold     # only if the comment posted
+Held: the plan was designed unattended and this ticket's kind (<kind, or none>) needs someone to look at the result before it merges.
 ```
 
-A failed write takes the same path as the shape hold's, and a PR held by both
-carries one label and two comments. A machine-assertable kind is never held
-here — its criteria already say what done looks like.
+Where the shape hold already applied `kit-hold`, post the comment and skip the
+label write.
 
 **4 · Run the project's ship gate, if it declares one.** Look for a `## Ship
 gate` section in the project's `CLAUDE.md`, read as `kit:worktree-conventions`

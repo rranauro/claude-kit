@@ -80,13 +80,10 @@ reads as either sends the operator to fix the wrong thing.
    is the criteria, and a design with nothing to be wrong against is not safer
    for having been unattended — it is only unreviewed.
 
-**The kind is not a precondition.** A `user-experience` ticket, or one with no
-kind, or a kind the canonical vocabulary does not name, is designed like any
-other. Its acceptance is someone looking at the result, and the look still
-happens — on the PR, which `kit:ticket-loop` `hand-off` holds when the plan
-opens with this mode's line and the kind is not one of `bug`, `enhancement`,
-`improve-codebase`, `technical-debt`. The plan's opening line is what that
-hold reads, so write it exactly.
+**The kind is not a precondition.** Every kind is designed here, including none.
+Where the kind's acceptance is a look, the look moves to the PR —
+`kit:ticket-loop` `hand-off` decides that hold, and reads this mode's opening
+line to do it, so write that line exactly.
 
 ### Where the human went
 

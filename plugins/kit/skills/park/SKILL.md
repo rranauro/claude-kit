@@ -96,6 +96,6 @@ hides among the others. Split them by the act that clears each:
   ticket changes; something outside it has to.
 - **Waiting on a label** — a missing marker. Seconds of work, and it should not
   be reported next to a decision that needs an afternoon.
-- **Waiting on the brief** — a ticket with no acceptance criteria, or nothing
-  saying what is out of scope. Name which, in those words; whoever writes it
-  clears the park, and nothing else about the ticket needs to change.
+- **Waiting on the brief** — the `/kit:design` precondition the park names.
+  Whoever writes it into the body clears the park, and nothing else about the
+  ticket needs to change.
