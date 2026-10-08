@@ -56,6 +56,21 @@ vocabulary those files read off an issue; `docs/commands.md` lists the surface;
   carry it. A change to the workflow that was not made through the workflow has
   not been tried.
 
+## Ship gate
+
+- run: `git fetch origin main && scripts/check-version-bump.sh`
+
+Parallel ship passes collide on this check routinely, because every PR touching
+`plugins/kit/` cuts a version and every sibling picks the same next number.
+Running it in the worktree catches the collision while the PR is still a draft,
+where `kit:ticket-loop` parks and names it; the recovery is an operator's rebase
+and bump, never a pass's. `docs/shipping-on-a-runner.md` carries the rest.
+
+Its command needs `Bash(scripts/check-version-bump.sh*)` in
+`.claude/settings.json` beside the `lint.sh` entries — the kit never grants a
+gate from the declaration. **A pass does not add it itself**, and a pass that
+finds it missing parks on the denied permission.
+
 ## Where a fact goes
 
 Four layers describe this system, and a fact written into the wrong one becomes a
