@@ -1,6 +1,11 @@
+---
+description: Push the current branch and open its pull request, with a Gist-first body wired to the issue. Use when `kit:ticket-loop` hands off an implemented branch to open its PR.
+---
+
 Create a GitHub pull request for the current branch.
 
-Always run `/kit:commit` first and confirm the branch is ready for a pull request.
+Invoke `kit:commit` through the Skill tool first, and confirm the branch is ready
+for a pull request.
 
 **Step 1 — Push the branch:**
 - If the branch has not been pushed or is behind, push it with `git push -u origin <branch>`.

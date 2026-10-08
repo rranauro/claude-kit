@@ -164,8 +164,9 @@ from — say so and walk the author's instructions directly.
 
 **Assess Copilot; don't act on it.** If the author received a Copilot review,
 form your own read on each comment and note whether the author addressed it.
-You may run `/kit:review-copilot <n>` in analysis-only mode to triage them — **never
-its fix-and-push path.** We do not fix another person's PR.
+You may invoke `kit:review-copilot` through the Skill tool with the PR number in
+analysis-only mode to triage them — **never its fix-and-push path.** We do not fix
+another person's PR.
 
 **Drafting comments.** Never post anything without the user's explicit
 permission. Inline comments stay in a pending review; never submit it unless
@@ -191,7 +192,8 @@ and skip re-raising it:
 ```
 
 **Then act on Copilot** — if the review flagged any of its comments as worth
-acting on, run `/kit:review-copilot <n>`, which verifies each against the code,
+acting on, invoke `kit:review-copilot` through the Skill tool with the PR number,
+which verifies each against the code,
 applies the valid ones, runs the affected tests, and records every decision
 including the rejections. Skip it if reconciliation already disagreed with all
 of them.
@@ -210,7 +212,8 @@ sandbox across sessions. Ask:
 
 > "Review worktree `pr-<n>-review` is still on disk. Remove it, or keep it?"
 
-On explicit approval, run `/kit:worktree-gc pr-<n>-review`. It removes the
+On explicit approval, invoke `kit:worktree-gc` through the Skill tool with
+`pr-<n>-review`. It removes the
 worktree with the project's own command where there is one, sweeps the runtime
 files git leaves behind, and prunes.
 

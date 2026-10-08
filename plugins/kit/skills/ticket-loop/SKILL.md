@@ -38,7 +38,9 @@ this one does not restate it.
 ## Mandatory constraints, both modes
 
 - **Do not duplicate constituent skill bodies.** A phase saying "invoke
-  `/kit:commit`" means the Skill tool, not an inlined copy of its steps.
+  `kit:commit`" means the Skill tool, under the name the tool takes — no leading
+  slash — and not an inlined copy of its steps, nor a read of the command file.
+  `docs/commands.md` says why the file read fails.
 - **Worktree-prefixed paths.** Once `prepare` creates the worktree, every
   Read/Edit/Write targets the path `kit:start-ticket` resolved. The tool cwd
   stays at the main checkout.
@@ -75,7 +77,7 @@ Unattended, each of those becomes a rule:
 | An anchor moved, or drift contradicts an assumption | **Park.** Its own text calls this a design decision, and it is right. |
 | `kit-blocked` present → confirm before coding | Park. The selection step should have filtered it. |
 | Criteria or out-of-scope missing → "say which and stop" | **Park**, naming which, in those words — a stop nobody reads records nothing. With no plan, don't stop here at all: `/kit:design` checks the same precondition and parks on it. |
-| No plan present → invoke `/kit:design` | See below. |
+| No plan present → invoke `kit:design` | See below. |
 
 `kit:start-ticket` `placement-check` skips itself when this skill is the caller,
 and its `handoff` is a no-op here — `tdd` owns the placement check.
@@ -90,9 +92,10 @@ or `/kit:design` derived it against the ticket's acceptance criteria. Neither
 form is manufactured here. Where neither is available, park.
 
 **Only a ticket with no resolvable plan reaches this question, and it has one
-answer whatever the kind:** invoke `/kit:design <number> unattended` and continue
-with the plan it stores. That mode owns what changes when nobody is watching and
-the preconditions it parks on; do not reproduce either here.
+answer whatever the kind:** invoke `kit:design` through the Skill tool with
+`<number> unattended`, and continue with the plan it stores. That mode owns what
+changes when nobody is watching and the preconditions it parks on; do not
+reproduce either here.
 
 **The kind decides whether the PR is held, never whether the ticket runs** —
 `hand-off` step 3. A plan a human settled is not held for its kind, because the
@@ -140,7 +143,7 @@ Then, per requirement:
 3. Implement the minimal change. Re-run the example; confirm green.
 4. Run the broader test file for regressions. Naming another *file* is fine;
    widening to its directory is not.
-5. At sensible checkpoints, invoke `/kit:commit` via the Skill tool. Do not push
+5. At sensible checkpoints, invoke `kit:commit` via the Skill tool. Do not push
    from inside it.
 
 **When the change adds or moves a class, run `kit:behavior-placement` first** —
@@ -199,7 +202,7 @@ at triage, as `kit-hold`, which `/kit:new-pull-request` transcribes onto the PR,
 or by the plan and the kind, which `hand-off` step 3 reads. A held PR gets its
 reviews and waits for the walkthrough; an unheld one was decided not to need one.
 
-Invoke `/kit:new-pull-request draft` via the Skill tool, adding `unattended`
+Invoke `kit:new-pull-request` via the Skill tool with `draft`, adding `unattended`
 when this pass is. The `draft` token is what makes `hand-off` possible: a draft
 PR still runs CI and still gets both reviews, but cannot merge out from under the
 round this pass is about to close. `unattended` is what lets the body be written
@@ -250,9 +253,10 @@ Pass `--no-request` where the project still has automatic Copilot review
 enabled; asking as well yields two reviews, the second landing after this round
 has closed.
 
-**2 · Collate and address them.** Invoke `/kit:review-copilot <pr-number>` via
-the Skill tool against the local branch. It triages both sources and pushes what
-it fixes; that push is its own and this phase is built around it, not against it.
+**2 · Collate and address them.** Invoke `kit:review-copilot` via the Skill tool
+with the PR number, against the local branch. It triages both sources and pushes
+what it fixes; that push is its own and this phase is built around it, not
+against it.
 
 **3 · Judge the diff's shape.** Invoke `kit:shape-review <pr-number>` through
 the **Agent tool**, so its inventory stays out of this session, and **wait for

@@ -127,7 +127,7 @@ Say which way you're going and why, in one line, before acting.
 2. Write the failing test first if the project's rules call for it (most do for bug fixes) — it's the artifact that proves the symptom was real once the session's memory is gone.
 3. Make the change. Run the targeted test. Run the file it lives in for regressions. Targeted runs need no permission; a directory or the full suite does.
 4. If the change adds or moves a class, run `kit:behavior-placement` first. Cleanup tickets accrete misplaced helpers precisely because each one looked too small to think about.
-5. Invoke `/kit:commit` — **one commit per fix**, subject naming the user-visible symptom, not the internal mechanism. At ship time these commits become the PR body, and future-you reads them to know what this branch did.
+5. Invoke `kit:commit` through the Skill tool — **one commit per fix**, subject naming the user-visible symptom, not the internal mechanism. At ship time these commits become the PR body, and future-you reads them to know what this branch did.
 6. Hand back to the user to verify in-app, then return to `intake`.
 
 Do not batch several unrelated fixes into one commit. The branch's value as a record is per-fix granularity.

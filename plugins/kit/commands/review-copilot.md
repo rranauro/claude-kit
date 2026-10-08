@@ -1,5 +1,6 @@
 ---
 model: sonnet
+description: Collate the automated reviews on a pull request and address each finding against the code, recording every decision. Use when `kit:ticket-loop` or `/kit:start-review` hands off a PR whose reviews have landed, or when a CI gate calls it unattended.
 ---
 
 Review and address automated PR review feedback one finding at a time — **GitHub Copilot** (inline + top-level review), the **Claude review** posted by the `pr-review-on-create` hook or `/kit:start-review`, wherever one of those ran, and a **shape review** — `kit:shape-review`'s comment, posted by whoever ran it. Each finding is verified against the actual code before it is acted on, and overlapping findings on the same `(path, line)` are merged into one bucket — agreement across reviewers is called out as a stronger signal.
@@ -115,7 +116,7 @@ All items are processed without stopping for approval. The summary in Step 5 is 
 - **Report the summary back to your caller in a form it can act on**, naming explicitly whether any **non-minor** item was skipped. That is what decides whether the PR gets pinned — `kit-pinned` plus an observation carrying the discussion, per Step 7.5 — and the caller cannot recover it from prose counts. It does not decide the merge: a pinned PR still merges.
 
 **Step 6 — Quality gates (if any fixes were made):**
-- Run the /kit:commit skill
+- Invoke `kit:commit` through the Skill tool
 - **Gate what you changed, not the suite.** The push is what CI reads, and CI
   runs everything again — so a broad local run buys a second copy of an answer
   already on its way, at this pass's expense rather than the runner's. These
