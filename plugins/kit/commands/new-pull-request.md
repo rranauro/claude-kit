@@ -8,35 +8,24 @@ Always run `/kit:commit` first and confirm the branch is ready for a pull reques
 **Step 2 — Analyze all changes:**
 - Read the full diff with `git diff main...HEAD` to understand every change.
 - Review ALL commits (not just the latest) to build a complete picture.
-- Group changes by concern (e.g., "typography improvements", "new rake task", "prompt updates").
+- If the branch name starts with a number (e.g., `218-...`), that's the issue number.
 
-**Step 3 — Draft and create the PR:**
+**Step 3 — Write the body with `kit:visual-pr`, then create the PR:**
+
+Invoke `kit:visual-pr` via the Skill tool for the body, passing the issue number
+and `unattended` if the arguments carry it. It is the only body this command
+writes: `kit:visual-review` reads exactly its sections, and a second format is
+a PR the review skill cannot rely on. It also owns the issue reference —
+`Closes #N` when the diff satisfies the issue, `Part of #N` when it does not.
+
 - Title: short, imperative, under 72 characters. Captures the primary change.
-- Body: use the format below. Be specific — reference actual files, methods, and config keys.
-- If the branch name starts with a number (e.g., `218-...`), that's the issue number — link it with `Closes #218`.
+- Append the co-author trailer below the body it wrote.
 - **If the arguments carry a `draft` token, add `--draft`.** A caller asks for
   that when it intends to close the review round itself before the PR is ready
   to merge; without the token nothing here changes.
 
 ```
-gh pr create --title "the pr title" --body "$(cat <<'EOF'
-## Summary
-<3-5 bullet points describing what changed and why>
-
-## Details
-<Paragraph or two explaining the motivation, approach, and any trade-offs>
-
-## Changes
-<Grouped list of specific changes by area>
-
-## Test plan
-- [ ] <specific testing steps>
-
-Closes #<issue-number-if-applicable>
-
-Co-Authored-By: Claude <noreply@anthropic.com>
-EOF
-)"
+gh pr create --title "the pr title" --body-file <the visual-pr-body.md it wrote, plus the trailer>
 ```
 
 Name the running model in the trailer if you know it (e.g.
@@ -45,7 +34,8 @@ Name the running model in the trailer if you know it (e.g.
 
 **Step 3b — Carry a hold forward, if the issue asked for one:**
 
-If this PR closes an issue, check whether that issue carries `kit-hold`:
+If this PR names an issue — `Closes` or `Part of` — check whether that issue
+carries `kit-hold`:
 
 ```
 gh issue view <issue-number> --json labels -q '.labels[].name'
@@ -95,18 +85,20 @@ Format:
 <branch-name>
 
 ## Why
-<One paragraph: the problem being solved or the root cause addressed>
+<One paragraph: the problem being solved or the root cause addressed — the Gist, in prose>
 
 ## Key Decisions
 <Bullet list of non-obvious choices made — trade-offs, alternatives rejected, architectural constraints>
 
 ## Files Touched
-<Grouped list matching the Changes section of the PR body>
+<Grouped list of the files the diff changes, by concern>
 ```
 
 Create the `tickets/` directory if it doesn't exist. Tell the user the file has been saved.
 
 **Arguments:** $ARGUMENTS
-A bare `draft` token is read by Step 3 and is not guidance. Anything else is
+Bare `draft` and `unattended` tokens are read by Step 3 and are not guidance.
+`unattended` is passed by a caller that knows nobody is watching — never infer
+it. Anything else is
 guidance for the PR title, scope, or target branch (e.g.,
 `/kit:new-pull-request ready for review` → mention readiness in the description).

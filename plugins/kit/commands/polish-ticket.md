@@ -170,7 +170,7 @@ Hand off to `kit:ticket-loop` starting at its `simplify` phase — `prepare` and
 Two adjustments for a multi-fix branch:
 
 - **The PR body is the fix list.** One line per commit, in the user's terms. Reviewers need to see the scope is many-small, not one-large.
-- **`Closes #<epic>` only if the epic is actually done.** Mid-stream batches must not auto-close it — use `Part of #<epic>` instead. This is the most common mistake in this workflow: `/kit:new-pull-request` adds the closing keyword automatically from the branch prefix, so check the body it generates and downgrade the keyword when the epic lives on.
+- **`Closes #<epic>` only if the epic is actually done.** Mid-stream batches must not auto-close it — use `Part of #<epic>` instead. This is the most common mistake in this workflow: `/kit:new-pull-request` reads the issue from the branch prefix and writes `Closes` when it judges the diff satisfies it, so check the body it generates and downgrade the keyword when the epic lives on.
 
 If the epic continues after the merge, `/kit:worktree-gc` removes the worktree — and the next batch starts over at `locate-work`, which will create a fresh one off the updated `origin/main`.
 
