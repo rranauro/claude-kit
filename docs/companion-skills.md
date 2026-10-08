@@ -17,12 +17,18 @@ here under their own names. `/kit:architect` and `/kit:design` already run the
 grill; reach for `kit:domain-modeling` alongside it when the model itself is what
 the conversation is changing.
 
-Each fork carries an `UPSTREAM` file with the sha it was taken at and the `git
-diff` incantation for reviewing what upstream changed since, plus the upstream
-`LICENSE`. See [commands](commands.md) for what each fork changes. The commands
-name the forks explicitly, so a command never reaches the upstream copy — but
-the model picking a skill on its own sees both descriptions, and two near-twins
-make the fork stop reliably winning.
+Not every fork is his. `kit:show-me` comes unchanged from [HumanLayer's
+skills][humanlayer]: the visual explainer, user-invoked only.
+
+Each fork carries an `UPSTREAM` file with the sha it was taken at, the local
+checkout it was taken from, and the `git diff` incantation for reviewing what
+upstream changed since, plus the upstream `LICENSE`. `scripts/adopt-skill.sh`
+writes it from whichever checkout `SKILLS_REPO` names, and
+`scripts/check-upstream.sh` checks each fork against its own checkout. See
+[commands](commands.md) for what each fork changes. The commands name the forks
+explicitly, so a command never reaches the upstream copy — but the model
+picking a skill on its own sees both descriptions, and two near-twins make the
+fork stop reliably winning.
 
 ## Installing the upstream suite
 
@@ -45,8 +51,9 @@ plugin. `skillOverrides` does not reach plugin skills, so the script sets
 `disable-model-invocation: true` in each `SKILL.md` instead.
 
 It sets it in a second clone, never in `~/dev/mattpocock`. That checkout is the
-default `SKILLS_REPO` that `adopt-skill.sh` copies from and `check-upstream.sh`
-diffs against; patched frontmatter there would ride into every fork. A
+default `SKILLS_REPO` that `adopt-skill.sh` copies from and the one his forks'
+sidecars name for `check-upstream.sh`; patched frontmatter there would ride
+into every fork. A
 directory marketplace is read in place, so the clone is the live install — to
 take upstream changes, pull `~/dev/mattpocock` and re-run the script, which
 discards its own edits, fast-forwards the clone, and hides again. A new session
@@ -96,4 +103,5 @@ is; `kit:domain-modeling` asks what the thing is *called* and whether the
 glossary already answers that. And go read the rest of his suite regardless of whether you use this one.
 
 [pocock]: https://github.com/mattpocock/skills
+[humanlayer]: https://github.com/humanlayer/skills
 [skills-cli]: https://github.com/vercel-labs/skills
