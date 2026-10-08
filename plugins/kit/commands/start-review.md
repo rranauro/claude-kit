@@ -164,9 +164,12 @@ from — say so and walk the author's instructions directly.
 
 **Assess Copilot; don't act on it.** If the author received a Copilot review,
 form your own read on each comment and note whether the author addressed it.
-You may invoke `kit:review-copilot` through the Skill tool with the PR number in
-analysis-only mode to triage them — **never its fix-and-push path.** We do not fix
-another person's PR.
+
+**Do that here, and do not hand it to `kit:review-copilot`.** That command has no
+non-mutating mode — its Steps 3, 6 and 7 apply the findings they verify, commit
+them, and push the branch — so delegating from this section would fix another
+person's PR, which is the one thing `assess-only` exists to prevent. Triaging
+the comments yourself is the whole of what is wanted here.
 
 **Drafting comments.** Never post anything without the user's explicit
 permission. Inline comments stay in a pending review; never submit it unless
