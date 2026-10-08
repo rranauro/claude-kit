@@ -12,10 +12,16 @@ metadata:
       url: "https://github.com/humanlayer/skills/blob/ca7c808/plugins/show-me/skills/show-me/SKILL.md"
 ---
 
+**Arguments:** an issue number, and optionally `unattended`.
+
+A caller that knows nobody is watching passes `unattended`; never infer it. Each place
+below that would ask a person says what stands in for them, so the body is written without
+stopping.
+
 Use this template for the PR body:
 
 ```markdown
-Fixes #<issue_number>   (or `Part of #<issue_number>`)
+Closes #<issue_number>   (or `Part of #<issue_number>`)
 
 ## Gist
 
@@ -34,7 +40,7 @@ Fixes #<issue_number>   (or `Part of #<issue_number>`)
 
 ### Screenshots
 
-<each image captioned with the acceptance criterion it proves, or "None — no visual change">
+<each image captioned with the acceptance criterion it proves, "Not captured — <why>", or "None — no visual change">
 
 ## Instructions
 
@@ -68,15 +74,17 @@ Each section answers one question:
 
 ### Issue reference
 
-Use `Fixes #N` when the diff satisfies the issue — not `Closes`. When it doesn't, use
-`Part of #N` and say so in the Gist. Never a bare `#N`. The `VerifyIssue` CI check fails a
-PR body with no issue mention.
+Use `Closes #N` when the diff satisfies the issue's acceptance criteria. When it doesn't, use `Part of #N` and say in the Gist what is left, so the issue stays open
+for the rest. Never a bare `#N`: it links the issue but says nothing about whether it is
+done.
 
 ### Gist
 
-Name the core data structure or migration, or say there is none. Note whether the change
-touches scripts, configuration rules, or dynamic forms — see
-`docs/Checking-Dynamic-Content.md`.
+Name the core data structure or migration, or say there is none.
+
+When the issue's `plan` comment opens with `Designed unattended`, say so here in one line,
+and point at that comment for the alternatives it beat. The reviewer
+who reads only the Gist is the one who has to know they are reviewing a derived design.
 
 Add a visual only when it makes the point faster than prose. Pick the smallest view that
 makes the key point clear.
@@ -198,8 +206,8 @@ unlikely you will use all of them. Don't overwhelm the reviewer.
 
 ### Acceptance Criteria
 
-Read the linked issue's body, not just its number. Mark each criterion met, partial, or not
-addressed. Say plainly whether the criteria were clear or ambiguous, and how an ambiguity
+Read the linked issue's body and comments, not just its number — the comments carry its
+`plan`. Mark each criterion met, partial, or not addressed. Say plainly whether the criteria were clear or ambiguous, and how an ambiguity
 was resolved.
 
 ### Evidence
@@ -220,7 +228,20 @@ The author's visual claim that the change is ready. Caption each image with the 
 criterion it proves; an image that proves no criterion does not belong. Show before and
 after when the change alters something that already existed. Write "None — no visual
 change" only when nothing visual changed — a UX change without screenshots is weak
-evidence, and a reviewer will grade it that way. If possible, create screenshots to capture and attach them, but name it and pause for confirmation before running the browser.
+evidence, and a reviewer will grade it that way.
+
+When the diff changes something visual, the browser is the person's, so it is driven only
+with their yes:
+
+- **Attended** — name the screenshots you would take, one per criterion they prove, and ask
+  before driving the browser. On a yes, take them and upload each through a GitHub comment box
+  in that same browser session — dropping an image there yields its `user-attachments` URL
+  without posting anything, and `gh` cannot upload one — then put each URL in the body,
+  captioned with its criterion. On a
+  no, write "Not captured — declined" and name what each would have shown.
+- **Unattended** — never drive the browser. Write "Not captured — opened unattended" and
+  name what each screenshot would have shown, so the reviewer knows what to look at
+  themselves.
 
 ### Instructions
 
@@ -230,8 +251,8 @@ How the reviewer validates it for themselves, independent of the Evidence. Numbe
 
 Say what undoing the change takes once it is in production, as one of three values:
 
-- **easy** — a revert, a feature flag, or a small follow-up fixes it. Notifications added for
-  concierges who later want fewer is easy: change or disable the audience.
+- **easy** — a revert, a feature flag, or a small follow-up fixes it. A notification added for
+  users who later want fewer is easy: change or disable the audience.
 - **costly** — it can be undone, but deploying it is hard and backing it out is harder. A
   migration adding an index to a large table is costly: it needs a concurrent build going
   in, and another coming out.
@@ -255,13 +276,22 @@ Read the `## Visual PR and review output` section of `CLAUDE.md` at the repo roo
 ```
 
 - **Format** — `markdown` or `html`. Always write `visual-pr-body.md`; it is what goes to GitHub. With `html`, also render a preview beside it and open it: `python3 -I <this skill's base directory>/scripts/render_html.py <location>/visual-pr-body.md`.
-- **Location** — the directory, with `<n>` the PR number. It must resolve inside a project directory, never the monorepo root. Before a PR exists, use the branch name for `<n>`.
+- **Location** — the directory, relative to the repository root, with `<n>` the PR number. Before a PR exists, use the branch name for `<n>`.
 
 If the section is missing, ask once for both values, offering `markdown` and
 `tmp/reviews/pr-<n>/` as defaults. Then offer to add the section to `CLAUDE.md`,
 and write it only on a yes. If they decline, use the answers for this run only.
 
+Unattended, ask nothing and offer nothing. With the section missing, write `markdown` to a
+fresh temporary directory outside the worktree: the PR is the copy anyone will read, and an
+untracked file left in the worktree reads as uncommitted work that holds it from every
+reclaim. With the section present and `html`, render with `--no-open` — there is nobody to
+look at the preview.
+
 ## Writing to an existing PR
 
-Write the body to the output location first and show the user. Run
-`gh pr edit <n> --body-file …` only on approval.
+When a person asks for a PR's body to be rewritten, write it to the output location first
+and show them. Run `gh pr edit <n> --body-file …` only on approval.
+
+When a command invokes this skill to open a PR, return the body file's path. Creating the
+PR is the command's step, and invoking it was the approval.

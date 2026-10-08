@@ -215,22 +215,25 @@ at triage, as `kit-hold`, which `/kit:new-pull-request` transcribes onto the PR.
 A held PR gets its reviews and waits for the walkthrough; an unheld one was
 decided not to need one.
 
-Invoke `/kit:new-pull-request draft` via the Skill tool. The `draft` token is
-what makes `hand-off` possible: a draft PR still runs CI and still gets both
-reviews, but cannot merge out from under the round this pass is about to close.
+Invoke `/kit:new-pull-request draft` via the Skill tool, adding `unattended`
+when this pass is. The `draft` token is what makes `hand-off` possible: a draft
+PR still runs CI and still gets both reviews, but cannot merge out from under the
+round this pass is about to close. `unattended` is what lets the body be written
+without stopping for a question nobody is there to answer.
 
-**If the plan was written by this run, say so in the PR body** — one line, that
-the approach was designed unattended and the plan comment on the issue carries
-the alternatives it beat. The reviewer is the first human to see that reasoning,
-and a review that does not know it is reviewing a derived design reviews only the
-diff.
+**If the plan was written by this run, the PR body says so in its Gist.**
+`kit:visual-pr` writes that line when the issue's `plan` comment opens with
+`/kit:design`'s unattended line; confirm it is there. The reviewer is the first
+human to see that reasoning, and a review that does not know it is reviewing a
+derived design reviews only the diff.
 
-**Verify the body carries `Closes #<issue>`.** `/kit:new-pull-request` adds it
-when the branch starts with the issue number; the closing keyword in the *body*
-is what closes the ticket, and the title prefix does not count. A missing keyword
+**Verify the body names the issue with `Closes` or `Part of`.**
+`/kit:new-pull-request` writes `Closes #<issue>` when the diff satisfies it; the
+closing keyword in the *body* is what closes the ticket, and the title prefix does not count. A missing keyword
 strands every ticket whose `kit-blocked-by` marker names this one, because a
-blocker reads as cleared only when its issue closes. `gh pr edit <n> --body` if
-it is absent.
+blocker reads as cleared only when its issue closes. `gh pr edit <n> --body` to
+add `Closes` if it carries neither. Leave a `Part of` in place — a `Closes`
+written over it closes an unfinished issue.
 
 ---
 
