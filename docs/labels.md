@@ -30,8 +30,10 @@ the append is a second copy.
 ## A mark that will not apply is reported, never skipped
 
 A pass can apply a label that already exists and cannot create one that does
-not: `ship-settings.json` and `tending-settings.json` both deny
-`Bash(gh label:*)`. So the first repo to adopt a newly defined label gets a pass
+not: `ship-settings.json` denies every `gh label` write, and
+`tending-settings.json` denies `Bash(gh label:*)` outright. Reading stays open
+in the ship grant because `/kit:list` validates its label names with
+`gh label list`, and the runner's list call runs under that grant. So the first repo to adopt a newly defined label gets a pass
 that decides correctly and silently records nothing.
 
 Keeping the deny is deliberate — an unattended pass may not invent repo-wide
