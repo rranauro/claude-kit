@@ -13,8 +13,9 @@ vocabulary those files read off an issue; `docs/commands.md` lists the surface;
   no test suite and nothing to unit-test. Do not offer to add specs, and do not
   treat their absence as a gap.
 - **`scripts/lint.sh` is the whole automated check** — shell parses, JSON
-  manifests are JSON, skill frontmatter matches its directory. All three fail at
-  harness load time rather than at review. Run it before opening a PR;
+  manifests are JSON, skill frontmatter matches its directory, and the kit
+  declares no version. The first three fail at harness load time rather than at
+  review; the last fails silently at update time. Run it before opening a PR;
   `.github/workflows/lint.yml` runs it again on the PR.
 - **The design skills this plugin ships do not govern this plugin.**
   `kit:rails-codebase-design` and `kit:behavior-placement` are the axis for the
@@ -43,33 +44,14 @@ vocabulary those files read off an issue; `docs/commands.md` lists the surface;
   before it lands, and say in the handoff that you did. The kit's own rule of
   holding auto-merge off until a review round is closed is written for repos
   with a bot reviewer — this one has none, so there is no round to wait for.
-- **A change under `plugins/kit/` cuts a version.** `claude plugin update`
-  compares version numbers rather than contents, so a payload that ships under an
-  unchanged version never reaches an installed session — it fails silently, which
-  is why `scripts/check-version-bump.sh` is a required check on every PR. Bump
-  **minor** when the invocable surface moves: a command, skill, or hook added,
-  removed, or renamed, so a consuming project's invocations change. Bump
-  **patch** when prose inside an existing file changes. Everything outside
-  `plugins/kit/` — docs, scripts, tests — ships nothing, so it cuts nothing.
+- **The kit carries no version number; its commit is its version.** Every merge
+  to `main` reaches an installed session with nobody editing anything. Never add
+  `version` to `plugin.json` or the marketplace entry — `scripts/lint.sh` fails
+  on one, and ADR 0006 says why.
 - **Work this repo through its own commands.** `/kit:architect` and
   `/kit:triage` for what to build, `/kit:design` for how, `/kit:ship-ticket` to
   carry it. A change to the workflow that was not made through the workflow has
   not been tried.
-
-## Ship gate
-
-- run: `git fetch origin main && scripts/check-version-bump.sh`
-
-Parallel ship passes collide on this check routinely, because every PR touching
-`plugins/kit/` cuts a version and every sibling picks the same next number.
-Running it in the worktree catches the collision while the PR is still a draft,
-where `kit:ticket-loop` parks and names it; the recovery is an operator's rebase
-and bump, never a pass's. `docs/shipping-on-a-runner.md` carries the rest.
-
-Its command needs `Bash(scripts/check-version-bump.sh*)` in
-`.claude/settings.json` beside the `lint.sh` entries — the kit never grants a
-gate from the declaration. **A pass does not add it itself**, and a pass that
-finds it missing parks on the denied permission.
 
 ## Where a fact goes
 

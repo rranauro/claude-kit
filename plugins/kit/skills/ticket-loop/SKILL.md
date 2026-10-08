@@ -49,8 +49,8 @@ this one does not restate it.
   `main` *into* the branch is a different act and equally not a pass's: `git
   merge`, `git rebase` and `gh pr update-branch` are one operation under three
   names, and a PR that has fallen behind its base is the operator's to carry
-  forward. A pass that integrates has moved the head its review round and its
-  version bump were decided against.
+  forward. A pass that integrates has moved the head its review round was
+  decided against.
 - **A denied operation stays denied however it is spelled.** The grant denies
   operations rather than commands, so a command the deny list never named that
   produces a denied command's effect is denied too — `gh api` alone can merge a

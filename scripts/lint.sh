@@ -3,8 +3,9 @@ set -euo pipefail
 
 # Everything here is a check that a drive-by PR can fail without anyone noticing
 # by reading the diff: a shell script that no longer parses, a manifest that is
-# no longer JSON, a skill whose frontmatter stops matching its directory. All
-# three fail at load time in the harness rather than at review time.
+# no longer JSON, a skill whose frontmatter stops matching its directory — all
+# of which fail at load time in the harness rather than at review time — and a
+# plugin version that would stop installs from updating at all.
 #
 # Shape only, and it stays under a second so it is worth running before every
 # push. Behaviour is asserted in tests/, which CI runs as its own step.
@@ -39,6 +40,26 @@ while IFS= read -r f; do
     fail "$f is not valid JSON"
   fi
 done < <(find . -path ./.git -prune -o -name '*.json' -print | sort)
+
+echo "==> plugin versioning"
+# A version anywhere pins installs to it until someone raises it; with none, an
+# install tracks the commit. ADR 0006 has why.
+rc=0
+python3 - <<'PY' || rc=$?
+import json, sys
+try:
+    plugin = json.load(open("plugins/kit/.claude-plugin/plugin.json"))
+    market = json.load(open(".claude-plugin/marketplace.json"))
+except (OSError, ValueError):
+    sys.exit(2)  # the json manifests check already names the cause
+entries = [p for p in market.get("plugins", []) if p.get("name") == plugin.get("name")]
+sys.exit(1 if "version" in plugin or any("version" in p for p in entries) else 0)
+PY
+case "$rc" in
+  0) echo "  ok   kit declares no version" ;;
+  2) echo "  skip a manifest is unreadable" ;;
+  *) fail "kit declares a version in plugin.json or marketplace.json; the commit is its version" ;;
+esac
 
 echo "==> skill frontmatter"
 for skill in plugins/kit/skills/*/; do

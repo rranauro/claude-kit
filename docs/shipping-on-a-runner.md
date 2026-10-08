@@ -160,16 +160,6 @@ there too; the kit never grants it from the declaration. Ungranted, the gate
 fails as a denied permission, which parks — so a project that declares a gate
 without granting it has made every ticket park rather than installed a check.
 
-The gate is also where a version collision between parallel passes surfaces.
-`hand-off` runs it after the review round's last push and before the PR leaves
-draft, so a sibling that has already taken the next version number shows up as
-a failing gate and a park that names it, rather than as a PR sitting red behind
-a required check. The park is the whole recovery: re-bumping would mean bringing
-`main` into the branch first, which is the one operation a pass may not perform.
-A sibling can still merge in the window between the gate passing and auto-merge
-firing — only the repository setting requiring branches to be up to date closes
-that, and it is a GitHub setting rather than anything here.
-
 ## A crashed ticket needs no cleanup of its own
 
 If a per-ticket call dies partway — the process is killed, the machine sleeps
