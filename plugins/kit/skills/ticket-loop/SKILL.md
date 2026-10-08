@@ -42,7 +42,20 @@ this one does not restate it.
 - **Worktree-prefixed paths.** Once `prepare` creates the worktree, every
   Read/Edit/Write targets the path `kit:start-ticket` resolved. The tool cwd
   stays at the main checkout.
-- **Never merge locally.** PRs merge on GitHub only.
+- **Never merge locally, and never bring the base into the branch at all.** The
+  PR merges on GitHub, through the auto-merge `hand-off` arms. Integrating
+  `main` *into* the branch is a different act and equally not a pass's: `git
+  merge`, `git rebase` and `gh pr update-branch` are one operation under three
+  names, and a PR that has fallen behind its base is the operator's to carry
+  forward. A pass that integrates has moved the head its review round and its
+  version bump were decided against.
+- **A denied operation stays denied however it is spelled.** The grant denies
+  operations rather than commands, so a command the deny list never named that
+  produces a denied command's effect is denied too — `gh api` alone can merge a
+  branch. This holds in **every permission mode**, including the auto mode a
+  `--bg` or headless session runs in, where nothing prompts and the deny list is
+  the only thing left saying no. Reaching one is a `kit:park`, never a thing to
+  accomplish another way.
 - **Never run a test directory or the full suite.** Named files and examples
   only. Attended, widening needs an ask; unattended it is not yours to take.
   No phase is exempt: CI is the merge gate, so nothing here runs the suite to
