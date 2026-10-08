@@ -18,6 +18,30 @@ out to a fresh `claude -p "/kit:ship-ticket <n> unattended"` per ticket and
 blocks until it returns — that block *is* the pacing, and it's why nothing
 here sleeps between one ticket finishing and the next one starting.
 
+## `--bg` keeps the process boundary and changes only the launcher
+
+With `--bg`, each ticket runs as a `claude --bg` session, not a `claude -p`
+call: an interactive session started in the background, billed the way any
+interactive session is. The runner still blocks on it, polling
+`claude agents --json` until the session stops working, so the pacing and the
+fresh-context-per-ticket guarantee above are unchanged.
+
+Two things differ, and both are why the flag exists rather than a swap:
+
+- **The grant has to be made the boundary on purpose.** `-p` refuses anything
+  the grant does not allow. A background session falls back to the operator's
+  permission mode, which in auto mode approves commands the grant never listed.
+  That is how a pass once merged `main` into its branch with
+  `gh pr update-branch` after the grant had denied `git merge`. `--bg` runs
+  sessions in don't-ask mode, which refuses anything the grant does not allow,
+  the same as `-p`.
+- **A finished session is `done` or `blocked`.** `blocked` means its last message
+  read as asking for something. Nobody will answer, so the runner treats both as
+  finished, reads the outcome from GitHub, and stops the session.
+
+The `/kit:list` call stays on `-p` in either mode: its offer block is read from
+stdout, and a background session's log is a terminal recording.
+
 ## The startable-ticket list has to be machine-readable, not ship-ticket's prose
 
 `/kit:list <label>` exists so a script never has to parse `/kit:ship-ticket`'s

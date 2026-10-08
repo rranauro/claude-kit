@@ -5,7 +5,7 @@
 # docs/shipping-on-a-runner.md for the gotchas this works around.
 #
 #   ship-startable.sh <label> [--repo DIR] [--max N] [--poll-seconds N]
-#                     [--project-settings FILE] [--model NAME]
+#                     [--project-settings FILE] [--model NAME] [--bg]
 #
 # --max caps tickets shipped in one run (default 20) — the safety valve if the
 # startable check is ever wrong; the run stops and says so rather than opening
@@ -15,6 +15,9 @@
 # notice a blocker closing well inside the ~15-minute round trip #101's own
 # text observed. Not meant to be tuned; the flag exists for the rare case a
 # consuming project's CI is unusually slow or fast.
+# --bg runs each ticket as a `claude --bg` session instead of `claude -p`, in
+# don't-ask mode so the grant stays the boundary. The /kit:list call stays on -p:
+# its offer block is read from stdout, and a background session has none.
 # --project-settings merges a project's own test/lint permission grant over
 # ship-settings.json, the same split scripts/tending-settings.json uses.
 #
@@ -32,6 +35,7 @@ MAX=20
 POLL_SECONDS=120
 PROJECT_SETTINGS=""
 MODEL="${SHIP_STARTABLE_MODEL:-claude-opus-5}"
+BG=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -40,6 +44,7 @@ while [ $# -gt 0 ]; do
     --poll-seconds)      POLL_SECONDS="$2"; shift 2 ;;
     --project-settings)  PROJECT_SETTINGS="$2"; shift 2 ;;
     --model)             MODEL="$2"; shift 2 ;;
+    --bg)                BG=1; shift ;;
     -*) echo "ship-startable: unknown option: $1" >&2; exit 2 ;;
     *)
       if [ -n "$LABEL" ]; then
@@ -51,7 +56,7 @@ while [ $# -gt 0 ]; do
 done
 
 [ -n "$LABEL" ] || {
-  echo "usage: ship-startable.sh <label> [--repo DIR] [--max N] [--poll-seconds N] [--project-settings FILE] [--model NAME]" >&2
+  echo "usage: ship-startable.sh <label> [--repo DIR] [--max N] [--poll-seconds N] [--project-settings FILE] [--model NAME] [--bg]" >&2
   exit 2
 }
 
@@ -111,7 +116,7 @@ log() { printf '%s %s\n' "$(date -u +%FT%TZ)" "$*" | tee -a "$LOG"; }
 log "log: $LOG"
 log "follow it with: tail -f $LOG"
 
-log "starting: label=${LABEL} repo=${REPO} max=${MAX} poll-seconds=${POLL_SECONDS} model=${MODEL}"
+log "starting: label=${LABEL} repo=${REPO} max=${MAX} poll-seconds=${POLL_SECONDS} model=${MODEL} bg=${BG}"
 
 # A per-ticket or list call that returns in under this floor with nothing to
 # show is the failure docs/tending-on-a-runner.md calls the worst kind: the
@@ -170,6 +175,39 @@ run_claude_timed() { # prompt
   end=$(date +%s)
   TIMED_ELAPSED=$((end - start))
   printf '%s\n' "$TIMED_OUT" >>"$LOG"
+}
+
+# The --bg counterpart of run_claude_timed: launches a background session and
+# blocks until it stops working, so the loop paces exactly as it does on -p.
+# A session ends its turn as "done" or, when its last message reads as asking
+# for something, "blocked" — either way it is finished, and outcomes are read
+# from GitHub as ever. Stopped afterwards so idle sessions do not pile up.
+run_claude_bg_timed() { # prompt name
+  local start end state
+  start=$(date +%s)
+  if ! "$CLAUDE_BIN" --bg --name "$2" --model "$MODEL" --plugin-dir "$PLUGIN_DIR" \
+      --settings "$SETTINGS_FILE" --permission-mode dontAsk "$1" >>"$LOG" 2>&1 </dev/null; then
+    TIMED_ELAPSED=0
+    return
+  fi
+  log "session $2 started — follow it with: claude attach $2"
+  while :; do
+    sleep 15
+    state="$("$CLAUDE_BIN" agents --json --all 2>/dev/null | python3 -c "
+import json, sys
+name = sys.argv[1]
+try:
+    sessions = json.load(sys.stdin)
+except Exception:
+    sys.exit(0)
+print(next((s.get('state', '') for s in sessions if s.get('name') == name), 'missing'))
+" "$2")"
+    [ "$state" = "working" ] || [ -z "$state" ] || break
+  done
+  end=$(date +%s)
+  TIMED_ELAPSED=$((end - start))
+  log "session $2 ended ($state) after ${TIMED_ELAPSED}s"
+  "$CLAUDE_BIN" stop "$2" >>"$LOG" 2>&1 || true
 }
 
 # Prints "<pr-number> <state>" for the PR belonging to issue <n>, or nothing.
@@ -252,7 +290,11 @@ list_lowest_startable() {
 ship_one() {
   local n="$1" labels pr_info pr_num pr_state pr_labels hold
 
-  run_claude_timed "/kit:ship-ticket ${n} unattended"
+  if [ "$BG" -eq 1 ]; then
+    run_claude_bg_timed "/kit:ship-ticket ${n} unattended" "ship-${n}-$(date +%s)"
+  else
+    run_claude_timed "/kit:ship-ticket ${n} unattended"
+  fi
   if [ "$TIMED_ELAPSED" -lt "$MIN_SECONDS" ]; then
     SHIP_OUTCOME="anomaly"
     return
