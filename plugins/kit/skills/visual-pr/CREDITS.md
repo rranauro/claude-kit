@@ -3,7 +3,8 @@
 Vendored from Matt Pocock's [`pr`](https://github.com/mattpocock/skills/blob/013860c/engineering/pr/SKILL.md)
 skill (`mattpocock/skills@013860c`, MIT — see `LICENSE`) renamed to
 `visual-pr`, made model-invocable, and given a Gist-first template with Acceptance Criteria and
-Instructions sections.
+Instructions sections, then adapted to the kit: `Closes` rather than `Fixes`, no references to
+the project it came from, and an `unattended` mode that writes the body without stopping.
 
 The Gist section's menu of visuals (pseudocode, call trees, component trees, file trees,
 Mermaid, diffs) and its placement guidance come from [Dex Horthy](https://github.com/dexhorthy)'s
