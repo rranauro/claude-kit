@@ -15,6 +15,26 @@ that keeps the work honest along the way.
 Everything is namespaced under `kit:`. You need **GitHub** (via `gh`) and **git
 worktrees**; there's nothing to configure and no vocabulary to adopt.
 
+### Following `main`
+
+The kit carries no version number, so the plugin's version is the commit it was
+installed from, and every merge to `main` counts as an update. To keep a machine
+on the latest `main`:
+
+1. Install it from GitHub as above. Don't use a local clone.
+2. Turn on auto-update for the marketplace: run `/plugin`, open
+   **Marketplaces**, select `claude-kit`, and enable auto-update. Third-party
+   marketplaces start with it off.
+3. After a merge, restart `claude` or run `/reload-plugins`.
+
+`claude plugin list` shows the installed commit where a version number would
+otherwise be. You don't need to pull a clone, maintain symlinks, or clear a
+cache.
+
+**Releases** are git tags on `main`, added by hand when a point is worth naming:
+`git tag v0.12.0 && git push origin v0.12.0`. Nothing reads the tag, and
+installs track the commit either way.
+
 ## The loop
 
 ```
