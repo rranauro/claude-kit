@@ -1,0 +1,3 @@
+interface:
+  display_name: "Visual PR"
+  short_description: "Write a Gist-first PR body that's fast to review"
