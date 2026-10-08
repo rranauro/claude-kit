@@ -363,16 +363,56 @@ the label stops depending on any pass reading it in time. **A project without
 that check must not adopt this step**: there, auto-merge armed on a held PR
 merges it, which is the thing the hold was set to prevent.
 
-**6 · Release the lease:** `git worktree unlock <worktree>`. The pass is over, so
-the worktree is an ordinary sweep candidate again and the next
-`/kit:ship-ticket` reclaims it once the PR merges.
+**Arming is this pass's last act on the PR, in both modes.** Step 6 releases the
+lease and reports, and nothing between here and the end of the pass writes to the
+PR again — no second `gh pr merge`, no `gh pr edit`, no comment, no push. The
+operator owns the PR from this line onward.
+
+**So a disable stands.** An operator who runs `gh pr merge <N> --disable-auto`
+while this pass is still running has made the decision that holds, and it holds
+because nothing here re-arms rather than because something here recognises it.
+The pass runs `gh` as the operator, so the PR's timeline cannot attribute the
+disable to anyone — which means a pass finding auto-merge off can never tell its
+own branch update from a person's deliberate hold, and must not guess. Treating
+one as the other is how a pass merges a PR over the hold an operator had just
+placed on it.
+
+**And a check that goes red after arming is not this pass's to repair.** Step 4's
+gate ran before the PR left draft; a failure after that is a red PR, which is
+visible to the operator without anything here acting on it.
+`docs/tending-on-a-runner.md` says the same of the runner, for the same reason.
+
+**6 · Release the lease, then report the PR as you find it:** `git worktree
+unlock <worktree>`. The pass is over, so the worktree is an ordinary sweep
+candidate again and the next `/kit:ship-ticket` reclaims it once the PR merges.
+
+**Then read the PR once.** Having armed auto-merge is not evidence that it is on:
+
+```
+gh pr view <pr-number> --json autoMergeRequest,statusCheckRollup
+```
+
+**Report both as found wherever this phase reports** — the auto-merge state, and
+any failing check the rollup names — attended in the line below, unattended in
+the report `/kit:ship-ticket` Step 3 writes. Where auto-merge comes back off
+after step 5 armed it, say so and say the pass did not re-arm: that line is the
+only record an operator has that their disable survived the rest of the pass,
+and a pass asserting "auto-merge on" from its own arming reports a state the PR
+may not be in.
 
 Attended, tell the user:
 
-> "PR #<N> is open, reviewed, and ready with auto-merge on — <the transition's
-> run registered, so the merge waits on it | nothing new registered within 120s,
-> so the merge waits on the checks already on the commit>. <Which review source,
-> if any, did not arrive.>"
+> "PR #<N> is open, reviewed, and ready, and auto-merge reads on — <the
+> transition's run registered, so the merge waits on it | nothing new registered
+> within 120s, so the merge waits on the checks already on the commit>. <Any
+> failing check the rollup named.> <Which review source, if any, did not
+> arrive.>"
+
+or, where it reads off:
+
+> "PR #<N> is open, reviewed, and ready, but auto-merge reads off — this pass
+> armed it and did not re-arm it, so nothing here will merge the PR. <Any failing
+> check the rollup named.> <Which review source, if any, did not arrive.>"
 
 or, when step 3 held it:
 
