@@ -28,12 +28,10 @@ on the latest `main`:
 3. After a merge, restart `claude` or run `/reload-plugins`.
 
 `claude plugin list` shows the installed commit where a version number would
-otherwise be. You don't need to pull a clone, maintain symlinks, or clear a
-cache.
+otherwise be.
 
 **Releases** are git tags on `main`, added by hand when a point is worth naming:
-`git tag v0.12.0 && git push origin v0.12.0`. Nothing reads the tag, and
-installs track the commit either way.
+`git tag v0.12.0 && git push origin v0.12.0`. Installs ignore tags.
 
 ## The loop
 

@@ -13,8 +13,9 @@ vocabulary those files read off an issue; `docs/commands.md` lists the surface;
   no test suite and nothing to unit-test. Do not offer to add specs, and do not
   treat their absence as a gap.
 - **`scripts/lint.sh` is the whole automated check** — shell parses, JSON
-  manifests are JSON, skill frontmatter matches its directory. All three fail at
-  harness load time rather than at review. Run it before opening a PR;
+  manifests are JSON, skill frontmatter matches its directory, and the kit
+  declares no version. The first three fail at harness load time rather than at
+  review; the last fails silently at update time. Run it before opening a PR;
   `.github/workflows/lint.yml` runs it again on the PR.
 - **The design skills this plugin ships do not govern this plugin.**
   `kit:rails-codebase-design` and `kit:behavior-placement` are the axis for the
@@ -43,13 +44,10 @@ vocabulary those files read off an issue; `docs/commands.md` lists the surface;
   before it lands, and say in the handoff that you did. The kit's own rule of
   holding auto-merge off until a review round is closed is written for repos
   with a bot reviewer — this one has none, so there is no round to wait for.
-- **The kit carries no version number; its commit is its version.** An install
-  from git is versioned by the commit it came from, so every merge to `main`
-  reaches `claude plugin update` with nobody editing anything. Never add
-  `version` to `plugin.json` or to the marketplace entry — a number there pins
-  installs to it until someone remembers to raise it, and `scripts/lint.sh`
-  fails on one. Tag a commit when a release wants a readable name. ADR 0006 has
-  the alternatives.
+- **The kit carries no version number; its commit is its version.** Every merge
+  to `main` reaches an installed session with nobody editing anything. Never add
+  `version` to `plugin.json` or the marketplace entry — `scripts/lint.sh` fails
+  on one, and ADR 0006 says why.
 - **Work this repo through its own commands.** `/kit:architect` and
   `/kit:triage` for what to build, `/kit:design` for how, `/kit:ship-ticket` to
   carry it. A change to the workflow that was not made through the workflow has

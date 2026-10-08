@@ -12,9 +12,11 @@ workflow unattended and in parallel turned an occasional collision into the
 normal case.
 
 We decided to drop the field. With no `version` in `plugin.json` or in the
-marketplace entry, Claude Code versions a plugin installed from git by its
-commit SHA, so every merge to `main` is an update and nobody edits anything for
-it to be one. `scripts/lint.sh` fails if a `version` comes back, because that
+marketplace entry, users "track your commits instead" (Claude Code docs, *Host
+and maintain a marketplace*, "Release a new version"). That covers a
+relative-path entry in a git-hosted marketplace, which is how this one is laid
+out, so every merge to `main` is an update and nobody edits anything for it to
+be one. `scripts/lint.sh` fails if a `version` comes back, because that
 is the one way the #152 freeze returns. When a release needs a readable name,
 it gets a git tag.
 
