@@ -91,10 +91,10 @@ Three preconditions. Any one missing, park without designing — say which:
   types into the comparison. Then take the one the axis scores highest and write
   the comparison into the plan. **A tie is broken, not parked**: take the
   approach that follows a precedent already in this codebase, else the one with
-  the smaller blast radius. List the other under `## Decided without
-  confirmation`, naming which tiebreak decided. A wrong pick is the shape
-  review's to catch at `kit:ticket-loop` `hand-off`, where a reviewer can see the
-  code. A tie that is really a scope change, an unbounded constraint, or an
+  the smaller blast radius, else either — and say neither separated them. List
+  the other under `## Decided without confirmation`, naming which tiebreak
+  decided. A wrong pick is the shape review's to catch at `kit:ticket-loop`
+  `hand-off`, where a reviewer can see the code. A tie that is really a scope change, an unbounded constraint, or an
   unbuildable ticket is one of the parks below.
 - **Step 4's grilling becomes the park detector.** Run it exactly as written —
   state what the direction commits to — but answer each assertion against the
