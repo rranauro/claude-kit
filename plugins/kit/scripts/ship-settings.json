@@ -52,6 +52,7 @@
       "Bash(gh label edit:*)",
       "Bash(gh label delete:*)",
       "Bash(gh label clone:*)",
+      "Bash(gh pr update-branch:*)",
       "Bash(git merge:*)",
       "Bash(git rebase:*)",
       "Bash(git reset:*)",

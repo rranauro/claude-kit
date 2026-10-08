@@ -30,11 +30,22 @@ Two things differ, and both are why the flag exists rather than a swap:
 
 - **The grant has to be made the boundary on purpose.** `-p` refuses anything
   the grant does not allow. A background session falls back to the operator's
-  permission mode, which in auto mode approves commands the grant never listed.
-  That is how a pass once merged `main` into its branch with
-  `gh pr update-branch` after the grant had denied `git merge`. `--bg` runs
-  sessions in don't-ask mode, which refuses anything the grant does not allow,
-  the same as `-p`.
+  permission mode. This runner's `--bg` path therefore pins
+  `--permission-mode dontAsk`, which refuses anything the grant does not allow,
+  the same as `-p` — so both paths here are bounded by the allow list. What is
+  not bounded is a background session an operator starts by hand: that inherits
+  whatever mode they are in, and auto mode approves commands the grant never
+  listed. An allow list is a boundary only where the mode was pinned, which is
+  why this runner pins it rather than trusting the default.
+
+  A **deny** entry needs none of that care, because it holds in every mode. That
+  is why the integration operations are denied rather than merely unlisted:
+  `git merge`, `git rebase` and `gh pr update-branch` all name one operation, and
+  closing only the git spellings leaves the GitHub one approved wherever auto
+  mode is in force. No
+  deny list reaches every equivalent, though — `gh api` is allowed and can merge
+  a branch by itself — so `kit:ticket-loop`'s constraint that a denied operation
+  stays denied however it is spelled is what actually carries the rule.
 - **A finished session is `done` or `blocked`.** `blocked` means its last message
   read as asking for something. Nobody will answer, so the runner treats both as
   finished, reads the outcome from GitHub, and stops the session.
@@ -145,7 +156,19 @@ split `tending-settings.json` already uses — this file says what shipping a
 ticket may do in any repo, the project's file adds how it verifies a change
 before pushing.
 A project that declares a `## Ship gate` in its `CLAUDE.md` grants that command
-there too; the kit never grants it from the declaration.
+there too; the kit never grants it from the declaration. Ungranted, the gate
+fails as a denied permission, which parks — so a project that declares a gate
+without granting it has made every ticket park rather than installed a check.
+
+The gate is also where a version collision between parallel passes surfaces.
+`hand-off` runs it after the review round's last push and before the PR leaves
+draft, so a sibling that has already taken the next version number shows up as
+a failing gate and a park that names it, rather than as a PR sitting red behind
+a required check. The park is the whole recovery: re-bumping would mean bringing
+`main` into the branch first, which is the one operation a pass may not perform.
+A sibling can still merge in the window between the gate passing and auto-merge
+firing — only the repository setting requiring branches to be up to date closes
+that, and it is a GitHub setting rather than anything here.
 
 ## A crashed ticket needs no cleanup of its own
 
