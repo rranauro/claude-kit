@@ -95,7 +95,8 @@ escalated a finding it may not settle alone, or the shape review found one, or
 the plan was designed unattended for a kind whose acceptance is a look. Set at
 triage on the issue and transcribed onto the PR, or written straight onto the PR
 when the decision is made after it exists — by a person, the review pass, or `kit:ticket-loop`.
-Cleared only by a person, never by the pass that set it. Independent of kind. On
+Cleared only by a person, never by the pass that set it. Once applied, it holds
+the same way whatever the kind, and whoever set it. On
 an open PR it also holds the branch's worktree, since the walkthrough runs in it.
 _Avoid_: hold, do-not-merge
 

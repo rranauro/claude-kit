@@ -74,6 +74,7 @@ Unattended, each of those becomes a rule:
 | "Present a summary and ask whether to proceed" | The plan is the authorization. Anchors verify and no drift contradicts them → proceed. |
 | An anchor moved, or drift contradicts an assumption | **Park.** Its own text calls this a design decision, and it is right. |
 | `kit-blocked` present → confirm before coding | Park. The selection step should have filtered it. |
+| Criteria or out-of-scope missing → "say which and stop" | **Park**, naming which, in those words — a stop nobody reads records nothing. With no plan, don't stop here at all: `/kit:design` checks the same precondition and parks on it. |
 | No plan present → invoke `/kit:design` | See below. |
 
 `kit:start-ticket` `placement-check` skips itself when this skill is the caller,
