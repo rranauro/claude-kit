@@ -6,7 +6,7 @@ Review and address automated PR review feedback one finding at a time — **GitH
 
 > **There is no per-item user prompt.** Verification is empirical, not interactive: findings are checked against the code and applied or skipped automatically (Step 3), and the user's review point is the summary in Step 5 plus the commit body that records every decision.
 
-> Despite the file name, this skill is the single addresser for *all* PR review comments it collates — the shape review included, though a person usually posts it. Kept the name for backward compatibility with existing references.
+> Despite the file name, this skill is the single addresser for *all* PR review comments it collates. Kept the name for backward compatibility with existing references.
 
 **Step 1 — Find the PR:**
 - Run `gh pr view --json number,url,title,labels` to get the current branch's PR. The labels are read again at Step 8 to decide the merge — fetched once here rather than paid for twice.
@@ -19,7 +19,7 @@ Pull from these sources in parallel:
 - **Copilot inline:** `gh api repos/{owner}/{repo}/pulls/{number}/comments --jq '.[] | select(.user.login | test("copilot|github-actions"; "i")) | {source: "copilot-inline", id, path, line, body, diff_hunk}'`
 - **Copilot top-level review:** `gh api repos/{owner}/{repo}/pulls/{number}/reviews --jq '.[] | select(.user.login | test("copilot|github-actions"; "i")) | {source: "copilot-review", id, state, body}'`
 - **Claude review:** `gh api repos/{owner}/{repo}/issues/{number}/comments --jq '.[] | select(.body | startswith("<!-- claude-pr-review -->")) | {source: "claude-review", id, body}'` — note this hits the **issues** endpoint (PR-level comments), not pulls/comments. The reviewer posts under the human user's gh account, so the `<!-- claude-pr-review -->` HTML marker (set by `scripts/pr-review.sh`) is the authoritative way to find it. It's posted automatically by the `pr-review-on-create` hook wherever a project has registered it, or by a manual `/kit:start-review`; absent either, treat that like any empty source.
-- **Shape review:** the same issues-endpoint result, selecting `startswith("<!-- kit-shape-review -->")` as `source: "shape-review"` — no extra call. **Find it by the marker, never by author**: the common case is a reviewer who ran `kit:shape-review`, edited what it printed, and posted it from their own account. Take the body exactly as GitHub returns it, which is the edited one — what the reviewer posted is what gets addressed, so never re-run the shape pass to regenerate it. **Where several marked comments exist, the most recently updated is the review** and the rest are superseded: a reviewer who reposts rather than edits means the new one, and addressing both applies the wording they replaced.
+- **Shape review:** `gh api repos/{owner}/{repo}/issues/{number}/comments --jq '[.[] | select(.body | startswith("<!-- kit-shape-review -->"))] | max_by(.updated_at) // empty | {source: "shape-review", id, updated_at, body}'` — the same endpoint as the Claude review, so fetch it once and filter twice. **Find it by the marker, never by author**: the common case is a reviewer who edited what `kit:shape-review` printed and posted it from their own account. Address the body as GitHub returns it, edits included, and never re-run the shape pass to regenerate it. **Where several marked comments exist, the most recently updated is the review** — a reviewer who reposts rather than edits means the new one, and addressing both applies the wording they replaced.
 
 > **Match logins case-insensitively** (the `"i"` flag is required). Copilot's *inline* comments are authored by login `Copilot` (capital C), while its top-level review bot is `copilot-pull-request-reviewer[bot]` (lowercase). Without `"i"` the inline pass silently returns nothing — the most important findings get missed.
 
@@ -46,8 +46,8 @@ The Claude review arrives as a single marker comment (`<!-- claude-pr-review -->
 - Bullets under `### Inline findings` start with `` **`<path>:<line>`** — <finding> `` — parse `(path, line, finding-text)` from each.
 - Bullets under `### General notes` (or anything outside `### Inline findings`) are top-level observations; treat them as one collective general item (`claude-review-general`) with the section text as the body.
 
-The shape review is one marker comment too. Parse it:
-- Each `` ### <n>. <count name> — `<Class#method>` `` section is one finding. Key it on the `file:line` its **Call site now** line names, so it joins the `(path, line)` buckets below and overlaps with the other sources.
+The shape review is one marker comment too, in the format `kit:shape-review` §5 writes. Parse it:
+- Each `` ### <n>. <count name> — `<Class#method>` `` section is one finding. Key it on the `file:line` its **Call site now** line names.
 - The **After** panels are the fix the reviewer proposes, and **Costs** / **Placement** are its reasoning — carry all three as the finding text.
 - The `<details><summary>Inventory</summary>` block is not a finding. A comment reading `**No shape findings.**` is an empty source.
 
