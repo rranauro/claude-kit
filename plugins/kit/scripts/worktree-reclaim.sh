@@ -106,33 +106,29 @@ hours = float(sys.argv[2])
 rest = sys.argv[1].rsplit(" since ", 1)[1].strip()
 stamp, _, awake = rest.partition(" awake ")
 
-# The window counts hours of the machine being awake, not hours on the wall. A
-# pass's own waits are bounded in process time — await-reviews.sh caps at 900s —
-# so wall-clock age measures the machine's sleep rather than the pass's life,
-# and a pass six minutes from returning read as thirteen hours abandoned (#183).
+# The window counts hours of the machine being awake rather than hours on the
+# wall, which is what the `awake` reading measures; docs/worktrees.md says why.
 if awake:
     try:
-        taken_mono, taken_boot = (float(v) for v in awake.strip().split("@", 1))
+        taken = float(awake)
     except ValueError:
-        awake = ""  # unreadable: leave the wall timestamp to answer, as before
+        pass  # unreadable: leave the wall timestamp to answer, as before
     else:
-        now, mono = time.time(), time.monotonic()
-        # A monotonic reading is boot-relative, so one taken under a different
-        # boot measures nothing: a backwards clock, or a boot epoch that has
-        # moved, means this lease did not survive a reboot — and a reboot kills
-        # every pass, which makes it provably dead rather than merely old. The
-        # tolerance absorbs the clock correction a machine makes on waking.
-        if mono < taken_mono or abs((now - mono) - taken_boot) > 300:
-            raise SystemExit(0)
-        raise SystemExit(0 if mono - taken_mono > hours * 3600 else 1)
+        # A monotonic reading is boot-relative, so one from before a reboot
+        # measures nothing against this clock — and it reads as the future,
+        # because the reboot restarted the count. A reboot kills every pass, so
+        # such a lease is dead rather than merely old.
+        now = time.monotonic()
+        raise SystemExit(0 if now < taken or now - taken > hours * 3600 else 1)
 
+# No awake reading, or none this can read: the wall timestamp is all there is.
 try:
-    taken = datetime.datetime.strptime(stamp.strip(), "%Y-%m-%dT%H:%M:%SZ")
+    taken = datetime.datetime.strptime(stamp, "%Y-%m-%dT%H:%M:%SZ")
 except ValueError:
     raise SystemExit(1)  # undatable: hold, rather than reclaim on a guess
+now = datetime.datetime.now(datetime.timezone.utc)
 taken = taken.replace(tzinfo=datetime.timezone.utc)
-age = (datetime.datetime.now(datetime.timezone.utc) - taken).total_seconds()
-raise SystemExit(0 if age > hours * 3600 else 1)
+raise SystemExit(0 if (now - taken).total_seconds() > hours * 3600 else 1)
 LEASE
 }
 
