@@ -52,10 +52,11 @@ this one does not restate it.
 - **A denied operation stays denied however it is spelled.** The grant denies
   operations rather than commands, so a command the deny list never named that
   produces a denied command's effect is denied too — `gh api` alone can merge a
-  branch. This holds in **every permission mode**, including the auto mode a
-  `--bg` or headless session runs in, where nothing prompts and the deny list is
-  the only thing left saying no. Reaching one is a `kit:park`, never a thing to
-  accomplish another way.
+  branch. This holds in **every permission mode**, and the mode it is written
+  for is auto: a session whose launcher never pinned the mode prompts for
+  nothing, so a deny entry is the only thing left refusing anything. Do not read
+  a command that went through as a command that was allowed. Reaching a denied
+  operation is a `kit:park`, never a thing to accomplish another way.
 - **Never run a test directory or the full suite.** Named files and examples
   only. Attended, widening needs an ask; unattended it is not yours to take.
   No phase is exempt: CI is the merge gate, so nothing here runs the suite to

@@ -30,15 +30,19 @@ Two things differ, and both are why the flag exists rather than a swap:
 
 - **The grant has to be made the boundary on purpose.** `-p` refuses anything
   the grant does not allow. A background session falls back to the operator's
-  permission mode, which in auto mode approves commands the grant never listed —
-  so an allow list is only a boundary under `-p`. `--bg` runs sessions in
-  don't-ask mode, which refuses anything the grant does not allow, the same as
-  `-p`.
+  permission mode. This runner's `--bg` path therefore pins
+  `--permission-mode dontAsk`, which refuses anything the grant does not allow,
+  the same as `-p` — so both paths here are bounded by the allow list. What is
+  not bounded is a background session an operator starts by hand: that inherits
+  whatever mode they are in, and auto mode approves commands the grant never
+  listed. An allow list is a boundary only where the mode was pinned, which is
+  why this runner pins it rather than trusting the default.
 
-  A **deny** entry holds in every mode, which is why the integration operations
-  are denied rather than merely unlisted: `git merge`, `git rebase` and
-  `gh pr update-branch` all name one operation, and closing only the git
-  spellings leaves the GitHub one approved wherever auto mode is in force. No
+  A **deny** entry needs none of that care, because it holds in every mode. That
+  is why the integration operations are denied rather than merely unlisted:
+  `git merge`, `git rebase` and `gh pr update-branch` all name one operation, and
+  closing only the git spellings leaves the GitHub one approved wherever auto
+  mode is in force. No
   deny list reaches every equivalent, though — `gh api` is allowed and can merge
   a branch by itself — so `kit:ticket-loop`'s constraint that a denied operation
   stays denied however it is spelled is what actually carries the rule.
