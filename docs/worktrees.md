@@ -43,9 +43,32 @@ The timestamp is what keeps a killed pass from owning a worktree forever:
 expired. That window is scoped to the kit's own wording — a lock you write by
 hand still holds until you unlock it.
 
-The lease ends at the open PR, and for a PR that has to be walked the worktree
-is needed after that — `/kit:walkthrough` runs in it, and keeps its position on
-disk precisely so a walk can be resumed days later. `kit-hold` is what covers
+**Twelve hours of the machine being awake, though, not twelve hours on the
+wall.** A pass's own waits are bounded in process time — `await-reviews.sh` caps
+its review round at 900 seconds — so a pass can only ever be minutes from its
+next act. Wall-clock age therefore measures how long the machine slept, which is
+not a fact about the pass at all: #183 was a pass six minutes from returning
+whose lease read as thirteen hours abandoned, reclaimed while it waited, leaving
+a draft PR nobody signed off and no record of why.
+
+So the lease also carries a reading of a clock that stops with the machine, and
+the boot it was read against. A sleeping pass spends none of its window; a pass
+that has burned twelve awake hours without acting has stopped, whatever its lock
+says. A reading from a boot that is gone is expired outright — a reboot kills
+every pass, so a lease that did not survive one is dead rather than merely old,
+and that case is now reclaimed on the next sweep instead of waiting out a window
+it was never really inside.
+
+What this accepts is the pass whose session died while the machine stayed up: it
+loses its lease after twelve awake hours, and `kit:ticket-loop` `hand-off` is
+what makes that survivable, because a pass returning to a worktree that is gone
+says so rather than carrying on.
+
+The lease ends where the pass does, which is the close of the review round —
+`hand-off` addresses both reviews, judges the diff's shape and runs the
+project's ship gate in the worktree before it unlocks. For a PR that has to be
+walked the worktree is needed after that too — `/kit:walkthrough` runs in it,
+and keeps its position on disk precisely so a walk can be resumed days later. `kit-hold` is what covers
 that stretch: reclaim holds the worktree of any open PR carrying it. Nothing is
 left to take a second lock, and the hold ends when the label or the PR does.
 

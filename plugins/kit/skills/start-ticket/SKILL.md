@@ -71,7 +71,7 @@ Either way, hold the resulting absolute path as `<worktree>`. Everything downstr
 **Then take the lease on it:**
 
 ```
-git worktree lock --reason "kit:ship #<issue-number> since $(date -u +%Y-%m-%dT%H:%M:%SZ)" <worktree>
+git worktree lock --reason "kit:ship #<issue-number> since $(date -u +%Y-%m-%dT%H:%M:%SZ) awake $(python3 -c 'import time; m = time.monotonic(); print("%.0f@%.0f" % (m, time.time() - m))')" <worktree>
 ```
 
 A worktree between commits is clean by construction, so another pass sweeping
@@ -84,6 +84,13 @@ The stamp is what makes it a **lease** rather than a hold nobody can release —
 `docs/worktrees.md` carries the argument. Write the reason in exactly that shape:
 a lock in any other wording never expires, and neither does one this suite cannot
 date.
+
+**The `awake` clause is the half that keeps a live pass's worktree.** It carries
+a reading of a clock that stops while the machine is asleep, and the boot it was
+read against. The lease window is spent in those hours rather than in wall-clock
+hours, so a pass that slept through the night is still holding a young lease —
+`docs/worktrees.md` says why that is the right measure. Drop the clause and the
+lease falls back to wall clock, which is what #183 was filed about.
 
 **Releasing it belongs to whoever took the ticket further.** `kit:ticket-loop`
 does it when the pass ends. A worktree this command wired for someone working by

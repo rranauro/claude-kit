@@ -34,11 +34,17 @@ as a hold would defer every sweep behind a terminal somebody forgot to close.
 Lock the worktree if you need it kept.
 
 **A ship pass locks the worktree it is working in**, with the reason
-`kit:ship #<issue> since <timestamp>`. The script reads that wording as a
-**lease** and expires it, so a pass that was killed and cannot unlock stops
-holding the worktree — `docs/worktrees.md` says why, and the script's own
-`KIT_LEASE_HOURS` is the window. Every other lock holds until somebody unlocks
-it.
+`kit:ship #<issue> since <timestamp> awake <reading>@<boot>`. The script reads
+that wording as a **lease** and expires it, so a pass that was killed and cannot
+unlock stops holding the worktree — `docs/worktrees.md` says why, and the
+script's own `KIT_LEASE_HOURS` is the window. Every other lock holds until
+somebody unlocks it.
+
+**The window is spent in hours the machine was awake, not hours on the wall**,
+which is what the `awake` clause carries. A pass waiting on its review round
+sleeps when the machine does, so wall-clock age measures the sleep rather than
+the pass, and a live pass used to lose its worktree overnight. A lease read
+against a boot that is gone is expired outright: a reboot kills every pass.
 
 **A walkthrough in flight holds the directory as well.** `/kit:walkthrough`
 resolves the worktree path and does all its work there, and it is designed to be

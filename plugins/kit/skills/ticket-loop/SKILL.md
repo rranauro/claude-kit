@@ -260,6 +260,17 @@ Its last line names any source that did not arrive. **Carry on with what landed,
 and say which one was missing** wherever this phase reports. A silent partial
 collation is worse than a slow one, and a timed-out source is not an escalation.
 
+**When the wait returns, check `<worktree>` is still on disk, and stop if it is
+not.** This is the one step with real time on both sides of it, so it is where a
+sweep elsewhere can have reclaimed the checkout — and every step below writes in
+it. A pass that carries on regardless fixes nothing, signs off nothing, and
+leaves the PR in draft with no record of why, which is exactly how #183 was
+found. Attended, say the worktree is gone and stop. Unattended, `kit:park` on it,
+naming the PR number so the round can be resumed: the bin is **waiting on the
+world**, since nothing about the ticket changed and what has to happen is a later
+pass rebuilding the checkout. Either way the lease is already gone with the
+directory, so there is nothing to unlock.
+
 Pass `--no-request` where the project still has automatic Copilot review
 enabled; asking as well yields two reviews, the second landing after this round
 has closed.

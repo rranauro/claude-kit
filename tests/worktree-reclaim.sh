@@ -409,6 +409,83 @@ assert_present_path "$MAIN/.claude/worktrees/alpha" \
 end_sandbox
 
 # ========================================================================
+# #183 · The lease window is twelve hours of the machine being awake, not
+#        twelve hours on the wall. A pass blocked in a 900s review wait while
+#        the machine sleeps is alive; the wall clock is the only thing that
+#        says otherwise.
+# ========================================================================
+
+# The lease `kit:start-ticket` writes once it carries an awake reading: the wall
+# timestamp aged by hand, the monotonic reading aged independently of it, and
+# the boot epoch the reading was taken against. Driving the two clocks apart is
+# the whole point — that divergence *is* machine sleep.
+ship_lock_awake() { # branch wall-hours-ago awake-hours-ago [boot-skew-seconds]
+  local reason
+  reason="$(python3 -c '
+import datetime, sys, time
+wall_ago, awake_ago, skew = float(sys.argv[1]), float(sys.argv[2]), float(sys.argv[3])
+now, mono = time.time(), time.monotonic()
+taken = datetime.datetime.fromtimestamp(now - wall_ago * 3600, datetime.timezone.utc)
+print("kit:ship #119 since %s awake %.0f@%.0f" % (
+    taken.strftime("%Y-%m-%dT%H:%M:%SZ"), mono - awake_ago * 3600,
+    now - mono + skew))' "$2" "$3" "${4:-0}")"
+  git -C "$MAIN" worktree lock --reason "$reason" "$MAIN/.claude/worktrees/$1"
+}
+
+new_sandbox "#183 a pass asleep overnight keeps its worktree"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 open null
+# The zcommerce shape: the lease was taken thirteen hours ago by the wall, and
+# six minutes ago by the only clock that was running.
+ship_lock_awake alpha 13 0.1
+out="$(run --act)"
+assert_present_path "$MAIN/.claude/worktrees/alpha" \
+  "a lease older than the window on the wall but young awake is still live"
+assert_branch_kept alpha "and so is its branch"
+assert_has "$out" "held	" "the skip is reported"
+assert_lacks "$out" "lease expired" "and nothing claims the lease ran out"
+end_sandbox
+
+new_sandbox "#183 a killed pass still loses its lease"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 open null
+# Thirteen hours on both clocks: the machine was up the whole time and the pass
+# made no progress, which is this design's definition of dead.
+ship_lock_awake alpha 13 13
+out="$(run --act)"
+assert_missing_path "$MAIN/.claude/worktrees/alpha" \
+  "twelve hours of awake time still expires the lease"
+assert_has "$out" "lease expired" "and the report says why it was taken"
+end_sandbox
+
+new_sandbox "#183 a lease from a previous boot is dead whatever its reading says"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 open null
+# Young on both clocks, but read against a boot two hours earlier than this
+# one. A reboot kills every pass, so its lease cannot have survived.
+ship_lock_awake alpha 0.1 0.1 -7200
+out="$(run --act)"
+assert_missing_path "$MAIN/.claude/worktrees/alpha" \
+  "a reading from a boot that is gone does not hold the worktree"
+assert_has "$out" "lease expired" "and the report says why it was taken"
+end_sandbox
+
+new_sandbox "#183 an unreadable awake clause falls back rather than reclaims"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 closed '"2024-01-01T00:00:00Z"'
+git -C "$MAIN" worktree lock \
+  --reason "kit:ship #119 since $(date -u +%Y-%m-%dT%H:%M:%SZ) awake soon@maybe" \
+  "$MAIN/.claude/worktrees/alpha"
+out="$(run --act)"
+assert_present_path "$MAIN/.claude/worktrees/alpha" \
+  "a clause nothing can read leaves the wall timestamp to answer"
+end_sandbox
+
+# ========================================================================
 # AC9 · A walkthrough in flight holds the worktree it runs in. The signal is
 #       `kit-hold` on the branch's open PR, and it lapses on its own.
 # ========================================================================
