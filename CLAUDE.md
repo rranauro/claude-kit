@@ -43,33 +43,17 @@ vocabulary those files read off an issue; `docs/commands.md` lists the surface;
   before it lands, and say in the handoff that you did. The kit's own rule of
   holding auto-merge off until a review round is closed is written for repos
   with a bot reviewer — this one has none, so there is no round to wait for.
-- **A change under `plugins/kit/` cuts a version.** `claude plugin update`
-  compares version numbers rather than contents, so a payload that ships under an
-  unchanged version never reaches an installed session — it fails silently, which
-  is why `scripts/check-version-bump.sh` is a required check on every PR. Bump
-  **minor** when the invocable surface moves: a command, skill, or hook added,
-  removed, or renamed, so a consuming project's invocations change. Bump
-  **patch** when prose inside an existing file changes. Everything outside
-  `plugins/kit/` — docs, scripts, tests — ships nothing, so it cuts nothing.
+- **The kit carries no version number; its commit is its version.** An install
+  from git is versioned by the commit it came from, so every merge to `main`
+  reaches `claude plugin update` with nobody editing anything. Never add
+  `version` to `plugin.json` or to the marketplace entry — a number there pins
+  installs to it until someone remembers to raise it, and `scripts/lint.sh`
+  fails on one. Tag a commit when a release wants a readable name. ADR 0006 has
+  the alternatives.
 - **Work this repo through its own commands.** `/kit:architect` and
   `/kit:triage` for what to build, `/kit:design` for how, `/kit:ship-ticket` to
   carry it. A change to the workflow that was not made through the workflow has
   not been tried.
-
-## Ship gate
-
-- run: `git fetch origin main && scripts/check-version-bump.sh`
-
-Parallel ship passes collide on this check routinely, because every PR touching
-`plugins/kit/` cuts a version and every sibling picks the same next number.
-Running it in the worktree catches the collision while the PR is still a draft,
-where `kit:ticket-loop` parks and names it; the recovery is an operator's rebase
-and bump, never a pass's. `docs/shipping-on-a-runner.md` carries the rest.
-
-Its command needs `Bash(scripts/check-version-bump.sh*)` in
-`.claude/settings.json` beside the `lint.sh` entries — the kit never grants a
-gate from the declaration. **A pass does not add it itself**, and a pass that
-finds it missing parks on the denied permission.
 
 ## Where a fact goes
 

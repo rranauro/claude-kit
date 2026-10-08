@@ -40,6 +40,23 @@ while IFS= read -r f; do
   fi
 done < <(find . -path ./.git -prune -o -name '*.json' -print | sort)
 
+echo "==> plugin versioning"
+# With no `version`, an install from git is versioned by its commit, so every
+# merge reaches `claude plugin update`. A number re-added here freezes installs
+# at it until someone remembers to raise it — the failure ADR 0006 retired.
+if python3 - <<'PY'
+import json, sys
+plugin = json.load(open("plugins/kit/.claude-plugin/plugin.json"))
+market = json.load(open(".claude-plugin/marketplace.json"))
+entries = [p for p in market.get("plugins", []) if p.get("name") == "kit"]
+sys.exit(1 if "version" in plugin or any("version" in p for p in entries) else 0)
+PY
+then
+  echo "  ok   kit declares no version"
+else
+  fail "kit declares a version in plugin.json or marketplace.json; the commit is its version"
+fi
+
 echo "==> skill frontmatter"
 for skill in plugins/kit/skills/*/; do
   [ -d "$skill" ] || continue
