@@ -247,7 +247,7 @@ list_lowest_startable() {
 # SHIP_OUTCOME to "shipped:<pr>:<state>:<hold-or-empty>", "parked", or
 # "anomaly". The hold flag matters as much as the PR number does — a PR
 # carrying kit-hold is one the CI gate skips entirely and a human has to
-# walk through, and reporting it the same as an ordinary shipped ticket would
+# take charge of, and reporting it the same as an ordinary shipped ticket would
 # bury exactly the PRs the operator most needs to notice.
 ship_one() {
   local n="$1" labels pr_info pr_num pr_state pr_labels hold
@@ -322,7 +322,7 @@ while true; do
     shipped:*)
       IFS=: read -r _ pr_num pr_state hold_flag <<<"$SHIP_OUTCOME"
       if [ "$hold_flag" = "hold" ]; then
-        SHIPPED+=("#${LIST_RESULT} -> PR #${pr_num} (${pr_state}, kit-hold — needs a walkthrough)")
+        SHIPPED+=("#${LIST_RESULT} -> PR #${pr_num} (${pr_state}, kit-hold — needs a person)")
       else
         SHIPPED+=("#${LIST_RESULT} -> PR #${pr_num} (${pr_state})")
       fi

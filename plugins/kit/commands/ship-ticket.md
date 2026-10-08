@@ -225,7 +225,8 @@ rather than parking again.
 
 One paragraph. Which ticket was taken, what the PR number is, whether the plan
 was stored or designed by this run, whether it carries `kit-hold` and so needs
-your walkthrough, and — if it parked — the decision it is waiting on.
+you (a walkthrough, or the shape review the run posted), and — if it parked —
+the decision it is waiting on.
 
 **Name the bin a park is in.** `kit:park` states them; the bin is what tells you
 whether the answer is yours to give or the world's to deliver.
