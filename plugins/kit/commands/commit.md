@@ -1,3 +1,7 @@
+---
+description: Commit the current changes, split by concern, running the project's own test, lint and security gates on what changed. Use when `kit:ticket-loop`, `/kit:new-pull-request`, `/kit:review-copilot` or `/kit:polish-ticket` hands off work to commit.
+---
+
 Create git commits for the current changes, split by concern.
 
 Stack-agnostic: the toolchain is read from the project, never assumed. Projects
