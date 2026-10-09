@@ -61,6 +61,10 @@ carries a file and a line:
 - **The threaded argument** — several methods passing the same argument to each
   other, class methods or private instance methods down a chain.
 - **The first-parameter receiver** — `Model.do_thing(record)`.
+- **The hidden instance** — a class method that builds an instance and calls it
+  once, where that instance exposes something its callers cannot now reach.
+  Name those call sites. Not one where an argument is the record operated on —
+  that is the first-parameter receiver — nor a scope, finder or factory.
 - **Reaching back to the class** — repeated `self.class.` inside instance methods.
 - **The doubled name** — one name defined twice, especially with differing
   signatures.

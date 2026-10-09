@@ -252,6 +252,25 @@ about some record, and that record is usually the receiver already waiting for
 it — a new class is what the absence of one buys, not the default response to
 the count.
 
+**The hidden instance.** A class method that constructs an instance and calls
+one method on it — `Thing.call(x)` wrapping `new(x).call` — so no call site ever
+holds the object. It fires where that instance has something its callers can no
+longer reach: a public reader, a further method, or a value it computed that a
+caller goes on to work out again. Each is a question the object could answer
+and the call site cannot ask, because the class method kept one answer and
+discarded the rest. Name the call sites that lose it; the fix is to let them
+hold the instance.
+
+Three things pass it. A class method that genuinely has no receiver — a scope, a
+finder, a factory that hands the instance back — hides nothing, since the caller
+holds whatever was built. An instance exposing nothing beyond the one answer
+its call returns hides nothing either; §3 says why. And where one of the
+method's arguments is the record it operates on, the first-parameter receiver
+above is the finding and this one is not: moving the method onto that record
+deletes the class and its hidden instance together, while exposing the instance
+keeps the misplacement. Report it once, as the cause.
+_Avoid_: callable, service object.
+
 **Reaching back to the class.** Repeated `self.class.` inside instance methods
 means behavior parked at class level that the instance needs. A handful is
 noise; dozens is one class living as two.
@@ -383,6 +402,11 @@ approach down for one of them is wrong.
 - **"It needs testing without the database" is not a reason to move behavior.**
   Narrow what the behavior depends on instead; the testability follows and the
   code stays where it belongs.
+- **A command object with nothing to hold is not a hidden instance.** Where the
+  instance answers only what its one call returns, `Thing.call(x)` and
+  `Thing.new(x).call` read the same at every call site, so no caller loses
+  anything. The convenience method is the most common in Rails; filing it
+  everywhere files a count no caller pays for.
 - **Framework conventions are not smells.** Callbacks, scopes, concerns,
   validations, and generated methods are the language being written in. What
   they hold is scorable; that they exist is not.
@@ -461,11 +485,6 @@ _Avoid_: re-parse, rebuild from the serialized form.
 Who constructs an object, and who calls it. `kit:behavior-placement` Check 3
 lists both, and the two lists decide the namespace.
 _Avoid_: boundary type, census.
-
-**Hidden instance**:
-A class method that constructs an instance and calls it once, so the call site
-never holds the object — `Thing.call(x)` wrapping `new(x).call`.
-_Avoid_: callable, service object.
 
 ### Structural nouns
 

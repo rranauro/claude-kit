@@ -42,8 +42,8 @@ In priority order:
 Smells that model behavior has been misplaced into a service (stop and
 reconsider): the signature is `Service.call(model:, …)` and the body mostly
 reads from `model`; the name is an agent-noun verb (`-er`/`-or` — Resolver,
-Swapper, Loader, Manager, Handler); it's a hidden instance — a `self.call` that
-news-up an instance and calls it once; `Service.call(model:, x:)` reads better
+Swapper, Loader, Manager, Handler); it's a hidden instance, which
+`kit:rails-codebase-design` §2 counts; `Service.call(model:, x:)` reads better
 as `model.verb(x:)`.
 
 The same misplacement happens without a service in sight: a class method that

@@ -64,7 +64,8 @@ Each candidate is one `<article>`:
   Order").
 - **Badge row**: recommendation strength (`Strong` = emerald, `Worth exploring` =
   amber, `Speculative` = slate), plus a tag for which count fired
-  (`arity`, `threaded argument`, `first-parameter receiver`, `fixed-key hash`,
+  (`arity`, `threaded argument`, `first-parameter receiver`, `hidden instance`,
+  `fixed-key hash`,
   `duplicated answer`, `unheld namespace`, `doubled name`).
 - **Files**: monospaced list with `file:line`, `font-mono text-sm`.
 - **Count**: one line, with the number in it — "arity of 6, drawn from 3

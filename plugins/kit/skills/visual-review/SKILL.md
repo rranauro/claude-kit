@@ -161,6 +161,8 @@ and §1's declarative-name property, under its names:
 
 - **First-parameter receiver** — a class method whose first argument is the record it
   operates on: an instance method that never moved onto the instance. Worst with one caller.
+- **Hidden instance** — a class method that builds an instance and calls it once, while that
+  instance exposes something its callers now cannot reach. Name those callers.
 - **Undeclarative name** — a long name narrating what the method does instead of what it
   returns: `build_preview_string`, not `preview`.
 - **Fixed-key hash** — a method returning a hash whose keys are literal: a domain object that
