@@ -95,7 +95,9 @@ What it buys is the executor's signal. Deleting a spec produces a diff that
 cannot fail: the suite is green by construction afterwards. So the decider has to
 hand down something that can.
 
-For each candidate in the band, one at a time:
+For each candidate in the band, one at a time — except that **candidates
+reaching the same code share its mutation**: apply it once and run every example
+they name in one invocation, whatever kind of finding each is.
 
 1. **Name the file you are about to change, before changing it.** If the run
    dies, that name is the only record of what to put back.
@@ -124,10 +126,6 @@ and file nothing. A gate that cannot put the code back has stopped being a gate.
 **An axis candidate whose mutation went red is not proven and is not a
 candidate** — something noticed, which is what load-bearing means. Drop it and
 say so.
-
-**Where findings below reach the same code, apply each mutation once** and run
-every example they name in one invocation — pairs, request examples and
-owning-layer files alike.
 
 ### A subsumption pair proves differently
 
