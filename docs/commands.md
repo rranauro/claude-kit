@@ -102,14 +102,14 @@ So the override belongs only where the turn it governs is the file's own:
 | A plugin subagent | Yes — it runs isolated, and its turn ends when it hands back. |
 | A skill with `context: fork` | Yes — the same isolation. |
 | A command a person invokes | Yes — the invocation starts its turn. |
-| A skill that runs inline | No. |
+| A skill that runs inline | No — run it isolated instead, as either of the first two. |
 | A command another prompt hands off to | No — the Skill tool runs it inside its caller's turn, which makes it inline. |
 
-`scripts/lint.sh` fails on the fourth row and names the file. It cannot hold the
-fifth: whether a command is handed off to is a fact about its call sites, not its
-frontmatter, so that row is this section's to carry when a handoff is added.
-Where work needs a model of its own and runs mid-turn, give it one by running it
-isolated — a subagent, or `context: fork` — rather than pinning it inline.
+`scripts/lint.sh` fails on the fourth row and names the file. It does not hold
+the fifth yet: a `description` is the frontmatter sign of a handoff target, but
+`design`, `review-copilot` and `worktree-gc` carry one beside a model pin, and
+which model each runs on is #244's to settle. Until then, that row is this
+section's to carry when a handoff is added.
 
 ## Skills
 

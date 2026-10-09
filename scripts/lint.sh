@@ -92,9 +92,9 @@ for skill in plugins/kit/skills/*/; do
   # A skill's model or effort override lasts for the rest of the turn, not the
   # rest of the skill, so an inline skill that names one carries its caller onto
   # it. Only one that runs isolated may. docs/commands.md has the rule.
-  pins="$(awk 'NR>1 && /^---$/{exit} /^(model|effort):/{sub(/:.*/,""); printf "%s%s", sep, $0; sep=" and "}' "$md")"
-  if [ -n "$pins" ] && ! awk 'NR>1 && /^---$/{exit} /^context:[[:space:]]*fork[[:space:]]*$/{f=1; exit} END{exit !f}' "$md"; then
-    fail "$md names $pins but runs inline — only a forked skill may; see docs/commands.md#only-work-that-starts-its-own-turn-names-a-model"
+  if awk 'NR>1 && /^---$/{exit} /^(model|effort):/{f=1; exit} END{exit !f}' "$md" &&
+     ! awk 'NR>1 && /^---$/{exit} /^context:[[:space:]]*fork[[:space:]]*$/{f=1; exit} END{exit !f}' "$md"; then
+    fail "$md names a model or effort but runs inline — only a forked skill may; see docs/commands.md#only-work-that-starts-its-own-turn-names-a-model"
   fi
 
   # A hand-copied skill passes every check above while dropping the notice its
