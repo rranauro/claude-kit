@@ -1,6 +1,5 @@
 ---
 model: opus
-effort: high
 ---
 
 Take an issue that arrived and settle it — bin it, fix its scope, design it, and publish the brief on the issue so an agent can pick it up unattended.
