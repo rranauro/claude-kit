@@ -272,7 +272,7 @@ Its last two lines name any declared source that did not arrive (`missing:`)
 and any the project does not run (`not run:`). **Carry on with what landed, and
 say which was missing and which was not run** wherever this phase reports. A
 silent partial collation is worse than a slow one, and a timed-out source is not
-an escalation. An undeclared source is neither: never report it as missing.
+an escalation.
 
 **When the wait returns, check `<worktree>` is still on disk, and stop if it is
 not.** This is the one step with real time on both sides of it, so it is where a

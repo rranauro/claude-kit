@@ -63,7 +63,7 @@ while [ $# -gt 0 ]; do
     --poll-seconds)     POLL="$2"; shift 2 ;;
     --no-request)       REQUEST=0; shift ;;
     --sources)          SOURCES="$2"; shift 2 ;;
-    -h|--help)          sed -n '2,5p' "$0"; exit 0 ;;
+    -h|--help)          sed -n '2,6p' "$0"; exit 0 ;;
     *)                  PR="$1"; shift ;;
   esac
 done
@@ -171,13 +171,15 @@ fi
 # Stage 3 — the reviews themselves.
 copilot_at=""
 claude_at=""
+# An undeclared source counts as settled, so the loop waits on the rest alone.
+declared copilot       || copilot_at=-
+declared claude-review || claude_at=-
 
 while :; do
-  declared copilot       && [ -z "$copilot_at" ] && copilot_arrived && copilot_at=$SECONDS
-  declared claude-review && [ -z "$claude_at" ]  && claude_arrived  && claude_at=$SECONDS
+  [ -n "$copilot_at" ] || { copilot_arrived && copilot_at=$SECONDS; }
+  [ -n "$claude_at" ]  || { claude_arrived  && claude_at=$SECONDS; }
 
-  { ! declared copilot       || [ -n "$copilot_at" ]; } &&
-  { ! declared claude-review || [ -n "$claude_at" ]; } && break
+  [ -n "$copilot_at" ] && [ -n "$claude_at" ] && break
   [ "$SECONDS" -ge "$CEILING" ] && break
   sleep "$POLL"
 done

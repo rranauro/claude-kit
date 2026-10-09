@@ -24,13 +24,9 @@ Pull from these sources in parallel:
 
 > **Match logins case-insensitively** (the `"i"` flag is required). Copilot's *inline* comments are authored by login `Copilot` (capital C), while its top-level review bot is `copilot-pull-request-reviewer[bot]` (lowercase). Without `"i"` the inline pass silently returns nothing — the most important findings get missed.
 
-**Read which automated reviews the project runs** from the `## Review sources`
-section of its `CLAUDE.md` — `copilot`, `claude-review`, or both; the same
-section `kit:ticket-loop` `hand-off` passes to the wait. Absent, both are
-expected. This changes no fetch and no finding: it decides only how an empty
-source is named in Step 5. An undeclared source that is empty was **not run**; a
-declared one that is empty is **missing**. Calling the first missing tells the
-reader a reviewer failed when the project never runs it.
+**Read `## Review sources` from the project's `CLAUDE.md`** (`copilot`,
+`claude-review`; absent, both). It changes no fetch and no finding — only how
+Step 5 names an empty source: **not run** if undeclared, **missing** if declared.
 
 If all fetched sources are empty, tell the user "No automated review comments found" and stop.
 
