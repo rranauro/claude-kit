@@ -41,9 +41,9 @@ vocabulary those files read off an issue; `docs/commands.md` lists the surface;
 - **Every PR opens with auto-merge on.** `gh pr merge <N> --auto --squash`
   immediately after `gh pr create`. `lint` is a required check, so CI is the
   gate; nothing merges red. Withhold `--auto` only when you want a human to look
-  before it lands, and say in the handoff that you did. The kit's own rule of
-  holding auto-merge off until a review round is closed is written for repos
-  with a bot reviewer — this one has none, so there is no round to wait for.
+  before it lands, and say in the handoff that you did. A PR carried by
+  `/kit:ship-ticket` is the exception: it opens as a draft, closes its Copilot
+  review round, and arms auto-merge itself once the round is closed.
 - **The kit carries no version number; its commit is its version.** Every merge
   to `main` reaches an installed session with nobody editing anything. Never add
   `version` to `plugin.json` or the marketplace entry — `scripts/lint.sh` fails
@@ -52,6 +52,10 @@ vocabulary those files read off an issue; `docs/commands.md` lists the surface;
   `/kit:triage` for what to build, `/kit:design` for how, `/kit:ship-ticket` to
   carry it. A change to the workflow that was not made through the workflow has
   not been tried.
+
+## Review sources
+
+- copilot
 
 ## Where a fact goes
 

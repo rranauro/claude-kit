@@ -248,20 +248,31 @@ leaves draft already reviewed, and CI carries it to merge from there.
 sweep reclaiming it mid-write is exactly what the lease prevents. The unlock is
 the last step below.
 
-**1 · Wait for both reviews.**
+**1 · Wait for the reviews the project runs.** Look for a `## Review sources`
+section in the project's `CLAUDE.md`, read as step 4 reads `## Ship gate`:
+
+```markdown
+## Review sources
+- copilot
+```
+
+The names are `copilot` and `claude-review`. Pass what it lists, comma-joined;
+absent, pass nothing and both are expected.
 
 ```
-plugins/kit/scripts/await-reviews.sh <pr-number>
+plugins/kit/scripts/await-reviews.sh <pr-number> [--sources <listed>]
 ```
 
-It waits for CI to complete, requests the Copilot review, then blocks until both
-that review and the `<!-- claude-pr-review -->` marker have landed or its ceiling
-expires. The ordering is the platform's, not a preference — the script's header
-says why, and it is not reproducible by hand.
+It waits for CI to complete, requests the Copilot review, then blocks until
+every declared source — that review, the `<!-- claude-pr-review -->` marker —
+has landed or its ceiling expires. The ordering is the platform's, not a
+preference — the script's header says why, and it is not reproducible by hand.
 
-Its last line names any source that did not arrive. **Carry on with what landed,
-and say which one was missing** wherever this phase reports. A silent partial
-collation is worse than a slow one, and a timed-out source is not an escalation.
+Its last two lines name any declared source that did not arrive (`missing:`)
+and any the project does not run (`not run:`). **Carry on with what landed, and
+say which was missing and which was not run** wherever this phase reports. A
+silent partial collation is worse than a slow one, and a timed-out source is not
+an escalation.
 
 **When the wait returns, check `<worktree>` is still on disk, and stop if it is
 not.** This is the one step with real time on both sides of it, so it is where a
@@ -433,14 +444,15 @@ Attended, tell the user:
 > "PR #<N> is open, reviewed, and ready, and auto-merge reads on — <the
 > transition's run registered, so the merge waits on it | nothing new registered
 > within 120s, so the merge waits on the checks already on the commit>. <Any
-> failing check the rollup named.> <Which review source, if any, did not
-> arrive.>"
+> failing check the rollup named.> <Which declared review source, if any, did
+> not arrive, and which the project does not run.>"
 
 or, where it reads off:
 
 > "PR #<N> is open, reviewed, and ready, but auto-merge reads off — this pass
 > armed it and did not re-arm it, so nothing here will merge the PR. <Any failing
-> check the rollup named.> <Which review source, if any, did not arrive.>"
+> check the rollup named.> <Which declared review source, if any, did not
+> arrive, and which the project does not run.>"
 
 or, when step 3 held it:
 

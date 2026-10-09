@@ -134,6 +134,11 @@ signoff its CI cannot produce — names the command that posts it under
 it once, after the review round's last push, and a non-zero exit keeps the PR in
 draft. A project without the section never runs its full suite from the loop.
 
+**Review sources are declared too.** `## Review sources` in `CLAUDE.md` lists the
+automated reviews a project runs (`- copilot`, `- claude-review`); absent, both
+are expected. `hand-off` waits only on what it lists, and the round reports an
+unlisted source as not run rather than missing.
+
 **External commands these call.** Beyond the [companion skills](companion-skills.md),
 the workflow invokes `/simplify` (`kit:ticket-loop` `simplify`), `/loop` (drives
 `/kit:ship-ticket` over the backlog), and optionally `/target-debug` (reads the `tickets/` notes
