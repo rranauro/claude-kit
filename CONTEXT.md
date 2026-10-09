@@ -141,6 +141,12 @@ An object whose interface has grown one member per caller rather than as an API.
 `kit:rails-codebase-design` is the one statement of it.
 _Avoid_: undertow, sprawl, bloat, god class, public surface
 
+**In-flight reshape**:
+A move across the namespaces a shape-held PR touched, chosen by the person at
+the hold, with no ticket. Distinct from an `improve-codebase` or
+`technical-debt` ticket.
+_Avoid_: refactor, follow-up, cleanup
+
 ### Reclaiming a worktree
 
 **Verdict**:
