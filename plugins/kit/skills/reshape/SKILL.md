@@ -138,13 +138,15 @@ exist, so it is one create; 5a's second pass does not apply. Show the draft and
 create it only on approval; a no files nothing.
 
 No `ready-for-agent` and no design: routing is `/kit:triage`'s, the approach
-`/kit:design`'s. Nothing is committed or pushed, so the next ask needs no
-recount.
+`/kit:design`'s. Until triage labels it, no sweep sees the ticket, however its
+blockers stand — the marker holds it back once routed, and does not route it.
+Nothing is committed or pushed, so the next ask needs no recount.
 
 ## 7 — Report
 
 Which moves landed and the head they left, and which tickets were filed,
-with their numbers. Where a move landed, the posted shape review is against the
+with their numbers and `/kit:triage <n>` beside each — unrouted, a sweep never
+starts one. Where a move landed, the posted shape review is against the
 old head — `/kit:shape-review <n>` judges the new one. `kit-hold` is still on
 and is the person's to clear: `gh pr edit <n> --remove-label kit-hold`.
 
