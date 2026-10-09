@@ -138,11 +138,8 @@ _Avoid_: coverage, covered, exercised, tested
 
 **Accreted interface**:
 An object whose interface has grown one member per caller rather than as an API.
-Each member cleared review alone, and the object's history is the cost, so only
-a review that reads the object behind a diff can see it. One of the shape
-review's reasons to hold a PR. `kit:rails-codebase-design` is the one statement
-of it.
-_Avoid_: undertow, sprawl, bloat, public surface
+`kit:rails-codebase-design` is the one statement of it.
+_Avoid_: undertow, sprawl, bloat, god class, public surface
 
 ### Reclaiming a worktree
 

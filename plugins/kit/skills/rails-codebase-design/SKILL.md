@@ -370,7 +370,9 @@ A member is a public method, a class method — constructors included — an
 optional `initialize` keyword, or a parent's hook that one subclass overrides
 for one caller. Each arrived with the capability that needed it and cleared §3 on
 its own, which is why the count exists: the interface became a list of callers
-rather than an API, and no single change owns that.
+rather than an API, and no single change owns that. Its cost is the object's
+history — each capability landed as a bespoke member, and the next one will too —
+which is the change it makes harder that §3's closing check asks for.
 
 The members it counts are the ones that differ from each other. A reader per
 channel — one signature and one return type, repeated once per channel — is a
@@ -379,10 +381,6 @@ few callers each one has. The count is for members that are each shaped to a
 different caller: `authored_by?(mode) -> Boolean` for one view,
 `removed_fields -> Array` for one job, `self.for_import(file)` for one importer, a
 `preview:` keyword only the test harness passes.
-
-Its cost is in the object's history, not in any one method: each capability
-landed as a bespoke member, and the next one will too. That history is the change
-it makes harder, and §3's closing check takes it as such.
 _Avoid_: undertow, sprawl, bloat, god class, public surface.
 
 **The deletion test.** Imagine the object gone. If the complexity vanishes, it
@@ -416,10 +414,8 @@ approach down for one of them is wrong.
   satisfies every count and lands over the limit has succeeded; one that lands
   under it while satisfying none has not.
 - **A method with one caller is not a finding on its own.** It costs nobody:
-  the deletion test sends its complexity back to that one caller, which is where
-  it would otherwise live. What §2 counts is the accreted interface — the third
-  such member on one object, judged by the ones already there. The single method
-  stays protected; the object's history is what it can be charged for.
+  the deletion test sends its complexity back to that one caller. What §2's
+  accreted interface charges is the object, never the single method.
 
 The check that settles it: **name the caller it costs, or the change it makes
 harder.** Friction that can name neither is not a finding.

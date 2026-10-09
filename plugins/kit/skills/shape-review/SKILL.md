@@ -41,21 +41,11 @@ are there to read, never to judge.
 - **New call sites** — every added line calling something in the first two lists.
 
 The inventory is complete when every added public method in the filtered diff
-appears in it once. Then find callers for all of them in one pass —
-`git grep -n -E '\b(m1|m2|…)\b' <head>` — rather than one grep per method.
-
-**Then read the objects the diff adds to.** For every existing class the diff
-gives a new member, list the interface it already carried at `<base>`, with each
-member's callers outside the class and its specs — the same one-pass grep. For
-each member with one caller or none, find the commit that introduced it:
-
-```bash
-git log --format='%h %s' -S '<member>' <base> -- <the class file> | tail -1
-```
-
-This is evidence for one count, the accreted interface, and nothing else. The
-existing members are read rather than judged, and a class the diff does not add
-to is not read at all.
+appears in it once. For every existing class the diff gives a new member, also
+list the interface it already carried at `<base>` — evidence for the accreted
+interface count, read rather than judged. Then find callers for all of them in
+one pass — `git grep -n -E '\b(m1|m2|…)\b' <head>` — rather than one grep per
+method.
 
 ## 3 — Judge
 
@@ -68,11 +58,18 @@ For every inventory entry:
 - **Gate it** on `kit:rails-codebase-design` §3, closing check included. What
   fails is dropped.
 
-An added member with one caller or none is also counted against the object it
-joins, using the members read in §2. Two or more existing single-caller members
-make the added one the accreted interface's third. An object with none or one
-makes it no finding, however bespoke the added member is: §3 protects the single
-method.
+An added member is also counted against the object it joins: apply §2's
+accreted interface to that object's members, the added one included.
+
+Only where that count fires, find the commit behind each existing member it
+counted — one blame of the class file, read off each member's definition line,
+then one lookup for the subjects. Where blame names a commit that only edited
+the line, `git log -S '<member>'` on that one member finds the one that added it.
+
+```bash
+git blame -s <base> -- <the class file>
+git show -s --format='%h %s' <sha> <sha> …
+```
 
 ## 4 — Write each finding from the call site
 
@@ -88,8 +85,8 @@ here would be a design nobody asked this pass for. **Call site now** is the adde
 member's caller, or its definition when it has none. **Costs** names each
 existing single-caller member with its one caller and the commit that introduced
 it — `` `#removed_fields` (`jobs/purge.rb:14`, a1b2c3d Purge removed fields) ``.
-That list is the history the diff alone cannot show, and it goes in **Costs**
-because `kit:review-copilot` carries that line and would drop a new one.
+It goes in **Costs** because `kit:review-copilot` carries that line and would
+drop a new one.
 
 Order findings strongest first: a placement finding above a naming one, a count
 with several callers above one with one.
