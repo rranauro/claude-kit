@@ -100,8 +100,9 @@ the whole point of the axis.
 
 The seven describe one object. They do not decide whether a problem is one
 object or a family of them — that is §2.5's rule on where the variation lives,
-answered from the callers, never from the shape of a class that already exists,
-in this namespace or another.
+read from the callers and from the class under judgment. Copying the shape of a
+different class that already exists, in this namespace or another, answers it
+for that class's callers, not these.
 
 ## 1.5 — The properties applied once, end to end
 

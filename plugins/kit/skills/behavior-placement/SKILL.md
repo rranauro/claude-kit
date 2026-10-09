@@ -211,10 +211,11 @@ shape: where it is, where it belongs, and which smell gave it away.
 The three checks above are language-neutral. Where the project is Rails, three
 things sharpen them.
 
-**The namespace carries the data; the child may carry the role.** An action or
-role name is the agent-noun smell only on a top-level class. Beneath an outer
-constant that names a kind of data — `kit:rails-codebase-design` §1 states the
-check — it is correct.
+**The namespace carries the data; the child may carry the role.** The agent-noun
+smell is a top-level class named for an action. The same action name beneath an
+outer constant that names a kind of data — `kit:rails-codebase-design` §1
+states the check — is correct, and a role name such as `Request` is not the
+smell at either level.
 
 Which data, though, is Check 3's question, not this rule's. "The namespace
 carries the data" is ambiguous the moment a class reads one kind and emits
