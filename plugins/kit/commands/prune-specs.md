@@ -12,6 +12,10 @@ minutes. Run it from the main checkout, against a clean tree.
 too.** What convicts, what does not, and what a pass says are all its. This
 command finds the files, proves the candidates, and files the result.
 
+**The one finding the axis does not own is subsumption**, because its only
+evidence is a run of two examples against the same mutations, and the run is
+this command's. Steps 2, 4 and 5 each say what changes for it.
+
 ---
 
 ## Step 1 · `enumerate` — Find the files and the runner
@@ -42,10 +46,24 @@ the aggregate, and the aggregate is what the axis's unit rule exists to prevent.
 name. Silence about a file that errored reads identically to a file with nothing
 in it, and the difference is what a suite sweep is trusted for.
 
+**Then one agent per spec directory, for subsumption pairs.** The axis refuses
+"duplicative" because reading cannot settle it — but an example whose every
+caught mutation another example also catches is a deletion with evidence, and
+the covering example is that evidence. It may sit in another file, so the unit
+here is the directory: the files directly in it, not its subdirectories. Each
+agent reads them and returns candidate pairs, one line each — the candidate's
+`file:line`, the covering example's `file:line`, and the production code both
+assertions reach. Reading only proposes a pair; Step 4 is what proves one, and
+a pair it does not prove is not reported as subsumed.
+
+Skip a directory holding a single example; there is nothing to pair. A
+directory whose agent fails is unassessed for subsumption, and Step 7 says so.
+
 ## Step 3 · `rank` — Choose what to prove
 
 Collate the returned lines and order convicted candidates by the axis's own
-convictability: tautology, then dead code, then contradiction. **Take at most
+convictability: tautology, then dead code, then contradiction, then subsumption
+pairs — last because each costs several mutations rather than one. **Take at most
 twenty into Step 4.** The gate is expensive and the cap is what keeps a run
 finite; say how many candidates it left behind.
 
@@ -94,6 +112,27 @@ and file nothing. A gate that cannot put the code back has stopped being a gate.
 **A candidate whose mutation went red is not proven and is not a candidate** —
 something noticed, which is what load-bearing means. Drop it and say so.
 
+### A subsumption pair proves differently
+
+One mutation cannot show subsumption: two examples can both catch "guard
+removed" while only one catches "nil returned". So a pair takes **at least two
+mutations of different kinds** to the production code the candidate reaches —
+three where the code offers them — each run through steps 1–6 above, with step 3
+running exactly the two named examples.
+
+The pair is **subsumed** when both hold, for the mutations tried:
+
+- **The candidate caught at least one.** A candidate that caught nothing is not
+  subsumed by anything; reading did not convict it on the axis, so it is
+  dropped, not reported.
+- **Every mutation the candidate caught, the covering example caught too.** A
+  mutation only the cover caught is fine — the cover is the stronger example. A
+  mutation only the candidate caught refutes the pair, and so does any overlap
+  short of full: sharing some caught mutations is not subsumption.
+
+Fewer than two distinct kinds the code offers leaves the pair unproven. Keep the
+list of mutations both caught; it is what Step 5 hands down.
+
 ## Step 5 · `file` — One ticket, or none
 
 **A run that proved nothing files no ticket.** Say so in one line and stop.
@@ -107,6 +146,18 @@ something the executor performs **before** deleting it — apply the mutation, r
 the example, confirm it stays green, then delete. That order is what makes it a
 check rather than an observation; after the deletion there is nothing left to
 run.
+
+**A subsumed example is listed with its covering example** and the mutations
+both caught. Its procedure inverts the check, because here the evidence is what
+*does* go red: apply each mutation, run both, confirm the covering example goes
+red on every one, revert, then delete. A cover that stays green on any of them
+means the pair no longer holds, and the example stays.
+
+**A covering example is never listed for deletion in the same ticket.** Where
+another finding would list it, drop the subsumption that names it as cover
+instead — evidence being deleted is no evidence. The same rule settles a pair
+that covers each other, where only one side is listed, and a chain, where the
+middle example is a cover and stays.
 
 **Say why, beside the criteria, in the ticket itself.** By `kit:writing-tickets`
 a per-example procedure is a route, and `/kit:triage` will try to rewrite it into
@@ -132,9 +183,16 @@ did not finish.
 
 ## Step 7 · `report` — Say what it found
 
-The axis's contract governs the candidate lines. Then the four things only a
-suite sweep can report, one line each: candidates the gate refuted, candidates
-left unproven, candidates beyond the band's cap, and files no agent assessed.
+The axis's contract governs the candidate lines. A subsumed example takes the
+same one-line shape, with its cover and the mutations in the evidence clause:
+
+```
+spec/models/order_spec.rb:96    subsumed    by order_spec.rb:120; both caught guard removed, nil returned at order.rb:44
+```
+
+Then the four things only a suite sweep can report, one line each: candidates
+the gate refuted, candidates left unproven, candidates beyond the band's cap,
+and files or directories no agent assessed.
 
 Close with the ticket number and what triage made of it — settled, closed, or
 left open as not-now with its reason — or the one line saying nothing was
