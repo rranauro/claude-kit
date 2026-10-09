@@ -1,6 +1,6 @@
 ---
 name: rails-codebase-design
-description: The axis for judging object shape in a Rails codebase — what a well-formed class looks like, what to count when one isn't, and what is not a finding. Use when comparing design approaches, judging a proposed class or extraction, or when another skill needs the object-shape vocabulary.
+description: The axis for judging object shape in a Rails codebase — what a well-formed class looks like, what to count when one isn't, the structural moves that fix it, and what is not a finding. Use when comparing design approaches, judging a proposed class or extraction, or when another skill needs the object-shape vocabulary.
 ---
 
 # Rails Codebase Design
@@ -195,6 +195,47 @@ Three consequences, none of them visible from the return type alone:
   direction: the threaded argument was the symptom, the discarded object the
   cause. Treating the symptom produces a caller that hoists a hash and still
   builds keys.
+
+### One finding, two moves
+
+Both examples above end in one After. This one shows a finding where two of
+§2.5's moves fit, which is the case the axis shows both for and ranks neither.
+
+**Before** — one class, and a mode chooses what it does:
+
+```ruby
+Ai::Request.new(site, mode: :edit, component: component).prompt
+Ai::Request.new(site, mode: :add_section, position: 3).prompt
+```
+
+**After, one object** — the mode became what it is constructed with:
+
+```ruby
+Ai::Request.new(site, target: component).prompt
+Ai::Request.new(site, target: page.slot(3)).prompt   # target answers #context
+```
+
+It answers §2.5's rule where the variation is in the data: both values ran the
+same steps, so the mode was input all along.
+
+**After, shared parent** — each value of the mode became a class:
+
+```ruby
+Ai::Request::Edit.new(site, component).prompt
+Ai::Request::AddSection.new(site, 3).prompt
+
+class Ai::Request::Base
+  def initialize(site)
+  def prompt -> String       # shared steps; subclasses supply theirs
+end
+```
+
+It answers the same rule where the variation is in the steps: count `mode`
+references inside the original class, and the number is the case for it.
+
+The Before shows only its call sites, so both fit and neither is marked
+preferred. Its body is what would favour one, and weighing that is the rank the
+invoking step owns.
 
 ## 2 — What to count when it isn't
 
@@ -402,6 +443,66 @@ was a pass-through. If it reappears at every caller, it earns its place.
 Applies to anything being proposed as much as to anything already written.
 _Avoid_: shallow module.
 
+## 2.5 — The moves a finding can call for
+
+A count names what is wrong with one object. Some findings are fixed inside that
+object; the ones here are fixed by changing a set of classes, and the axis names
+four. Each points back to the counts that suggest it and adds none: an
+observation no count covers is stated with the move, not in §2.
+
+**Where more than one move fits a finding, show each one's After and mark none
+preferred.** Choosing between them is the rank, and the rank belongs to the step
+that invoked this axis. A finding that offers only the move it thought of first
+has made that choice silently.
+
+**Shared parent.** Several objects differ along one axis and repeat the rest, so
+each value of that axis is a class under a parent that holds what they share.
+_Tell_: the unearned construction's mode flag, the same-signature constructors,
+and — no count covers it — a `case` on one argument, or that argument read in
+method after method to pick a step.
+_Cost at the call site_: the caller names a class instead of passing a mode.
+Where the mode is computed at runtime, one lookup from value to class returns at
+that site. The reach is every call site that passes the mode.
+
+**One object over a library reached raw.** A library, or a derivation, is called
+directly at many call sites and each re-derives from the result inline; one
+object named for the data takes the calls and answers the questions they were
+re-deriving.
+_Tell_: the duplicated answer, recurring at each site that recomputes from the
+serialized form; and — no count covers it — the number of call sites reaching
+the library raw, or once the object exists, raw references to the library
+outside it.
+_Cost at the call site_: every raw call site moves onto the object. The reach is
+that count of raw references.
+
+**The rule that separates those two.** Variation in what the object is
+constructed with — the same operations on different data — is one object.
+Variation in the steps, keyed on one argument, is a shared parent: each value of
+that argument is a class. It is countable on the day the class is written, as
+references to that argument inside the class, and the count rising with each
+feature is the shared parent arriving late. Where the variation is in both, both
+moves fit and both are shown.
+
+**Separate namespaces.** Classes filed together under one namespace serve
+different callers, so a reader cannot tell which belong to which. The set splits
+along its consumers. `kit:behavior-placement` Check 3 is the test for each class
+in it; what this move adds is that Check 3 places one class, and here a set
+moves together.
+_Tell_: the unheld namespace, fired by several classes in one namespace with
+different consumers.
+_Cost at the call site_: every constant path outside the moved set changes. The
+reach is each reference to a moved constant.
+
+**A mixin for a family with no shared parent.** Several classes share behavior
+but cannot share a parent — they already have one, or what they are constructed
+with differs — so the shared behavior goes in one module each of them includes.
+Where the family is models, that module is a concern, and §5 calls it one.
+_Tell_: the duplicated answer, or the doubled name, across classes that sit
+beside a parent rather than under it.
+_Cost at the call site_: none; call sites are unchanged. The cost lands on the
+definitions, and there is no common ancestor a caller or a test can check
+against.
+
 ## 3 — What is not a finding
 
 Raising any of these is the failure this axis exists to prevent. Scoring an
@@ -435,6 +536,17 @@ approach down for one of them is wrong.
 - **A method with one caller is not a finding on its own.** It costs nobody:
   the deletion test sends its complexity back to that one caller. What §2's
   accreted interface charges is the object, never the single method.
+- **A mode whose values differ only in data is not a shared-parent finding.**
+  Where every value runs the same steps, the mode is construction input, and
+  one object is the shape.
+- **A library reached raw at one or two call sites is not a one-object
+  finding**, and neither is one reached for a different kind of data — XML
+  parsed through the library an HTML wrapper also uses belongs outside that
+  wrapper.
+- **A namespace whose returns make sense to every caller in it is not a
+  separate-namespaces finding**, however many classes it holds.
+- **A module one class includes is not the mixin move.** The move is for a
+  family; a module with one includer is that class's code in another file.
 
 The check that settles it: **name the caller it costs, or the change it makes
 harder.** Friction that can name neither is not a finding.
@@ -502,6 +614,17 @@ _Avoid_: inflate, materialize.
 Who constructs an object, and who calls it. `kit:behavior-placement` Check 3
 lists both, and the two lists decide the namespace.
 _Avoid_: boundary type, census.
+
+**Move**:
+A change to a set of classes that resolves a finding — shared parent, one object,
+separate namespaces, a mixin. §2.5 names them, each with its tell and its cost at
+the call site.
+_Avoid_: refactoring, pattern.
+
+**Rank**:
+Ordering the moves that fit one finding, with one recommended. The invoking
+step's act; this axis shows the moves and never ranks them.
+_Avoid_: preference, best fit.
 
 ### Structural nouns
 
