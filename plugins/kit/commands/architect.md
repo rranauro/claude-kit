@@ -1,5 +1,6 @@
 ---
 model: opus
+effort: high
 ---
 
 Think through a technical topic with the user — exploring ideas, questioning assumptions, looking at how others solve it — and file tickets only if the conversation earns them.

@@ -1,5 +1,6 @@
 ---
 model: sonnet
+effort: low
 ---
 
 Report the open tickets a sweep would actually start.
