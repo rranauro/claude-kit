@@ -29,8 +29,8 @@
 
 set -uo pipefail
 
-# Goes stale; override with --model rather than editing callers.
-MODEL="claude-opus-5"
+. "$(dirname "${BASH_SOURCE[0]}")/default-model.sh"
+MODEL="$KIT_DEFAULT_MODEL"
 SOURCE="manual"
 REPO=""
 OUT_DIR=""

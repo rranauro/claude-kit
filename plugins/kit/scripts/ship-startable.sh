@@ -29,12 +29,14 @@
 # what shipped, what parked, and what (if anything) was still open.
 set -uo pipefail
 
+. "$(dirname "${BASH_SOURCE[0]}")/default-model.sh"
+
 LABEL=""
 REPO="$PWD"
 MAX=20
 POLL_SECONDS=120
 PROJECT_SETTINGS=""
-MODEL="${SHIP_STARTABLE_MODEL:-claude-opus-5}"
+MODEL="${SHIP_STARTABLE_MODEL:-$KIT_DEFAULT_MODEL}"
 BG=0
 
 while [ $# -gt 0 ]; do
