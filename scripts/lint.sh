@@ -90,6 +90,21 @@ for skill in plugins/kit/skills/*/; do
   [ "$this_failed" -eq 1 ] || echo "  ok   $md"
 done
 
+echo "==> vendored notices"
+# A hand-copied skill passes every other check here while dropping the notice
+# its licence requires to travel with it. A sidecar or a credits block is the
+# skill saying it came from elsewhere, so that much is checkable.
+for skill in plugins/kit/skills/*/; do
+  skill="${skill%/}"
+  md="$skill/SKILL.md"
+  [ -f "$skill/UPSTREAM" ] || awk 'NR>1 && /^---$/{exit} /^[[:space:]]+credits:/{found=1} END{exit !found}' "$md" 2>/dev/null || continue
+  if compgen -G "$skill/LICENSE*" >/dev/null; then
+    echo "  ok   $skill"
+  else
+    fail "$skill credits an upstream but carries no LICENSE — see docs/companion-skills.md#vendoring"
+  fi
+done
+
 echo
 if [ "$failed" -eq 0 ]; then
   echo "all checks passed"
