@@ -109,14 +109,10 @@ check rather than an observation; after the deletion there is nothing left to
 run.
 
 **Say why, beside the criteria, in the ticket itself.** By `kit:writing-tickets`
-a per-example procedure is a route, and `/kit:triage` reading the criteria back
-will try to rewrite it into a fence. Here that is deliberate: the only fence a
-deletion has is behavior preserved, which it meets by construction, so the
-mutation check is the one thing an executor can fail. Write that in a short
-paragraph next to the criteria, addressed to whoever applies the route test,
-saying the procedure is the acceptance and must stay. The reason belongs on the
-ticket rather than in triage because every reader of the ticket needs it, and
-triage reads criteria the same way for every other one.
+a per-example procedure is a route, and `/kit:triage` will try to rewrite it into
+a fence. Next to the criteria, write a short paragraph saying the procedure is
+the acceptance and must stay: a deletion meets behavior-preserved by
+construction, so the mutation check is the only thing an executor can fail.
 
 The ticket carries **`technical-debt`**, and `kit:writing-tickets` owns the body.
 Give it the empty blocking marker `<!-- kit-blocked-by: -->` so a sweep can see
@@ -128,15 +124,11 @@ to pick up unbidden, and this command filed it.
 **Only when Step 5 filed a ticket.** A run that proved nothing has nothing to
 settle.
 
-Run `/kit:triage <n>` on it now, in this session. This is a step, not an offer:
+Run `/kit:triage <n>` on it now, in this session — a step, not an offer:
 filed without the label, the ticket is invisible to `/kit:list` and to every
-sweep until someone remembers it, and the session that just proved its examples
-is the best placed to settle it.
-
-Triage runs unchanged and owns everything it writes — the label, the plan, or a
-close or not-now with its reason. It keeps the arriving `technical-debt` kind,
-so never relabel the ticket, and never add `ready-for-agent` here to cover a
-triage that did not finish.
+sweep. Triage runs unchanged and owns everything it writes; never relabel the
+`technical-debt` kind, and never add `ready-for-agent` to cover a triage that
+did not finish.
 
 ## Step 7 · `report` — Say what it found
 
@@ -146,5 +138,4 @@ left unproven, candidates beyond the band's cap, and files no agent assessed.
 
 Close with the ticket number and what triage made of it — settled, closed, or
 left open as not-now with its reason — or the one line saying nothing was
-proven. A triage stopped partway is reported with `/kit:triage <n>`, so the gap
-is named rather than left for a sweep to discover.
+proven. A triage stopped partway is reported with `/kit:triage <n>`.
