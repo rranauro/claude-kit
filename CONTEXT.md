@@ -110,6 +110,23 @@ cannot do. Distinct from **kit-hold**, which stops a merge because something
 could not be established; an observation stops nothing because everything was.
 _Avoid_: deferred, backlog, todo, follow-up
 
+### Writing a criterion
+
+**Fence**:
+An acceptance criterion stated as what a consumer of the change must observe,
+so any implementation that produces it satisfies the ticket. What a criterion should be. `kit:writing-tickets` is the
+one statement of the test that tells a fence from a route. Distinct from the
+fence `kit:grilling` draws, which bounds a change's scope rather than a single
+criterion.
+_Avoid_: requirement, guard, constraint
+
+**Route**:
+An acceptance criterion only one implementation can meet — the author's fix
+written in the grammar of an outcome, usually with the code as its subject. Not
+a criterion at all: it belongs in the problem statement, where it is
+non-binding. Distinct from routing a ticket to an agent or a person.
+_Avoid_: prescription, implementation detail, how-to
+
 ### Asking a human
 
 **Entry point**:
