@@ -261,8 +261,8 @@ fix is to let them hold the instance.
 
 A scope, a finder, or a factory that hands the instance back has no hidden
 instance, and neither does an instance exposing only its one answer (§3). Where
-an argument is the record operated on, report the first-parameter receiver
-instead: moving the method onto that record deletes this one with it, while
+its first parameter is the record operated on, report the first-parameter
+receiver instead: moving the method onto that record deletes this one with it, while
 exposing the instance would keep the misplacement.
 _Avoid_: callable, service object.
 
