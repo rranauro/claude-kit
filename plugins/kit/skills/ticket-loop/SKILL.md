@@ -461,7 +461,7 @@ or, when step 3 held it:
 
 > "PR #<N> is open, reviewed, ready and held (`kit-hold`) — <the shape review
 > posted on it is the reason, and `/kit:reshape <N>` offers an in-flight reshape
-> on this branch | the kind comment posted on it is the reason>, and auto-merge
+> on this branch, or a ticket blocked on it | the kind comment posted on it is the reason>, and auto-merge
 > is not armed."
 
 Unattended, the same line goes in the report `/kit:ship-ticket` Step 3 writes.
