@@ -35,11 +35,9 @@ in progress. Say what is uncommitted and stop.
 
 ## Step 2 · `assess` — One subagent per file
 
-Fan out through the **Agent tool**, one agent per spec file, in waves of about
-eight. Each agent gets one file path and one instruction: apply
-`kit:rails-load-bearing-specs` to it and return its output contract — with the
-declaration line and the assertion line quoted under any `restated` line, the
-evidence the axis produces on request.
+Fan out the `kit:spec-assessor` subagent through the **Agent tool**, one per
+spec file, in waves of about eight. Each gets one file path, and returns
+`kit:rails-load-bearing-specs`' output contract for it.
 
 **One file per agent, never a batch.** An agent holding several files reports on
 the aggregate, and the aggregate is what the axis's unit rule exists to prevent.

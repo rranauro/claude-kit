@@ -52,34 +52,10 @@ chose.
 
 ## 3 — Gather the evidence in a subagent
 
-Through the **Agent tool**, so the inventory stays out of this session — wait
-for it to return. It works at the PR head, and reads the diff and the references
-once each, then answers from them:
-
-```bash
-git diff -U0 <base>...<head>                  # touched files, and the added lines
-git grep -n -E '\b(<Namespace>|<Class>|<member>|…)\b' <head>   # every reference into the scope
-```
-
-The pattern carries the scoped classes' bare names and their public members as
-well as the namespace: code inside a namespace reaches its siblings unqualified
-(`Contract.new` within `module Ai::Prompts`), and a namespace-only search drops
-exactly those call sites from the list the person decides on.
-
-- **The scope** is the outer constant — `kit:rails-codebase-design` §5
-  **Namespace** — of every class the diff adds or changes. Nothing outside it is
-  a candidate, even where a count fires: that is a scan's finding, and taking it
-  here turns a hold into a survey.
-- **The shape** — per namespace, each class with its `initialize` and public
-  members, the PR's additions marked, and its consumers grouped by calling
-  namespace with a count. The grouping is what a move is judged against.
-- **The candidates** — the scoped classes judged as `kit:shape-review` §2–3
-  judges a diff's, placement included, over the scope rather than the diff. The
-  posted review's findings stand as counted only where step 1 found its SHA is the head.
-  Each candidate carries its count and number, its move (§1.5 or §2.5) and the
-  After in §1.5's panels, and **outside the diff**: every reference row above
-  the move would change that the diff did not add, as `file:line`. None is an
-  answer. Ranked strongest first, one recommended, as §5 **Rank** defines it.
+Launch the `kit:reshape-inventory` subagent through the **Agent tool**, so the
+inventory stays out of this session, and wait for it to return. Hand it the
+worktree, the PR's base and head, the shape review step 1 found, and whether that
+review's SHA is the head. Step 4 shows what it hands back.
 
 ## 4 — Show the shape, then the candidates
 
