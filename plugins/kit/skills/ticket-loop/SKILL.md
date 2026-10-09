@@ -308,7 +308,11 @@ cannot lose a race with a green CI.
   reports and carry on as if clean: a hold with no review to give its reason is
   worse than leaving the shape unjudged.
 - **Findings, attended** — show them and ask whether to post the review and hold
-  the PR, or post it and arm auto-merge anyway. Never hold without saying so.
+  the PR, or post it and arm auto-merge anyway, or post it, hold it, and reshape
+  now. Never hold without saying so. The third answer is the first one followed
+  by invoking `kit:reshape <pr-number>` through the Skill tool, here, before
+  step 4 — it pushes, and step 4 has to attest the head it leaves. Declining it
+  is either of the other two, exactly as written.
 - **Findings, unattended** — hold it, record first:
 
   ```
@@ -458,6 +462,12 @@ or, when step 3 held it:
 
 > "PR #<N> is open, reviewed, ready and held (`kit-hold`) — <the shape review
 > | the kind comment> posted on it is the reason, and auto-merge is not armed."
+
+**A shape hold carries one more sentence, in both modes** — attended unless the
+third answer already ran it, unattended in the report `/kit:ship-ticket` Step 3
+writes: `/kit:reshape <N>` offers an in-flight reshape of the namespaces the PR
+touched, committed on this branch. Only a shape hold carries it; the kind
+comment's hold is about a look, not a shape.
 
 Then stop. Nothing local picks it up from here.
 
