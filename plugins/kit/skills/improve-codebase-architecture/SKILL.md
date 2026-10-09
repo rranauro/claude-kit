@@ -52,37 +52,14 @@ recently changed. Decide *where* to look before you look:
 Read the project's domain glossary (`CONTEXT.md`) and any ADRs in the area
 you're touching first.
 
-Then spawn sub-agents to walk the codebase. Look for the counts in
-`kit:rails-codebase-design` §2, because each one either fires or doesn't and
-carries a file and a line:
+Then spawn sub-agents to walk the codebase. Look for every count in
+`kit:rails-codebase-design` §2, applied as §2 defines it, because each one
+either fires or doesn't and carries a file and a line. Hand each sub-agent §2
+itself rather than a summary of it.
 
-- **Construction arity** — more than three arguments, or arguments from more
-  than two aggregates.
-- **The threaded argument** — several methods passing the same argument to each
-  other, class methods or private instance methods down a chain.
-- **The first-parameter receiver** — `Model.do_thing(record)`.
-- **The hidden instance** — a class method wrapping `new(…).call` whose instance
-  exposes more than that call returns.
-- **Reaching back to the class** — repeated `self.class.` inside instance methods.
-- **The doubled name** — one name defined twice, especially with differing
-  signatures.
-- **The unearned construction** — an alternate constructor using `allocate`,
-  `send(:initialize_…)`, or a mode flag.
-- **The unpredicted return type** — two public methods, and the class name
-  predicts only one of their return types. Divergent types are the tell, not the
-  test: two renderings of one answer still fire.
-- **The same-signature constructors** — two constructors of the same arity
-  returning the same type.
-- **The duplicated answer** — a method recomputing from a serialized form what
-  the app already hydrates.
-- **The fixed-key hash** — a returned hash whose keys are literal.
-- **The keyed lookup handed out raw** — a returned hash the caller dereferences
-  by a composite key it builds itself. Fires at the call site, not the producer,
-  so a sub-agent reading only the class that returns it will miss this one.
-- **The loop that produces and consumes** — a loop creating a record and then
-  passing it to something that writes further records.
-- **The unheld namespace** — a class filed under the data it reads rather than
-  the caller it serves.
+One count needs a different read. **The keyed lookup handed out raw** fires at
+the call site, not the producer, so a sub-agent reading only the class that
+returns the hash will miss it.
 
 Cast wide here. Cheap counts over a large surface is what makes the report worth
 reading; a scan that returns two candidates has under-searched.

@@ -474,7 +474,7 @@ _Avoid_: shared derivation.
 **Hydrate**:
 To fill an object's state from what the app already holds, so its fields are
 named and typed. The hydrated form is what a derivation reads.
-_Avoid_: re-parse, rebuild from the serialized form.
+_Avoid_: inflate, materialize.
 
 **Producer / consumer**:
 Who constructs an object, and who calls it. `kit:behavior-placement` Check 3
