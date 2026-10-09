@@ -143,7 +143,8 @@ than an observation; after the deletion there is nothing left to run.
 
 **A covering example is never listed for deletion in the same ticket.** Where
 another finding would list it, drop the subsumption that names it as cover; of
-two examples covering each other, list one.
+two examples covering each other, list one. A candidate proven against several
+covers is listed once, under one cover that is itself not listed.
 
 **Say why, beside the criteria, in the ticket itself.** By `kit:writing-tickets`
 a per-example procedure is a route, and `/kit:triage` will try to rewrite it into
