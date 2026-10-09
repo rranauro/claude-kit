@@ -80,11 +80,11 @@ argument threaded through the construction.
 method does inside. `headers`, not `parse_headers`. `preview`, not
 `build_preview_string`.
 
-**The namespace is the data structure.** `Csv`, `Html`, `Api` — the outer name
-tells a reader what kind of data is in play. Children may name the role within
-it: `Api::Request`, `Api::Response`, `Csv::Document`, `Csv::Editor`. The
-constraint is that the namespace carries the data; a role name underneath it is
-correct, not a violation.
+**The namespace is the data structure.** The outer constant names the kind of
+data its classes read or produce, and a child names its role within that data.
+Check the outer constant alone: it names a kind of data — a format, a protocol,
+a record family — rather than an action or a feature. A role name underneath it
+is correct, not a violation; `Api::Request` is one.
 
 *Which* data is decided at the call sites, not by reading the class. An object
 that takes one kind of data and returns another — parses HTML, emits prompt
@@ -97,6 +97,12 @@ consumers that decide which.
 An object with all seven is legible from its call site. Someone planning a
 change can tell what it holds and what it answers without opening it — which is
 the whole point of the axis.
+
+The seven describe one object. They do not decide whether a problem is one
+object or a family of them — that is §2.5's rule on where the variation lives,
+read from the callers and from the class under judgment. Copying the shape of a
+different class that already exists, in this namespace or another, answers it
+for that class's callers, not these.
 
 ## 1.5 — The properties applied once, end to end
 
@@ -286,20 +292,20 @@ _Avoid_: factory hack, alternate initializer.
 one of their return types. The method answering the other is a separate object
 wearing this one's name, and naming which one is the count.
 _Avoid_: mixed responsibilities, SRP violation.
-Constructed: `Csv::Exporter` predicts the exported rows, so `#rows` answering
-them in memory is the method its name covers, and `#write` answering the file
-paths it created is the separate object. Both still answer something about one
-export, which is the version of this worth stating. That the two types diverge
-is the tell that sends you looking, not the test: `.run` answering a report
-beside `.call` answering a persisted record fires on sight, but two renderings of
-one answer have plenty in common, and a count led by their divergence is a count
-a reader discharges. The differing names are the disguise — the doubled name
-above needs one name twice, and `kit:behavior-placement` Check 2's search passes
-both rows `only here`, since neither method computes the other's answer. **It
-fires from the class**: two return types and a name are the whole of it. Reach
-for Check 3's list of producers and consumers when the name predicts both types
-or neither, and again once it fires — that list names the callers that move when
+It counts even when both methods answer about the same subject. That the two types diverge is the
+tell that sends you looking, not the test: `.run` answering a report beside
+`.call` answering a persisted record fires on sight, but two renderings of one
+answer have plenty in common, and a count led by their divergence is a count a
+reader discharges. The differing names are the disguise — the doubled name above
+needs one name twice, and `kit:behavior-placement` Check 2's search passes both
+rows `only here`, since neither method computes the other's answer. **It fires
+from the class**: two return types and a name are the whole of it. Reach for
+Check 3's list of producers and consumers when the name predicts both types or
+neither, and again once it fires — that list names the callers that move when
 the object splits.
+Example of the count, constructed: `Csv::Exporter` predicts the exported rows,
+so `#rows` answering them in memory is the method its name covers, and `#write`
+answering the file paths it created is the separate object.
 
 **The same-signature constructors.** Two constructors of the same arity
 returning the same type — `Thing.from_json(str)` and `Thing.from_text(str)`,
