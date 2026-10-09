@@ -20,7 +20,7 @@ the prefix comes from the `name` field in `plugins/kit/.claude-plugin/plugin.jso
 | Command | What it does |
 |---|---|
 | `/kit:list` | The open tickets a sweep would actually start, under the labels you name — number and title, and nothing else. Reads the same `kit:startable-tickets` rule `/kit:ship-ticket` sweeps on, so a ticket it names is one `/kit:ship-ticket <number>` will take. Creates nothing and touches no worktree. A label holding nothing startable reads differently from a label nobody created. |
-| `/kit:ship-ticket` | Orchestrates the rest: a reclaim sweep, then worktree, plan, TDD, a simplify pass, PR. Opens by reclaiming dead worktrees in a subagent — ahead of selection, and even when it goes on to take no ticket; what it reclaimed and held is the first line of the report, and a sweep that fails never stops a ticket starting. **Takes one ticket per invocation**: the issue number you name; or a label, which narrows the backlog sweep without replacing its rules; or nothing, and picks the next epic ticket whose blocking edges have all closed. More than one number is a usage error and there is no flag that takes a set — `/kit:list` is how you see what to work on, and running several in succession is the caller's job, one process each. `--dry-run` resolves the selection, reports the ticket and what was excluded, and creates nothing. A trailing `unattended` replaces every gate with a rule; where a rule cannot decide — the plan's anchors have moved, no plan exists, the work won't converge — it **parks**, which is the only way it stops and what makes `/loop` over it safe. Skips any ticket already carrying `kit-blocked`, reported by name with its reason, and any carrying `epic`, which is a container with no slice to implement. |
+| `/kit:ship-ticket` | Orchestrates the rest: a reclaim sweep, then worktree, plan, TDD, a simplify pass, PR. Opens by reclaiming dead worktrees in the `kit:reclaim-sweep` subagent — ahead of selection, and even when it goes on to take no ticket; what it reclaimed and held is the first line of the report, and a sweep that fails never stops a ticket starting. **Takes one ticket per invocation**: the issue number you name; or a label, which narrows the backlog sweep without replacing its rules; or nothing, and picks the next epic ticket whose blocking edges have all closed. More than one number is a usage error and there is no flag that takes a set — `/kit:list` is how you see what to work on, and running several in succession is the caller's job, one process each. `--dry-run` resolves the selection, reports the ticket and what was excluded, and creates nothing. A trailing `unattended` replaces every gate with a rule; where a rule cannot decide — the plan's anchors have moved, no plan exists, the work won't converge — it **parks**, which is the only way it stops and what makes `/loop` over it safe. Skips any ticket already carrying `kit-blocked`, reported by name with its reason, and any carrying `epic`, which is a container with no slice to implement. |
 | `/kit:polish-ticket` | Runs a catch-all polish ticket. The user reports problems one at a time; each is triaged into an inline fix on the branch or its own filed ticket. |
 | `/kit:commit` | Focused commit with a real message. Reads the project's test, lint, and security gates from `CLAUDE.md`/manifest/CI and runs them on what changed. |
 | `/kit:new-pull-request` | Opens a PR whose body `kit:visual-pr` writes — the Gist-first sections `kit:visual-review` reads — wired to the issue. |
@@ -104,6 +104,13 @@ So the override belongs only where the turn it governs is the file's own:
 | A command a person invokes | Yes — the invocation starts its turn. |
 | A skill that runs inline | No — run it isolated instead, as either of the first two. |
 | A command another prompt hands off to | No — the Skill tool runs it inside its caller's turn, which makes it inline. |
+
+**A subagent's pin is a default, not a lock.** A model passed for it — on the
+Agent call, or through the environment's subagent-model override — wins over
+its frontmatter. So a prompt that launches a pinned subagent passes no model:
+the pin is the kit's choice and the override is the operator's, and a model
+written into the call replaces the first with whatever the caller happened to
+run.
 
 `scripts/lint.sh` fails on the fourth row and names the file. It does not hold
 the fifth: a `description` is the frontmatter sign of a handoff target, but

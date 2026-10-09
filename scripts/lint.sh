@@ -3,8 +3,8 @@ set -euo pipefail
 
 # Everything here is a check that a drive-by PR can fail without anyone noticing
 # by reading the diff: a shell script that no longer parses, a manifest that is
-# no longer JSON, a skill whose frontmatter stops matching its directory — all
-# of which fail at load time in the harness rather than at review time — a
+# no longer JSON, a skill or subagent whose frontmatter stops matching its file
+# — all of which fail at load time in the harness rather than at review time — a
 # plugin version that would stop installs from updating at all, a vendored
 # skill that dropped the notice its licence requires, and an inline skill whose
 # model pin would outlive it.
@@ -21,6 +21,28 @@ fail() {
   echo "  FAIL: $*" >&2
   failed=1
   this_failed=1
+}
+
+# A skill and a subagent fail the same way, at load and with nothing said:
+# frontmatter that does not open on line 1 is read as body text, and a file with
+# no name or description is dropped. A name that differs from where the file
+# lives answers to something other than what its path advertises.
+check_frontmatter() {
+  local md="$1" expected="$2" name desc
+  [ "$(head -1 "$md")" = "---" ] || { fail "$md does not open with ---"; return 1; }
+  # Unclosed, the whole body is frontmatter, and a name or description written
+  # anywhere in it would satisfy the checks below.
+  awk 'NR>1 && /^---$/{f=1; exit} END{exit !f}' "$md" ||
+    { fail "$md never closes its frontmatter with ---"; return 1; }
+
+  name="$(awk 'NR>1 && /^---$/{exit} /^name:/{sub(/^name:[[:space:]]*/,""); print; exit}' "$md")"
+  desc="$(awk 'NR>1 && /^---$/{exit} /^description:/{sub(/^description:[[:space:]]*/,""); print; exit}' "$md")"
+
+  [ -n "$name" ] || fail "$md has no name in its frontmatter"
+  [ -n "$desc" ] || fail "$md has no description in its frontmatter"
+  if [ -n "$name" ] && [ "$name" != "$expected" ]; then
+    fail "$md declares name '$name' but lives at '$expected'"
+  fi
 }
 
 echo "==> shell syntax"
@@ -73,21 +95,7 @@ for skill in plugins/kit/skills/*/; do
 
   [ -f "$md" ] || { fail "$skill has no SKILL.md"; continue; }
 
-  # Frontmatter has to open on line 1; a leading blank line makes the harness
-  # read the whole block as body text and the skill silently never triggers.
-  [ "$(head -1 "$md")" = "---" ] || { fail "$md does not open with ---"; continue; }
-
-  name="$(awk 'NR>1 && /^---$/{exit} /^name:/{sub(/^name:[[:space:]]*/,""); print; exit}' "$md")"
-  desc="$(awk 'NR>1 && /^---$/{exit} /^description:/{print; exit}' "$md")"
-
-  [ -n "$name" ] || fail "$md has no name in its frontmatter"
-  [ -n "$desc" ] || fail "$md has no description in its frontmatter"
-
-  # The invocable name comes from the directory, so a mismatch means the skill
-  # answers to something other than what its own frontmatter advertises.
-  if [ -n "$name" ] && [ "$name" != "$dir_name" ]; then
-    fail "$md declares name '$name' but lives in '$dir_name'"
-  fi
+  check_frontmatter "$md" "$dir_name" || continue
 
   # A skill's model or effort override lasts for the rest of the turn, not the
   # rest of the skill, so an inline skill that names one carries its caller onto
@@ -108,6 +116,14 @@ for skill in plugins/kit/skills/*/; do
       fail "$skill credits an upstream but has no row in docs/companion-skills.md#what-is-vendored"
   fi
 
+  [ "$this_failed" -eq 1 ] || echo "  ok   $md"
+done
+
+echo "==> agent frontmatter"
+for md in plugins/kit/agents/*.md; do
+  [ -f "$md" ] || continue
+  this_failed=0
+  check_frontmatter "$md" "$(basename "$md" .md)" || continue
   [ "$this_failed" -eq 1 ] || echo "  ok   $md"
 done
 

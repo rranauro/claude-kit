@@ -87,8 +87,13 @@ at, answering the parks, and walking the PRs that carry `kit-hold`.
 ## Step 0 · `reclaim` — Clear the dead worktrees first
 
 Before anything is selected or prepared, reclaim the worktrees this project has
-accumulated. Invoke `kit:worktree-reclaim` through the **Agent tool**, unattended
-and with no target, so it sweeps and asks nothing.
+accumulated. Launch the `kit:reclaim-sweep` subagent through the **Agent tool**.
+It runs `kit:worktree-reclaim` unattended with no target, so it sweeps and asks
+nothing.
+
+**Pass it no model.** The subagent pins its own, and a model on the call
+overrides the pin — `docs/commands.md` *Only work that starts its own turn names
+a model* says why that is the operator's lever, not this command's.
 
 **Wait for the agent to return before Step 1 begins.** The Agent tool returns
 when the sweep is *launched*, not when it is finished, so the sequencing above
@@ -110,8 +115,8 @@ every caller they have.
 
 **In a subagent, so the survey stays out of this session.** A verdict line per
 worktree is exactly the inventory that crowds out the ticket the session is
-actually for. What comes back is what was reclaimed and what was skipped with
-reasons; nothing else.
+actually for. What comes back is the sweep's report, and the subagent owns its
+shape.
 
 **`--dry-run` skips this step.** Reclaiming removes worktrees and deletes
 branches, so a dry run that reclaimed would not be dry. Step 1 says what that
