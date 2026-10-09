@@ -1,6 +1,6 @@
 ---
 name: behavior-placement
-description: Decide where behavior belongs — model, value object, or service — and whether the answer already exists. Use when designing new classes, reviewing a proposed service, refactoring, or when another skill needs the placement checks.
+description: Decide where behavior belongs — model, domain object, or service — and whether the answer already exists. Use when designing new classes, reviewing a proposed service, refactoring, or when another skill needs the placement checks.
 ---
 
 # Behavior Placement
@@ -8,7 +8,8 @@ description: Decide where behavior belongs — model, value object, or service �
 Checks to run before proposing any new class or refactor. An app is a
 collection of models that own their data and behavior; services are the
 residual, not the default. A project rule that says "default behavior to the
-model" states the conclusion; this states how to reach it.
+model" states the conclusion; this states how to reach it. The words are
+`kit:rails-codebase-design`'s, defined in its §5 and §2.
 
 **Also run these when adding a second entry point to a class that already
 exists** — a second class method taking the same data, a second `for_*`
@@ -26,7 +27,7 @@ In priority order:
    Derived state, validation, state transitions, anything that primarily
    reads/writes one aggregate. Manage size with concerns, not by exporting
    behavior to a service that takes the model as an argument.
-2. **A value/domain object instantiated from that data** (`Thing.new(record).query`)
+2. **A domain object instantiated from that data** (`Thing.new(record).query`)
    — when a cohesive bundle of derivations over one structure would swell the
    model. Name it for the concept (a noun). "It needs unit-testing without the
    DB" is NOT a reason to leave the model: a concern depending on two or three
@@ -41,8 +42,9 @@ In priority order:
 Smells that model behavior has been misplaced into a service (stop and
 reconsider): the signature is `Service.call(model:, …)` and the body mostly
 reads from `model`; the name is an agent-noun verb (`-er`/`-or` — Resolver,
-Swapper, Loader, Manager, Handler); it's a `self.call` that news-up an instance
-and calls it once; `Service.call(model:, x:)` reads better as `model.verb(x:)`.
+Swapper, Loader, Manager, Handler); it's a hidden instance — a `self.call` that
+news-up an instance and calls it once; `Service.call(model:, x:)` reads better
+as `model.verb(x:)`.
 
 The same misplacement happens without a service in sight: a class method that
 takes the record it operates on (`Model.do_thing(record)`) is an instance method
@@ -58,8 +60,8 @@ and the enumeration that finds them.
 When refactoring: ask **"who owns this state?"** before "where does this file
 go?" — layout follows ownership, and relocating a file to a nicer folder is the
 lowest-value refactor. Put **delete / inline / fold-onto-a-model** on the
-options list before "relocate." Find the existing seam (a concern already
-hydrating related data) and extend it rather than reopening "service vs model."
+options list before "relocate." Find the existing concern already hydrating
+related data and extend it rather than reopening "service vs model."
 Treat a prior "keep it a service" decision as an input to revisit when the user
 reopens it, not a constraint.
 
@@ -78,18 +80,18 @@ equivalent" habit is about code, and it won't fire when the thing to reuse is an
 answer.
 
 Re-deriving from a serialized form (HTML, JSON, CSV headers) what the app
-already hydrates forks the definition, and the two copies drift apart on the
-first schema change. If a proposal starts by parsing something, ask what
+already hydrates duplicates the definition, and the two copies drift apart on
+the first schema change. If a proposal starts by parsing something, ask what
 populated that something and whether the populated form is still in reach.
 
 An answer you are about to write that something else already computes is a
-**fork** that has not been committed yet — the same condition at an earlier
-moment — so the check reads the same whichever end you came in from. The only
+**duplicated answer** that has not been committed yet — the same condition at
+an earlier moment — so the check reads the same whichever end you came in from. The only
 thing that varies is how many answers the subject holds: one when you are
 filtering a single candidate, one per method when the subject is a class already
 in the tree.
 
-### The census
+### Search for an existing answer
 
 This check ends in an enumeration. One line per method the subject holds, or one
 line where the answer has no class yet:
@@ -98,18 +100,18 @@ line where the answer has no class yet:
 <method> — <where else this answer is computed, or nothing> — <verdict>
 ```
 
-**Enumerate the hand-written public surface**, rather than the subset you judge
+**Enumerate every hand-written public method**, rather than the subset you judge
 to be derivations. A reader checks a list for completeness against a set they can
 enumerate themselves, and the methods written in the file are that set — where
 the methods you picked out are not. Generated accessors, associations and enum
-predicates are the framework's answers rather than the subject's, and stay out of
-the census. A method that derives nothing gets a row saying so, and costs one
+predicates are the framework's answers rather than the subject's, and stay off
+the list. A method that derives nothing gets a row saying so, and costs one
 line.
 
-Two verdicts. **`only here`** — nothing else computes this answer. **`forked`** —
-something else does, and the row names it. A `forked` row is
-`kit:rails-codebase-design` §2's **duplicated answer**, caught before the code is
-committed rather than after.
+Two verdicts. **`only here`** — nothing else computes this answer.
+**`duplicated`** — something else does, and the row names it. A `duplicated` row
+is `kit:rails-codebase-design` §2's **duplicated answer**, caught before the code
+is committed rather than after.
 
 **Search two sets, and only these two:** the siblings in the subject's namespace,
 and the collaborators it constructs or holds. Where there is no class yet, those
@@ -124,15 +126,15 @@ the two sets above answer this check; the rest answer that one.
 **A proposal offered before every row carries a verdict is incomplete.** Name the
 rows still outstanding and finish them.
 
-### A forked row
+### A duplicated row
 
-The proposal is to collapse the fork to one implementation and run the suite. A
-failure names the input the two copies disagreed on, which arrives faster than
-reading both. A green run is evidence the fork was redundant rather than proof of
+The proposal is to collapse the two copies to one implementation and run the
+suite. A failure names the input the two copies disagreed on, which arrives faster than
+reading both. A green run is evidence the copy was redundant rather than proof of
 it — `kit:rails-load-bearing-specs` §1 holds why a suite's silence is an
 observation rather than a clearance.
 
-The census has already named both sites, so that is a recommendation carrying its
+The search has already named both sites, so that is a recommendation carrying its
 own evidence, and nothing about it is speculative enough to file as a bug.
 
 ## Check 3 — who produces it, who consumes it?
@@ -145,10 +147,9 @@ So before naming anything, enumerate the call sites — one `rg` for the
 constructor and one for the methods — and write down the two lists: who
 constructs it, and who calls it. The shape of that graph decides:
 
-- **Many producers, one consumer domain** → a boundary type. Name it for the
-  **consumer's** boundary, not for the data it happens to read. Several callers
-  agreeing on a shape none of them owns is what a boundary is.
-- **One producer, many consumers** → a shared derivation. Name it for the
+- **Many producers, one consumer domain** → it belongs to the consumer. Name it
+  in the **consumer's** namespace, not for the data it happens to read.
+- **One producer, many consumers** → it belongs to the data. Name it for the
   **data**, in that data's namespace.
 - **Producer and consumer are the same model** → not a separate class at all.
   Check 1 already answered this: a method, or a concern.
@@ -163,7 +164,7 @@ it touched on the way. Ask what a caller from the input's own namespace would do
 with the return value; if the honest answer is "nothing, that string only makes
 sense to the one consumer," the namespace belongs to the consumer.
 
-Do this before proposing the name, and state the census in the proposal. A
+Do this before proposing the name, and state both lists in the proposal. A
 placement that cannot name its producers and consumers has not been derived,
 only asserted — and an asserted namespace is the one nobody can argue with later
 because no reasoning was written down.
@@ -172,8 +173,8 @@ because no reasoning was written down.
 
 All three checks end in a proposal, not an action. State it in a few lines: what
 the behavior is, where it should live and under what name, which check decided
-it, Check 2's derivation census and Check 3's producer/consumer census, and —
-where a row came back forked — the existing derivation you'd reuse instead.
+it, Check 2's rows and Check 3's producers and consumers, and — where a row
+came back `duplicated` — the existing derivation you'd reuse instead.
 Then wait for the user to confirm before writing anything.
 
 Where two namespaces both had a claim, say which one you rejected and why. That
@@ -219,7 +220,7 @@ no data structure above it.
 Which data, though, is Check 3's question, not this rule's. "The namespace
 carries the data" is ambiguous the moment a class reads one kind and emits
 another — parses HTML, returns prompt text; reads a CSV, returns an import
-report. Run the census and let the call sites break the tie.
+report. List the producers and consumers and let the call sites break the tie.
 
 **Counting settles what the checks leave to argument.** Construction taking
 more than three arguments, or arguments from more than two aggregates, means an

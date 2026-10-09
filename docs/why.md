@@ -99,7 +99,7 @@ are a superset of the input's," which sends someone off to write a parser, but
 "the redesigned component must still declare every field the original declared,"
 which sends them to the schema.
 
-**Behavior decisions belong with the human, not the model.** Model, value object,
+**Behavior decisions belong with the human, not the model.** Model, domain object,
 or service is a structural call you live with, so `kit:behavior-placement` hands you
 the priority order and the smells that mean you got it wrong — the loudest being
 a `Service.call(model:, …)` whose body mostly reads from `model`.

@@ -15,7 +15,7 @@ intent — not a file-by-file implementation plan. Do NOT freeze file lists, lin
 numbers, or step-by-step instructions into the ticket.
 
 Do NOT freeze the **implementation substrate** either: the data structure to
-inspect, the input types, or a class shape like "a value object over the
+inspect, the input types, or a class shape like "a domain object over the
 before/after HTML pair." Substrate choices read as settled decisions but are
 usually guesses made without the code open, and once written down they reach the
 implementer with an authority they never earned — `kit:start-ticket` tells them not
