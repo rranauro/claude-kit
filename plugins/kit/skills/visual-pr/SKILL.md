@@ -5,7 +5,7 @@ metadata:
   credits:
     - skill: pr
       author: Matt Pocock
-      url: "https://github.com/mattpocock/skills/blob/013860c/engineering/pr/SKILL.md"
+      url: "https://github.com/mattpocock/skills/blob/a7d038f/skills/engineering/pr/SKILL.md"
     - skill: show-me
       author: Dex Horthy
       organisation: Humanlayer
