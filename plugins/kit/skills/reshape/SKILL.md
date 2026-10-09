@@ -1,6 +1,6 @@
 ---
 name: reshape
-description: Reshape the namespaces a shape-held pull request touched, with the person at the hold choosing the move and the commits landing on that PR's branch — no ticket filed. Use when kit:ticket-loop hand-off holds a PR on shape findings and the person takes the reshape, or when a person runs /kit:reshape on a PR held by a shape review.
+description: Reshape the namespaces a shape-held pull request touched, with the person at the hold choosing each move — committed on that PR's branch with no ticket, or filed as a follow-up ticket that starts once the PR's issue closes. Use when kit:ticket-loop hand-off holds a PR on shape findings and the person takes the reshape, or when a person runs /kit:reshape on a PR held by a shape review.
 ---
 
 # Reshape
@@ -97,7 +97,9 @@ person only, so this pass cannot run it for them.
 
 Then the ranked candidates, held to `kit:asking-a-human`, with each one's call
 sites outside the diff listed in full — never summarised as a count. Ask which
-to take, or none.
+to take, and for each, whether **inline** — step 5, on the held branch — or as a
+**follow-up** — step 6, a ticket that starts once the held PR's issue closes.
+Or none.
 
 **Never say whether a candidate belongs inline or in a ticket.** The call sites
 outside the diff are the evidence; the person weighs it.
@@ -116,15 +118,40 @@ uncommitted change, and stop. What was pushed before it stays.
 Another candidate can follow. Recount only the classes the move touched and
 their consumers, and re-show what changed in the ranking before asking again.
 
-## 6 — Report
+## 6 — File it as a follow-up
 
-Which moves landed and the head they left. The posted shape review is against
-the old head — `/kit:shape-review <n>` judges the new one. `kit-hold` is still on
+For a candidate that is its own piece of work — typically a new object serving
+callers the PR never touched. Hand-filed later, it would have no
+`kit-blocked-by` marker and no sweep would ever start it; filed here, its edge
+is known.
+
+**The edge is the issues the held PR closes** — its `closingIssuesReferences`,
+as `kit:startable-tickets` `already-carried` reads them, all of them where there
+are several. **Where there are none, offer no follow-up exit on this PR, and say
+why**: an empty marker makes the ticket startable before the held PR merges,
+and no marker is the hand-filed ticket this exit exists to replace.
+
+Draft it through `kit:writing-tickets` — the candidate's move as the problem,
+its call sites outside the diff as the evidence, the held PR linked — with the
+marker naming those issues in `kit:to-tickets` 5a's form and the "Blocked by"
+prose agreeing with it. The numbers already exist, so it is one create, not
+that skill's two passes. Show the draft and create it only on approval; a no
+files nothing.
+
+No `ready-for-agent` and no design: routing is `/kit:triage`'s, the approach
+`/kit:design`'s. Nothing is committed or pushed, so the branch, the posted shape
+review and `kit-hold` are as they were, and the next ask needs no recount.
+
+## 7 — Report
+
+Which moves landed and the head they left, and which follow-ups were filed,
+with their numbers. Where a move landed, the posted shape review is against the
+old head — `/kit:shape-review <n>` judges the new one. `kit-hold` is still on
 and is the person's to clear: `gh pr edit <n> --remove-label kit-hold`.
 
 ## Never
 
-- File an issue. A follow-up ticket is a separate exit, not this pass's.
+- File an issue for a move taken inline, or one the person has not approved.
 - Remove `kit-hold`.
 - Propose a move outside the scoped namespaces.
 - Edit `kit:show-me` or `kit:improve-codebase-architecture`. Both are forks with
