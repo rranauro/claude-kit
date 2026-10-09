@@ -1,6 +1,6 @@
 ---
 name: improve-codebase-architecture
-description: Scan a codebase for misshapen objects and present them as a visual HTML report in plans/, ranked strongest to weakest, then file the strongest as tickets under an epic.
+description: Scan a codebase for misshapen objects and present them as a visual HTML report in plans/, ranked strongest to weakest, then file the strongest as tickets under an epic and walk them through triage.
 disable-model-invocation: true
 ---
 
@@ -299,11 +299,41 @@ One per surviving candidate, in rank order, each carrying:
   Someone implementing off a ranked list will otherwise take the next one down.
 
 A child is filed *specified*, not *settled*: the plan artifact and the AFK-ready
-label are `/kit:triage`'s to add.
+label are `/kit:triage`'s to add, and the step below is where they are added.
+
+#### Settle the children
+
+Walk the children through `/kit:triage <n>`, one at a time, in rank order,
+strongest first. This is a step rather than an offer. The scan routes nothing,
+so a child nobody triages carries no AFK-ready label. A sweep never sees an
+unlabelled child, and `/kit:ship-ticket` would design it without the person who
+knows it best. That person is this session, which just ranked it.
+
+**Say how many there are before the first one**, and that each is a triage
+conversation of its own. The user may name a cutoff, or stop at any child
+boundary. Spending a session on the strongest few is a fair outcome. Leaving the
+rest unaccounted for is not.
+
+Triage runs unchanged, and it owns everything it writes: the plan, the body's
+criteria and out-of-scope, the marker, the label and the hold question. Do not
+restate any of that here. Its step 1 leaves the arriving `improve-codebase` kind
+in place. That kind is what holds the child to the counts the scan stated, so
+never relabel a child to suit a triage answer.
+
+**Name every child the cutoff left.** Do not label one to cover the gap. A
+label is triage's claim, not the scan's. An unlabelled child is startable only
+through a pass somebody remembers to run, so the report has to say which
+children still need that pass and how to run it.
+
+**Then report, and stop.** Give one line each for the epic and the children
+filed, the children settled, and the children left, with `/kit:triage <n>` for
+each child left. Never invoke `/kit:ship-ticket` from here. Starting work is a
+separate decision, made one ticket at a time by whoever runs it.
 
 ## Never
 
 - Make implementation changes. This is a scan, a report, and the tickets in §5.
+- Start a child. §5 settles them and stops.
 - Design a candidate in the report. One constructor line is the ceiling.
 - File a child whose problem statement asserts the scan's findings as verified.
 - Ship a card whose Cost is missing either half §2 requires.
