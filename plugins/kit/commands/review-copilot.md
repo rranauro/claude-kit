@@ -28,7 +28,7 @@ Pull from these sources in parallel:
 `claude-review`; absent, both). It changes no fetch and no finding — only how
 Step 5 names an empty source: **not run** if undeclared, **missing** if declared.
 
-If all fetched sources are empty, tell the user "No automated review comments found" and stop.
+If all fetched sources are empty, tell the user "No automated review comments found", skip to Step 5 to name each source not run or missing, and close the round at Step 7.5. Stopping here leaves a round nobody can tell from one that never ran.
 
 **Step 2.4 · `round-already-closed` — Check whether this round is already closed:**
 
