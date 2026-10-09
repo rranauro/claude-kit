@@ -254,21 +254,16 @@ the count.
 
 **The hidden instance.** A class method that constructs an instance and calls
 one method on it — `Thing.call(x)` wrapping `new(x).call` — so no call site ever
-holds the object. It fires where that instance has something its callers can no
-longer reach: a public reader, a further method, or a value it computed that a
-caller goes on to work out again. Each is a question the object could answer
-and the call site cannot ask, because the class method kept one answer and
-discarded the rest. Name the call sites that lose it; the fix is to let them
-hold the instance.
+holds the object. It fires where that instance exposes something its callers
+can no longer reach — a public reader, a further method, or a value it computed
+that a caller goes on to work out again. Name the call sites that lose it; the
+fix is to let them hold the instance.
 
-Three things pass it. A class method that genuinely has no receiver — a scope, a
-finder, a factory that hands the instance back — hides nothing, since the caller
-holds whatever was built. An instance exposing nothing beyond the one answer
-its call returns hides nothing either; §3 says why. And where one of the
-method's arguments is the record it operates on, the first-parameter receiver
-above is the finding and this one is not: moving the method onto that record
-deletes the class and its hidden instance together, while exposing the instance
-keeps the misplacement. Report it once, as the cause.
+A scope, a finder, or a factory that hands the instance back has no hidden
+instance, and neither does an instance exposing only its one answer (§3). Where
+an argument is the record operated on, report the first-parameter receiver
+instead: moving the method onto that record deletes this one with it, while
+exposing the instance would keep the misplacement.
 _Avoid_: callable, service object.
 
 **Reaching back to the class.** Repeated `self.class.` inside instance methods

@@ -61,10 +61,8 @@ carries a file and a line:
 - **The threaded argument** — several methods passing the same argument to each
   other, class methods or private instance methods down a chain.
 - **The first-parameter receiver** — `Model.do_thing(record)`.
-- **The hidden instance** — a class method that builds an instance and calls it
-  once, where that instance exposes something its callers cannot now reach.
-  Name those call sites. Not one where an argument is the record operated on —
-  that is the first-parameter receiver — nor a scope, finder or factory.
+- **The hidden instance** — a class method wrapping `new(…).call` whose instance
+  exposes more than that call returns.
 - **Reaching back to the class** — repeated `self.class.` inside instance methods.
 - **The doubled name** — one name defined twice, especially with differing
   signatures.
@@ -125,6 +123,8 @@ positively require several of them:
 - "It isn't injected" / "the database is a dependency" / "it needs testing
   without the DB."
 - "This method changes its own record."
+- A `self.call` over an instance that exposes nothing beyond its one answer.
+  Nothing is hidden, so no caller pays.
 - Callbacks, scopes, concerns, validations, generated methods — the language,
   not a smell.
 - File count in either direction. What a caller has to learn is the measure.
