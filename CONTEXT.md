@@ -113,9 +113,8 @@ _Avoid_: deferred, backlog, todo, follow-up
 ### Writing a criterion
 
 **Fence**:
-An acceptance criterion stated as what a consumer — the caller, the user, the
-neighbouring system — must observe, so any implementation that produces it
-satisfies the ticket. What a criterion should be. `kit:writing-tickets` is the
+An acceptance criterion stated as what a consumer of the change must observe,
+so any implementation that produces it satisfies the ticket. What a criterion should be. `kit:writing-tickets` is the
 one statement of the test that tells a fence from a route. Distinct from the
 fence `kit:grilling` draws, which bounds a change's scope rather than a single
 criterion.
