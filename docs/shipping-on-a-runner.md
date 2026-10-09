@@ -144,10 +144,9 @@ the project enforces `kit-hold` as a required check, the same precondition
 takes the PR out of draft with `gh pr ready` before arming, and a pass refused
 it parks with a finished PR left in draft. The scripts are matched by a
 `*/scripts/<name>.sh` wildcard because their path differs by install: relative
-in this repo, an expanded `${CLAUDE_PLUGIN_ROOT}` in a consuming project. A rule
-that mixes `*` with the legacy trailing `:*` matches the `*` literally, which is
-why the two worktree-cleanup rules here match nothing. They are left that way on
-purpose: expanded, `rm -rf .claude/worktrees/*` would also match a path that
+in this repo, an expanded `${CLAUDE_PLUGIN_ROOT}` in a consuming project.
+Worktree cleanup is granted only through `worktree-reclaim.sh`, never as a raw
+`rm -rf .claude/worktrees/*` rule: a wildcard there also matches a path that
 climbs out with `..`.
 A consuming project's own
 `--project-settings`

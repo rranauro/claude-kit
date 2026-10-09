@@ -41,9 +41,7 @@
       "Bash(*/scripts/await-reviews.sh*)",
       "Bash(*/scripts/worktree-reclaim.sh*)",
       "Bash(*/scripts/pr-review.sh*)",
-      "Bash(*/scripts/observe.sh*)",
-      "Bash(chmod -R u+rwX .claude/worktrees/*:*)",
-      "Bash(rm -rf .claude/worktrees/*:*)"
+      "Bash(*/scripts/observe.sh*)"
     ],
     "deny": [
       "Bash(gh issue create:*)",
