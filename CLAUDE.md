@@ -53,6 +53,10 @@ vocabulary those files read off an issue; `docs/commands.md` lists the surface;
   carry it. A change to the workflow that was not made through the workflow has
   not been tried.
 
+## Review sources
+
+- copilot
+
 ## Where a fact goes
 
 Four layers describe this system, and a fact written into the wrong one becomes a

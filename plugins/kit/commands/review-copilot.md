@@ -24,6 +24,14 @@ Pull from these sources in parallel:
 
 > **Match logins case-insensitively** (the `"i"` flag is required). Copilot's *inline* comments are authored by login `Copilot` (capital C), while its top-level review bot is `copilot-pull-request-reviewer[bot]` (lowercase). Without `"i"` the inline pass silently returns nothing — the most important findings get missed.
 
+**Read which automated reviews the project runs** from the `## Review sources`
+section of its `CLAUDE.md` — `copilot`, `claude-review`, or both; the same
+section `kit:ticket-loop` `hand-off` passes to the wait. Absent, both are
+expected. This changes no fetch and no finding: it decides only how an empty
+source is named in Step 5. An undeclared source that is empty was **not run**; a
+declared one that is empty is **missing**. Calling the first missing tells the
+reader a reviewer failed when the project never runs it.
+
 If all fetched sources are empty, tell the user "No automated review comments found" and stop.
 
 **Step 2.4 · `round-already-closed` — Check whether this round is already closed:**
@@ -97,6 +105,7 @@ All items are processed without stopping for approval. The summary in Step 5 is 
 
 **Step 5 · `summarize` — After all items are processed:**
 - Summarize for the user: how many auto-fixed, how many skipped (non-minor or ignored), and why. Break the count out by source (copilot-inline / copilot-review / claude-review / shape-review / overlap) so the user can see whether one reviewer is consistently noisy or consistently right.
+- Name each automated source that posted nothing as **not run** or **missing**, by the declaration Step 2 read. This summary is what Step 7.5 records, so the distinction reaches the PR.
 - If any fixes were made, the commit message must capture the per-item evaluation so it's durable in git history (not just the conversation). Format:
 
   ```
