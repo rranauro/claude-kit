@@ -159,6 +159,16 @@ which is a finding that the example adds nothing.
 `kit:rails-excludable-specs` is the one statement of it.
 _Avoid_: slow, quarantined, pending, skipped
 
+**Subsumed**:
+A property of one load-bearing RSpec example relative to another, its covering
+example: every break the example notices, the covering example notices too.
+Shown by running both, never by how alike they read. Distinct from load-bearing,
+which a subsumed example still is; from excludable, which keeps an example and
+tags it; and from deletable, which finds an example adds nothing on its own — a
+subsumed one adds nothing its cover does not. `/kit:prune-specs` is the one
+statement of it.
+_Avoid_: duplicate, duplicative, redundant, overlapping, covered
+
 ### Judging object shape
 
 **Accreted interface**:

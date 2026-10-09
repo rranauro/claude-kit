@@ -154,7 +154,9 @@ resting only on one of them is not a weaker candidate; it is not a candidate.
 - **Slow, verbose, or duplicative.** Those are true of load-bearing examples too.
   A cost claim is a different axis with different evidence and a different
   disposition — a tag and a runner flag, not a deletion — and it belongs to
-  `kit:rails-excludable-specs`, never here.
+  `kit:rails-excludable-specs`, never here. And "another example already
+  catches this" is a claim reading cannot settle: it is subsumption, which
+  `/kit:prune-specs` proves by running both, never this axis.
 
 The check that settles a candidate: **name the production code the example
 holds up, and say what could go wrong there that only this example would catch.**
