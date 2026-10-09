@@ -148,8 +148,7 @@ constructor and one for the methods — and write down the two lists: who
 constructs it, and who calls it. The shape of that graph decides:
 
 - **Many producers, one consumer domain** → it belongs to the consumer. Name it
-  in the **consumer's** namespace, not for the data it happens to read. Several
-  callers agreeing on a shape none of them owns is what makes it the consumer's.
+  in the **consumer's** namespace, not for the data it happens to read.
 - **One producer, many consumers** → it belongs to the data. Name it for the
   **data**, in that data's namespace.
 - **Producer and consumer are the same model** → not a separate class at all.

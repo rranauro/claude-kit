@@ -156,15 +156,16 @@ List each new or changed model, service, action, controller, serializer, job, an
 Name its closest existing analogue, and say whether it is built the same way. Placement is
 the author's call; inconsistency with the analogue is what to report.
 
-Then flag what will be hard to maintain. These counts come from `kit:rails-codebase-design`:
+Then flag what will be hard to maintain. These are `kit:rails-codebase-design`'s §2 counts
+and §1's declarative-name property, under its names:
 
 - **First-parameter receiver** — a class method whose first argument is the record it
   operates on: an instance method that never moved onto the instance. Worst with one caller.
-- **Name doing the work** — a long name narrating what the method does instead of what it
+- **Undeclarative name** — a long name narrating what the method does instead of what it
   returns: `build_preview_string`, not `preview`.
 - **Fixed-key hash** — a method returning a hash whose keys are literal: a domain object that
   was never named, and cannot be tested as a type.
-- **Keyed lookup handed out** — a caller digging into a returned hash by a key it builds or
+- **Keyed lookup handed out raw** — a caller digging into a returned hash by a key it builds or
   knows.
 - **Duplicated answer** — a rule the app already defines, restated.
 - **Unheld namespace** — behaviour filed under the data it reads rather than the caller it

@@ -11,10 +11,7 @@ and something an adversarial pass can check rather than argue.
 
 `kit:behavior-placement` answers *whose* the behavior is. This answers *what
 shape* the result should take. Neither decides what to build; the invoking
-command owns that.
-
-Its words are defined once, here: the concepts and structural nouns in §5, each
-count where §2 states it. Every skill that judges shape uses them as written.
+command owns that. Its vocabulary is §5.
 
 ## 1 — What a well-shaped object looks like
 
@@ -304,8 +301,9 @@ have known which constructor to call.
 _Avoid_: named constructors, mode constructors.
 
 Those two counts are one rule read from both ends: the interface is a type
-signature. Same types in and out is a split between objects that should not be
-there; a return type the name does not predict is one that should.
+signature. Same types in and out means two objects where there should be one;
+a return type the name does not predict means one object where there should be
+two.
 
 **The duplicated answer.** A method that recomputes something the application
 already establishes elsewhere duplicates the definition, and the two copies
@@ -359,7 +357,7 @@ correct. Two passes over the collection, or two methods, say the same thing with
 failure boundary a reader can state: all of the first, then all of the second.
 Where it shows up first is the spec — the second operation cannot be exercised
 without driving the first.
-_Avoid_: interleaved loop.
+_Avoid_: mixed loop.
 
 This is the only count about the inside of a method body. It is here because the
 shape survives every other check: arity, naming, and placement can all be correct
@@ -416,7 +414,7 @@ of them is the definition and the other is recomputing it.
 One exclusion is specific here. **A controller that renders what the server
 calculated is complete, not thin.** Where the convention is that the server
 computes state and hands the result to the front end, scoring such a module as
-shallow — or proposing to move the calculation into it — misreads the
+thin — or proposing to move the calculation into it — misreads the
 architecture.
 
 ## 5 — Vocabulary
@@ -461,8 +459,7 @@ _Avoid_: re-parse, rebuild from the serialized form.
 
 **Producer / consumer**:
 Who constructs an object, and who calls it. `kit:behavior-placement` Check 3
-lists both; where many producers feed one consumer domain the class belongs to
-the consumer, and where one producer feeds many consumers it belongs to the data.
+lists both, and the two lists decide the namespace.
 _Avoid_: boundary type, census.
 
 **Hidden instance**:
@@ -473,8 +470,7 @@ _Avoid_: callable, service object.
 ### Structural nouns
 
 **Model**:
-An ActiveRecord class that owns its data and the behavior over it. The default
-home for behavior.
+An ActiveRecord class that owns its data and the behavior over it.
 _Avoid_: record class.
 
 **Concern**:
@@ -487,13 +483,12 @@ _Avoid_: seam, mixin, trait.
 An object constructed from data the app has hydrated, named for a domain concept,
 answering derivations over it. The second home for model behavior, after a
 concern.
-_Avoid_: value object — unless the thing really is immutable and compared by
-value — PORO.
+_Avoid_: PORO; value object, unless it really is immutable and compared by
+value.
 
 **Service**:
-A class for an operation with no natural owner: one that coordinates several
-aggregates, adapts to the outside world, or runs a multi-step workflow. The
-residual, never the default.
+A class for an operation no model owns. `kit:behavior-placement` Check 1 says
+when one is warranted.
 _Avoid_: interactor, operation class.
 
 **Namespace**:

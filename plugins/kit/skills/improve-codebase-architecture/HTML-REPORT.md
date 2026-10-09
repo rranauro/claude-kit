@@ -166,7 +166,7 @@ avoids. Concision is not an excuse to drift.
 - "Three class methods thread `page` through each other; `page` is the
   `initialize` of the object that doesn't exist."
 - "The hash's four keys were always four methods."
-- "`Order` already derives this; the class re-parses it out of the serialized
+- "`Order` already hydrates this; the class recomputes it from the serialized
   form."
 
 **Cost lines** name a caller or a change: *"both callers must read `Order` to
