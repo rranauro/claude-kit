@@ -364,6 +364,27 @@ shape survives every other check: arity, naming, and placement can all be correc
 while the body still interleaves two operations that had no reason to be
 interleaved.
 
+**The accreted interface.** An object whose interface carries three or more
+members that each serve at most one call site outside the object and its specs.
+A member is a public method, a class method — constructors included — an
+optional `initialize` keyword, or a parent's hook that one subclass overrides
+for one caller. Each arrived with the capability that needed it and cleared §3 on
+its own, which is why the count exists: the interface became a list of callers
+rather than an API, and no single change owns that.
+
+The members it counts are the ones that differ from each other. A reader per
+channel — one signature and one return type, repeated once per channel — is a
+single question asked of the object many times. That is the API working, however
+few callers each one has. The count is for members that are each shaped to a
+different caller: `authored_by?(mode) -> Boolean` for one view,
+`removed_fields -> Array` for one job, `self.for_import(file)` for one importer, a
+`preview:` keyword only the test harness passes.
+
+Its cost is in the object's history, not in any one method: each capability
+landed as a bespoke member, and the next one will too. That history is the change
+it makes harder, and §3's closing check takes it as such.
+_Avoid_: undertow, sprawl, bloat, god class, public surface.
+
 **The deletion test.** Imagine the object gone. If the complexity vanishes, it
 was a pass-through. If it reappears at every caller, it earns its place.
 Applies to anything being proposed as much as to anything already written.
@@ -394,6 +415,11 @@ approach down for one of them is wrong.
   own and never the criterion a proposal is measured against. A refactor that
   satisfies every count and lands over the limit has succeeded; one that lands
   under it while satisfying none has not.
+- **A method with one caller is not a finding on its own.** It costs nobody:
+  the deletion test sends its complexity back to that one caller, which is where
+  it would otherwise live. What §2 counts is the accreted interface — the third
+  such member on one object, judged by the ones already there. The single method
+  stays protected; the object's history is what it can be charged for.
 
 The check that settles it: **name the caller it costs, or the change it makes
 harder.** Friction that can name neither is not a finding.
