@@ -13,9 +13,10 @@ vocabulary those files read off an issue; `docs/commands.md` lists the surface;
   no test suite and nothing to unit-test. Do not offer to add specs, and do not
   treat their absence as a gap.
 - **`scripts/lint.sh` is the whole automated check** — shell parses, JSON
-  manifests are JSON, skill frontmatter matches its directory, and the kit
-  declares no version. The first three fail at harness load time rather than at
-  review; the last fails silently at update time. Run it before opening a PR;
+  manifests are JSON, skill frontmatter matches its directory, the kit declares
+  no version, and a vendored skill carries its notice. The first three fail at
+  harness load time rather than at review; the version fails silently at update
+  time; a dropped notice fails nowhere at all. Run it before opening a PR;
   `.github/workflows/lint.yml` runs it again on the PR.
 - **The design skills this plugin ships do not govern this plugin.**
   `kit:rails-codebase-design` and `kit:behavior-placement` are the axis for the
@@ -34,11 +35,9 @@ vocabulary those files read off an issue; `docs/commands.md` lists the surface;
 - **An adopted skill is a fork.** A skill carrying an `UPSTREAM` sidecar was
   vendored by `scripts/adopt-skill.sh` from an upstream repo, and
   `scripts/check-upstream.sh` reports what has changed there since. Editing one
-  by hand diverges the fork silently. A skill with a `metadata.credits` block
-  instead was vendored by hand and does not track its upstream. A skill with
-  neither is ours outright. Anything copied in from elsewhere, by script or
-  by hand, carries the notice that
-  [the vendoring convention](docs/companion-skills.md#vendoring) requires.
+  by hand diverges the fork silently. Anything copied in from elsewhere, by
+  script or by hand, follows
+  [the vendoring convention](docs/companion-skills.md#vendoring).
 - **Never commit to `main`.** Feature branch off `origin/main` — `git fetch
   origin main` first so the local ref is not stale — then a PR. PRs are merged on
   GitHub, never locally.

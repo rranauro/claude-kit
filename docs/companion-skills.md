@@ -36,9 +36,7 @@ existing fork.
 
 - **An `UPSTREAM` sidecar**, for a fork that tracks its upstream.
   `scripts/adopt-skill.sh` writes it from whichever checkout `SKILLS_REPO`
-  names: the repo, the path inside it, the sha it was taken at, the checkout to
-  diff against, and the `git diff` incantation for reviewing what changed
-  since. `scripts/check-upstream.sh` reads it, so drift is a command away.
+  names, and `scripts/check-upstream.sh` reads it, so drift is a command away.
 - **A `metadata.credits` block in `SKILL.md` frontmatter**, for a derivation
   that does not track its upstream — copied by hand, adapted heavily, or
   combined from more than one source. Each entry names the skill, the author and
@@ -57,10 +55,9 @@ repo root, and they do not make the local changes inside the directory the
 upstream author's. Those are ours, under the root licence, alongside the
 upstream text they sit with.
 
-**`scripts/lint.sh` fails a skill that declares an upstream and carries no
-notice** — a sidecar or a credits block with no `LICENSE*` beside it. A copy that
-declares nothing cannot be caught that way; the declaration is the part a person
-adding a fork owes.
+**`scripts/lint.sh` holds a declared fork to the notice and the row below.** A
+copy that declares nothing cannot be caught that way; the declaration is the
+part a person adding a fork owes.
 
 ### What is vendored
 
@@ -74,8 +71,7 @@ adding a fork owes.
 | `visual-pr` | mattpocock/skills `pr`, and through it humanlayer/skills `show-me` | `metadata.credits`, `CREDITS.md` |
 | `visual-review` | mattpocock/skills `pr` | `metadata.credits` |
 
-All under `plugins/kit/skills/`. A row added here belongs in the same PR as the
-directory it describes.
+All under `plugins/kit/skills/`.
 
 ## Installing the upstream suite
 
