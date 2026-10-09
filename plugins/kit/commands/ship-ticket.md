@@ -87,8 +87,15 @@ at, answering the parks, and walking the PRs that carry `kit-hold`.
 ## Step 0 · `reclaim` — Clear the dead worktrees first
 
 Before anything is selected or prepared, reclaim the worktrees this project has
-accumulated. Invoke `kit:worktree-reclaim` through the **Agent tool**, unattended
-and with no target, so it sweeps and asks nothing.
+accumulated. Launch the `kit:reclaim-sweep` subagent through the **Agent tool**
+with no target. It runs `kit:worktree-reclaim` unattended, so it sweeps and asks
+nothing.
+
+**Pass it no model.** The sweep is mechanical, so the subagent pins a fast model
+at low effort itself, and that pin holds whatever this session runs — which it
+would not if the call named the session's model. A model passed for a subagent,
+on the call or through the environment's subagent-model override, still wins
+over the pin, so an operator who wants a different one gets it.
 
 **Wait for the agent to return before Step 1 begins.** The Agent tool returns
 when the sweep is *launched*, not when it is finished, so the sequencing above

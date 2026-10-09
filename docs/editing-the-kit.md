@@ -9,6 +9,7 @@ nothing in the checkout looks different either way.
 |---|---|---|
 | `plugins/kit/commands/*.md` | Session start | After a restart |
 | `plugins/kit/skills/*/SKILL.md` and its bundled files | Session start | After a restart |
+| `plugins/kit/agents/*.md` | Session start | After a restart |
 | `plugins/kit/scripts/*.sh` | Every run, by path | Immediately |
 | `plugins/kit/hooks/rails-quality-gates.sh` | Every fire, by path | Immediately |
 
