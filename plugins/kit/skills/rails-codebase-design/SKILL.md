@@ -196,44 +196,6 @@ Three consequences, none of them visible from the return type alone:
   cause. Treating the symptom produces a caller that hoists a hash and still
   builds keys.
 
-### One finding, two moves
-
-Both examples above end in one After. This one is a finding that two of §2.5's
-reshapes fit.
-
-**Before** — one class, and a mode chooses what it does:
-
-```ruby
-Ai::Request.new(site, mode: :edit, component: component).prompt
-Ai::Request.new(site, mode: :add_section, position: 3).prompt
-```
-
-**After, one object** — the mode became what it is constructed with:
-
-```ruby
-Ai::Request.new(site, target: component).prompt
-Ai::Request.new(site, target: page.slot(3)).prompt   # target answers #context
-```
-
-It answers §2.5's rule for variation in the data.
-
-**After, shared parent** — each value of the mode became a class:
-
-```ruby
-Ai::Request::Edit.new(site, component).prompt
-Ai::Request::AddSection.new(site, 3).prompt
-
-class Ai::Request::Base
-  def initialize(site)
-  def prompt -> String       # shared steps; subclasses supply theirs
-end
-```
-
-It answers the same rule for variation in the steps.
-
-The Before shows only its call sites, so both fit. Its body is what would favour
-one.
-
 ## 2 — What to count when it isn't
 
 Counts, not preferences. Each states what the number means and stops there.
@@ -447,10 +409,11 @@ object; the ones here are fixed by reshaping a set of classes, and the axis
 names four. Each points back to the counts that suggest it and adds no count: an
 observation no count covers is stated with the move, not in §2.
 
-**Where more than one move fits a finding, show each one's After and mark none
-preferred.** Choosing between them is the rank, and the rank belongs to the step
-that invoked this axis. A finding that offers only the move it thought of first
-has made that choice silently.
+**Where the invoking step asks for alternatives and more than one move fits a
+finding, show each one's After and mark none preferred.** Choosing between them
+is the rank, and the rank belongs to that step. A step whose report carries one
+After per finding keeps it — the moves widen what it may propose, not how many
+it writes.
 
 **Shared parent.** Several objects differ along one axis and repeat the rest, so
 each value of that axis is a class under a parent that holds what they share.
@@ -501,6 +464,44 @@ _Tell_: the duplicated answer, or the doubled name, across classes that sit
 beside a parent rather than under it.
 _Cost at the call site_: none. The cost lands on the definitions, and there is
 no common ancestor a caller or a test can check against.
+
+### One finding, two moves
+
+The examples in §1.5 end in one After. This one is a finding that two of the
+moves above fit.
+
+**Before** — one class, and a mode chooses what it does:
+
+```ruby
+Ai::Request.new(site, mode: :edit, component: component).prompt
+Ai::Request.new(site, mode: :add_section, position: 3).prompt
+```
+
+**After, one object** — the mode became what it is constructed with:
+
+```ruby
+Ai::Request.new(site, target: component).prompt
+Ai::Request.new(site, target: page.slot(3)).prompt   # target answers #context
+```
+
+It answers the rule above for variation in the data.
+
+**After, shared parent** — each value of the mode became a class:
+
+```ruby
+Ai::Request::Edit.new(site, component).prompt
+Ai::Request::AddSection.new(site, 3).prompt
+
+class Ai::Request::Base
+  def initialize(site)
+  def prompt -> String       # shared steps; subclasses supply theirs
+end
+```
+
+It answers the same rule for variation in the steps.
+
+The Before shows only its call sites, so both fit. Its body is what would favour
+one.
 
 ## 3 — What is not a finding
 
