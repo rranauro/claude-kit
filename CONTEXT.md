@@ -180,6 +180,17 @@ still is once the assertion goes; and from subsumed, which compares two examples
 `/kit:prune-specs` is the one statement of it.
 _Avoid_: wrong-layer test, leaky spec, over-asserting, redundant, duplicate
 
+**Over-stubbed**:
+A property of one RSpec example that stubs a real collaborator of its subject:
+a break in that collaborator's real implementation goes unnoticed by every
+example covering the subject. Shown by running, never by counting stubs — some
+isolation hides nothing. Distinct from a tautology, which passes whatever its
+subject does; an over-stubbed example exercises a real subject and may be
+load-bearing over it, and is blind only to what its stubs replace. It is filed
+for rewrite, not for pruning.
+`/kit:prune-specs` is the one statement of it.
+_Avoid_: over-mocked, mock-heavy, hollow, isolated, brittle
+
 ### Judging object shape
 
 **Accreted interface**:

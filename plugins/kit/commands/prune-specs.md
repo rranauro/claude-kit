@@ -2,8 +2,8 @@
 model: opus
 ---
 
-Walk this project's spec suite, prove which examples can be removed, and file
-them as one ticket. It decides; it never deletes.
+Walk this project's spec suite, prove which examples can be removed or must be
+rewritten, and file them as a ticket each way. It decides; it never deletes.
 
 **Arguments:** none. The scan covers the whole suite, every time — expect tens of
 minutes. Run it from the main checkout, against a clean tree.
@@ -12,9 +12,9 @@ minutes. Run it from the main checkout, against a clean tree.
 too.** What convicts, what does not, and what a pass says are all its. This
 command finds the files, proves the candidates, and files the result.
 
-**Two findings the axis does not own** — subsumption and the misplaced
-assertion: reading cannot settle either, and their only evidence is a run of
-specs against the same mutation, which is this command's.
+**Three findings the axis does not own** — subsumption, the misplaced assertion
+and the over-stubbed example: reading cannot settle any of them, and their only
+evidence is a run of specs against the same mutation, which is this command's.
 
 ---
 
@@ -63,9 +63,9 @@ the gate ever becomes cheap enough to run on everything, delete this step rather
 than keeping it for shape.
 
 **Fill any room left in the band with misplaced assertions, then subsumption
-pairs** — after the axis's categories, and only when there is room, since a full
-band would discard the search. An assertion costs one mutation and a pair
-several, which is the order.
+pairs, then over-stubbed examples** — after the axis's categories, and only when
+there is room, since a full band would discard the search. Removals come before rewrites,
+then cheaper proofs first: an assertion costs one mutation and a pair several.
 
 For misplaced assertions, fan out one agent per request spec file. Each returns
 candidate assertions, one line each — the assertion's `file:line`, the
@@ -84,6 +84,13 @@ another file, so the unit is the directory: the files directly in it, not its
 subdirectories. Each agent returns candidate pairs, one line each — the
 candidate's `file:line`, the covering example's `file:line`, and the production
 code both assertions reach.
+
+For over-stubbed examples, fan out one agent per spec file. Each returns
+candidates, one line each — the example's `file:line`, its subject, the stubbed
+collaborator method, and the spec files that cover the subject by the project's
+layout. **Only a stub of the project's own code is a candidate**: a gem, the
+standard library or an external service has no implementation in this tree to
+mutate. A mock asserting the mock is the axis's tautology, not this.
 
 Reading only proposes; Step 4 proves. A file or directory whose agent fails is
 unassessed for that finding, and Step 7 says so.
@@ -164,13 +171,30 @@ thing noticing the break, and the assertion **moves**: a spec at the owning laye
 is written, and the assertion leaves. Any means it is already noticed where it
 belongs, and the assertion simply **goes**.
 
-## Step 5 · `file` — One ticket, or none
+### An over-stubbed example proves against what its stub replaces
+
+Mutate the stubbed method's real implementation in what the stub stands in for —
+its returned value, or its effect. A mutation the subject never consumes goes
+unnoticed for no fault of the spec, and convicts legitimate isolation. Run the
+candidate together with every example covering the subject, through steps 1–6
+above.
+
+Mutations of different kinds, up to three as for a pair, stopping at the
+**first one nothing went red under** — that mutation is the proof, and the
+examples that stayed green are the evidence. Every mutation noticed by some
+example covering the subject means the stubs hide nothing, and the candidate is
+dropped. Candidates stubbing the same collaborator method share its mutations.
+
+## Step 5 · `file` — Up to two tickets, or none
 
 **A run that proved nothing files no ticket.** Say so in one line and stop.
 
-Otherwise file exactly one issue carrying every proven finding. Not one per
-candidate: a prune is mechanical, so a ticket each buys an executor nothing and
-costs a run each.
+Otherwise file one ticket per disposition: a **prune ticket** carrying every
+finding proven for removal, and a **rewrite ticket** carrying every over-stubbed
+example, each only when it has a finding. Not one per candidate: a ticket each
+buys an executor nothing and costs a run each.
+
+### The prune ticket
 
 Each listed finding carries the gate's run, written as something the executor
 performs **before** removing anything — apply each mutation, run the named
@@ -202,17 +226,36 @@ a fence. Next to the criteria, write a short paragraph saying the procedure is
 the acceptance and must stay: a deletion guarantees behavior preservation
 by construction, so the mutation check is the only thing an executor can fail.
 
-The ticket carries **`technical-debt`**, and `kit:writing-tickets` owns the body.
 Give it the empty blocking marker `<!-- kit-blocked-by: -->` so a sweep can see
-it. Leave `ready-for-agent` off — that is a person's claim that a ticket is safe
-to pick up unbidden, and this command filed it.
+it.
 
-## Step 6 · `settle` — Triage the ticket it filed
+### The rewrite ticket
+
+One criterion per over-stubbed example: **afterwards, an example covering the
+subject goes red under the named mutation** — the stubbed collaborator, and what
+was done to its implementation. Rewriting the example against the project's own
+test data meets it, and so does removing it where another example covering the
+subject now notices. Which test data is the project's, never this command's choice.
+
+**An example the prune ticket lists for deletion is not listed for rewrite.**
+Its blocking marker names the prune ticket where one was filed, and is empty
+otherwise: a rewrite may remove an example the prune's checks still run as a
+cover.
+
+### Both tickets
+
+Each carries **`technical-debt`**, and `kit:writing-tickets` owns the body.
+Leave `ready-for-agent` off — that is a
+person's claim that a ticket is safe to pick up unbidden, and this command filed
+it.
+
+## Step 6 · `settle` — Triage the tickets it filed
 
 **Only when Step 5 filed a ticket.** A run that proved nothing has nothing to
 settle.
 
-Run `/kit:triage <n>` on it now, in this session — a step, not an offer:
+Run `/kit:triage <n>` on each now, in this session, the prune ticket first — a
+step, not an offer:
 filed without the label, the ticket is invisible to `/kit:list` and to every
 sweep. Triage runs unchanged and owns everything it writes; never relabel the
 `technical-debt` kind, and never add `ready-for-agent` to cover a triage that
@@ -234,11 +277,18 @@ spec/requests/sites_spec.rb:58  misplaced   slug derivation dropped at site.rb:2
 spec/requests/sites_spec.rb:71  misplaced   total rounding removed at order.rb:40; order_spec.rb:88 noticed too — goes
 ```
 
+An over-stubbed example names its stubbed collaborator, the mutation, and the
+examples covering the subject that stayed green:
+
+```
+spec/services/checkout_spec.rb:42  over-stubbed  stubs Pricing#total; total inverted at pricing.rb:18, unnoticed by checkout_spec.rb:42, :57 — rewrite
+```
+
 Then the four things only a suite sweep can report, one line each: candidates
 the gate refuted, candidates left unproven, candidates beyond the band's cap,
 and files or directories no agent assessed.
 
-Close with the ticket number and what triage made of it — settled, closed, or
+Close with each ticket's number and what triage made of it — settled, closed, or
 left open as not-now with its reason — or the one line saying nothing was
 proven. A triage stopped partway means the run did not finish: say so, not that
 it completed, and give `/kit:triage <n>` as what finishes it.
