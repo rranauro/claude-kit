@@ -1,5 +1,6 @@
 ---
 model: sonnet
+effort: low
 ---
 
 Record what just surfaced as a checkable observation — and review what has
