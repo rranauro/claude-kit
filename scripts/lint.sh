@@ -5,8 +5,9 @@ set -euo pipefail
 # by reading the diff: a shell script that no longer parses, a manifest that is
 # no longer JSON, a skill whose frontmatter stops matching its directory — all
 # of which fail at load time in the harness rather than at review time — a
-# plugin version that would stop installs from updating at all, and a vendored
-# skill that dropped the notice its licence requires.
+# plugin version that would stop installs from updating at all, a vendored
+# skill that dropped the notice its licence requires, and an inline skill whose
+# model pin would outlive it.
 #
 # Shape only, and it stays under a second so it is worth running before every
 # push. Behaviour is asserted in tests/, which CI runs as its own step.
@@ -86,6 +87,14 @@ for skill in plugins/kit/skills/*/; do
   # answers to something other than what its own frontmatter advertises.
   if [ -n "$name" ] && [ "$name" != "$dir_name" ]; then
     fail "$md declares name '$name' but lives in '$dir_name'"
+  fi
+
+  # A skill's model or effort override lasts for the rest of the turn, not the
+  # rest of the skill, so an inline skill that names one carries its caller onto
+  # it. Only one that runs isolated may. docs/commands.md has the rule.
+  if awk 'NR>1 && /^---$/{exit} /^(model|effort):/{f=1; exit} END{exit !f}' "$md" &&
+     ! awk 'NR>1 && /^---$/{exit} /^context:[[:space:]]*fork[[:space:]]*$/{f=1; exit} END{exit !f}' "$md"; then
+    fail "$md names a model or effort but runs inline — only a forked skill may; see docs/commands.md#only-work-that-starts-its-own-turn-names-a-model"
   fi
 
   # A hand-copied skill passes every check above while dropping the notice its

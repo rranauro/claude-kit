@@ -86,6 +86,32 @@ also blocks a scheduled task whose prompt *is* the command — which is how
 `/loop 20m /kit:ship-ticket unattended` and `ship-startable.sh` run — so staying
 unlisted is the weaker tool that costs nothing.
 
+### Only work that starts its own turn names a model
+
+A `model:` or `effort:` in a prompt file's frontmatter does not stay with that
+file. It applies for the rest of the current turn, so it lands on whatever runs
+after it in the same turn — the caller included. An unattended
+`/kit:ship-ticket` is one turn from selection to hand-off, so a cheap model
+pinned on `kit:commit` would carry the rest of the ticket after the first commit,
+and an effort pinned on an axis skill would drag down the pass that consulted it.
+
+So the override belongs only where the turn it governs is the file's own:
+
+| Prompt file | May name a model or effort |
+|---|---|
+| A plugin subagent | Yes — it runs isolated, and its turn ends when it hands back. |
+| A skill with `context: fork` | Yes — the same isolation. |
+| A command a person invokes | Yes — the invocation starts its turn. |
+| A skill that runs inline | No — run it isolated instead, as either of the first two. |
+| A command another prompt hands off to | No — the Skill tool runs it inside its caller's turn, which makes it inline. |
+
+`scripts/lint.sh` fails on the fourth row and names the file. It does not hold
+the fifth: a `description` is the frontmatter sign of a handoff target, but
+`design`, `review-copilot` and `worktree-gc` carry one beside a model pin today,
+so a check would fail the kit as it stands. Those three are an open exception to
+this row, and until they are settled the row is this section's to carry when a
+handoff is added.
+
 ## Skills
 
 | Skill | What it does |
