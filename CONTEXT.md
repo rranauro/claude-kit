@@ -143,10 +143,8 @@ _Avoid_: undertow, sprawl, bloat, god class, public surface
 
 **In-flight reshape**:
 A move across the namespaces a shape-held PR touched, chosen by the person at
-the hold and committed on that PR's branch, with no ticket. Distinct from an
-`improve-codebase` or `technical-debt` ticket, which briefs an agent working
-unwatched; here the person steering is the brief. `kit:reshape` is the one
-statement of it.
+the hold, with no ticket. Distinct from an `improve-codebase` or
+`technical-debt` ticket.
 _Avoid_: refactor, follow-up, cleanup
 
 ### Reclaiming a worktree

@@ -5,58 +5,70 @@ description: Reshape the namespaces a shape-held pull request touched, with the 
 
 # Reshape
 
-An **in-flight reshape**: a move across the namespaces one held PR touched,
-chosen by the person at the hold and committed on that PR's branch. `CONTEXT.md`
-defines the term; ADR 0007 says why it files no ticket.
+An **in-flight reshape**, as `CONTEXT.md` defines it; ADR 0007 says why it files
+no ticket.
 
-**A person is the brief, so there is no unattended mode.** This pass shows,
-ranks and asks; the person decides — which move, and whether any belongs inline
-at all. A run with nobody present has nothing to offer and stops before step 1.
+**There is no unattended mode.** This pass shows, ranks and asks, and the person
+picks. A run with nobody present stops before step 1.
 
 **Argument:** a pull request number.
 
 ## 1 — Confirm it is a shape hold
 
-```bash
-gh pr view <n> --json state,labels,headRefName,headRefOid,baseRefOid,comments
-```
-
-The PR must be open, carry `kit-hold`, and have a comment opening on
-`<!-- kit-shape-review -->` with findings. Missing any, say which and stop —
-the kind hold, a triage hold and a `kit:review-copilot` escalation are holds
-about something other than shape, and this pass has nothing to say to them.
+The PR must be open and carry `kit-hold`, and its latest `<!-- kit-shape-review
+-->` comment must carry findings — found as `/kit:review-copilot` Step 1 finds
+it, by marker and latest `updated_at`. Missing any, say which and stop: a hold
+with no shape review is about something else, and this pass has nothing to say
+to it.
 
 ## 2 — Stand in the branch's worktree
 
-Find it with `git worktree list --porcelain`, matching the PR's branch — a
-`kit-hold` PR keeps reclaim off it, so it is usually there. Where it is not,
-`git fetch origin <branch>` and create one on the existing branch through
-`kit:worktree-conventions`; never a new branch.
+**`kit:ticket-loop` as the caller** is already in it, at the PR head, holding
+the lease. Skip to step 3, and leave the lease alone — it is the loop's, and
+step 4 of its `hand-off` still needs it.
 
-Its head must be the PR's head. Behind → `git pull --ff-only`. Uncommitted
-changes, or a local commit the PR lacks → say so and stop; that is someone's
-work, and a reshape on top of it is not one they chose.
+**Run by a person**, resume through `kit:start-ticket` `safety-check` with the
+issue the PR closes; a `kit-hold` PR keeps reclaim off its worktree, so it is
+usually there. Where it is not, create one on the PR's existing branch through
+`kit:worktree-conventions` — never a new branch — and wire it as
+`kit:start-ticket` `wire-worktree` does. Take the lease as `create-worktree`
+writes it, and release it however this pass ends.
 
-Take the lease as `kit:start-ticket` `create-worktree` writes it, and release it
-however this pass ends — `git worktree unlock <worktree>`.
+Either way, the worktree's head must be the PR's. Behind →
+`git pull --ff-only`. Uncommitted changes, or a local commit the PR lacks → say
+so and stop; that is someone's work, and a reshape on top of it is not one they
+chose.
 
-Every path below is that worktree's.
+## 3 — Gather the evidence in a subagent
 
-## 3 — Scope to the namespaces the PR touched
-
-The scope is the outer constant — `kit:rails-codebase-design` §5 **Namespace**
-— of every class the diff adds or changes:
+Through the **Agent tool**, so the inventory stays out of this session — wait
+for it to return. It works at the PR head, and reads the diff and the references
+once each, then answers from them:
 
 ```bash
-git diff <base>...<head> --name-only
+git diff -U0 <base>...<head>                  # touched files, and the added lines
+git grep -n -E '\b(<Namespace>|…)\b' <head>   # every reference into the scope
 ```
 
-Nothing outside it is a candidate, even where a count fires. A finding beyond
-the scope is a scan's, and naming it here turns a hold into a survey.
+- **The scope** is the outer constant — `kit:rails-codebase-design` §5
+  **Namespace** — of every class the diff adds or changes. Nothing outside it is
+  a candidate, even where a count fires: that is a scan's finding, and taking it
+  here turns a hold into a survey.
+- **The shape** — per namespace, each class with its `initialize` and public
+  members, the PR's additions marked, and its consumers grouped by calling
+  namespace with a count. The grouping is what a move is judged against.
+- **The candidates** — the scoped classes judged as `kit:shape-review` §2–3
+  judges a diff's, placement included, over the scope rather than the diff. The
+  posted review's findings stand as counted where the head has not moved since.
+  Each candidate carries its count and number, its move (§1.5 or §2.5) and the
+  After in §1.5's panels, and **outside the diff**: every reference row above
+  the move would change that the diff did not add, as `file:line`. None is an
+  answer. Ranked strongest first, one recommended, as §5 **Rank** defines it.
 
-## 4 — Show the shape before proposing anything
+## 4 — Show the shape, then the candidates
 
-One view per namespace, as its own message, ahead of any candidate:
+The shape first, as its own message, before any candidate — the person reads
+what the namespace is before reading what it could become:
 
 ```text
 Ai::Prompts
@@ -69,55 +81,31 @@ Ai::Prompts
         consumers: Ai::Request (1)
 ```
 
-Each class with its `initialize` and public members, the PR's additions marked,
-and its consumers grouped by calling namespace with a count — one `git grep` for
-references into the namespace, as `kit:rails-codebase-design` §2.5 **Separate
-namespaces** finds them. That grouping is what a move will be judged against,
-so the person reads it before reading a move.
-
 If they want it drawn another way, name `/kit:show-me` — it is invoked by a
 person only, so this pass cannot run it for them.
 
-## 5 — Rank the candidates
+Then the ranked candidates, held to `kit:asking-a-human`, with each one's call
+sites outside the diff listed in full — never summarised as a count. Ask which
+to take, or none.
 
-Over the scoped classes only, apply `kit:rails-codebase-design` §2 counts, gate
-on §3, and propose the §1.5 or §2.5 move each surviving count calls for. The
-posted shape review's findings are the first leads, not the limit.
-
-Per candidate:
-
-- **The count**, by name, and its number.
-- **The move**, and the After at the call site in §1.5's panels.
-- **Outside the diff** — every call site the move would change that the PR did
-  not add, as `file:line`. Find them in one `git grep` at the head, then drop
-  the lines `git diff <base>...<head>` adds. None is an answer; say it. This is
-  the line the person decides inline-versus-later on, so it is never left out
-  and never summarised as a count.
-
-Rank strongest first and recommend one, as §5 **Rank** defines it. Hold the
-question to `kit:asking-a-human` — its register, and the reach on its own line.
-
-Then ask which to take, or none. **Never say whether a candidate belongs inline
-or in a ticket**; the call sites outside the diff are the evidence, and the
-person weighs it.
+**Never say whether a candidate belongs inline or in a ticket.** The call sites
+outside the diff are the evidence; the person weighs it.
 
 **None** ends the pass. Nothing was written, and the hold is exactly as it was.
 
-## 6 — Make the move
+## 5 — Make the move
 
-In the worktree, under the project's own test rules — named files and examples,
-never a directory or the suite. Run the test files that cover each call site the
-move reached, outside the diff included. Commit through `kit:commit`, then
-`git push`. No force, no rebase, no merge of the base: the review round was
-decided against this branch's history.
+In the worktree. Commit through `kit:commit`, which runs the tests over every
+file the move changed — the call sites outside the diff included — then
+`git push`. No force; and never integrate the base, `kit:ticket-loop`'s rule.
 
 A move that will not go green after a real attempt: say so, discard the
 uncommitted change, and stop. What was pushed before it stays.
 
-Another candidate can follow. Return to step 5 against the new head; a moved
-class changes what the remaining counts read.
+Another candidate can follow. Recount only the classes the move touched and
+their consumers, and re-show what changed in the ranking before asking again.
 
-## 7 — Report
+## 6 — Report
 
 Which moves landed and the head they left. The posted shape review is against
 the old head — `/kit:shape-review <n>` judges the new one. `kit-hold` is still on
@@ -125,7 +113,7 @@ and is the person's to clear: `gh pr edit <n> --remove-label kit-hold`.
 
 ## Never
 
-- File an issue, or offer to. A follow-up ticket is not this pass's exit.
+- File an issue. A follow-up ticket is a separate exit, not this pass's.
 - Remove `kit-hold`.
 - Propose a move outside the scoped namespaces.
 - Edit `kit:show-me` or `kit:improve-codebase-architecture`. Both are forks with

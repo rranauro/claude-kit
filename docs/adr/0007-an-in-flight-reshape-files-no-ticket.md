@@ -9,16 +9,12 @@ one down for them to hand back to themselves is a round trip with no reader.
 
 ## Considered Options
 
-**File a ticket for every reshape the hold surfaces.** The path every other
-structural change takes — `kit:improve-codebase-architecture` files its `Strong`
-band, and a person who notices one files `technical-debt`. Rejected here: the move lands after
-merge, against code the held PR has already spread to more call sites, and the
-ticket's agent redoes the reading the person at the hold had just finished.
-Filing remains a legitimate exit for a move the person judges too wide to take
-inline; it is a separate path, not this one.
+**File a ticket for every reshape the hold surfaces.** The path other
+structural changes take. Rejected here: the move lands after merge, against code
+the held PR has already spread to more call sites, and the ticket's agent redoes
+the reading the person at the hold had just finished.
 
 ## Consequences
 
-A reshape changes the head after the shape review was posted, so the review on
-the PR describes an older commit. `kit:reshape` says so and names the rerun
-rather than running it, and `kit-hold` stays until the person clears it.
+A reshape moves the head past the posted shape review, so that review describes
+an older commit until it is rerun.
