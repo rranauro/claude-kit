@@ -125,14 +125,16 @@ and file nothing. A gate that cannot put the code back has stopped being a gate.
 candidate** — something noticed, which is what load-bearing means. Drop it and
 say so.
 
+**Where findings below reach the same code, apply each mutation once** and run
+every example they name in one invocation — pairs, request examples and
+owning-layer files alike.
+
 ### A subsumption pair proves differently
 
 One mutation cannot show subsumption: two examples can both catch "guard
 removed" while only one catches "nil returned". So a pair takes **at least two
 mutations of different kinds** to the production code the candidate reaches —
-three where the code offers them — each run through steps 1–6 above. Where pairs
-share that code, apply each mutation once and run every example of those pairs
-in one invocation.
+three where the code offers them — each run through steps 1–6 above.
 
 The pair is **subsumed** when the candidate caught at least one mutation and
 every one it caught, the covering example caught too. One only the cover caught
@@ -145,15 +147,14 @@ are what Step 5 hands down.
 
 One mutation, to the lower-layer code the assertion reaches, through steps 1–6
 above — running the request example and the owning-layer spec files together in
-one invocation. That is the subsumption comparison with the cover replaced by a
-layer.
+one invocation.
 
 The candidate is **proven** when the request example goes red *at that
 assertion*; red elsewhere in the example, or not at all, drops it. Then record
 which owning-layer examples went red too. None means the request spec is the only
 thing noticing the break, and the assertion **moves**: a spec at the owning layer
 is written, and the assertion leaves. Any means it is already noticed where it
-belongs, and the assertion simply **goes**. Either way the example stays.
+belongs, and the assertion simply **goes**.
 
 ## Step 5 · `file` — One ticket, or none
 
@@ -163,20 +164,19 @@ Otherwise file exactly one issue carrying every proven finding. Not one per
 candidate: a prune is mechanical, so a ticket each buys an executor nothing and
 costs a run each.
 
-Each listed example carries the gate's run, written as something the executor
-performs **before** deleting it — apply each mutation, run the named examples,
-confirm each goes the colour the gate saw, revert, then delete. For an axis
-candidate that is one mutation and the example staying green. For a subsumed
-example it is the mutations both caught, with its covering example named, and
-the cover going red on every one. That order is what makes it a check rather
-than an observation; after the deletion there is nothing left to run.
+Each listed finding carries the gate's run, written as something the executor
+performs **before** removing anything — apply each mutation, run the named
+examples, confirm each goes the colour the gate saw, revert, then remove. That
+order is what makes it a check rather than an observation; after the removal
+there is nothing left to run.
 
-**A misplaced assertion is listed by its assertion, not its example**, with the
-mutation and what the owning layer did under it. Its check is what holds
-afterwards: under the named mutation an owning-layer example goes red, and on
-unmutated code the request example passes without the assertion. For a move the
-executor writes that owning-layer example first and sees it go red; for one that
-simply goes, they confirm the named owning-layer example does.
+- **An axis candidate:** one mutation, and the example staying green.
+- **A subsumed example:** the mutations both caught, its covering example named,
+  and the cover going red on every one.
+- **A misplaced assertion**, listed by its assertion rather than its example:
+  its mutation, and an owning-layer example going red under it — the one named,
+  or for a move the one the executor writes first. Then the assertion goes, and
+  the request example still passes without it.
 
 **An example named as evidence is never listed for deletion in the same
 ticket** — a cover, or the owning-layer example a misplaced assertion goes in
@@ -215,8 +215,7 @@ same one-line shape, with its cover and the mutations in the evidence clause:
 spec/models/order_spec.rb:96    subsumed    by order_spec.rb:120; both caught guard removed, nil returned at order.rb:44
 ```
 
-A misplaced assertion carries the mutation, the assertion that noticed it, and
-whether any owning-layer spec did:
+A misplaced assertion likewise:
 
 ```
 spec/requests/sites_spec.rb:58  misplaced   slug derivation dropped at site.rb:22; no owning-layer spec noticed — move
