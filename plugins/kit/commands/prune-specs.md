@@ -38,7 +38,7 @@ eight. Each agent gets one file path and one instruction: apply
 **One file per agent, never a batch.** An agent holding several files reports on
 the aggregate, and the aggregate is what the axis's unit rule exists to prevent.
 
-**A file whose agent fails is unassessed, not clean.** Carry it into Step 6 by
+**A file whose agent fails is unassessed, not clean.** Carry it into Step 7 by
 name. Silence about a file that errored reads identically to a file with nothing
 in it, and the difference is what a suite sweep is trusted for.
 
@@ -108,15 +108,35 @@ the example, confirm it stays green, then delete. That order is what makes it a
 check rather than an observation; after the deletion there is nothing left to
 run.
 
+**Say why, beside the criteria, in the ticket itself.** By `kit:writing-tickets`
+a per-example procedure is a route, and `/kit:triage` will try to rewrite it into
+a fence. Next to the criteria, write a short paragraph saying the procedure is
+the acceptance and must stay: a deletion guarantees behavior preservation
+by construction, so the mutation check is the only thing an executor can fail.
+
 The ticket carries **`technical-debt`**, and `kit:writing-tickets` owns the body.
 Give it the empty blocking marker `<!-- kit-blocked-by: -->` so a sweep can see
 it. Leave `ready-for-agent` off — that is a person's claim that a ticket is safe
 to pick up unbidden, and this command filed it.
 
-## Step 6 · `report` — Say what it found
+## Step 6 · `settle` — Triage the ticket it filed
+
+**Only when Step 5 filed a ticket.** A run that proved nothing has nothing to
+settle.
+
+Run `/kit:triage <n>` on it now, in this session — a step, not an offer:
+filed without the label, the ticket is invisible to `/kit:list` and to every
+sweep. Triage runs unchanged and owns everything it writes; never relabel the
+`technical-debt` kind, and never add `ready-for-agent` to cover a triage that
+did not finish.
+
+## Step 7 · `report` — Say what it found
 
 The axis's contract governs the candidate lines. Then the four things only a
 suite sweep can report, one line each: candidates the gate refuted, candidates
 left unproven, candidates beyond the band's cap, and files no agent assessed.
 
-Close with the ticket number, or the one line saying nothing was proven.
+Close with the ticket number and what triage made of it — settled, closed, or
+left open as not-now with its reason — or the one line saying nothing was
+proven. A triage stopped partway means the run did not finish: say so, not that
+it completed, and give `/kit:triage <n>` as what finishes it.
