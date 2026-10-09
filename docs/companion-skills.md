@@ -41,7 +41,15 @@ existing fork.
   that does not track its upstream — copied by hand, adapted heavily, or
   combined from more than one source. Each entry names the skill, the author and
   a url pinned to a sha, so the point it was taken at is recoverable even though
-  no script diffs it.
+  no script diffs it:
+
+  ```yaml
+  metadata:
+    credits:
+      - skill: pr
+        author: Matt Pocock
+        url: "https://github.com/mattpocock/skills/blob/a7d038f/skills/engineering/pr/SKILL.md"
+  ```
 
 **It carries each upstream's notice.** The licences worth vendoring under all
 require their notice to travel with the copy. The first upstream's goes in
@@ -54,6 +62,9 @@ They do not cover the rest of the plugin, which is under the `LICENSE` at the
 repo root, and they do not make the local changes inside the directory the
 upstream author's. Those are ours, under the root licence, alongside the
 upstream text they sit with.
+
+**It has a row in the table below**, naming the directory, its upstream, and
+which of the two records it.
 
 **`scripts/lint.sh` holds a declared fork to the notice and the row below.** A
 copy that declares nothing cannot be caught that way; the declaration is the
