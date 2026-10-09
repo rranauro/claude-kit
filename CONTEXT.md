@@ -169,6 +169,18 @@ subsumed one adds nothing its cover does not. `/kit:prune-specs` is the one
 statement of it.
 _Avoid_: duplicate, duplicative, redundant, overlapping, covered
 
+**Misplaced assertion**:
+An assertion inside a request example that notices a break in something a lower
+layer computes — a derived value, a callback's effect — so the behavior is held
+up at the wrong layer. Its unit is the assertion, not the example. An assertion
+about what the endpoint was sent, returned or persisted as given is the request
+spec's own contract and never one. Distinct from load-bearing, which its example
+still is once the assertion goes; and from subsumed, which compares two examples
+in one directory and deletes one — this compares an assertion with the layer that
+owns what it checks, and moves it there, or drops it where that layer already
+notices. `/kit:prune-specs` is the one statement of it.
+_Avoid_: wrong-layer test, leaky spec, over-asserting, redundant, duplicate
+
 ### Judging object shape
 
 **Accreted interface**:
