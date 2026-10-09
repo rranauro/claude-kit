@@ -293,11 +293,13 @@ with the PR number, against the local branch. It triages both sources and pushes
 what it fixes; that push is its own and this phase is built around it, not
 against it.
 
-**3 · Judge the diff's shape.** Invoke `kit:shape-review <pr-number>` through
-the **Agent tool**, so its inventory stays out of this session, and **wait for
-it to return** — the Agent tool returns when the work is launched, so reading its
-answer early takes the failed branch below and arms a PR the review would have
-held. Its final message is the comment, opening on `<!-- kit-shape-review -->`.
+**3 · Judge the diff's shape.** Launch the `kit:shape-reviewer` subagent
+through the **Agent tool** with the PR number, so its inventory stays out of
+this session, and **wait for it to return** — the Agent tool returns when the
+work is launched, so reading its answer early takes the failed branch below and
+arms a PR the review would have held. Its final message is the comment, opening
+on `<!-- kit-shape-review -->`. **Pass it no model** — it pins its own, as
+`docs/commands.md` *Only work that starts its own turn names a model* says.
 
 It runs here because the round's fixes are pushed, so it judges the head that
 will merge (it pushes nothing itself), and auto-merge is not yet armed, so a hold
