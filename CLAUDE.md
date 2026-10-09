@@ -57,6 +57,10 @@ vocabulary those files read off an issue; `docs/commands.md` lists the surface;
 
 - copilot
 
+## Draft checks
+
+- full
+
 ## Where a fact goes
 
 Four layers describe this system, and a fact written into the wrong one becomes a

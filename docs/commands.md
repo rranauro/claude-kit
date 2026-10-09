@@ -141,6 +141,12 @@ automated reviews a project runs (`- copilot`, `- claude-review`); absent, both
 are expected. `hand-off` waits only on what it lists, and the round reports an
 unlisted source as not run rather than missing.
 
+**So is whether drafts run the full checks.** `## Draft checks` with `- full`
+tells `hand-off` that a draft's green is the ready PR's verdict, so it arms
+auto-merge the moment it marks the PR ready instead of first waiting for the
+transition's run to register. Absent, it waits — the safe reading for a project
+that skips steps on drafts under the same check names.
+
 **External commands these call.** Beyond the [companion skills](companion-skills.md),
 the workflow invokes `/simplify` (`kit:ticket-loop` `simplify`), `/loop` (drives
 `/kit:ship-ticket` over the backlog), and optionally `/target-debug` (reads the `tickets/` notes
