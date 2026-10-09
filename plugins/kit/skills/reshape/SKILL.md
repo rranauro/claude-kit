@@ -16,10 +16,15 @@ picks. A run with nobody present stops before step 1.
 ## 1 — Confirm it is a shape hold
 
 The PR must be open and carry `kit-hold`, and its latest `<!-- kit-shape-review
--->` comment must carry findings — found as `/kit:review-copilot` Step 1 finds
+-->` comment must carry findings — found as `/kit:review-copilot` Step 2 finds
 it, by marker and latest `updated_at`. Missing any, say which and stop: a hold
 with no shape review is about something else, and this pass has nothing to say
 to it.
+
+**Compare the review's heading SHA with `headRefOid`.** Where they differ, say
+so: the posted findings describe a head the branch has moved past — a review
+round's fixes, or an earlier reshape — and may already be fixed. Step 3 then
+counts everything afresh rather than starting from them.
 
 ## 2 — Stand in the branch's worktree
 
@@ -27,9 +32,10 @@ to it.
 the lease. Skip to step 3, and leave the lease alone — it is the loop's, and
 step 4 of its `hand-off` still needs it.
 
-**Run by a person**, resume through `kit:start-ticket` `safety-check` with the
-issue the PR closes; a `kit-hold` PR keeps reclaim off its worktree, so it is
-usually there. Where it is not, create one on the PR's existing branch through
+**Run by a person**, find it in `git worktree list --porcelain` by the PR's
+exact `headRefName` — not by an issue prefix, since a PR shape-reviewed by hand
+may close no issue, or several. A `kit-hold` PR keeps reclaim off its worktree,
+so it is usually there. Where it is not, create one on the PR's existing branch through
 `kit:worktree-conventions` — never a new branch — and wire it as
 `kit:start-ticket` `wire-worktree` does. Take the lease as `create-worktree`
 writes it, and release it however this pass ends.
@@ -47,8 +53,13 @@ once each, then answers from them:
 
 ```bash
 git diff -U0 <base>...<head>                  # touched files, and the added lines
-git grep -n -E '\b(<Namespace>|…)\b' <head>   # every reference into the scope
+git grep -n -E '\b(<Namespace>|<Class>|<member>|…)\b' <head>   # every reference into the scope
 ```
+
+The pattern carries the scoped classes' bare names and their public members as
+well as the namespace: code inside a namespace reaches its siblings unqualified
+(`Contract.new` within `module Ai::Prompts`), and a namespace-only search drops
+exactly those call sites from the list the person decides on.
 
 - **The scope** is the outer constant — `kit:rails-codebase-design` §5
   **Namespace** — of every class the diff adds or changes. Nothing outside it is
@@ -59,7 +70,7 @@ git grep -n -E '\b(<Namespace>|…)\b' <head>   # every reference into the scope
   namespace with a count. The grouping is what a move is judged against.
 - **The candidates** — the scoped classes judged as `kit:shape-review` §2–3
   judges a diff's, placement included, over the scope rather than the diff. The
-  posted review's findings stand as counted where the head has not moved since.
+  posted review's findings stand as counted only where step 1 found its SHA is the head.
   Each candidate carries its count and number, its move (§1.5 or §2.5) and the
   After in §1.5's panels, and **outside the diff**: every reference row above
   the move would change that the diff did not add, as `file:line`. None is an
