@@ -186,8 +186,8 @@ a break in that collaborator's real implementation goes unnoticed by every
 example covering the subject. Shown by running, never by counting stubs — some
 isolation hides nothing. Distinct from a tautology, which passes whatever its
 subject does; an over-stubbed example exercises a real subject and may be
-load-bearing over it, and is blind only to what its stubs replace. Its
-disposition is a rewrite against real data, never a deletion.
+load-bearing over it, and is blind only to what its stubs replace. It is filed
+for rewrite, not for pruning.
 `/kit:prune-specs` is the one statement of it.
 _Avoid_: over-mocked, mock-heavy, hollow, isolated, brittle
 

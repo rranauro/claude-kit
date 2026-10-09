@@ -59,10 +59,8 @@ than keeping it for shape.
 
 **Fill any room left in the band with misplaced assertions, then subsumption
 pairs, then over-stubbed examples** — after the axis's categories, and only when
-there is room, since a full band would discard the search. An assertion costs one
-mutation and a pair several, which is the order; an over-stubbed candidate costs
-up to as many as a pair and files a rewrite rather than a removal, so it goes
-last.
+there is room, since a full band would discard the search. Removals come before rewrites,
+then cheaper proofs first: an assertion costs one mutation and a pair several.
 
 For misplaced assertions, fan out one agent per request spec file. Each returns
 candidate assertions, one line each — the assertion's `file:line`, the
@@ -87,8 +85,7 @@ candidates, one line each — the example's `file:line`, its subject, the stubbe
 collaborator method, and the spec files that cover the subject by the project's
 layout. **Only a stub of the project's own code is a candidate**: a gem, the
 standard library or an external service has no implementation in this tree to
-mutate. An example whose only assertion is on a double is the axis's tautology,
-not this.
+mutate. A mock asserting the mock is the axis's tautology, not this.
 
 Reading only proposes; Step 4 proves. A file or directory whose agent fails is
 unassessed for that finding, and Step 7 says so.
@@ -172,22 +169,22 @@ unnoticed for no fault of the spec, and convicts legitimate isolation. Run the
 candidate together with every example covering the subject, through steps 1–6
 above.
 
-Up to three mutations of different kinds, stopping at the **first one nothing
-went red under** — that mutation is the proof, and the examples that stayed green
-are the evidence. Every mutation noticed by some example covering the subject
-means the stubs hide nothing, and the candidate is dropped.
+Mutations of different kinds, up to three as for a pair, stopping at the
+**first one nothing went red under** — that mutation is the proof, and the
+examples that stayed green are the evidence. Every mutation noticed by some
+example covering the subject means the stubs hide nothing, and the candidate is
+dropped. Candidates stubbing the same collaborator method share its mutations.
 
 ## Step 5 · `file` — Up to two tickets, or none
 
 **A run that proved nothing files no ticket.** Say so in one line and stop.
 
-Otherwise file at most two issues: one **prune ticket** carrying every finding
-proven for removal, and one **rewrite ticket** carrying every over-stubbed
-example. Each is filed only when it has a finding. Not one per candidate: a prune
-is mechanical, so a ticket each buys an executor nothing and costs a run each.
+Otherwise file one ticket per disposition: a **prune ticket** carrying every
+finding proven for removal, and a **rewrite ticket** carrying every over-stubbed
+example, each only when it has a finding. Not one per candidate: a ticket each
+buys an executor nothing and costs a run each.
 
 ### The prune ticket
-
 
 Each listed finding carries the gate's run, written as something the executor
 performs **before** removing anything — apply each mutation, run the named
@@ -215,25 +212,26 @@ a fence. Next to the criteria, write a short paragraph saying the procedure is
 the acceptance and must stay: a deletion guarantees behavior preservation
 by construction, so the mutation check is the only thing an executor can fail.
 
+Give it the empty blocking marker `<!-- kit-blocked-by: -->` so a sweep can see
+it.
+
 ### The rewrite ticket
 
 One criterion per over-stubbed example: **afterwards, an example covering the
 subject goes red under the named mutation** — the stubbed collaborator, and what
-was done to its implementation. That is a fence, so it needs no paragraph
-defending it: rewriting the example against the project's own test data meets
-it, and so does removing it where another example covering the subject now
-notices. Which test data is the project's, never this command's choice.
+was done to its implementation. Rewriting the example against the project's own
+test data meets it, and so does removing it where another example covering the
+subject now notices. Which test data is the project's, never this command's choice.
 
 **An example the prune ticket lists for deletion is not listed for rewrite.**
-Where both tickets are filed, the rewrite ticket's blocking marker names the
-prune ticket: a rewrite may remove an example the prune's checks still run as a
+Its blocking marker names the prune ticket where one was filed, and is empty
+otherwise: a rewrite may remove an example the prune's checks still run as a
 cover.
 
 ### Both tickets
 
-Each carries **`technical-debt`**, and `kit:writing-tickets` owns the body. Give
-each a blocking marker so a sweep can see it — empty, `<!-- kit-blocked-by: -->`,
-except as the rewrite ticket's above. Leave `ready-for-agent` off — that is a
+Each carries **`technical-debt`**, and `kit:writing-tickets` owns the body.
+Leave `ready-for-agent` off — that is a
 person's claim that a ticket is safe to pick up unbidden, and this command filed
 it.
 
