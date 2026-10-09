@@ -80,11 +80,17 @@ argument threaded through the construction.
 method does inside. `headers`, not `parse_headers`. `preview`, not
 `build_preview_string`.
 
-**The namespace is the data structure.** `Csv`, `Html`, `Api` — the outer name
-tells a reader what kind of data is in play. Children may name the role within
-it: `Api::Request`, `Api::Response`, `Csv::Document`, `Csv::Editor`. The
-constraint is that the namespace carries the data; a role name underneath it is
-correct, not a violation.
+**The namespace is the data structure.** The outer constant names the kind of
+data its classes read or produce, and a child names its role within that data.
+Check it by reading the outer name off a call site: it should tell a reader what
+kind of data is in play before the child is read. A role name underneath it is
+correct, not a violation — `Api::Request` and `Api::Response` illustrate the
+child clause, a role under a data name.
+
+A shared namespace settles nothing about how many objects live under it. Whether
+the classes there are one object over varying data or a family under a shared
+parent is §2.5's rule on where the variation lives, and it is answered from the
+callers, not from what an existing class in the namespace looks like.
 
 *Which* data is decided at the call sites, not by reading the class. An object
 that takes one kind of data and returns another — parses HTML, emits prompt
@@ -286,20 +292,22 @@ _Avoid_: factory hack, alternate initializer.
 one of their return types. The method answering the other is a separate object
 wearing this one's name, and naming which one is the count.
 _Avoid_: mixed responsibilities, SRP violation.
-Constructed: `Csv::Exporter` predicts the exported rows, so `#rows` answering
-them in memory is the method its name covers, and `#write` answering the file
-paths it created is the separate object. Both still answer something about one
-export, which is the version of this worth stating. That the two types diverge
-is the tell that sends you looking, not the test: `.run` answering a report
-beside `.call` answering a persisted record fires on sight, but two renderings of
-one answer have plenty in common, and a count led by their divergence is a count
-a reader discharges. The differing names are the disguise — the doubled name
-above needs one name twice, and `kit:behavior-placement` Check 2's search passes
-both rows `only here`, since neither method computes the other's answer. **It
-fires from the class**: two return types and a name are the whole of it. Reach
-for Check 3's list of producers and consumers when the name predicts both types
-or neither, and again once it fires — that list names the callers that move when
+It still counts when both methods answer something about the same subject —
+that is the version of this worth stating. That the two types diverge is the
+tell that sends you looking, not the test: `.run` answering a report beside
+`.call` answering a persisted record fires on sight, but two renderings of one
+answer have plenty in common, and a count led by their divergence is a count a
+reader discharges. The differing names are the disguise — the doubled name above
+needs one name twice, and `kit:behavior-placement` Check 2's search passes both
+rows `only here`, since neither method computes the other's answer. **It fires
+from the class**: two return types and a name are the whole of it. Reach for
+Check 3's list of producers and consumers when the name predicts both types or
+neither, and again once it fires — that list names the callers that move when
 the object splits.
+Illustrating the count, constructed: `Csv::Exporter` predicts the exported rows,
+so `#rows` answering them in memory is the method its name covers, and `#write`
+answering the file paths it created is the separate object — though both answer
+something about one export.
 
 **The same-signature constructors.** Two constructors of the same arity
 returning the same type — `Thing.from_json(str)` and `Thing.from_text(str)`,
