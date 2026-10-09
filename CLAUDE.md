@@ -34,7 +34,11 @@ vocabulary those files read off an issue; `docs/commands.md` lists the surface;
 - **An adopted skill is a fork.** A skill carrying an `UPSTREAM` sidecar was
   vendored by `scripts/adopt-skill.sh` from an upstream repo, and
   `scripts/check-upstream.sh` reports what has changed there since. Editing one
-  by hand diverges the fork silently. A skill with no sidecar is ours outright.
+  by hand diverges the fork silently. A skill with a `metadata.credits` block
+  instead was vendored by hand and does not track its upstream. A skill with
+  neither is ours outright. Anything copied in from elsewhere, by script or
+  by hand, carries the notice that
+  [the vendoring convention](docs/companion-skills.md#vendoring) requires.
 - **Never commit to `main`.** Feature branch off `origin/main` — `git fetch
   origin main` first so the local ref is not stale — then a PR. PRs are merged on
   GitHub, never locally.
