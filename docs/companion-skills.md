@@ -20,15 +20,69 @@ the conversation is changing.
 Not every fork is his. `kit:show-me` comes unchanged from [HumanLayer's
 skills][humanlayer]: the visual explainer, user-invoked only.
 
-Each fork carries an `UPSTREAM` file with the sha it was taken at, the local
-checkout it was taken from, and the `git diff` incantation for reviewing what
-upstream changed since, plus the upstream `LICENSE`. `scripts/adopt-skill.sh`
-writes it from whichever checkout `SKILLS_REPO` names, and
-`scripts/check-upstream.sh` checks each fork against its own checkout. See
-[commands](commands.md) for what each fork changes. The commands name the forks
+See [commands](commands.md) for what each fork changes. The commands name the forks
 explicitly, so a command never reaches the upstream copy — but the model
 picking a skill on its own sees both descriptions, and two near-twins make the
 fork stop reliably winning.
+
+## Vendoring
+
+A skill directory is **vendored** when it contains text taken from somewhere
+else. Copying one in looks like an ordinary file copy and passes every other
+check, so what it must carry is stated here, not left to be inferred from an
+existing fork.
+
+**It records where it came from, in one of two ways:**
+
+- **An `UPSTREAM` sidecar**, for a fork that tracks its upstream.
+  `scripts/adopt-skill.sh` writes it from whichever checkout `SKILLS_REPO`
+  names, and `scripts/check-upstream.sh` reads it, so drift is a command away.
+- **A `metadata.credits` block in `SKILL.md` frontmatter**, for a derivation
+  that does not track its upstream — copied by hand, adapted heavily, or
+  combined from more than one source. Each entry names the skill, the author and
+  a url pinned to a sha, so the point it was taken at is recoverable even though
+  no script diffs it:
+
+  ```yaml
+  metadata:
+    credits:
+      - skill: pr
+        author: Matt Pocock
+        url: "https://github.com/mattpocock/skills/blob/a7d038f/skills/engineering/pr/SKILL.md"
+  ```
+
+**It carries each upstream's notice.** The licences worth vendoring under all
+require their notice to travel with the copy. The first upstream's goes in
+`LICENSE`; each further upstream's goes in `LICENSE-<owner>` beside it. A
+derivation of a derivation carries both: `visual-pr` reproduces HumanLayer's
+`show-me` text by way of Matt Pocock's `pr`, so both notices travel with it.
+
+**The carried terms govern that directory's upstream text, and nothing else.**
+They do not cover the rest of the plugin, which is under the `LICENSE` at the
+repo root, and they do not make the local changes inside the directory the
+upstream author's. Those are ours, under the root licence, alongside the
+upstream text they sit with.
+
+**It has a row in the table below**, naming the directory, its upstream, and
+which of the two records it.
+
+**`scripts/lint.sh` holds a declared fork to the notice and the row below.** A
+copy that declares nothing cannot be caught that way; the declaration is the
+part a person adding a fork owes.
+
+### What is vendored
+
+| Directory | Upstream | Recorded by |
+|---|---|---|
+| `domain-modeling` | mattpocock/skills `domain-modeling` | `UPSTREAM` |
+| `grilling` | mattpocock/skills `grilling` | `UPSTREAM` |
+| `improve-codebase-architecture` | mattpocock/skills `improve-codebase-architecture` | `UPSTREAM` |
+| `to-tickets` | mattpocock/skills `to-tickets` | `UPSTREAM` |
+| `show-me` | humanlayer/skills `show-me` | `UPSTREAM` |
+| `visual-pr` | mattpocock/skills `pr`, and through it humanlayer/skills `show-me` | `metadata.credits`, `CREDITS.md` |
+| `visual-review` | mattpocock/skills `pr` | `metadata.credits` |
+
+All under `plugins/kit/skills/`.
 
 ## Installing the upstream suite
 

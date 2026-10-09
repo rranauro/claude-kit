@@ -4,8 +4,9 @@ set -euo pipefail
 # Everything here is a check that a drive-by PR can fail without anyone noticing
 # by reading the diff: a shell script that no longer parses, a manifest that is
 # no longer JSON, a skill whose frontmatter stops matching its directory — all
-# of which fail at load time in the harness rather than at review time — and a
-# plugin version that would stop installs from updating at all.
+# of which fail at load time in the harness rather than at review time — a
+# plugin version that would stop installs from updating at all, and a vendored
+# skill that dropped the notice its licence requires.
 #
 # Shape only, and it stays under a second so it is worth running before every
 # push. Behaviour is asserted in tests/, which CI runs as its own step.
@@ -85,6 +86,17 @@ for skill in plugins/kit/skills/*/; do
   # answers to something other than what its own frontmatter advertises.
   if [ -n "$name" ] && [ "$name" != "$dir_name" ]; then
     fail "$md declares name '$name' but lives in '$dir_name'"
+  fi
+
+  # A hand-copied skill passes every check above while dropping the notice its
+  # licence requires to travel with it, and drops out of the one list that
+  # answers "what is not ours?". A sidecar or a credits block is the skill
+  # saying it came from elsewhere, so both halves are checkable from there.
+  if [ -f "$skill/UPSTREAM" ] || awk 'NR>1 && /^---$/{exit} /^[[:space:]]+credits:/{f=1; exit} END{exit !f}' "$md"; then
+    [ -f "$skill/LICENSE" ] ||
+      fail "$skill credits an upstream but carries no LICENSE — see docs/companion-skills.md#vendoring"
+    grep -q "^| \`$dir_name\` |" docs/companion-skills.md ||
+      fail "$skill credits an upstream but has no row in docs/companion-skills.md#what-is-vendored"
   fi
 
   [ "$this_failed" -eq 1 ] || echo "  ok   $md"
