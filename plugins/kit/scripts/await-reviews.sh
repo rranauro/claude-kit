@@ -3,6 +3,7 @@
 #
 #   await-reviews.sh <pr> [--repo owner/name] [--ceiling-seconds N]
 #                         [--poll-seconds N] [--no-request]
+#                         [--sources copilot,claude-review]
 #
 # Called once from kit:ticket-loop Phase 5, which opens the PR as a draft and
 # closes the review round locally before marking it ready. The alternative it
@@ -22,7 +23,15 @@
 #   2. Request the review. Nothing else produces one where automatic review is
 #      off, which is the configuration this exists for — leaving it on as well
 #      yields two reviews per PR, the second landing after the round has closed.
-#   3. Wait for both reviews, and name on stdout any that did not arrive.
+#   3. Wait for the declared reviews, and name on stdout any that did not
+#      arrive.
+#
+# Which reviews a project runs is declared in its CLAUDE.md, but the caller
+# reads that and passes `--sources`; this file never does. Omitted, both are
+# expected. A source left out is reported as not run rather than missing,
+# because waiting the ceiling out on a reviewer the project never runs is the
+# same stall as waiting on one that failed, and reporting it as missing tells
+# the reader a reviewer broke when nothing did.
 #
 # A prose poll loop would cost one Bash round-trip per poll, and every
 # round-trip re-sends the caller's whole conversation. Blocking here is one
@@ -43,6 +52,7 @@ set -uo pipefail
 CEILING=900
 POLL=15
 REQUEST=1
+SOURCES="copilot,claude-review"
 REPO=""
 PR=""
 
@@ -52,12 +62,24 @@ while [ $# -gt 0 ]; do
     --ceiling-seconds)  CEILING="$2"; shift 2 ;;
     --poll-seconds)     POLL="$2"; shift 2 ;;
     --no-request)       REQUEST=0; shift ;;
+    --sources)          SOURCES="$2"; shift 2 ;;
     -h|--help)          sed -n '2,5p' "$0"; exit 0 ;;
     *)                  PR="$1"; shift ;;
   esac
 done
 
 [ -n "$PR" ] || { echo "error: no PR number given" >&2; exit 1; }
+
+# A misspelt source would otherwise read as "not declared" and be skipped
+# silently, which is the wait this flag exists to shorten turned into a review
+# nobody collects.
+for s in ${SOURCES//,/ }; do
+  case "$s" in
+    copilot|claude-review) ;;
+    *) echo "error: unknown review source '$s' (known: copilot, claude-review)" >&2; exit 1 ;;
+  esac
+done
+declared() { case ",$SOURCES," in *",$1,"*) return 0 ;; *) return 1 ;; esac; }
 
 if [ -z "$REPO" ]; then
   REPO="$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null)"
@@ -120,13 +142,13 @@ SECONDS=0
 
 # Stages 1 and 2 — wait for CI, then ask for the review. Both are skipped where
 # the review is already in hand, which is the case on a re-run against a PR
-# whose round has closed, and where the project produces one without being
-# asked.
+# whose round has closed, where the project produces one without being asked,
+# and where the project does not run Copilot at all.
 #
 # The request has to follow CI completion: firing it earlier is the silent
 # discard described at the top, and reporting the review as missing after a full
 # ceiling is a better failure than a request nobody can tell was lost.
-if [ "$REQUEST" -eq 1 ] && ! copilot_arrived; then
+if declared copilot && [ "$REQUEST" -eq 1 ] && ! copilot_arrived; then
   sha="$(gh api "repos/$REPO/pulls/$PR" --jq '.head.sha' 2>/dev/null)"
   ci_at=""
 
@@ -151,17 +173,22 @@ copilot_at=""
 claude_at=""
 
 while :; do
-  [ -n "$copilot_at" ] || { copilot_arrived && copilot_at=$SECONDS; }
-  [ -n "$claude_at" ]  || { claude_arrived  && claude_at=$SECONDS; }
+  declared copilot       && [ -z "$copilot_at" ] && copilot_arrived && copilot_at=$SECONDS
+  declared claude-review && [ -z "$claude_at" ]  && claude_arrived  && claude_at=$SECONDS
 
-  [ -n "$copilot_at" ] && [ -n "$claude_at" ] && break
+  { ! declared copilot       || [ -n "$copilot_at" ]; } &&
+  { ! declared claude-review || [ -n "$claude_at" ]; } && break
   [ "$SECONDS" -ge "$CEILING" ] && break
   sleep "$POLL"
 done
 
 missing=""
+not_run=""
 report() { # label arrival-time
-  if [ -n "$2" ]; then
+  if ! declared "$1"; then
+    printf '%s: not run (not declared)\n' "$1"
+    not_run="${not_run:+$not_run }$1"
+  elif [ -n "$2" ]; then
     printf '%s: arrived after %ss\n' "$1" "$2"
   else
     printf '%s: did not arrive within %ss\n' "$1" "$CEILING"
@@ -172,10 +199,11 @@ report() { # label arrival-time
 report copilot       "$copilot_at"
 report claude-review "$claude_at"
 
-# The caller reads this line to decide what it is collating. Naming the absent
+# The caller reads these lines to decide what it is collating. Naming the absent
 # source is the whole contract: a silent partial collation is worse than a slow
 # one.
 printf 'missing: %s\n' "${missing:-none}"
+printf 'not run: %s\n' "${not_run:-none}"
 
 # Always 0, even when a source never arrived or the request was lost. A non-zero
 # exit reads as failure to `set -e` and to a model alike, which would turn

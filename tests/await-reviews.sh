@@ -305,6 +305,59 @@ assert_at_most "$SECONDS" 5 "returns immediately"
 assert_lacks "$OUT" "CI did not complete" "does not report a CI wait it never made"
 end_sandbox
 
+new_sandbox "copilot alone declared returns once copilot lands"
+# A project that runs no Claude review: waiting on its marker burns the whole
+# ceiling on a source that was never going to post.
+checks completed
+reviews "copilot-pull-request-reviewer[bot]"
+marker ""
+SECONDS=0
+run --ceiling-seconds 20 --sources copilot
+assert_at_most "$SECONDS" 5                     "does not wait on the undeclared source"
+assert_has "$OUT" "claude-review: not run"      "names the undeclared source as not run"
+assert_lacks "$OUT" "claude-review: did not arrive" "does not call it missing"
+assert_has "$OUT" "missing: none"               "the summary names nothing missing"
+assert_has "$OUT" "not run: claude-review"      "the summary names what was not run"
+assert_status "$STATUS" 0                       "exits 0"
+end_sandbox
+
+new_sandbox "a declared source that does not arrive is still missing"
+checks completed
+reviews ""
+marker ""
+run --ceiling-seconds 2 --sources copilot
+assert_has "$OUT" "copilot: did not arrive" "names the declared source as missing"
+assert_has "$OUT" "missing: copilot"        "the summary names it"
+assert_has "$OUT" "not run: claude-review"  "and the undeclared one as not run"
+end_sandbox
+
+new_sandbox "undeclared copilot is neither waited on nor requested"
+checks in_progress
+reviews ""
+marker "9001"
+SECONDS=0
+run --ceiling-seconds 20 --sources claude-review
+assert_lacks "$(requests)" "requested_reviewers" "requests no review nobody runs"
+assert_at_most "$SECONDS" 5                      "does not wait on CI for it"
+assert_has "$OUT" "copilot: not run"             "names copilot as not run"
+assert_has "$OUT" "missing: none"                "names nothing missing"
+end_sandbox
+
+new_sandbox "no sources given expects both, as before"
+checks completed
+reviews "copilot-pull-request-reviewer[bot]"
+marker ""
+run --ceiling-seconds 2
+assert_has "$OUT" "missing: claude-review" "the claude review is still expected"
+assert_has "$OUT" "not run: none"          "nothing is reported as not run"
+end_sandbox
+
+new_sandbox "an unknown source is a usage error"
+OUT="$("$SCRIPT" 128 --repo owner/repo --sources copilot,coderabbit 2>&1)"; STATUS=$?
+assert_status "$STATUS" 1   "exits non-zero"
+assert_has "$OUT" "coderabbit" "names the source it does not know"
+end_sandbox
+
 # --- summary ------------------------------------------------------------
 
 echo
