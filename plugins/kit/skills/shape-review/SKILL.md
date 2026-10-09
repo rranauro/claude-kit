@@ -44,6 +44,19 @@ The inventory is complete when every added public method in the filtered diff
 appears in it once. Then find callers for all of them in one pass —
 `git grep -n -E '\b(m1|m2|…)\b' <head>` — rather than one grep per method.
 
+**Then read the objects the diff adds to.** For every existing class the diff
+gives a new member, list the interface it already carried at `<base>`, with each
+member's callers outside the class and its specs — the same one-pass grep. For
+each member with one caller or none, find the commit that introduced it:
+
+```bash
+git log --format='%h %s' -S '<member>' <base> -- <the class file> | tail -1
+```
+
+This is evidence for one count, the accreted interface, and nothing else. The
+existing members are read rather than judged, and a class the diff does not add
+to is not read at all.
+
 ## 3 — Judge
 
 For every inventory entry:
@@ -55,6 +68,12 @@ For every inventory entry:
 - **Gate it** on `kit:rails-codebase-design` §3, closing check included. What
   fails is dropped.
 
+An added member with one caller or none is also counted against the object it
+joins, using the members read in §2. Two or more existing single-caller members
+make the added one the accreted interface's third. An object with none or one
+makes it no finding, however bespoke the added member is: §3 protects the single
+method.
+
 ## 4 — Write each finding from the call site
 
 A reader judges a finding from the call site without opening the class, so every
@@ -62,6 +81,15 @@ finding leads with it: the line as the diff writes it, then as it would read
 after the fix, in the **caller**, **model** and **class** panels of
 `kit:rails-codebase-design` §1.5 — each panel present only when the fix touches
 it.
+
+**An accreted interface finding leaves out the panels.** Its subject is the
+object, and the reshape is decided by whoever answers the hold, so an **After**
+here would be a design nobody asked this pass for. **Call site now** is the added
+member's caller, or its definition when it has none. **Costs** names each
+existing single-caller member with its one caller and the commit that introduced
+it — `` `#removed_fields` (`jobs/purge.rb:14`, a1b2c3d Purge removed fields) ``.
+That list is the history the diff alone cannot show, and it goes in **Costs**
+because `kit:review-copilot` carries that line and would drop a new one.
 
 Order findings strongest first: a placement finding above a naming one, a count
 with several callers above one with one.
