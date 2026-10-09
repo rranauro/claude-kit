@@ -58,13 +58,15 @@ For every inventory entry:
 - **Gate it** on `kit:rails-codebase-design` §3, closing check included. What
   fails is dropped.
 
-An added member is also counted against the object it joins: apply §2's
-accreted interface to that object's members, the added one included.
+Then, once per object the diff adds to, apply §2's accreted interface to its
+members, every added one included. It is one count on the object, so it yields at
+most one finding however many members the diff adds there.
 
 Only where that count fires, find the commit behind each existing member it
 counted — one blame of the class file, read off each member's definition line,
 then one lookup for the subjects. Where blame names a commit that only edited
-the line, `git log -S '<member>'` on that one member finds the one that added it.
+the line, `git log --format='%h %s' -S '<member>' <base> -- <the class file> |
+tail -1` finds the one that added it.
 
 ```bash
 git blame -s <base> -- <the class file>
@@ -81,10 +83,11 @@ it.
 
 **An accreted interface finding leaves out the panels.** Its subject is the
 object, and the reshape is decided by whoever answers the hold, so an **After**
-here would be a design nobody asked this pass for. **Call site now** is the added
-member's caller, or its definition when it has none. **Costs** names each
-existing single-caller member with its one caller and the commit that introduced
-it — `` `#removed_fields` (`jobs/purge.rb:14`, a1b2c3d Purge removed fields) ``.
+here would be a design nobody asked this pass for. **Call site now** is the first
+added member's caller, or its definition when it has none, and any other members
+the diff added there are listed in **Costs**. **Costs** names each existing
+single-caller member with its one caller — or its definition, when it has none —
+and the commit that introduced it — `` `#removed_fields` (`jobs/purge.rb:14`, a1b2c3d Purge removed fields) ``.
 It goes in **Costs** because `kit:review-copilot` carries that line and would
 drop a new one.
 
