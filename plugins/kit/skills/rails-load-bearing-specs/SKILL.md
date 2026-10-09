@@ -160,6 +160,11 @@ resting only on one of them is not a weaker candidate; it is not a candidate.
   `kit:rails-excludable-specs`, never here. And "another example already
   catches this" is a claim reading cannot settle: it is subsumption, which
   `/kit:prune-specs` proves by running both, never this axis.
+- **Heavy stubbing around a real subject.** Some isolation is legitimate, and
+  reading cannot tell which. Only a mock asserting the mock is a tautology here;
+  the wider claim — that the stubs hide a collaborator's break from everything
+  covering the subject — is over-stubbed, which `/kit:prune-specs` proves by
+  running, never this axis.
 
 The check that settles a candidate: **name the production code the example
 holds up, and say what could go wrong there that only this example would catch.**
