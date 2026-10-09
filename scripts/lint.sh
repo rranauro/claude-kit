@@ -93,7 +93,7 @@ for skill in plugins/kit/skills/*/; do
   # answers "what is not ours?". A sidecar or a credits block is the skill
   # saying it came from elsewhere, so both halves are checkable from there.
   if [ -f "$skill/UPSTREAM" ] || awk 'NR>1 && /^---$/{exit} /^[[:space:]]+credits:/{f=1; exit} END{exit !f}' "$md"; then
-    compgen -G "$skill/LICENSE*" >/dev/null ||
+    [ -f "$skill/LICENSE" ] ||
       fail "$skill credits an upstream but carries no LICENSE — see docs/companion-skills.md#vendoring"
     grep -q "^| \`$dir_name\` |" docs/companion-skills.md ||
       fail "$skill credits an upstream but has no row in docs/companion-skills.md#what-is-vendored"
