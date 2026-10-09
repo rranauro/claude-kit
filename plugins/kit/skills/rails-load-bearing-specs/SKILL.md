@@ -28,6 +28,12 @@ That is the whole definition, and it is deliberately not coverage. Coverage says
 the line ran. This says the suite *notices*. A line can run under a dozen
 examples and still be free to return anything at all.
 
+**Wrong means wrong by something other than the example.** A declaration — a
+validation, a constant, a configuration value — has no wrong value except the one
+an example repeating it disagrees with. Changing it reddens that example, and the
+red is the repetition: nothing the application does was broken, so nothing was
+noticed. §2 convicts such an example as a restated declaration.
+
 Two consequences worth stating, because each is a place the definition gets
 read too narrowly:
 
@@ -66,9 +72,8 @@ The three shapes:
   presence: true` and `it { is_expected.to validate_presence_of(:name) }` are
   one line written twice in two notations. So are a constant and an example
   asserting its literal, and a configuration value and an example reading it
-  back. Change the declaration and the example goes red — the definition's
-  letter, but not what it is for: the red is the repetition, not the suite
-  noticing the application go wrong.
+  back. Changing the declaration reddens the example, and §1 says why that red
+  is not load-bearing.
 
 **What convicts:** two lines quoted together, checkable without running
 anything — which is why this category is first. For the first two shapes that is
