@@ -212,11 +212,9 @@ The three checks above are language-neutral. Where the project is Rails, three
 things sharpen them.
 
 **The namespace carries the data; the child may carry the role.** An action or
-role name is the agent-noun smell only where no constant naming a kind of data
-sits above it. Check the class's outer constant: if it names data, the action
-name beneath it is correct; if the class is top-level and named for an action,
-that is the smell. `Api::Request` illustrates the first case — a role under a
-data name.
+role name is the agent-noun smell only on a top-level class. Beneath an outer
+constant that names a kind of data — `kit:rails-codebase-design` §1 states the
+check — it is correct.
 
 Which data, though, is Check 3's question, not this rule's. "The namespace
 carries the data" is ambiguous the moment a class reads one kind and emits
