@@ -3,8 +3,8 @@ set -euo pipefail
 
 # Everything here is a check that a drive-by PR can fail without anyone noticing
 # by reading the diff: a shell script that no longer parses, a manifest that is
-# no longer JSON, a skill whose frontmatter stops matching its directory — all
-# of which fail at load time in the harness rather than at review time — a
+# no longer JSON, a skill or subagent whose frontmatter stops matching its file
+# — all of which fail at load time in the harness rather than at review time — a
 # plugin version that would stop installs from updating at all, a vendored
 # skill that dropped the notice its licence requires, and an inline skill whose
 # model pin would outlive it.
@@ -106,6 +106,30 @@ for skill in plugins/kit/skills/*/; do
       fail "$skill credits an upstream but carries no LICENSE — see docs/companion-skills.md#vendoring"
     grep -q "^| \`$dir_name\` |" docs/companion-skills.md ||
       fail "$skill credits an upstream but has no row in docs/companion-skills.md#what-is-vendored"
+  fi
+
+  [ "$this_failed" -eq 1 ] || echo "  ok   $md"
+done
+
+echo "==> agent frontmatter"
+# A subagent fails the way a skill does — dropped at load with nothing said —
+# and Step 0 of /kit:ship-ticket names one by its declared name, so that name
+# has to be the one its file advertises. A subagent may pin its own model:
+# docs/commands.md#only-work-that-starts-its-own-turn-names-a-model.
+for md in plugins/kit/agents/*.md; do
+  [ -f "$md" ] || continue
+  stem="$(basename "$md" .md)"
+  this_failed=0
+
+  [ "$(head -1 "$md")" = "---" ] || { fail "$md does not open with ---"; continue; }
+
+  name="$(awk 'NR>1 && /^---$/{exit} /^name:/{sub(/^name:[[:space:]]*/,""); print; exit}' "$md")"
+  desc="$(awk 'NR>1 && /^---$/{exit} /^description:/{print; exit}' "$md")"
+
+  [ -n "$name" ] || fail "$md has no name in its frontmatter"
+  [ -n "$desc" ] || fail "$md has no description in its frontmatter"
+  if [ -n "$name" ] && [ "$name" != "$stem" ]; then
+    fail "$md declares name '$name' but is named '$stem'"
   fi
 
   [ "$this_failed" -eq 1 ] || echo "  ok   $md"
