@@ -134,6 +134,13 @@ breaks the example. Distinct from coverage, which says only that the line ran.
 `kit:rails-load-bearing-specs` is the one statement of it.
 _Avoid_: coverage, covered, exercised, tested
 
+### Judging object shape
+
+**Accreted interface**:
+An object whose interface has grown one member per caller rather than as an API.
+`kit:rails-codebase-design` is the one statement of it.
+_Avoid_: undertow, sprawl, bloat, god class, public surface
+
 ### Reclaiming a worktree
 
 **Verdict**:

@@ -41,8 +41,11 @@ are there to read, never to judge.
 - **New call sites** — every added line calling something in the first two lists.
 
 The inventory is complete when every added public method in the filtered diff
-appears in it once. Then find callers for all of them in one pass —
-`git grep -n -E '\b(m1|m2|…)\b' <head>` — rather than one grep per method.
+appears in it once. For every existing class the diff gives a new member, also
+list the interface it already carried at `<base>` — evidence for the accreted
+interface count, read rather than judged. Then find callers for all of them in
+one pass — `git grep -n -E '\b(m1|m2|…)\b' <head>` — rather than one grep per
+method.
 
 ## 3 — Judge
 
@@ -55,6 +58,21 @@ For every inventory entry:
 - **Gate it** on `kit:rails-codebase-design` §3, closing check included. What
   fails is dropped.
 
+Then, once per object the diff adds to, apply §2's accreted interface to its
+members, every added one included. It is one count on the object, so it yields at
+most one finding however many members the diff adds there.
+
+Only where that count fires, find the commit behind each existing member it
+counted — one blame of the class file, read off each member's definition line,
+then one lookup for the subjects. Where blame names a commit that only edited
+the line, `git log --format='%h %s' -S '<member>' <base> -- <the class file> |
+tail -1` finds the one that added it.
+
+```bash
+git blame -s <base> -- <the class file>
+git show -s --format='%h %s' <sha> <sha> …
+```
+
 ## 4 — Write each finding from the call site
 
 A reader judges a finding from the call site without opening the class, so every
@@ -62,6 +80,16 @@ finding leads with it: the line as the diff writes it, then as it would read
 after the fix, in the **caller**, **model** and **class** panels of
 `kit:rails-codebase-design` §1.5 — each panel present only when the fix touches
 it.
+
+**An accreted interface finding leaves out the panels.** Its subject is the
+object, and the reshape is decided by whoever answers the hold, so an **After**
+here would be a design nobody asked this pass for. **Call site now** is the first
+added member's caller, or its definition when it has none, and any other members
+the diff added there are listed in **Costs**. **Costs** names each existing
+single-caller member with its one caller — or its definition, when it has none —
+and the commit that introduced it — `` `#removed_fields` (`jobs/purge.rb:14`, a1b2c3d Purge removed fields) ``.
+It goes in **Costs** because `kit:review-copilot` carries that line and would
+drop a new one.
 
 Order findings strongest first: a placement finding above a naming one, a count
 with several callers above one with one.
