@@ -37,7 +37,9 @@ in progress. Say what is uncommitted and stop.
 
 Fan out through the **Agent tool**, one agent per spec file, in waves of about
 eight. Each agent gets one file path and one instruction: apply
-`kit:rails-load-bearing-specs` to it and return its output contract.
+`kit:rails-load-bearing-specs` to it and return its output contract — with the
+declaration line and the assertion line quoted under any `restated` line, the
+evidence the axis produces on request.
 
 **One file per agent, never a batch.** An agent holding several files reports on
 the aggregate, and the aggregate is what the axis's unit rule exists to prevent.
@@ -48,9 +50,12 @@ in it, and the difference is what a suite sweep is trusted for.
 
 ## Step 3 · `rank` — Choose what to prove
 
-Collate the returned lines and order convicted candidates by the axis's own
-convictability: tautology, then dead code, then contradiction. **Take at most
-twenty into Step 4.** The gate is expensive and the cap is what keeps a run
+Collate the returned lines. **A `restated` line is proven by its two quoted
+lines**: it takes no slot here and goes straight to Step 5.
+
+Order the other convicted candidates by the axis's own convictability:
+tautology, then dead code, then contradiction. **Take at most twenty into Step
+4.** The gate is expensive and the cap is what keeps a run
 finite; say how many candidates it left behind.
 
 Ranking exists only to choose that band. There is no report for it to order — if
@@ -127,6 +132,11 @@ and file nothing. A gate that cannot put the code back has stopped being a gate.
 candidate** — something noticed, which is what load-bearing means. Drop it and
 say so.
 
+**A restated declaration never reaches this gate.** Mutating the declaration
+reddens the example that repeats it by construction, and an example asserting
+what the application derives from it alike — only the axis's reading tells them
+apart.
+
 ### A subsumption pair proves differently
 
 One mutation cannot show subsumption: two examples can both catch "guard
@@ -169,6 +179,10 @@ order is what makes it a check rather than an observation; after the removal
 there is nothing left to run.
 
 - **An axis candidate:** one mutation, and the example staying green.
+- **A restated declaration:** both lines, quoted, and the check to re-quote
+  them from the tree as it stands — the declaration still says what the
+  assertion says, and the example asserts nothing else. Either moved, and the
+  example stays.
 - **A subsumed example:** the mutations both caught, its covering example named,
   and the cover going red on every one.
 - **A misplaced assertion**, listed by its assertion rather than its example:

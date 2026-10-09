@@ -53,23 +53,34 @@ what keeps a pass from converting its own unfinished search into a deletion.
 
 ### Tautology — evidence is local and quotable
 
-The assertion restates the setup. Whatever the production code does, this
-example passes.
+The assertion says nothing the setup or a declaration did not already say.
+It never notices the application doing anything wrong.
 
 The three shapes:
 
 - **The assertion restates the setup.** A value is stubbed, computed nowhere,
-  and asserted back.
+  and asserted back. It passes whatever the production code does.
 - **A mock asserts the mock.** The double is told to receive `foo` and then
   asserted to have received `foo`, with no production object between them.
-- **The matcher restates the line under test.** `validates :name,
+- **The matcher restates a declaration.** `validates :name,
   presence: true` and `it { is_expected.to validate_presence_of(:name) }` are
-  one line written twice in two notations. Nothing about the application is
-  asserted that the declaration did not already say.
+  one line written twice in two notations. So are a constant and an example
+  asserting its literal, and a configuration value and an example reading it
+  back. Change the declaration and the example goes red — the definition's
+  letter, but not what it is for: the red is the repetition, not the suite
+  noticing the application go wrong.
 
-**What convicts:** the setup line and the assertion line, together, from inside
-the same example. This category needs nothing outside the file, which is
-why it is first — the reader can check the finding without leaving it.
+**What convicts:** two lines quoted together, checkable without running
+anything — which is why this category is first. For the first two shapes that is
+the setup line and the assertion line, inside the same example. For a restated
+declaration it is the declaration line and the assertion line, across the
+production file and the spec file.
+
+**Asserting what the application does with a declaration is not this shape.** A
+record refusing to save without a name, the error a user is shown, a computation
+using the constant — each is behavior derived from the declaration, and the
+example holds it up. Where an example could be read either way, read it as
+derived.
 
 ### Covers dead code — needs a runtime witness
 
@@ -177,11 +188,13 @@ buried the two lines the reader came for.
 
 **The output is one line per convicted example, and nothing else.** Each line
 carries the example's `file:line`, the category that fired, and the evidence in
-a clause:
+a clause. A restated declaration is reported as `restated` rather than
+`tautology`, its evidence naming the declaration's `file:line` — the one
+tautology whose proof spans two files:
 
 ```
 spec/models/order_spec.rb:412   tautology   stubs #total, asserts #total back
-spec/models/order_spec.rb:518   tautology   matcher restates order.rb:31 validation
+spec/models/order_spec.rb:518   restated    order.rb:31 presence validation
 ```
 
 Enough to check the call without reading an argument for it. The full evidence
