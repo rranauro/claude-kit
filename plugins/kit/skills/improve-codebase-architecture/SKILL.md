@@ -100,6 +100,8 @@ positively require several of them:
 - "It isn't injected" / "the database is a dependency" / "it needs testing
   without the DB."
 - "This method changes its own record."
+- A `self.call` over an instance that exposes nothing beyond its one answer.
+  Nothing is hidden, so no caller pays.
 - Callbacks, scopes, concerns, validations, generated methods — the language,
   not a smell.
 - File count in either direction. What a caller has to learn is the measure.
