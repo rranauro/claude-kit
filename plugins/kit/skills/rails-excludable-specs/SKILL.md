@@ -1,6 +1,6 @@
 ---
 name: rails-excludable-specs
-description: The axis for judging whether one RSpec example may be left out of a project's default suite run — what makes an example excludable, the evidence rarity and cost each need, what is not a reason, how an excludable example differs from a deletable one, and the tag that opts it back in. Use when deciding what a default run should skip, when judging whether one slow or rarely-relevant example earns its place in every run, or when another skill needs the excludable vocabulary.
+description: The axis for judging whether one RSpec example may be left out of a project's default suite run — what makes an example excludable, the evidence rarity and cost each need, what is not a reason, how an excludable example differs from a deletable one, and the tag that excludes it and the runner argument that opts it back in. Use when deciding what a default run should skip, when judging whether one slow or rarely-relevant example earns its place in every run, or when another skill needs the excludable vocabulary.
 ---
 
 # Rails Excludable Specs
@@ -11,7 +11,7 @@ justify an exclusion on, and something an adversarial pass can check rather than
 argue.
 
 `kit:rails-load-bearing-specs` asks whether an example is worth keeping. This
-asks whether a kept example is worth running every time. Neither tags or deletes
+asks whether a kept example is worth running every time. Neither tags nor deletes
 anything; the invoking command owns that.
 
 **The unit of a finding is a single `it`**, for the sibling axis's reason: "skip
@@ -81,8 +81,9 @@ The example drives a task reached only by a person or a schedule — a backfill,
 yearly rollover, an operator's repair task.
 
 **Rarity evidence:** the task's entry points — the schedule entry or runbook that
-invokes it, or the absence of any. Name the cadence the schedule states; a task
-with no schedule runs when someone runs it, and the example runs then too.
+invokes it — and the cadence it states. A task with no schedule runs whenever
+someone runs it, so no schedule is not rarity: report it unassessed unless
+history or operational evidence shows how seldom that is.
 
 ### Cost — needed by every category
 

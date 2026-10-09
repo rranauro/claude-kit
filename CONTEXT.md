@@ -151,6 +151,14 @@ breaks the example. Distinct from coverage, which says only that the line ran.
 `kit:rails-load-bearing-specs` is the one statement of it.
 _Avoid_: coverage, covered, exercised, tested
 
+**Excludable**:
+A property of a single load-bearing RSpec example: the path it holds up runs
+rarely and running it costs something real, so the default run may skip it. It
+is tagged, never deleted, and runs when asked for. Distinct from deletable,
+which is a finding that the example adds nothing.
+`kit:rails-excludable-specs` is the one statement of it.
+_Avoid_: slow, quarantined, pending, skipped
+
 ### Judging object shape
 
 **Accreted interface**:
