@@ -1,6 +1,6 @@
 ---
 name: improve-codebase-architecture
-description: Scan a codebase for misshapen objects and present them as a visual HTML report in plans/, ranked strongest to weakest, then file the strongest as tickets under an epic.
+description: Scan a codebase for misshapen objects and present them as a visual HTML report in plans/, ranked strongest to weakest, then file the strongest as tickets under an epic and walk them through triage.
 disable-model-invocation: true
 ---
 
@@ -301,9 +301,32 @@ One per surviving candidate, in rank order, each carrying:
 A child is filed *specified*, not *settled*: the plan artifact and the AFK-ready
 label are `/kit:triage`'s to add.
 
+#### Settle the children
+
+Walk the children through `/kit:triage <n>`, one at a time, in rank order,
+strongest first. Unlike `kit:to-tickets` 5c this is a step, not an offer: that
+skill labels at publish, while the scan routes nothing, so an untriaged child is
+invisible to every sweep — and this session, which just ranked it, is the best
+placed to settle it.
+
+**Before the first one, say how many there are and ask once for a cutoff** —
+each is a triage conversation of its own, and a large batch should not start
+before the user can bound it. They may also stop at any child boundary.
+
+Triage runs unchanged and owns everything it writes. Its step 1 leaves the
+arriving `improve-codebase` kind in place; that kind is what holds the child to
+the counts the scan stated, so never relabel one.
+
+**Then report, and stop:** the epic and the children filed, the children
+settled, any triage closed or left open as not-now with its reason, and every
+child a cutoff left, each with `/kit:triage <n>`. Do not
+label a child to cover the gap — the label is triage's claim, not the scan's.
+
 ## Never
 
 - Make implementation changes. This is a scan, a report, and the tickets in §5.
+- Start a child. §5 settles them and stops; starting is `/kit:ship-ticket`, one
+  ticket at a time.
 - Design a candidate in the report. One constructor line is the ceiling.
 - File a child whose problem statement asserts the scan's findings as verified.
 - Ship a card whose Cost is missing either half §2 requires.
