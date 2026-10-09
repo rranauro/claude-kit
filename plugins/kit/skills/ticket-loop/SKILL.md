@@ -298,8 +298,7 @@ through the **Agent tool** with the PR number, so its inventory stays out of
 this session, and **wait for it to return** — the Agent tool returns when the
 work is launched, so reading its answer early takes the failed branch below and
 arms a PR the review would have held. Its final message is the comment, opening
-on `<!-- kit-shape-review -->`. **Pass it no model** — it pins its own, as
-`docs/commands.md` *Only work that starts its own turn names a model* says.
+on `<!-- kit-shape-review -->`.
 
 It runs here because the round's fixes are pushed, so it judges the head that
 will merge (it pushes nothing itself), and auto-merge is not yet armed, so a hold

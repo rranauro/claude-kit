@@ -55,12 +55,8 @@ chose.
 Launch the `kit:reshape-inventory` subagent through the **Agent tool**, so the
 inventory stays out of this session, and wait for it to return. Hand it the
 worktree, the PR's base and head, the shape review step 1 found, and whether that
-review's SHA is the head. **Pass it no model** — it pins its own, as
-`docs/commands.md` *Only work that starts its own turn names a model* says.
+review's SHA is the head. Step 4 shows what it hands back.
 
-It hands back the scope, the shape of each namespace in it, and the ranked
-candidates with their call sites outside the diff. Step 4 shows them as they
-come back.
 ## 4 — Show the shape, then the candidates
 
 The shape first, as its own message, before any candidate — the person reads

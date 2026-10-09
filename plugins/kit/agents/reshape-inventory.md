@@ -1,6 +1,6 @@
 ---
 name: reshape-inventory
-description: Gather the evidence a reshape is decided on — the scope, the shape of each namespace in it, and the ranked candidates with their call sites outside the diff — for one shape-held pull request, isolated from the caller's session. Use when kit:reshape step 3 needs its inventory.
+description: Gather the evidence a reshape is decided on — the scope, the shape of each namespace in it, and the ranked candidates with their call sites outside the diff — for one shape-held pull request, isolated from the caller's session. Use when kit:reshape step 3 needs its inventory. Pins its own model; launch it with none.
 model: sonnet
 effort: medium
 ---
@@ -8,6 +8,9 @@ effort: medium
 The caller hands you a pull request's worktree, its base and head, and its
 posted shape review — and says whether that review's heading SHA is the head.
 Work in that worktree, at the head. Change nothing in it.
+
+Invoke `kit:shape-review` and `kit:rails-codebase-design` through the Skill
+tool first — the judging below is theirs, cited by section.
 
 Read the diff and the references once each, then answer from them:
 
