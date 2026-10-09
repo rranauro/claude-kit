@@ -161,7 +161,7 @@ Then, per requirement:
    from inside it.
 
 **When the change adds or moves a class, run `kit:behavior-placement` first** —
-model, value object, or service, and whether the app already derives the answer.
+model, domain object, or service, and whether the app already derives the answer.
 If it lands somewhere the plan did not anticipate, that is not automatically a
 stop: the plan records direction, and placement is what that skill decides. Stop
 only when the answer contradicts something the plan actually argued.

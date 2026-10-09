@@ -132,7 +132,7 @@ candidates. That is the category working, not a gap to widen.
 Raising any of these is the failure this axis exists to prevent. An example
 resting only on one of them is not a weaker candidate; it is not a candidate.
 
-- **A named unit's public surface is its own requirement.** A model, controller,
+- **A named unit's interface is its own requirement.** A model, controller,
   view, concern, or service with an example per public method and per hydration
   path needs no further justification for them: the public method *is* the
   requirement. This refuses the second and third categories for those examples,

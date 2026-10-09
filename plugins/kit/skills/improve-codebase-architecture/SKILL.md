@@ -21,13 +21,11 @@ project's own design vocabulary:
 
 - Invoke `kit:rails-codebase-design` for the axis — the seven properties of a
   well-shaped object, the counts that fire when one isn't, and the explicit list
-  of what is **not** a finding. Use its terms exactly: model, concern, value
-  object, service, namespace, aggregate, accessor, construction arity. Don't
-  drift into "module," "interface," "seam," or "adapter" — this codebase is
-  Rails, and a vocabulary that calls a function and a tier-spanning slice the
-  same word gives the report nothing checkable.
+  of what is **not** a finding. Its §5 and §2 are the vocabulary: use those
+  words as defined there, and none of their *Avoid* lines. A report whose nouns
+  drift gives its reader nothing checkable.
 - Invoke `kit:behavior-placement` when a candidate's *owner* is in question —
-  whether behavior belongs on the model, in a value object, or in a service.
+  whether behavior belongs on the model, in a domain object, or in a service.
   Used as a filter here, not as a design step.
 - The domain language in `CONTEXT.md` names the concepts; ADRs in `docs/adr/`
   record decisions this command should not re-litigate.
@@ -215,7 +213,7 @@ candidate, one sentence on why it leads, and an anchor to its card.
 
 **Use CONTEXT.md vocabulary for the domain, and `kit:rails-codebase-design`
 vocabulary for the shape.** If `CONTEXT.md` defines "Order," talk about the
-`Order` model and the `Order::Intake` value object — not "the FooBarHandler,"
+`Order` model and the `Order::Intake` domain object — not "the FooBarHandler,"
 and not "the Order intake module."
 
 **ADR conflicts**: if a candidate contradicts an existing ADR, only surface it

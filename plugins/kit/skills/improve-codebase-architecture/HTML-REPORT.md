@@ -23,7 +23,7 @@ it'll start to look generic.
     <style>
       /* small custom layer for things Tailwind doesn't cover cleanly:
          dashed call edges, hand-drawn-feeling arrow heads, etc. */
-      .census { stroke-dasharray: 4 4; }
+      .call-edge { stroke-dasharray: 4 4; }
       .cost { stroke: #dc2626; }
       .owned { background: linear-gradient(135deg, #0f172a, #1e293b); }
     </style>
@@ -88,7 +88,7 @@ redraw the diagram.
 Pick the pattern that fits the candidate. Mix them. Don't make every diagram look
 the same. Variety is part of the point.
 
-### Mermaid graph (the workhorse for the call-site census)
+### Mermaid graph (the workhorse for producers and consumers)
 
 Use a Mermaid `flowchart` or `graph` when the point is "these four callers all
 construct it, and only one of them uses what it reads." Wrap it in a
@@ -156,14 +156,8 @@ link to its card. That's it.
 ## Tone
 
 Plain English, concise, but the nouns and verbs come straight from
-`kit:rails-codebase-design`. Concision is not an excuse to drift.
-
-**Use exactly:** model, concern, value object, service, namespace, aggregate,
-accessor, construction arity, call site, derivation.
-
-**Never substitute:** module, unit, component (for class) · interface, API (for
-the constructor and public methods) · seam, boundary (for namespace) · layer,
-wrapper.
+`kit:rails-codebase-design` — its §5 and the counts in §2, each with the words it
+avoids. Concision is not an excuse to drift.
 
 **Phrasings that fit the style:**
 

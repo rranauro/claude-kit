@@ -248,10 +248,10 @@ next to the code being written — where a different answer can still change the
 file cheaply. Running it here too just asks the same question twice, several gates
 apart.
 
-If the agreed approach introduces a new model, concern, service, or PORO — or
-relocates behavior between them — run the `kit:behavior-placement` skill before
-implementation starts. It answers where the behavior belongs (model → value
-object → service) and whether the app already derives the answer somewhere.
+If the agreed approach introduces a new model, concern, service, or domain
+object — or relocates behavior between them — run the `kit:behavior-placement`
+skill before implementation starts. It answers where the behavior belongs (model
+→ domain object → service) and whether the app already derives the answer somewhere.
 
 Run it even when the settled approach already names a class. Both artifacts record
 the *direction* — `/kit:architect` deliberately keeps the implementation substrate
