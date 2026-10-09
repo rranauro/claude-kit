@@ -48,6 +48,7 @@ Present the proposed breakdown as a numbered list. For each ticket, show:
 - **Title**: short descriptive name
 - **Blocked by**: which other tickets (if any) must complete first
 - **What it delivers**: the end-to-end behaviour this ticket makes work
+- **Routed to**: agent or person — who writes the code. (Local addition — see 5c.)
 
 Ask the user:
 
@@ -62,7 +63,7 @@ Iterate until the user approves the breakdown.
 Publish the approved tickets. **How** depends on the tracker `/setup-matt-pocock-skills` configured — the tickets are the same either way, only the shape of the blocking edges changes:
 
 - **Local files** → write one file per ticket under `.scratch/<feature-slug>/issues/<NN>-<slug>.md`, numbered from `01` in dependency order (blockers first). Each file's "Blocked by" lists the numbers/titles it depends on. Use the per-ticket file template below — one ticket per file, never a single combined file.
-- **A real issue tracker (GitHub, Linear, …)** → publish one issue per ticket in dependency order (blockers first) so each ticket's blocking edges can reference real identifiers. Use the platform's native blocking / sub-issue relationship where it has one; otherwise set each ticket's "Blocked by" to the blocking issues. **Do not apply the `ready-for-agent` label here** — 5c hands each ticket to `/kit:triage`, which owns that decision and the hold question that goes with it. The walkthrough ticket is the exception and carries its labels from here. (Local change — see 3a and 5c.)
+- **A real issue tracker (GitHub, Linear, …)** → publish one issue per ticket in dependency order (blockers first) so each ticket's blocking edges can reference real identifiers. Use the platform's native blocking / sub-issue relationship where it has one; otherwise set each ticket's "Blocked by" to the blocking issues. **Apply the `ready-for-agent` label to every agent-routed ticket here**, and `ready-for-human` to every person-routed one — the routing the user approved in step 4. The walkthrough ticket carries its own labels, per 3a. (Local change — see 3a and 5c.)
 
 Work the **frontier**: any ticket whose blockers are all done. For a purely linear chain that means top to bottom.
 
@@ -105,8 +106,8 @@ follow carry it like any other ticket:
   integrated feature and record what is wrong*. The findings do not exist until
   someone walks it, and criteria written here would be a guess at them.
 
-Apply both labels when you publish it. Unlike the slices, **5c does not triage
-it**: triage turns a specified ticket into a settled one by storing a plan, and
+Apply both labels when you publish it. Unlike the slices, **5c never offers it
+for triage**: triage turns a specified ticket into a settled one by storing a plan, and
 there is no approach to settle before anyone has looked.
 
 **Write both of its exits into the body**, so whoever picks it up knows where it
@@ -152,35 +153,27 @@ Add an **Out of scope** section to each issue, alongside the acceptance criteria
 
 It also does the job the section is named for: an agent implementing a narrow slice will otherwise fix adjacent things it notices, and the review round is a poor place to discover that.
 
-### 5c. Triage each ticket
+### 5c. Offer to triage, never require it
 
-The tickets are published with edges but no plan. A ticket in that state is
-*specified* and not *settled*: `/kit:triage`'s own test asks for a plan artifact,
-and the acceptance criteria this skill writes are not one. Left there, the design
-pass happens later — inside whichever session picks the ticket up, by whoever is
-around, one ticket at a time.
+The label goes on at publish because withholding it is not a lever — ADR 0001.
+An unlabelled ticket is invisible to `/kit:list` and to every sweep no matter
+what has since landed, and becomes startable only through a pass nobody
+scheduled. Routing is the one thing the label says, and the user settled it in
+step 4.
 
-So finish the job here. Walk the tickets in dependency order and run
-`/kit:triage <n>` on each. The conversation that produced this breakdown is the
-most informed anyone will be about these tickets, and triage is where that
-context becomes a stored plan, a label, and a hold decision.
+A published ticket has edges and criteria but no plan. That is enough to start:
+the out-of-scope section 5b writes is what lets `kit:start-ticket` judge it, and
+whichever pass picks it up runs `/kit:design` first — attended, in front of
+whoever named it; unattended, recorded as derived, with the PR held where the
+kind needs a look.
 
-Order matters and it is the same order as publishing: a blocker's design
-constrains what its dependents can assume. Triaging a dependent first means
-designing against a shape that may not survive its blocker's own pass.
+So triage here is an offer, for a user who wants plans stored while this
+conversation is still the most informed anyone will be about these tickets. If
+they take it, run `/kit:triage <n>` in dependency order — a blocker's design
+constrains what its dependents can assume — and stop at the frontier if the set
+is more than they want to spend on now. Declined, the set is already finished.
 
-Expect triage to skip its own steps 2–3 rarely, if at all — this skill grilled
-the *boundary*, which is not the mechanism. That is the pass being useful, not
-redundant. If the set is large enough that designing every ticket now is more
-than the user wants to spend, triage the frontier — the tickets with no open
-blockers — and say which ones you left, rather than labelling the rest.
-
-The walkthrough ticket from 3a is the exception, and the only one: it is
-published with its labels and left alone.
-
-Nothing downstream repairs a skipped pass. `/kit:ship-ticket` picks up only
-labelled tickets, so an untriaged one is invisible to the loop and an unlabelled
-epic simply stalls at whichever slice never got here.
+The walkthrough ticket is not part of the offer — 3a says why.
 
 <local-ticket-template>
 
