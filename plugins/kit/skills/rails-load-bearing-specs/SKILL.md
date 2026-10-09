@@ -150,7 +150,10 @@ resting only on one of them is not a weaker candidate; it is not a candidate.
   tautology. `nil` handling asserts a real branch, and the assertion does not
   restate the setup — the setup is an absence.
 - **A request or system spec that walks a whole path.** Its assertions are thin
-  relative to the setup by construction; the path is what it holds up.
+  relative to the setup by construction; the path is what it holds up. One of
+  its assertions checking what a lower layer computes is a different claim — a
+  misplaced assertion, which `/kit:prune-specs` proves by running, never this
+  axis.
 - **Slow, verbose, or duplicative.** Those are true of load-bearing examples too.
   A cost claim is a different axis with different evidence and a different
   disposition — a tag and a runner flag, not a deletion — and it belongs to

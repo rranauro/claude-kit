@@ -12,9 +12,9 @@ minutes. Run it from the main checkout, against a clean tree.
 too.** What convicts, what does not, and what a pass says are all its. This
 command finds the files, proves the candidates, and files the result.
 
-**The one finding the axis does not own is subsumption**: reading cannot settle
-it, and its only evidence is a run of two examples against the same mutations,
-which is this command's.
+**Two findings the axis does not own** — subsumption and the misplaced
+assertion: reading cannot settle either, and their only evidence is a run of
+specs against the same mutation, which is this command's.
 
 ---
 
@@ -57,15 +57,31 @@ Ranking exists only to choose that band. There is no report for it to order — 
 the gate ever becomes cheap enough to run on everything, delete this step rather
 than keeping it for shape.
 
-**Fill any room left in the band with subsumption pairs** — last, because each
-costs several mutations rather than one, and only when there is room, since a
-full band would discard the search. Fan out one agent per spec directory, for
+**Fill any room left in the band with misplaced assertions, then subsumption
+pairs** — after the axis's categories, and only when there is room, since a full
+band would discard the search. An assertion costs one mutation and a pair
+several, which is the order.
+
+For misplaced assertions, fan out one agent per request spec file. Each returns
+candidate assertions, one line each — the assertion's `file:line`, the
+lower-layer code it reaches (the model, helper or service that computes what it
+checks), and the spec files that own that code by the project's layout. **Never
+propose an assertion about what the endpoint was sent, returned, or persisted as
+given** — `site.reload.hero_headline` after a PATCH is the request spec's own
+contract. The run cannot tell that apart from a misplaced one, since a mutation
+to a model callback reddens both, so the reading has to. Nor propose an
+assertion that is its example's only one: removing it would leave an example
+asserting nothing, and the example stays.
+
+For subsumption pairs, fan out one agent per spec directory, for
 the directories holding at least two examples. A covering example may sit in
 another file, so the unit is the directory: the files directly in it, not its
 subdirectories. Each agent returns candidate pairs, one line each — the
 candidate's `file:line`, the covering example's `file:line`, and the production
-code both assertions reach. Reading only proposes a pair; Step 4 proves it. A
-directory whose agent fails is unassessed for subsumption, and Step 7 says so.
+code both assertions reach.
+
+Reading only proposes; Step 4 proves. A file or directory whose agent fails is
+unassessed for that finding, and Step 7 says so.
 
 ## Step 4 · `prove` — Mutate, observe, revert
 
@@ -79,7 +95,9 @@ What it buys is the executor's signal. Deleting a spec produces a diff that
 cannot fail: the suite is green by construction afterwards. So the decider has to
 hand down something that can.
 
-For each candidate in the band, one at a time:
+For each candidate in the band, one at a time — except that **candidates
+reaching the same code share its mutation**: apply it once and run every example
+they name in one invocation, whatever kind of finding each is.
 
 1. **Name the file you are about to change, before changing it.** If the run
    dies, that name is the only record of what to put back.
@@ -114,9 +132,7 @@ say so.
 One mutation cannot show subsumption: two examples can both catch "guard
 removed" while only one catches "nil returned". So a pair takes **at least two
 mutations of different kinds** to the production code the candidate reaches —
-three where the code offers them — each run through steps 1–6 above. Where pairs
-share that code, apply each mutation once and run every example of those pairs
-in one invocation.
+three where the code offers them — each run through steps 1–6 above.
 
 The pair is **subsumed** when the candidate caught at least one mutation and
 every one it caught, the covering example caught too. One only the cover caught
@@ -125,26 +141,46 @@ there. A candidate that caught nothing is dropped, and code offering only one
 kind of mutation leaves the pair unproven. Keep the mutations both caught; they
 are what Step 5 hands down.
 
+### A misplaced assertion proves against its owning layer
+
+One mutation, to the lower-layer code the assertion reaches, through steps 1–6
+above — running the request example and the owning-layer spec files together in
+one invocation.
+
+The candidate is **proven** when the request example goes red *at that
+assertion*; red elsewhere in the example, or not at all, drops it. Then record
+which owning-layer examples went red too. None means the request spec is the only
+thing noticing the break, and the assertion **moves**: a spec at the owning layer
+is written, and the assertion leaves. Any means it is already noticed where it
+belongs, and the assertion simply **goes**.
+
 ## Step 5 · `file` — One ticket, or none
 
 **A run that proved nothing files no ticket.** Say so in one line and stop.
 
-Otherwise file exactly one issue carrying every proven example. Not one per
+Otherwise file exactly one issue carrying every proven finding. Not one per
 candidate: a prune is mechanical, so a ticket each buys an executor nothing and
 costs a run each.
 
-Each listed example carries the gate's run, written as something the executor
-performs **before** deleting it — apply each mutation, run the named examples,
-confirm each goes the colour the gate saw, revert, then delete. For an axis
-candidate that is one mutation and the example staying green. For a subsumed
-example it is the mutations both caught, with its covering example named, and
-the cover going red on every one. That order is what makes it a check rather
-than an observation; after the deletion there is nothing left to run.
+Each listed finding carries the gate's run, written as something the executor
+performs **before** removing anything — apply each mutation, run the named
+examples, confirm each goes the colour the gate saw, revert, then remove. That
+order is what makes it a check rather than an observation; after the removal
+there is nothing left to run.
 
-**A covering example is never listed for deletion in the same ticket.** Where
-another finding would list it, drop the subsumption that names it as cover; of
-two examples covering each other, list one. A candidate proven against several
-covers is listed once, under one cover that is itself not listed.
+- **An axis candidate:** one mutation, and the example staying green.
+- **A subsumed example:** the mutations both caught, its covering example named,
+  and the cover going red on every one.
+- **A misplaced assertion**, listed by its assertion rather than its example:
+  its mutation, and an owning-layer example going red under it — the one named,
+  or for a move the one the executor writes first. Then the assertion goes, and
+  the request example still passes without it.
+
+**An example named as evidence is never listed for deletion in the same
+ticket** — a cover, or the owning-layer example a misplaced assertion goes in
+favour of. Where another finding would list it, drop the finding that names it;
+of two examples covering each other, list one. A candidate proven against
+several covers is listed once, under one cover that is itself not listed.
 
 **Say why, beside the criteria, in the ticket itself.** By `kit:writing-tickets`
 a per-example procedure is a route, and `/kit:triage` will try to rewrite it into
@@ -175,6 +211,13 @@ same one-line shape, with its cover and the mutations in the evidence clause:
 
 ```
 spec/models/order_spec.rb:96    subsumed    by order_spec.rb:120; both caught guard removed, nil returned at order.rb:44
+```
+
+A misplaced assertion likewise:
+
+```
+spec/requests/sites_spec.rb:58  misplaced   slug derivation dropped at site.rb:22; no owning-layer spec noticed — move
+spec/requests/sites_spec.rb:71  misplaced   total rounding removed at order.rb:40; order_spec.rb:88 noticed too — goes
 ```
 
 Then the four things only a suite sweep can report, one line each: candidates
