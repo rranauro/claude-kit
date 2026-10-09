@@ -111,8 +111,8 @@ run.
 **Say why, beside the criteria, in the ticket itself.** By `kit:writing-tickets`
 a per-example procedure is a route, and `/kit:triage` will try to rewrite it into
 a fence. Next to the criteria, write a short paragraph saying the procedure is
-the acceptance and must stay: a deletion meets behavior-preserved by
-construction, so the mutation check is the only thing an executor can fail.
+the acceptance and must stay: a deletion guarantees behavior preservation
+by construction, so the mutation check is the only thing an executor can fail.
 
 The ticket carries **`technical-debt`**, and `kit:writing-tickets` owns the body.
 Give it the empty blocking marker `<!-- kit-blocked-by: -->` so a sweep can see
@@ -138,4 +138,5 @@ left unproven, candidates beyond the band's cap, and files no agent assessed.
 
 Close with the ticket number and what triage made of it — settled, closed, or
 left open as not-now with its reason — or the one line saying nothing was
-proven. A triage stopped partway is reported with `/kit:triage <n>`.
+proven. A triage stopped partway means the run did not finish: say so, not that
+it completed, and give `/kit:triage <n>` as what finishes it.
