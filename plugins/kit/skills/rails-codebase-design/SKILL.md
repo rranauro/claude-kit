@@ -13,6 +13,9 @@ and something an adversarial pass can check rather than argue.
 shape* the result should take. Neither decides what to build; the invoking
 command owns that.
 
+Its words are defined once, here: the concepts and structural nouns in §5, each
+count where §2 states it. Every skill that judges shape uses them as written.
+
 ## 1 — What a well-shaped object looks like
 
 Seven properties. Each is checkable by reading the file, and an approach either
@@ -89,10 +92,10 @@ correct, not a violation.
 *Which* data is decided at the call sites, not by reading the class. An object
 that takes one kind of data and returns another — parses HTML, emits prompt
 text — is claimed by both namespaces, and the constructor argument is the
-weaker claim of the two. Many producers feeding one consumer is a boundary
-type, and belongs to the consumer; one producer feeding many consumers is a
-shared derivation, and belongs to the data. `kit:behavior-placement` Check 3
-runs the census.
+weaker claim of the two. Where many producers feed one consumer domain, the
+class belongs to the consumer and is named for it; where one producer feeds many
+consumers, it belongs to the data. `kit:behavior-placement` Check 3 lists the producers and
+consumers that decide which.
 
 An object with all seven is legible from its call site. Someone planning a
 change can tell what it holds and what it answers without opening it — which is
@@ -203,6 +206,7 @@ Counts, not preferences. Each states what the number means and stops there.
 **Construction arity.** More than three arguments, or arguments drawn from more
 than two aggregates: a structure nobody has named is being assembled at every
 call site. The missing structure is the finding, not the length of the list.
+_Avoid_: long parameter list, too many params.
 
 **The threaded argument.** Several methods passing the same argument to each
 other — class methods, or private instance methods handing it down a chain. That
@@ -211,9 +215,11 @@ threading it are its instance methods. Where they are already instance methods o
 some object, the argument is state that object never named: it gets built at the
 top of the chain and carried by hand, one parameter at every hop, because there is
 nowhere for it to live.
+_Avoid_: tramp data, data clump, prop drilling.
 
 **The first-parameter receiver.** A class method whose first parameter is the
 record it operates on is an instance method that never moved onto the instance.
+_Avoid_: static helper, utility method.
 
 **The borrowed receiver.** An instance method whose body reads no state of its
 host: its arguments and the globals are its whole input. Mirror of the count
@@ -221,6 +227,7 @@ above — that one is behavior that never moved *onto* the instance, this one is
 behavior that never moved *off* it. Both are one rule read from both ends, and
 this end is the one that accumulates silently, because putting it here was
 locally the shortest thing to write and nothing resisted.
+_Avoid_: feature envy, helper method.
 
 Reaching an association merely to construct a collaborator is not reading own
 state. Whoever holds the record already holds the association, so a method that
@@ -251,19 +258,23 @@ the count.
 **Reaching back to the class.** Repeated `self.class.` inside instance methods
 means behavior parked at class level that the instance needs. A handful is
 noise; dozens is one class living as two.
+_Avoid_: class-level coupling.
 
 **The doubled name.** The same name defined twice — class and instance, or
 twice at one level — and especially with differing signatures: two things are
 wearing one name.
+_Avoid_: overload, shadowing.
 
 **The unearned construction.** An alternate constructor resorting to
 `allocate`, `send(:initialize_…)`, or a mode flag, because the real
 `initialize` already claimed the signature: either two objects are in here, or
 the state was described wrong.
+_Avoid_: factory hack, alternate initializer.
 
 **The unpredicted return type.** Two public methods, and the class name predicts
 one of their return types. The method answering the other is a separate object
 wearing this one's name, and naming which one is the count.
+_Avoid_: mixed responsibilities, SRP violation.
 Constructed: `Csv::Exporter` predicts the exported rows, so `#rows` answering
 them in memory is the method its name covers, and `#write` answering the file
 paths it created is the separate object. Both still answer something about one
@@ -272,34 +283,37 @@ is the tell that sends you looking, not the test: `.run` answering a report
 beside `.call` answering a persisted record fires on sight, but two renderings of
 one answer have plenty in common, and a count led by their divergence is a count
 a reader discharges. The differing names are the disguise — the doubled name
-above needs one name twice, and `kit:behavior-placement` Check 2's census passes
+above needs one name twice, and `kit:behavior-placement` Check 2's search passes
 both rows `only here`, since neither method computes the other's answer. **It
 fires from the class**: two return types and a name are the whole of it. Reach
-for Check 3's producer/consumer census when the name predicts both types or
-neither, and again once it fires — the census names the callers that move when
+for Check 3's list of producers and consumers when the name predicts both types
+or neither, and again once it fires — that list names the callers that move when
 the object splits.
 
 **The same-signature constructors.** Two constructors of the same arity
 returning the same type — `Thing.from_json(str)` and `Thing.from_text(str)`,
 both arity 1, both `-> Thing`. Both are clean, which is why the unearned
 construction above stays quiet, and a caller picking between them by name is
-picking a mode. A mode is an argument. Check 2's census does reach this pair —
-both constructors get rows, each naming the other as forked — and what it cannot
-supply is where that mode goes once the fork collapses to one implementation.
+picking a mode. A mode is an argument. Check 2's search does reach this pair —
+both constructors get rows, each naming the other as `duplicated` — and what it
+cannot supply is where that mode goes once the two collapse to one
+implementation.
 The shortest path from there is a third class method. It goes in an argument, or
 at the call site: either the decision was the caller's, or the caller could not
 have known which constructor to call.
+_Avoid_: named constructors, mode constructors.
 
-Those two counts are one rule read from both ends: the public surface is a type
-signature. Same types in and out is a seam that should not be there; a return
-type the name does not predict is one that should.
+Those two counts are one rule read from both ends: the interface is a type
+signature. Same types in and out is a split between objects that should not be
+there; a return type the name does not predict is one that should.
 
 **The duplicated answer.** A method that recomputes something the application
-already establishes elsewhere forks the definition, and the two copies diverge
-on the first change. Recomputing from a serialized form — HTML, JSON, CSV
-headers — what the application already loaded is the usual case.
+already establishes elsewhere duplicates the definition, and the two copies
+diverge on the first change. Recomputing from a serialized form — HTML, JSON,
+CSV headers — what the application already hydrated is the usual case.
+_Avoid_: fork, forked — that word means code copied from an upstream.
 
-A column does this too, and reads as schema rather than as a fork, which is why
+A column does this too, and reads as schema rather than as a copy, which is why
 it survives the count as written. A column caching a fact the rows already
 answer — `first_activated_at` beside a child carrying an `active` flag,
 `item_count` beside the items — is one definition stored twice. The tell is at
@@ -316,6 +330,7 @@ the thing survives the assignment. Section 1's chaining property does not catch
 this, because a hash is a legal terminator; the tell is that the keys are
 literal, not that a hash came back. When the keys are computed rather than
 literal, the next count applies.
+_Avoid_: primitive obsession, data bag.
 
 **The keyed lookup handed out raw.** A method returning a hash the caller
 dereferences by a key it builds itself — `rates[[zone_id, weight_class]]`.
@@ -326,12 +341,14 @@ the value's, every call site restates that contract, and a wrong key yields `nil
 rather than an error. The fix is not a new class; the object already exists and
 was discarded. Keep the hash private and add the question:
 `rate(zone_id, weight_class)`.
+_Avoid_: leaky hash, exposed index.
 
 **The unheld namespace.** A class whose returns make sense to only one caller,
 filed under the namespace of the data it reads rather than the one it serves.
 The tell is the return type: ask what a caller from the namespace it currently
 sits in would do with the value. If nothing there would ever want it, the class
 is filed under its input instead of its owner.
+_Avoid_: wrong module.
 
 **The loop that produces and consumes.** A loop whose body creates something and
 then feeds it to a second operation — a record created, then its children built
@@ -342,6 +359,7 @@ correct. Two passes over the collection, or two methods, say the same thing with
 failure boundary a reader can state: all of the first, then all of the second.
 Where it shows up first is the spec — the second operation cannot be exercised
 without driving the first.
+_Avoid_: interleaved loop.
 
 This is the only count about the inside of a method body. It is here because the
 shape survives every other check: arity, naming, and placement can all be correct
@@ -351,6 +369,7 @@ interleaved.
 **The deletion test.** Imagine the object gone. If the complexity vanishes, it
 was a pass-through. If it reappears at every caller, it earns its place.
 Applies to anything being proposed as much as to anything already written.
+_Avoid_: shallow module.
 
 ## 3 — What is not a finding
 
@@ -399,3 +418,94 @@ calculated is complete, not thin.** Where the convention is that the server
 computes state and hands the result to the front end, scoring such a module as
 shallow — or proposing to move the calculation into it — misreads the
 architecture.
+
+## 5 — Vocabulary
+
+The concepts and structural nouns the axis is written in, defined once. Each
+count in §2 is its own entry where §2 states it, with its *Avoid* line there.
+`kit:behavior-placement`, the architecture scan and the reviews that cite this
+axis use these words as written.
+
+**These terms govern code shape only.** A host project's own glossary governs
+its domain. Where it uses one of these words for a domain concept or an in-app
+act — a Component, a layer, a derivation, an act it calls hydrating — the host's
+meaning stands for that sense, and this one for code mechanism. A design pass
+writing in a host project says which sense it means rather than reusing the word
+bare. No *Avoid* line here forbids a host's domain noun.
+
+### Concepts
+
+**Object shape**:
+What a class takes, holds and answers, read from its interface and its call
+sites. The thing §1 describes and §2 counts.
+_Avoid_: design quality, code quality.
+
+**Interface**:
+An object's `initialize` and the signatures of its public methods — what a
+caller must supply and what each method returns.
+_Avoid_: seam, public surface.
+
+**Call site**:
+A line that constructs an object or calls one of its methods. Where shape is
+paid for.
+_Avoid_: invocation point.
+
+**Derivation**:
+An answer computed from data the app already holds.
+_Avoid_: shared derivation.
+
+**Hydrate**:
+To fill an object's state from what the app already holds, so its fields are
+named and typed. The hydrated form is what a derivation reads.
+_Avoid_: re-parse, rebuild from the serialized form.
+
+**Producer / consumer**:
+Who constructs an object, and who calls it. `kit:behavior-placement` Check 3
+lists both; where many producers feed one consumer domain the class belongs to
+the consumer, and where one producer feeds many consumers it belongs to the data.
+_Avoid_: boundary type, census.
+
+**Hidden instance**:
+A class method that constructs an instance and calls it once, so the call site
+never holds the object — `Thing.call(x)` wrapping `new(x).call`.
+_Avoid_: callable, service object.
+
+### Structural nouns
+
+**Model**:
+An ActiveRecord class that owns its data and the behavior over it. The default
+home for behavior.
+_Avoid_: record class.
+
+**Concern**:
+A module of instance methods over a model's established state. The preferred way
+to organise model behavior, and the existing owner to extend before opening a new
+class.
+_Avoid_: seam, mixin, trait.
+
+**Domain object**:
+An object constructed from data the app has hydrated, named for a domain concept,
+answering derivations over it. The second home for model behavior, after a
+concern.
+_Avoid_: value object — unless the thing really is immutable and compared by
+value — PORO.
+
+**Service**:
+A class for an operation with no natural owner: one that coordinates several
+aggregates, adapts to the outside world, or runs a multi-step workflow. The
+residual, never the default.
+_Avoid_: interactor, operation class.
+
+**Namespace**:
+The outer constant that names the kind of data in play — `Csv`, `Html`, `Api`.
+Children under it may name a role.
+_Avoid_: module (for a class), package, boundary.
+
+**Aggregate**:
+A model and the records it owns, treated as one unit for reads and writes.
+_Avoid_: object graph.
+
+**Accessor**:
+A reader exposing an object's input or its working state, so a caller or a test
+can see what it is working from.
+_Avoid_: getter, attr.
