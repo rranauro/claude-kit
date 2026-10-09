@@ -30,9 +30,13 @@ fail() {
 check_frontmatter() {
   local md="$1" expected="$2" name desc
   [ "$(head -1 "$md")" = "---" ] || { fail "$md does not open with ---"; return 1; }
+  # Unclosed, the whole body is frontmatter, and a name or description written
+  # anywhere in it would satisfy the checks below.
+  awk 'NR>1 && /^---$/{f=1; exit} END{exit !f}' "$md" ||
+    { fail "$md never closes its frontmatter with ---"; return 1; }
 
   name="$(awk 'NR>1 && /^---$/{exit} /^name:/{sub(/^name:[[:space:]]*/,""); print; exit}' "$md")"
-  desc="$(awk 'NR>1 && /^---$/{exit} /^description:/{print; exit}' "$md")"
+  desc="$(awk 'NR>1 && /^---$/{exit} /^description:/{sub(/^description:[[:space:]]*/,""); print; exit}' "$md")"
 
   [ -n "$name" ] || fail "$md has no name in its frontmatter"
   [ -n "$desc" ] || fail "$md has no description in its frontmatter"
