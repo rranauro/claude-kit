@@ -397,6 +397,21 @@ transition never triggered.
 reports. A project that reports nothing on the transition is describing its own
 CI rather than failing here.
 
+**Skip the snapshot and the poll where the project declares that drafts run the
+full checks.** Look for a `## Draft checks` section in the project's
+`CLAUDE.md`, read as step 4 reads `## Ship gate`:
+
+```markdown
+## Draft checks
+- full
+```
+
+`full` says every required check a draft passes is the same check a ready PR
+would run, so the head's green is already the verdict and there is no
+transition run to wait for. Mark ready and arm in the same breath. Absent, or
+any other value, poll as above: the wait is cheap, and arming early on a project
+that skips steps on drafts merges a PR its full CI never saw.
+
 **The arming above consults no label** — only step 3's outcome, which withholds
 it from a PR this pass held. A `kit-hold` set at triage is not special-cased
 here, and that is only safe where the consuming project enforces the hold as a
@@ -431,13 +446,14 @@ candidate again and the next `/kit:ship-ticket` reclaims it once the PR merges.
 **Then read the PR once.** Having armed auto-merge is not evidence that it is on:
 
 ```
-gh pr view <pr-number> --json autoMergeRequest,statusCheckRollup
+gh pr view <pr-number> --json state,autoMergeRequest,statusCheckRollup
 ```
 
 **Report both as found wherever this phase reports** — the auto-merge state, and
 any failing check the rollup names — attended in the line below, unattended in
 the report `/kit:ship-ticket` Step 3 writes. Where auto-merge comes back off
-after step 5 armed it, say so and say the pass did not re-arm: that line is the
+after step 5 armed it — and the PR is not already merged, which also reads as
+off when the checks were green at arming — say so and say the pass did not re-arm: that line is the
 only record an operator has that their disable survived the rest of the pass,
 and a pass asserting "auto-merge on" from its own arming reports a state the PR
 may not be in.
@@ -446,7 +462,8 @@ Attended, tell the user:
 
 > "PR #<N> is open, reviewed, and ready, and auto-merge reads on — <the
 > transition's run registered, so the merge waits on it | nothing new registered
-> within 120s, so the merge waits on the checks already on the commit>. <Any
+> within 120s, so the merge waits on the checks already on the commit | the
+> project declares draft checks full, so it armed without waiting>. <Any
 > failing check the rollup named.> <Which declared review source, if any, did
 > not arrive, and which the project does not run.>"
 
