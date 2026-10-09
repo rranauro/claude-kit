@@ -106,10 +106,11 @@ So the override belongs only where the turn it governs is the file's own:
 | A command another prompt hands off to | No — the Skill tool runs it inside its caller's turn, which makes it inline. |
 
 `scripts/lint.sh` fails on the fourth row and names the file. It does not hold
-the fifth yet: a `description` is the frontmatter sign of a handoff target, but
-`design`, `review-copilot` and `worktree-gc` carry one beside a model pin, and
-which model each runs on is #244's to settle. Until then, that row is this
-section's to carry when a handoff is added.
+the fifth: a `description` is the frontmatter sign of a handoff target, but
+`design`, `review-copilot` and `worktree-gc` carry one beside a model pin today,
+so a check would fail the kit as it stands. Those three are an open exception to
+this row, and until they are settled the row is this section's to carry when a
+handoff is added.
 
 ## Skills
 
