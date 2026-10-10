@@ -8,22 +8,16 @@ export const meta = {
   ],
 }
 
-// The reading half of /kit:prune-specs, run here so that no agent's hand-back
-// reaches the session that launched it. A whole-suite run is hundreds of
-// reports; delivered as hand-backs they exhaust the session before it proves
-// anything, however few run at once. What returns is the collated lines only.
+// The reading half of /kit:prune-specs — its Step 2 says why it runs here, and
+// Step 3 is the rule the ranking below follows.
 //
-// The band is chosen here, not by the caller, because whether there is room in
-// it is what decides whether each fill kind runs at all.
-//
-// args: { listFile, command, requestDir, cap }
+// args: { listFile, count, command, requestDir }
 //   listFile    the candidate files, one path per line, written outside the repo
-//   command     the path of prune-specs.md; fill agents read their rule from it,
-//               so the rule has one statement
+//   count       how many paths the session counted into it
+//   command     the path of prune-specs.md; fill agents read their rule from it
 //   requestDir  the project's request spec directory, or null where it has none
-//   cap         the band's size
 
-const CAP = args.cap || 20
+const CAP = 20
 const AXIS_ORDER = ['tautology', 'dead-code', 'contradiction']
 
 const LIST = {
@@ -70,8 +64,10 @@ const listed = await agent(
   { label: 'enumerate', phase: 'Enumerate', schema: LIST, effort: 'low' },
 )
 const files = listed ? listed.files : []
-if (!files.length) {
-  return { error: `no candidate files read back from ${args.listFile}` }
+// The list passes through a model on its way here; a dropped path would be a
+// file nobody assessed and nothing reported.
+if (files.length !== args.count) {
+  return { error: `read back ${files.length} candidate files from ${args.listFile}, expected ${args.count}` }
 }
 
 phase('Assess')
@@ -81,13 +77,14 @@ const assessed = await parallel(files.map(f => () =>
     { label: `assess:${f}`, phase: 'Assess', agentType: 'kit:spec-assessor', schema: ASSESSED },
   )))
 
-const unassessedUnits = { assess: [], misplaced: [], subsumption: [], overStubbed: [] }
+const unassessedUnits = { assess: [], misplaced: [], subsumed: [], 'over-stubbed': [] }
+const failed = (unit, r) => `${unit} — ${r && r.reason ? r.reason : 'agent failed'}`
 const axis = []
 const restated = []
 const unassessedExamples = []
 assessed.forEach((r, i) => {
   if (!r || !r.assessed) {
-    unassessedUnits.assess.push(`${files[i]}${r && r.reason ? ` — ${r.reason}` : ' — agent failed'}`)
+    unassessedUnits.assess.push(failed(files[i], r))
     return
   }
   for (const l of r.lines) {
@@ -99,33 +96,27 @@ assessed.forEach((r, i) => {
 
 axis.sort((a, b) => AXIS_ORDER.indexOf(a.category) - AXIS_ORDER.indexOf(b.category))
 const band = axis.slice(0, CAP).map(l => ({ kind: l.category, line: l.line }))
-const beyond = axis.slice(CAP).map(l => l.line)
+let beyond = axis.length - band.length
 
 const dirname = p => p.replace(/\/[^/]*$/, '')
 const requestPrefix = args.requestDir ? args.requestDir.replace(/\/?$/, '/') : null
 const FILL = [
   {
     kind: 'misplaced',
-    key: 'misplaced',
     heading: 'misplaced assertions',
     units: requestPrefix ? files.filter(f => f.startsWith(requestPrefix)) : [],
-    empty: 'the scope held no request specs to propose them from',
     unit: 'request spec file',
   },
   {
     kind: 'subsumed',
-    key: 'subsumption',
     heading: 'subsumption pairs',
     units: [...new Set(files.map(dirname))],
-    empty: 'the scope held no spec directory',
     unit: 'spec directory (the files directly in it, not its subdirectories; return no candidates if it holds fewer than two examples)',
   },
   {
     kind: 'over-stubbed',
-    key: 'overStubbed',
     heading: 'over-stubbed examples',
     units: files,
-    empty: 'the scope held no spec files',
     unit: 'spec file',
   },
 ]
@@ -138,7 +129,7 @@ for (const k of FILL) {
     continue
   }
   if (!k.units.length) {
-    notReached.push(`${k.heading}: ${k.empty}`)
+    notReached.push(`${k.heading}: the scope held no request specs to propose them from`)
     continue
   }
   phase('Fill')
@@ -146,18 +137,18 @@ for (const k of FILL) {
   const proposed = await parallel(k.units.map(u => () =>
     agent(
       `Read Step 3 of ${args.command} — the paragraph on ${k.heading}, and the paragraph after them on what reading may and may not do — and apply it to this one ${k.unit}: ${u}\n\nPropose only; prove nothing and change no file. Return each candidate as one line in the shape that paragraph names. Set assessed to false, with the reason, if you could not read it.`,
-      { label: `${k.key}:${u}`, phase: 'Fill', schema: PROPOSED },
+      { label: `${k.kind}:${u}`, phase: 'Fill', schema: PROPOSED },
     )))
   const found = []
   proposed.forEach((r, i) => {
     if (!r || !r.assessed) {
-      unassessedUnits[k.key].push(`${k.units[i]}${r && r.reason ? ` — ${r.reason}` : ' — agent failed'}`)
+      unassessedUnits[k.kind].push(failed(k.units[i], r))
       return
     }
     found.push(...r.candidates)
   })
   band.push(...found.slice(0, room).map(line => ({ kind: k.kind, line })))
-  beyond.push(...found.slice(room))
+  beyond += Math.max(0, found.length - room)
 }
 
 return { files: files.length, band, restated, beyond, unassessedExamples, unassessedUnits, notReached }

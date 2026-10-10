@@ -80,10 +80,10 @@ Launch it with the script this plugin ships:
 ```
 scriptPath: ${CLAUDE_PLUGIN_ROOT}/workflows/prune-read.js
 args: { listFile: <the file Step 1 wrote>,
+        count: <the count Step 1 reported>,
         command: ${CLAUDE_PLUGIN_ROOT}/commands/prune-specs.md,
         requestDir: <the project's request spec directory, spelled as the list
-                     spells it, or null where it has none>,
-        cap: 20 }
+                     spells it, or null where it has none> }
 ```
 
 If the harness refuses the path, read the file and pass its contents as
@@ -99,7 +99,7 @@ It returns, and nothing else reaches this session:
 - `band` — at most twenty candidates for Step 4, in proving order, each with
   its kind.
 - `restated` — every `restated` line with its two quoted lines, for Step 5.
-- `beyond` — the candidates the cap left out.
+- `beyond` — how many candidates the cap left out.
 - `unassessedExamples` — the axis's own unassessed lines.
 - `unassessedUnits` — every file or directory whose agent failed, per finding
   kind, with the reason where it gave one.
@@ -113,16 +113,17 @@ each returns `kit:rails-load-bearing-specs`' output contract for it.
 **One file per agent, never a batch.** An agent holding several files reports on
 the aggregate, and the aggregate is what the axis's unit rule exists to prevent.
 
-**A file whose agent fails is unassessed, not clean.** The workflow returns it
-by name and Step 7 reports it. Silence about a file that errored reads
+**A file whose agent fails is unassessed, not clean.** Silence about a file that errored reads
 identically to a file with nothing in it, and the difference is what a suite
 sweep is trusted for.
 
 ## Step 3 · `rank` — Choose what to prove
 
 The workflow does the ranking, because whether there is room in the band is
-what decides whether each fill kind runs at all. This step is the rule it
-follows, and the fill agents read their paragraphs below from this file.
+what decides whether each fill kind runs at all. This step is the rule; the
+script carries its order and its cap as code, so a change to either here is a
+change to the script too. The fill agents read their paragraphs below from this
+file.
 
 **A `restated` line is proven by its two quoted lines**: it takes no slot here
 and goes straight to Step 5.
@@ -168,8 +169,7 @@ standard library or an external service has no implementation in this tree to
 mutate. A mock asserting the mock is the axis's tautology, not this.
 
 Reading only proposes; Step 4 proves. A file or directory whose agent fails is
-unassessed for that finding: the workflow returns it by name, and Step 7 says
-so.
+unassessed for that finding, and Step 7 says so.
 
 ## Step 4 · `prove` — Mutate, observe, revert
 
