@@ -102,31 +102,95 @@ passes is worse.
 
 Every `*_spec.rb` under that directory — or under the scope, when one was given —
 excluding fixtures, factories, and support. These are the run's **candidate
-files**; every fan-out below draws from them and nothing else. Report the scope
-and the count before fanning out — the run's cost is proportional to it, and
-this is the last cheap moment to stop.
+files**; every fan-out below draws from them and nothing else. Write them one
+path per line to a temporary file outside the repository (`mktemp`), and print
+only the count and the list's digest — the list goes to the workflow through
+that file, because a path per line in this session is the growth Step 2 exists
+to keep out of it. The digest is what lets the workflow check it read the same
+list back, in the same order:
+
+```
+python3 -c 'import sys;h=0x811c9dc5
+for c in "\n".join(l.rstrip("\n") for l in open(sys.argv[1]) if l.strip()):h=((h^ord(c))*0x01000193)&0xffffffff
+print("%08x"%h)' <the list file>
+```
+
+**More than 998 candidate files is too many for one run.** The workflow's agent
+limit is a thousand, and the read takes one agent per file plus one; a run over
+it aborts having reported nothing. Name the count and ask for a narrower scope
+rather than starting. Nearer the limit the read still runs, and the fill kinds
+that would cross it are reported as not reached.
+
+Report the scope and the count before fanning out — the run's cost is
+proportional to it, and this is the last cheap moment to stop.
 
 **Refuse to start against a dirty working tree.** Step 4 mutates tracked files
 and reverts them with git, which cannot tell its own mutation from work you had
 in progress. Say what is uncommitted and stop.
 
-## Step 2 · `assess` — One subagent per file
+## Step 2 · `read` — Every reading fan-out, as one workflow
 
-Fan out the `kit:spec-assessor` subagent through the **Agent tool**, one per
-spec file, in waves of about eight. Each gets one file path, and returns
-`kit:rails-load-bearing-specs`' output contract for it.
+Steps 2 and 3's agents run inside a **Workflow**, never through the Agent tool.
+Every Agent-tool hand-back lands in this session, so a suite of several hundred
+files exhausts the session's context before Step 4 proves anything — however few
+agents run at once. The workflow collects the agents' output itself and returns
+only the collated lines, so what this session holds grows with the candidates,
+not with the files read. Calling it is this command's instruction, not a size
+the run chose: one agent per file is the unit, whatever the count.
+
+Launch it with the script this plugin ships:
+
+```
+scriptPath: ${CLAUDE_PLUGIN_ROOT}/workflows/prune-read.js
+args: { listFile: <the file Step 1 wrote>,
+        count: <the count Step 1 reported>,
+        digest: <the digest Step 1 printed>,
+        command: ${CLAUDE_PLUGIN_ROOT}/commands/prune-specs.md,
+        requestDir: <the project's request spec directory, spelled as the list
+                     spells it, or null where it has none> }
+```
+
+If the harness refuses the path, read the file and pass its contents as
+`script` — the same script either way, never one retyped from memory.
+
+**Wait for the workflow to complete before Step 4.** It runs in the background
+and the tool returns when it is launched; nothing below may read its result
+earlier. Nothing in Steps 2 and 3 asks the person anything, so no question moves
+into the background with it.
+
+It returns, and nothing else reaches this session:
+
+- `band` — at most twenty candidates for Step 4, in proving order, each with
+  its kind.
+- `restated` — every `restated` line with its two quoted lines, for Step 5.
+- `beyond` — how many candidates the cap left out.
+- `unassessedExamples` — the axis's own unassessed lines.
+- `unassessedUnits` — every file or directory whose agent failed, per finding
+  kind, with the reason where it gave one.
+- `notReached` — each fill kind the run did not assess, and why.
+
+### `assess` — one assessor per file
+
+The workflow runs the `kit:spec-assessor` subagent once per candidate file, and
+each returns `kit:rails-load-bearing-specs`' output contract for it.
 
 **One file per agent, never a batch.** An agent holding several files reports on
 the aggregate, and the aggregate is what the axis's unit rule exists to prevent.
 
-**A file whose agent fails is unassessed, not clean.** Carry it into Step 8 by
-name. Silence about a file that errored reads identically to a file with nothing
-in it, and the difference is what a suite sweep is trusted for.
+**A file whose agent fails is unassessed, not clean.** Silence about a file that errored reads
+identically to a file with nothing in it, and the difference is what a suite
+sweep is trusted for.
 
 ## Step 3 · `rank` — Choose what to prove
 
-Collate the returned lines. **A `restated` line is proven by its two quoted
-lines**: it takes no slot here and goes straight to Step 5.
+The workflow does the ranking, because whether there is room in the band is
+what decides whether each fill kind runs at all. This step is the rule; the
+script carries its order and its cap as code, so a change to either here is a
+change to the script too. The fill agents read their paragraphs below from this
+file.
+
+**A `restated` line is proven by its two quoted lines**: it takes no slot here
+and goes straight to Step 5.
 
 Order the other convicted candidates by the axis's own convictability:
 tautology, then dead code, then contradiction. **Take at most twenty into Step
@@ -142,7 +206,7 @@ pairs, then over-stubbed examples** — after the axis's categories, and only wh
 there is room, since a full band would discard the search. Removals come before rewrites,
 then cheaper proofs first: an assertion costs one mutation and a pair several.
 
-For misplaced assertions, fan out one agent per request spec file among the
+For misplaced assertions, the workflow runs one agent per request spec file among the
 candidate files. Each returns
 candidate assertions, one line each — the assertion's `file:line`, the
 lower-layer code it reaches (the model, helper or service that computes what it
@@ -154,14 +218,14 @@ to a model callback reddens both, so the reading has to. Nor propose an
 assertion that is its example's only one: removing it would leave an example
 asserting nothing, and the example stays.
 
-For subsumption pairs, fan out one agent per spec directory holding candidate
+For subsumption pairs, it runs one agent per spec directory holding candidate
 files, for the directories holding at least two examples. A covering example may sit in
 another file, so the unit is the directory: the files directly in it, not its
 subdirectories. Each agent returns candidate pairs, one line each — the
 candidate's `file:line`, the covering example's `file:line`, and the production
 code both assertions reach.
 
-For over-stubbed examples, fan out one agent per candidate file. Each returns
+For over-stubbed examples, it runs one agent per candidate file. Each returns
 candidates, one line each — the example's `file:line`, its subject, the stubbed
 collaborator method, and the spec files that cover the subject by the project's
 layout. **Only a stub of the project's own code is a candidate**: a gem, the

@@ -11,12 +11,14 @@ nothing in the checkout looks different either way.
 | `plugins/kit/skills/*/SKILL.md` and its bundled files | Session start | After a restart |
 | `plugins/kit/agents/*.md` | Session start | After a restart |
 | `plugins/kit/scripts/*.sh` | Every run, by path | Immediately |
+| `plugins/kit/workflows/*.js` | Every run, by path | Immediately |
 | `plugins/kit/hooks/rails-quality-gates.sh` | Every fire, by path | Immediately |
 
-The scripts and the hook are on the immediate side because nothing loads their
-contents — a command names one by path, `${CLAUDE_PLUGIN_ROOT}/scripts/pr-review.sh`,
-and the shell executes the file on disk. The prose deciding *whether* to run it
-was fixed at session start; the script it runs is whatever you last saved.
+The scripts, the workflows and the hook are on the immediate side because nothing
+loads their contents at session start — a command names one by path,
+`${CLAUDE_PLUGIN_ROOT}/scripts/pr-review.sh`, and the shell or the Workflow
+runtime reads the file on disk when it runs. The prose deciding *whether* to run
+it was fixed at session start; the file it runs is whatever you last saved.
 
 ## A command edited here keeps running until you restart
 
