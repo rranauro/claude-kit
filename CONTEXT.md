@@ -91,7 +91,8 @@ _Avoid_: smoke test, QA pass, manual test, demo
 The finished PR does not merge on its own — a person is in charge of it. Usually
 because it must be walked in the running app first; also because someone declined
 auto-merge and means to merge it themselves; also because the review pass
-escalated a finding it may not settle alone, or the shape review found one, or
+escalated a finding it may not settle alone, or the shape review found a
+contested one, or
 the plan was designed unattended for a kind whose acceptance is a look. Set at
 triage on the issue and transcribed onto the PR, or written straight onto the PR
 when the decision is made after it exists — by a person, the review pass, or `kit:ticket-loop`.
@@ -197,6 +198,13 @@ _Avoid_: over-mocked, mock-heavy, hollow, isolated, brittle
 An object whose interface has grown one member per caller rather than as an API.
 `kit:rails-codebase-design` is the one statement of it.
 _Avoid_: undertow, sprawl, bloat, god class, public surface
+
+**Contested finding**:
+A shape finding with two or more fixes that survive the axis, none clearing a
+count another still fires, so only their reach separates them. The one kind of
+shape finding that holds a PR; a finding with one clear fix is posted, pinned
+and merged. `kit:shape-review` is the one statement of it.
+_Avoid_: close call, toss-up, ambiguous finding
 
 **In-flight reshape**:
 A move across the namespaces a shape-held PR touched, chosen by the person at

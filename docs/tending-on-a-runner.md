@@ -33,7 +33,7 @@ usually on the PR before CI ever finishes — `/kit:new-pull-request` transcribe
 it from the issue at creation time. It can also arrive later:
 `/kit:review-copilot` writes it when someone declines auto-merge at its prompt,
 which is the only record that the decline happened, and `kit:ticket-loop`
-writes it when the shape review it posted has findings. Without the gate
+writes it when the shape review it posted has a contested finding. Without the gate
 honouring it, the next firing re-enables the thing they just declined. A gate that does not check it
 merges the one PR a human deliberately asked to see first, and does so within
 minutes.

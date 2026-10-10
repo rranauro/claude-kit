@@ -4,7 +4,7 @@ Every label this kit writes is a cheap stand-in for something expensive to
 read. `kit-review-closed` stands for the summary comment. `kit-hold` stands for
 the record the pass that set it posted — a round summary, a shape review, or the
 comment naming a derived plan's kind — or for a person's decision at triage. `kit-blocked` stands for the "Blocked by"
-section a park wrote. `kit-pinned` stands for an observation and the round summary beside it.
+section a park wrote. `kit-pinned` stands for an observation and the record beside it — a round summary or a shape review.
 
 A label without its record is therefore not a partial success. It is the one
 state that suppresses every later look: the PR reads as handled, no gate re-runs
