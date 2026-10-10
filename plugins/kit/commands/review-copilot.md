@@ -54,6 +54,7 @@ The Claude review arrives as a single marker comment (`<!-- claude-pr-review -->
 The shape review is one marker comment too, in the format `kit:shape-review` §5 writes. Parse it:
 - Each `` ### <n>. <count name> — `<Class#method>` `` section is one finding. Key it on the `file:line` its **Call site now** line names.
 - The **After** panels are the fix the reviewer proposes, and **Costs** / **Placement** are its reasoning — carry all three as the finding text.
+- A heading ending `— contested` carries several **After — <move>** blocks and marks none preferred. Carry them all; Step 3 does not pick one.
 - The `<details><summary>Inventory</summary>` block is not a finding. A comment reading `**No shape findings.**` is an empty source.
 
 If the `<!-- claude-pr-review -->` comment is not present (the hook isn't registered for this project, nobody ran `/kit:start-review`, or it found nothing), there are no Claude findings to merge; build the buckets from the sources that did land.
@@ -82,7 +83,7 @@ For each item, in order:
    - 🟢 **Optional** — style preference, nitpick, or suggestion that doesn't improve the code meaningfully
    - ⚪ **Ignore** — false positive, already handled, or not applicable to our codebase
 
-   **A shape finding is never 🟢 Optional.** It is 🔴 or 🟡 — and so applied, whatever its scope — unless verifying it against the code shows its premise false, which makes it ⚪: the call site it names is gone, or the fix already landed. A shape finding is cross-file almost by definition, so the minor test below would skip nearly every one; and it has already been gated once by the pass that printed it, then chosen by the person who posted it. The fix is commits on this branch through Steps 6 and 7 — never a new ticket or PR.
+   **A shape finding is never 🟢 Optional.** It is 🔴 or 🟡 — and so applied, whatever its scope — unless verifying it against the code shows its premise false, which makes it ⚪: the call site it names is gone, or the fix already landed. A shape finding is cross-file almost by definition, so the minor test below would skip nearly every one; and it has already been gated once by the pass that printed it, then chosen by the person who posted it. The fix is commits on this branch through Steps 6 and 7 — never a new ticket or PR. **A contested shape finding is the exception**: the axis could not choose between its Afters, so applying one would make the choice the PR was held for. Mark it ⚪ with that as the reason and leave it to the person at the hold — `kit:reshape` is where it is decided.
 4. **Classify scope** — is the fix **minor**? A fix is minor when ALL of the following are true:
    - Localized: touches ≤ 3 lines and ≤ 1 file
    - Safe: no behavior change visible to callers (renaming a local variable, adding a missing `nil` guard, correcting a typo, adjusting a log message, removing an unused variable, etc.)

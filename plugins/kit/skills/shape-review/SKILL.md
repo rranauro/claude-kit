@@ -73,6 +73,25 @@ git blame -s <base> -- <the class file>
 git show -s --format='%h %s' <sha> <sha> …
 ```
 
+Then **contest every finding** but an accreted interface one. Draft the After
+the finding calls for, and an After for every other fix that fits it — each
+`kit:rails-codebase-design` §2.5 move whose tell the finding shows, and the fix
+inside the object where there is one. Gate each After on §3 as the finding was
+gated, then score it: the §2 counts it still fires, by name. One After **beats**
+another when it clears a count the other still fires.
+
+**A finding is contested when two or more Afters survive and none beats
+another.** The axis cannot choose between them; what is left is which callers
+each one moves, and that is the person's to weigh. Otherwise the finding carries
+the one After that beats the rest, and the others are dropped unwritten — an
+alternative the axis beats is a choice already made, and showing it asks a
+person to make it again. Most findings have one After. Contested is the
+exception, and a caller holds the PR on it, so never call a finding contested to
+be thorough.
+
+An accreted interface finding is never contested: it writes no After, so there
+is nothing to rank.
+
 ## 4 — Write each finding from the call site
 
 A reader judges a finding from the call site without opening the class, so every
@@ -81,8 +100,15 @@ after the fix, in the **caller**, **model** and **class** panels of
 `kit:rails-codebase-design` §1.5 — each panel present only when the fix touches
 it.
 
+**A contested finding writes one After per surviving fix**, each headed by the
+move it makes — a §2.5 move by name, or `in place` for the fix inside the
+object — and marks none preferred — the rank is the person's, and an
+order here would make it for them. Its **Costs** gives each After its own line:
+the call sites outside the diff that move, counted, since reach is all that is
+left to separate them.
+
 **An accreted interface finding leaves out the panels.** Its subject is the
-object, and the reshape is decided by whoever answers the hold, so an **After**
+object, and the reshape is decided by whoever takes it up, so an **After**
 here would be a design nobody asked this pass for. **Call site now** is the first
 added member's caller, or its definition when it has none, and any other members
 the diff added there are listed in **Costs**. **Costs** names each existing
@@ -91,8 +117,9 @@ and the commit that introduced it — `` `#removed_fields` (`jobs/purge.rb:14`, 
 It goes in **Costs** because `kit:review-copilot` carries that line and would
 drop a new one.
 
-Order findings strongest first: a placement finding above a naming one, a count
-with several callers above one with one.
+Order findings strongest first: contested findings above the rest, since a
+caller holds the PR on them; then a placement finding above a naming one, a
+count with several callers above one with one.
 
 ## 5 — The comment
 
@@ -100,9 +127,30 @@ with several callers above one with one.
 <!-- kit-shape-review -->
 ## Shape review — #<pr> at `<short sha>`
 
-**<n> findings**
+**<n> findings, <c> contested**
 
-### 1. <count name> — `<Class#method>`
+### 1. <count name> — `<Class#method>` — contested
+
+**Call site now** (`<file:line>`)
+```ruby
+<the line as the diff writes it>
+```
+
+**After — <move>**
+```ruby
+<the panels, as below>
+```
+
+**After — <another move>**
+```ruby
+<the panels, as below>
+```
+
+**Costs:**
+- <first move>: <the call sites outside the diff it moves, counted>
+- <second move>: <the same>
+
+### 2. <count name> — `<Class#method>`
 
 **Call site now** (`<file:line>`)
 ```ruby
@@ -132,6 +180,9 @@ with several callers above one with one.
 
 </details>
 ````
+
+**The count line is what a caller reads to decide the hold**, so `<c>` is the
+number of headings that end `— contested`, and it is written even when it is 0.
 
 The inventory ships whatever the findings, so a reader can tell a clean diff from
 one nobody looked at. **With no findings**, the line under the heading reads

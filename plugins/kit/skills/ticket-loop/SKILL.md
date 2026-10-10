@@ -308,12 +308,32 @@ cannot lose a race with a green CI.
 - **No marked comment comes back** — the pass failed. Say so wherever this phase
   reports and carry on as if clean: a hold with no review to give its reason is
   worse than leaving the shape unjudged.
-- **Findings, attended** — show them and ask whether to post the review and hold
-  the PR, or post it and arm auto-merge anyway, or post it, hold it, and reshape
-  now. Never hold without saying so. The third answer is the first one followed
-  by invoking `kit:reshape <pr-number>` through the Skill tool, here, before
-  step 4 — it pushes, and step 4 has to attest the head it leaves.
-- **Findings, unattended** — hold it, record first:
+- **Findings, attended** — show them, saying which are contested, and ask
+  whether to post the review and hold the PR, or post it and arm auto-merge
+  anyway, or post it, hold it, and reshape now. Never hold without saying so.
+  With nothing contested the axis has already picked every fix, so say arming is
+  what an unattended run would do. The second answer pins and records as the
+  uncontested case below does. The third is the first followed by invoking
+  `kit:reshape <pr-number>` through the Skill tool, here, before step 4 — it
+  pushes, and step 4 has to attest the head it leaves.
+- **Findings, unattended, none contested** — the count line reads
+  `<c> contested` with `<c>` at 0. A finding with one clear fix is not a
+  decision anyone has to make before the merge, so it does not hold the PR. Post
+  it, pin it, and let it merge:
+
+  ```
+  gh pr comment <pr-number> --body-file <the comment>
+  gh pr edit <pr-number> --add-label kit-pinned   # only if the comment posted
+  ```
+
+  Then invoke `kit:observations` and record each finding — one record per
+  finding, passing `--pr <pr-number>`. The `claim` is the finding's heading and
+  its **Call site now** `file:line`; the `check` greps that file for the
+  call-site line; `surfaced` says the shape review found it uncontested and the
+  PR merged with it unapplied; the `action` is an `improve-codebase` ticket.
+  Report each line the script prints. A failed write follows `docs/labels.md`:
+  report it and carry on to step 4, since nothing here was a hold.
+- **Findings, unattended, one or more contested** — hold it, record first:
 
   ```
   gh pr comment <pr-number> --body-file <the comment>
