@@ -18,8 +18,7 @@ top-level spec directories:
 - domain: models, services
 ```
 
-Resolve the argument in that order: a declared group name is that group;
-otherwise a directory under the spec directory, spelled with or without its
+A declared group name is that group; otherwise the argument is a directory under the spec directory, spelled with or without its
 prefix (`services`, `spec/services`, `spec/models/concerns`). Neither is a usage
 error — name the declared groups and start nothing.
 
@@ -30,9 +29,8 @@ mutation reaches — is read wherever the project keeps it. A misplaced
 assertion's owning-layer spec sits outside `spec/requests` by construction, so a
 run that looked only inside its scope would convict every one it read.
 
-A scoped run does not settle its scope. The band's cap is per run, and examples
-read and kept once can be proven on the next; running the same scope again is
-expected.
+A scoped run does not settle its scope. The band's cap is per run, so running
+the same scope again is expected to prove more.
 
 **`kit:rails-load-bearing-specs` is the axis, and it owns the output contract
 too.** What convicts, what does not, and what a pass says are all its. This
@@ -94,7 +92,7 @@ there is room, since a full band would discard the search. Removals come before 
 then cheaper proofs first: an assertion costs one mutation and a pair several.
 
 For misplaced assertions, fan out one agent per request spec file among the
-candidate files; a scope holding none leaves this kind unassessed. Each returns
+candidate files. Each returns
 candidate assertions, one line each — the assertion's `file:line`, the
 lower-layer code it reaches (the model, helper or service that computes what it
 checks), and the spec files that own that code by the project's layout. **Never
