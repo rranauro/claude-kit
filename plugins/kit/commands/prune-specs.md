@@ -52,7 +52,7 @@ issue titled `Spec prune rotation`, whose body opens with
 
 ```markdown
 <!-- kit-prune-scan: domain -->
-Last scanned 2026-10-10 — filed #412, #413
+Last scanned 2026-10-10T14:02:00Z — filed #412, #413
 ```
 
 or `nothing proven` in place of the tickets. **Keep it closed.** Every listing
@@ -76,9 +76,9 @@ Choose this way:
 
 1. **Least recently scanned.** A group with no comment counts as oldest; ties go
    to the earlier group. A comment for a group no longer declared is ignored.
-2. **Held while its tickets are open.** Check the chosen group's last tickets in
-   one `gh issue list --state open --search '<n> <m>' --json number`. If any is
-   open, scan nothing. Say which group, which ticket, and that closing it or
+2. **Held while its tickets are open.** Read each of the chosen group's last
+   tickets by number — `gh issue view <n> --json state` — never through search,
+   which matches text rather than numbers. If any is open, scan nothing. Say which group, which ticket, and that closing it or
    naming a group explicitly moves on. **Do not fall through to the next
    group**: every other group has been scanned more recently than this one, and
    taking one of them scans it twice before this one is scanned again.
@@ -341,8 +341,9 @@ did not finish.
 
 ## Step 7 · `record` — Move the rotation on
 
-Update the scanned group's ledger comment in place: today's date, and the
-tickets Step 5 filed or `nothing proven`. **A run that proved nothing has still
+Update the scanned group's ledger comment in place: the UTC time to the second —
+a date alone ties two scans on one day, and the tie-break then picks the same
+group again — and the tickets Step 5 filed or `nothing proven`. **A run that proved nothing has still
 scanned its group**, and leaving it unrecorded would make the rotation choose it
 again next time. Record a named scope too when it is a group — declared, or a
 top-level directory where none are declared — but not a subdirectory, which
