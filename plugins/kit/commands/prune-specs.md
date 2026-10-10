@@ -5,8 +5,34 @@ model: opus
 Walk this project's spec suite, prove which examples can be removed or must be
 rewritten, and file them as a ticket each way. It decides; it never deletes.
 
-**Arguments:** none. The scan covers the whole suite, every time — expect tens of
+**Arguments:** an optional **scope** — one spec directory, or one group the
+project declares. Without one, the scan covers the whole suite — expect tens of
 minutes. Run it from the main checkout, against a clean tree.
+
+A group is declared in the project's `CLAUDE.md`, one line per group naming its
+top-level spec directories:
+
+```markdown
+## Spec groups
+- web: requests, controllers
+- domain: models, services
+```
+
+A declared group name is that group. Otherwise the argument must name a
+directory that exists under the spec directory, spelled with or without its
+prefix (`services`, `spec/services`, `spec/models/concerns`). Anything else is a
+usage error: name the declared groups and start nothing. A typo read as an empty
+directory is a run that reports a clean scope it never looked at.
+
+**Scope narrows the candidates, never the evidence.** Only examples under the
+scope may be proposed, proven or filed. What proves or clears one — an
+owning-layer spec, a spec covering a stubbed subject, the production code a
+mutation reaches — is read wherever the project keeps it. A misplaced
+assertion's owning-layer spec sits outside `spec/requests` by construction, so a
+run that looked only inside its scope would convict every one it read.
+
+A scoped run does not settle its scope. The band's cap is per run, so running
+the same scope again is expected to prove more.
 
 **`kit:rails-load-bearing-specs` is the axis, and it owns the output contract
 too.** What convicts, what does not, and what a pass says are all its. This
@@ -25,9 +51,11 @@ Read the project's spec directory and its test command from the project itself �
 `bundle exec rspec`; a wrong runner that errors is noise and one that silently
 passes is worse.
 
-Every `*_spec.rb` under that directory, excluding fixtures, factories, and
-support. Report the count before fanning out — the run's cost is proportional to
-it, and this is the last cheap moment to stop.
+Every `*_spec.rb` under that directory — or under the scope, when one was given —
+excluding fixtures, factories, and support. These are the run's **candidate
+files**; every fan-out below draws from them and nothing else. Report the scope
+and the count before fanning out — the run's cost is proportional to it, and
+this is the last cheap moment to stop.
 
 **Refuse to start against a dirty working tree.** Step 4 mutates tracked files
 and reverts them with git, which cannot tell its own mutation from work you had
@@ -65,7 +93,8 @@ pairs, then over-stubbed examples** — after the axis's categories, and only wh
 there is room, since a full band would discard the search. Removals come before rewrites,
 then cheaper proofs first: an assertion costs one mutation and a pair several.
 
-For misplaced assertions, fan out one agent per request spec file. Each returns
+For misplaced assertions, fan out one agent per request spec file among the
+candidate files. Each returns
 candidate assertions, one line each — the assertion's `file:line`, the
 lower-layer code it reaches (the model, helper or service that computes what it
 checks), and the spec files that own that code by the project's layout. **Never
@@ -76,14 +105,14 @@ to a model callback reddens both, so the reading has to. Nor propose an
 assertion that is its example's only one: removing it would leave an example
 asserting nothing, and the example stays.
 
-For subsumption pairs, fan out one agent per spec directory, for
-the directories holding at least two examples. A covering example may sit in
+For subsumption pairs, fan out one agent per spec directory holding candidate
+files, for the directories holding at least two examples. A covering example may sit in
 another file, so the unit is the directory: the files directly in it, not its
 subdirectories. Each agent returns candidate pairs, one line each — the
 candidate's `file:line`, the covering example's `file:line`, and the production
 code both assertions reach.
 
-For over-stubbed examples, fan out one agent per spec file. Each returns
+For over-stubbed examples, fan out one agent per candidate file. Each returns
 candidates, one line each — the example's `file:line`, its subject, the stubbed
 collaborator method, and the spec files that cover the subject by the project's
 layout. **Only a stub of the project's own code is a candidate**: a gem, the
@@ -185,7 +214,9 @@ dropped. Candidates stubbing the same collaborator method share its mutations.
 
 ## Step 5 · `file` — Up to two tickets, or none
 
-**A run that proved nothing files no ticket.** Say so in one line and stop.
+**A run that proved nothing files no ticket.** Say so in one line, skip Step 6,
+and go to Step 7 — the scope and the kinds left unassessed are what a clean run
+has to report.
 
 Otherwise file one ticket per disposition: a **prune ticket** carrying every
 finding proven for removal, and a **rewrite ticket** carrying every over-stubbed
@@ -260,6 +291,15 @@ sweep. Triage runs unchanged and owns everything it writes; never relabel the
 did not finish.
 
 ## Step 7 · `report` — Say what it found
+
+**Open with the scope**, in one line: the group or directory and the file count,
+or the whole suite.
+
+**Then name every kind of finding the run did not assess, and why** — the band
+filled before the fill order reached it, or the scope held nothing to propose it
+from, such as misplaced assertions in a scope with no request specs. A kind
+nobody mentions reads as a kind that found nothing, and the difference is what
+the next run is chosen on.
 
 The axis's contract governs the candidate lines. A subsumed example takes the
 same one-line shape, with its cover and the mutations in the evidence clause:

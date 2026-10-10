@@ -13,7 +13,7 @@ the prefix comes from the `name` field in `plugins/kit/.claude-plugin/plugin.jso
 | `/kit:architect` | The problem conversation. Explores an idea, questions the premise, looks at how others solve it — and files lean GitHub issues only if the conversation earns them. |
 | `/kit:design` | The *how*, once the *what* is settled. Places the behavior, compares approaches, grills the choice, and stores the plan on the issue it belongs to — where an agent that never had your `plans/` directory can read it. |
 | `/kit:triage` | The lane for work that arrived rather than work you started. Bins an issue (fixed, duplicate, parked, not-a-ticket), grills its *scope* before any approach exists — which adjacent decisions fold in now, and which are their own tickets — then runs `/kit:design` and brings the body up to the bar an unattended agent can pick up from. |
-| `/kit:prune-specs` | Walks the whole spec suite, one subagent per file, applying `kit:rails-load-bearing-specs`, then **proves** the strongest band by mutation: break the code an example's assertion reaches, run that example, record whether it went red, revert with `git checkout --`. Deleting a spec produces a diff that cannot fail, so the gate is what gives an executor a check at all — applied before the deletion, not after. Not the axis's runtime witness and no substitute for one. A **restated declaration** skips the gate and is proven by its two lines quoted together. Fills any room in the band with **misplaced assertions**, proven by one mutation that runs the owning layer's specs too, then **subsumed** pairs from the same spec directory, proven across several mutations, then **over-stubbed** examples. Files a `technical-debt` prune ticket for removals and a separate rewrite ticket for over-stubbed examples, and settles each through `/kit:triage` in the same run; decides, never deletes. |
+| `/kit:prune-specs` | Walks the whole spec suite — or one spec directory, or one group declared under `## Spec groups` — one subagent per file, applying `kit:rails-load-bearing-specs`, then **proves** the strongest band by mutation: break the code an example's assertion reaches, run that example, record whether it went red, revert with `git checkout --`. Deleting a spec produces a diff that cannot fail, so the gate is what gives an executor a check at all — applied before the deletion, not after. Not the axis's runtime witness and no substitute for one. A **restated declaration** skips the gate and is proven by its two lines quoted together. Fills any room in the band with **misplaced assertions**, proven by one mutation that runs the owning layer's specs too, then **subsumed** pairs from the same spec directory, proven across several mutations, then **over-stubbed** examples. Files a `technical-debt` prune ticket for removals and a separate rewrite ticket for over-stubbed examples, and settles each through `/kit:triage` in the same run; decides, never deletes. |
 
 ### Building it
 
@@ -179,6 +179,9 @@ tells `hand-off` that a draft's green is the ready PR's verdict, so it arms
 auto-merge the moment it marks the PR ready instead of first waiting for the
 transition's run to register. Absent, it waits — the safe reading for a project
 that skips steps on drafts under the same check names.
+
+**Spec groups are declared there as well.** `## Spec groups` is what
+`/kit:prune-specs <group>` reads; the command owns its format.
 
 **External commands these call.** Beyond the [companion skills](companion-skills.md),
 the workflow invokes `/simplify` (`kit:ticket-loop` `simplify`), `/loop` (drives
