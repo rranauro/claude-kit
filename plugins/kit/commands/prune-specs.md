@@ -18,9 +18,11 @@ top-level spec directories:
 - domain: models, services
 ```
 
-A declared group name is that group; otherwise the argument is a directory under the spec directory, spelled with or without its
-prefix (`services`, `spec/services`, `spec/models/concerns`). Neither is a usage
-error — name the declared groups and start nothing.
+A declared group name is that group. Otherwise the argument must name a
+directory that exists under the spec directory, spelled with or without its
+prefix (`services`, `spec/services`, `spec/models/concerns`). Anything else is a
+usage error: name the declared groups and start nothing. A typo read as an empty
+directory is a run that reports a clean scope it never looked at.
 
 **Scope narrows the candidates, never the evidence.** Only examples under the
 scope may be proposed, proven or filed. What proves or clears one — an
@@ -212,7 +214,9 @@ dropped. Candidates stubbing the same collaborator method share its mutations.
 
 ## Step 5 · `file` — Up to two tickets, or none
 
-**A run that proved nothing files no ticket.** Say so in one line and stop.
+**A run that proved nothing files no ticket.** Say so in one line, skip Step 6,
+and go to Step 7 — the scope and the kinds left unassessed are what a clean run
+has to report.
 
 Otherwise file one ticket per disposition: a **prune ticket** carrying every
 finding proven for removal, and a **rewrite ticket** carrying every over-stubbed
