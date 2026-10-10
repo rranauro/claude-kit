@@ -6,8 +6,8 @@ Walk this project's spec suite, prove which examples can be removed or must be
 rewritten, and file them as a ticket each way. It decides; it never deletes.
 
 **Arguments:** an optional **scope** — one spec directory, or one group the
-project declares. Without one, the scan covers the whole suite — expect tens of
-minutes. Run it from the main checkout, against a clean tree.
+project declares. Without one, the run takes the next group in the rotation
+below. Run it from the main checkout, against a clean tree.
 
 A group is declared in the project's `CLAUDE.md`, one line per group naming its
 top-level spec directories:
@@ -33,6 +33,50 @@ run that looked only inside its scope would convict every one it read.
 
 A scoped run does not settle its scope. The band's cap is per run, so running
 the same scope again is expected to prove more.
+
+### The rotation — a run with no argument
+
+**Nobody keeps a calendar of which group was pruned when, so the run keeps it.**
+A run with no argument scans one group: the one that has gone longest without a
+run. A whole-suite run fills the band before it reaches the later finding kinds,
+so there is no unscoped form; a wider sweep is several runs.
+
+The groups are the declared ones, in declaration order. A project that declares
+none rotates through each top-level directory under the spec directory that
+holds a candidate file, in alphabetical order.
+
+**The state lives on the project's tracker, because it has to read the same
+from a fresh clone on another machine.** A gitignored file is gone there, and a
+committed one would make every run a pull request. The ledger is one standing
+issue titled `Spec prune rotation`, whose body opens with
+`<!-- kit-prune-rotation -->`, holding one comment per group:
+
+```markdown
+<!-- kit-prune-scan: domain -->
+Last scanned 2026-10-10 — filed #412, #413
+```
+
+or `nothing proven` in place of the tickets. Find it with `gh issue list --state
+all --search 'in:title "Spec prune rotation"'`, keep the issues whose body opens
+with the marker, and take the lowest number. **Keep it closed.** Every listing
+and sweep reads open issues, and a standing open one is a drawer they would all
+have to step over.
+
+Choose this way:
+
+1. **Least recently scanned.** A group with no comment has never been scanned
+   and goes first; ties go to the earlier group. A comment for a group no
+   longer declared is ignored.
+2. **Held while its tickets are open.** If any ticket the chosen group's last
+   run filed is still open, scan nothing. Say which group, which ticket, and
+   that closing it or naming a group explicitly moves on. **Do not fall through
+   to the next group**: every other group has been scanned more recently than
+   this one, and taking one of them scans it twice before this one is scanned
+   again. A rescan while the findings are still in a ticket would only propose
+   them a second time, so the hold is the rotation waiting rather than a stall.
+
+Report the group and why before Step 1 fans out — never scanned, or last
+scanned on its date, the oldest of however many groups.
 
 **`kit:rails-load-bearing-specs` is the axis, and it owns the output contract
 too.** What convicts, what does not, and what a pass says are all its. This
@@ -70,7 +114,7 @@ spec file, in waves of about eight. Each gets one file path, and returns
 **One file per agent, never a batch.** An agent holding several files reports on
 the aggregate, and the aggregate is what the axis's unit rule exists to prevent.
 
-**A file whose agent fails is unassessed, not clean.** Carry it into Step 7 by
+**A file whose agent fails is unassessed, not clean.** Carry it into Step 8 by
 name. Silence about a file that errored reads identically to a file with nothing
 in it, and the difference is what a suite sweep is trusted for.
 
@@ -120,7 +164,7 @@ standard library or an external service has no implementation in this tree to
 mutate. A mock asserting the mock is the axis's tautology, not this.
 
 Reading only proposes; Step 4 proves. A file or directory whose agent fails is
-unassessed for that finding, and Step 7 says so.
+unassessed for that finding, and Step 8 says so.
 
 ## Step 4 · `prove` — Mutate, observe, revert
 
@@ -215,8 +259,8 @@ dropped. Candidates stubbing the same collaborator method share its mutations.
 ## Step 5 · `file` — Up to two tickets, or none
 
 **A run that proved nothing files no ticket.** Say so in one line, skip Step 6,
-and go to Step 7 — the scope and the kinds left unassessed are what a clean run
-has to report.
+and go to Step 7 — the group still counts as scanned, and the scope and the
+kinds left unassessed are what a clean run has to report.
 
 Otherwise file one ticket per disposition: a **prune ticket** carrying every
 finding proven for removal, and a **rewrite ticket** carrying every over-stubbed
@@ -290,10 +334,28 @@ sweep. Triage runs unchanged and owns everything it writes; never relabel the
 `technical-debt` kind, and never add `ready-for-agent` to cover a triage that
 did not finish.
 
-## Step 7 · `report` — Say what it found
+## Step 7 · `record` — Move the rotation on
+
+Update the scanned group's ledger comment in place: today's date, and the
+tickets Step 5 filed or `nothing proven`. **A run that proved nothing has still
+scanned its group**, and leaving it unrecorded would make the rotation choose it
+again next time. Record a named scope too when it is a group — declared, or a
+top-level directory where none are declared — but not a subdirectory, which
+scanned less than any group.
+
+Edit by comment id (`gh api --method PATCH
+repos/{owner}/{repo}/issues/comments/<id> -f body=@<file>`), and post a new one
+only for a group with none. If there is no ledger yet, create the issue, close it
+as not planned, then comment on it, and say in Step 8 that you did.
+
+A run that aborted on a failed revert scanned nothing and records nothing. A
+write that fails is reported in Step 8 rather than skipped: the next run with no
+argument will choose this group again.
+
+## Step 8 · `report` — Say what it found
 
 **Open with the scope**, in one line: the group or directory and the file count,
-or the whole suite.
+and for a rotation run why that group was chosen.
 
 **Then name every kind of finding the run did not assess, and why** — the band
 filled before the fill order reached it, or the scope held nothing to propose it
