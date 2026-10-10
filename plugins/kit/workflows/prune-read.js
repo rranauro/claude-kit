@@ -11,13 +11,17 @@ export const meta = {
 // The reading half of /kit:prune-specs — its Step 2 says why it runs here, and
 // Step 3 is the rule the ranking below follows.
 //
-// args: { listFile, count, command, requestDir }
+// args: { listFile, count, digest, command, requestDir }
 //   listFile    the candidate files, one path per line, written outside the repo
 //   count       how many paths the session counted into it
+//   digest      fnv1a() of those lines joined by newlines, as Step 1 computed it
 //   command     the path of prune-specs.md; fill agents read their rule from it
 //   requestDir  the project's request spec directory, or null where it has none
 
 const CAP = 20
+// The Workflow runtime aborts a run past this many agent() calls, so a fan-out
+// that would cross it is reported as not reached rather than started.
+const AGENT_LIMIT = 1000
 const AXIS_ORDER = ['tautology', 'dead-code', 'contradiction']
 
 const LIST = {
@@ -64,11 +68,26 @@ const listed = await agent(
   { label: 'enumerate', phase: 'Enumerate', schema: LIST, effort: 'low' },
 )
 const files = listed ? listed.files : []
-// The list passes through a model on its way here; a dropped path would be a
-// file nobody assessed and nothing reported.
-if (files.length !== args.count) {
-  return { error: `read back ${files.length} candidate files from ${args.listFile}, expected ${args.count}` }
+
+// The list passes through a model on its way here. A dropped, duplicated or
+// altered path is a file nobody assessed and nothing reported, and a reorder
+// changes which candidates make the band — so the order is checked too.
+// 32-bit FNV-1a over code points; Step 1 computes the same in Python.
+function fnv1a(text) {
+  let h = 0x811c9dc5
+  for (const ch of text) {
+    h ^= ch.codePointAt(0)
+    h = Math.imul(h, 0x01000193) >>> 0
+  }
+  return h.toString(16).padStart(8, '0')
 }
+if (files.length !== args.count || fnv1a(files.join('\n')) !== args.digest) {
+  return { error: `the ${files.length} paths read back from ${args.listFile} are not the ${args.count} Step 1 listed` }
+}
+if (1 + files.length > AGENT_LIMIT) {
+  return { error: `${files.length} candidate files would pass the workflow's ${AGENT_LIMIT}-agent limit; name a narrower scope` }
+}
+let spent = 1 + files.length
 
 phase('Assess')
 const assessed = await parallel(files.map(f => () =>
@@ -129,9 +148,14 @@ for (const k of FILL) {
     continue
   }
   if (!k.units.length) {
-    notReached.push(`${k.heading}: the scope held no request specs to propose them from`)
+    notReached.push(`${k.heading}: ${files.length ? 'the scope held no request specs to propose them from' : 'the scope held no spec files'}`)
     continue
   }
+  if (spent + k.units.length > AGENT_LIMIT) {
+    notReached.push(`${k.heading}: ${k.units.length} more agents would pass the workflow's ${AGENT_LIMIT}-agent limit; a narrower scope reaches them`)
+    continue
+  }
+  spent += k.units.length
   phase('Fill')
   log(`${room} slots left; proposing ${k.heading} over ${k.units.length} units`)
   const proposed = await parallel(k.units.map(u => () =>

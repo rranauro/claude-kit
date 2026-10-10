@@ -55,8 +55,22 @@ Every `*_spec.rb` under that directory — or under the scope, when one was give
 excluding fixtures, factories, and support. These are the run's **candidate
 files**; every fan-out below draws from them and nothing else. Write them one
 path per line to a temporary file outside the repository (`mktemp`), and print
-only the count — the list goes to the workflow through that file, because a
-path per line in this session is the growth Step 2 exists to keep out of it.
+only the count and the list's digest — the list goes to the workflow through
+that file, because a path per line in this session is the growth Step 2 exists
+to keep out of it. The digest is what lets the workflow check it read the same
+list back, in the same order:
+
+```
+python3 -c 'import sys;h=0x811c9dc5
+for c in "\n".join(l.rstrip("\n") for l in open(sys.argv[1]) if l.strip()):h=((h^ord(c))*0x01000193)&0xffffffff
+print("%08x"%h)' <the list file>
+```
+
+**More than 998 candidate files is too many for one run.** The workflow's agent
+limit is a thousand, and the read takes one agent per file plus one; a run over
+it aborts having reported nothing. Name the count and ask for a narrower scope
+rather than starting. Nearer the limit the read still runs, and the fill kinds
+that would cross it are reported as not reached.
 
 Report the scope and the count before fanning out — the run's cost is
 proportional to it, and this is the last cheap moment to stop.
@@ -81,6 +95,7 @@ Launch it with the script this plugin ships:
 scriptPath: ${CLAUDE_PLUGIN_ROOT}/workflows/prune-read.js
 args: { listFile: <the file Step 1 wrote>,
         count: <the count Step 1 reported>,
+        digest: <the digest Step 1 printed>,
         command: ${CLAUDE_PLUGIN_ROOT}/commands/prune-specs.md,
         requestDir: <the project's request spec directory, spelled as the list
                      spells it, or null where it has none> }
