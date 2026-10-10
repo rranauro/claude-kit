@@ -240,12 +240,23 @@ One mutation, to the lower-layer code the assertion reaches, through steps 1–6
 above — running the request example and the owning-layer spec files together in
 one invocation.
 
+**The owning-layer spec files are found, not just named.** Step 3's reading
+names the files that own the code by the project's layout, and layout misses
+some: a namespaced model splits its examples across a subdirectory, and the
+reading names `site_spec.rb` without `site/discard_spec.rb`. So once the
+mutation is chosen, add every spec file anywhere under the spec directory,
+whatever the scope, that names the class or module it touches or the method it
+changes — found by search, excluding the request and system specs, which are not
+the owning layer. They are still named files, run in that same invocation.
+
 The candidate is **proven** when the request example goes red *at that
 assertion*; red elsewhere in the example, or not at all, drops it. Then record
-which owning-layer examples went red too. None means the request spec is the only
-thing noticing the break, and the assertion **moves**: a spec at the owning layer
-is written, and the assertion leaves. Any means it is already noticed where it
-belongs, and the assertion simply **goes**.
+which owning-layer examples went red too, by `file:line`. None means the request
+spec is the only thing noticing the break, and the assertion **moves**: a spec at
+the owning layer is written, and the assertion leaves. Any means it is already
+noticed where it belongs, and the assertion simply **goes** — and the example
+that noticed is what Step 5 hands the executor to re-run. A move filed off a
+reading that missed one asks the executor for a duplicate example.
 
 ### An over-stubbed example proves against what its stub replaces
 
@@ -288,8 +299,9 @@ there is nothing left to run.
 - **A subsumed example:** the mutations both caught, its covering example named,
   and the cover going red on every one.
 - **A misplaced assertion**, listed by its assertion rather than its example:
-  its mutation, and an owning-layer example going red under it — the one named,
-  or for a move the one the executor writes first. Then the assertion goes, and
+  its mutation, and an owning-layer example going red under it — for a goes, the
+  one Step 4 saw go red, by `file:line`; for a move, the one the executor writes
+  first. Then the assertion goes, and
   the request example still passes without it.
 
 **An example named as evidence is never listed for deletion in the same
@@ -379,7 +391,7 @@ A misplaced assertion likewise:
 
 ```
 spec/requests/sites_spec.rb:58  misplaced   slug derivation dropped at site.rb:22; no owning-layer spec noticed — move
-spec/requests/sites_spec.rb:71  misplaced   total rounding removed at order.rb:40; order_spec.rb:88 noticed too — goes
+spec/requests/sites_spec.rb:71  misplaced   total rounding removed at order.rb:40; order/totals_spec.rb:88 noticed too — goes
 ```
 
 An over-stubbed example names its stubbed collaborator, the mutation, and the
