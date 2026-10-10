@@ -36,7 +36,6 @@ the same scope again is expected to prove more.
 
 ### The rotation — a run with no argument
 
-**Nobody keeps a calendar of which group was pruned when, so the run keeps it.**
 A run with no argument scans one group: the one that has gone longest without a
 run. A whole-suite run fills the band before it reaches the later finding kinds,
 so there is no unscoped form; a wider sweep is several runs.
@@ -56,27 +55,33 @@ issue titled `Spec prune rotation`, whose body opens with
 Last scanned 2026-10-10 — filed #412, #413
 ```
 
-or `nothing proven` in place of the tickets. Find it with `gh issue list --state
-all --search 'in:title "Spec prune rotation"'`, keep the issues whose body opens
-with the marker, and take the lowest number. **Keep it closed.** Every listing
+or `nothing proven` in place of the tickets. **Keep it closed.** Every listing
 and sweep reads open issues, and a standing open one is a drawer they would all
 have to step over.
 
+Each comment is stored the way `kit:ticket-artifacts` stores an artifact — a
+marker on its first line, one per key, rewritten in place — with the group name
+as the key and this issue as the anchor. Read it in two calls:
+
+```
+gh issue list --state all --search 'in:title "Spec prune rotation"' --json number,body
+gh api repos/{owner}/{repo}/issues/<n>/comments --paginate
+```
+
+Take the lowest-numbered issue whose body opens with the marker. The REST
+comment ids are what Step 7 edits, so hold the chosen group's — or that it has
+none — rather than reading again there.
+
 Choose this way:
 
-1. **Least recently scanned.** A group with no comment has never been scanned
-   and goes first; ties go to the earlier group. A comment for a group no
-   longer declared is ignored.
-2. **Held while its tickets are open.** If any ticket the chosen group's last
-   run filed is still open, scan nothing. Say which group, which ticket, and
-   that closing it or naming a group explicitly moves on. **Do not fall through
-   to the next group**: every other group has been scanned more recently than
-   this one, and taking one of them scans it twice before this one is scanned
-   again. A rescan while the findings are still in a ticket would only propose
-   them a second time, so the hold is the rotation waiting rather than a stall.
-
-Report the group and why before Step 1 fans out — never scanned, or last
-scanned on its date, the oldest of however many groups.
+1. **Least recently scanned.** A group with no comment counts as oldest; ties go
+   to the earlier group. A comment for a group no longer declared is ignored.
+2. **Held while its tickets are open.** Check the chosen group's last tickets in
+   one `gh issue list --state open --search '<n> <m>' --json number`. If any is
+   open, scan nothing. Say which group, which ticket, and that closing it or
+   naming a group explicitly moves on. **Do not fall through to the next
+   group**: every other group has been scanned more recently than this one, and
+   taking one of them scans it twice before this one is scanned again.
 
 **`kit:rails-load-bearing-specs` is the axis, and it owns the output contract
 too.** What convicts, what does not, and what a pass says are all its. This
@@ -259,8 +264,8 @@ dropped. Candidates stubbing the same collaborator method share its mutations.
 ## Step 5 · `file` — Up to two tickets, or none
 
 **A run that proved nothing files no ticket.** Say so in one line, skip Step 6,
-and go to Step 7 — the group still counts as scanned, and the scope and the
-kinds left unassessed are what a clean run has to report.
+and go to Step 7 — the scope and the kinds left unassessed are what a clean run
+has to report.
 
 Otherwise file one ticket per disposition: a **prune ticket** carrying every
 finding proven for removal, and a **rewrite ticket** carrying every over-stubbed
@@ -343,14 +348,13 @@ again next time. Record a named scope too when it is a group — declared, or a
 top-level directory where none are declared — but not a subdirectory, which
 scanned less than any group.
 
-Edit by comment id (`gh api --method PATCH
-repos/{owner}/{repo}/issues/comments/<id> -f body=@<file>`), and post a new one
-only for a group with none. If there is no ledger yet, create the issue, close it
-as not planned, then comment on it, and say in Step 8 that you did.
+Edit the comment id the rotation held — a run with a named scope reads the
+ledger here instead — and post a new comment only for a group with none. With
+no ledger yet, `gh issue create` it, then `gh issue close <n> --reason "not
+planned" --comment <the group's comment>`, and say in Step 8 that you did.
 
 A run that aborted on a failed revert scanned nothing and records nothing. A
-write that fails is reported in Step 8 rather than skipped: the next run with no
-argument will choose this group again.
+write that fails is reported in Step 8, not skipped.
 
 ## Step 8 · `report` — Say what it found
 
