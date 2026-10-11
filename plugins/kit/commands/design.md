@@ -108,8 +108,8 @@ line to do it, so write that line exactly.
   is here.
 - **Step 4's `kit:domain-modeling` handoff records, never writes.** A glossary
   entry or an ADR is a repository edit, and a term nobody argued is worse than no
-  term. Note the candidate in the plan under its own heading and leave it for a
-  human. The exception is a park: a design that has to **redefine or rename an
+  term. Put it under `## Vocabulary to land` marked *candidate — a human
+  writes it*, not the implementer. The exception is a park: a design that has to **redefine or rename an
   existing glossary entry** is changing vocabulary other tickets are written in,
   and that is not yours.
 - **Step 5 stores the plan the same way, and says how it was made.** Open the
@@ -197,13 +197,13 @@ decision that genuinely changes performance, testability, or maintainability, go
 back to step 3 for that branch.
 
 Then invoke `kit:domain-modeling` on what the confirmed choice leaves behind —
-but only if it left something. Two things qualify, and neither survives the plan
-file:
+but only if it left something. Two things qualify, and both go into the plan
+under their own heading — the wording verbatim, as part of what the PR lands:
 
 - **The design names a concept the glossary doesn't have.** A class you are about
   to add is a noun the project will use in code review and in every later ticket.
-  Write the entry now, while the meaning is still being argued; a term back-filled
-  later records what got built rather than what was decided.
+  Capture the entry now, while the meaning is still being argued; a term
+  back-filled later records what got built rather than what was decided.
 - **An approach was rejected for a reason a future reader would need.** Step 3
   compared 2-3 of them and the losers are about to disappear. If someone would
   credibly propose one again next quarter, that is an ADR. If they wouldn't, it
@@ -211,6 +211,10 @@ file:
 
 Most designs leave neither, and that is the normal outcome. Don't manufacture a
 term or an ADR to have run the step.
+
+**The plan is the capture.** `kit:domain-modeling` says when the file may be
+written as well; where it may not, the implementer writes the entry from
+`## Vocabulary to land`.
 
 ## 5 — Write the plan
 
@@ -253,9 +257,12 @@ line numbers that will rot.
 
 ## Key Decisions & Trade-offs
 [Decisions made and why alternatives were rejected — the durable reasoning]
+
+## Vocabulary to land
+[Only if step 4 left a glossary entry or ADR — its settled wording, verbatim]
 ```
 
-Only decisions that were actually examined belong in that last section — in
+Only decisions that were actually examined belong in `Key Decisions & Trade-offs` — in
 practice, the ones grilling put pressure on. A mechanism nobody argued about is
 an assumption, and writing it beside genuine trade-offs launders it into one: the
 implementer can't tell which line cost an hour of discussion and which was typed
