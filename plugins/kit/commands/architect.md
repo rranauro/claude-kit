@@ -50,10 +50,8 @@ question becomes *how to build it*, that is `/kit:design` — offer it and stop.
   and get built as two different things. That skill captures the settled wording
   as the term resolves, which is why it belongs in the conversation rather than
   in the issue body afterwards. The ticket that will land it does not exist yet,
-  so the capture here is a record, not an edit to `CONTEXT.md`: the wording rides on the
-  ticket that lands it, as an acceptance criterion carrying the entry verbatim.
-  A conversation that files no ticket says the wording back when it stops, so it
-  is not lost with the session.
+  so the wording rides on it verbatim, as an acceptance criterion. A
+  conversation that files no ticket says the wording back when it stops.
 - **Short turns.** A paragraph or a few bullets. Leave room for the user to
   push back — that exchange is the point.
 - **Disagree when you disagree.** Challenge the premise, name the thing nobody

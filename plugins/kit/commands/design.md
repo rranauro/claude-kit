@@ -108,8 +108,8 @@ line to do it, so write that line exactly.
   is here.
 - **Step 4's `kit:domain-modeling` handoff records, never writes.** A glossary
   entry or an ADR is a repository edit, and a term nobody argued is worse than no
-  term. Put it under `## Vocabulary to land` marked as a candidate, which the
-  implementer does not write — it is left for a human. The exception is a park: a design that has to **redefine or rename an
+  term. Put it under `## Vocabulary to land` marked *candidate — a human
+  writes it*, not the implementer. The exception is a park: a design that has to **redefine or rename an
   existing glossary entry** is changing vocabulary other tickets are written in,
   and that is not yours.
 - **Step 5 stores the plan the same way, and says how it was made.** Open the
@@ -212,11 +212,9 @@ under their own heading — the wording verbatim, as part of what the PR lands:
 Most designs leave neither, and that is the normal outcome. Don't manufacture a
 term or an ADR to have run the step.
 
-**The plan is the capture, not `CONTEXT.md`.** This command runs before the
-ticket's branch carries anything, usually from the default branch, and
-`kit:domain-modeling` writes the file only in the checkout of the ticket that
-lands it. Where that skill finds itself there, it writes as well; everywhere
-else the plan is the only copy, and the implementer writes the entry from it.
+**The plan is the capture.** `kit:domain-modeling` says when the file may be
+written as well; where it may not, the implementer writes the entry from
+`## Vocabulary to land`.
 
 ## 5 — Write the plan
 

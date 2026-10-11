@@ -225,8 +225,8 @@ when the user asks.
 
 Two side effects are worth doing inline if the conversation continues:
 
-- **A candidate names a concept not in `CONTEXT.md`?** Add the term. Create the
-  file lazily if it doesn't exist.
+- **A candidate names a concept not in `CONTEXT.md`?** Capture the term —
+  `kit:domain-modeling` says whether that is a write or a record in the report.
 - **User rejects a candidate with a load-bearing reason?** Offer an ADR, framed
   as: _"Want me to record this as an ADR so future architecture reviews don't
   re-suggest it?"_ Only offer when the reason would actually be needed by a

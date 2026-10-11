@@ -77,8 +77,8 @@ implementer of that ticket writes the entry from it. An edit left in a checkout 
 ticket owns ships with nobody's PR, and every session that starts from that
 checkout inherits vocabulary nobody reviewed. The same holds for an ADR.
 
-Ask git which branch the checkout is on rather than assuming; a session is on
-the default branch far more often than it is in a ticket's worktree.
+Ask git which branch the checkout is on, once per session, rather than assuming;
+a session is on the default branch far more often than in a ticket's worktree.
 
 `CONTEXT.md` should be totally devoid of implementation details. Do not treat `CONTEXT.md` as a spec, a scratch pad, or a repository for implementation decisions. It is a glossary and nothing else.
 
