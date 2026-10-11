@@ -89,11 +89,14 @@ only on the first answer:
 - **Extend the existing issue** — draft the addition as a comment on it, shown
   for approval like any draft. Edit that issue's acceptance criteria only when
   the observable outcome changes and the person says yes to that edit: they bind
-  another ticket.
+  another ticket. A closed match is reopened as part of the same approval — a
+  comment on a closed issue is work nobody will pick up.
 - **Drop the draft.**
 
 On the set path, settle these before handing off, so `kit:to-tickets` cuts only
-what is left.
+what is left. Its quiz can still split, merge or reword a slice, so tell it at
+handoff to match the breakdown the person approves against the search results
+before it publishes, and to put any new overlap to the person as above.
 
 **Then ask whether this is a set.** If the tickets are
 slices of one piece of work rather than separate findings that happened to share
