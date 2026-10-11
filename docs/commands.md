@@ -180,6 +180,12 @@ auto-merge the moment it marks the PR ready instead of first waiting for the
 transition's run to register. Absent, it waits — the safe reading for a project
 that skips steps on drafts under the same check names.
 
+**And whether a hold is enforced.** `## Hold check` with `- required` says the
+project runs a required check that fails while `kit-hold` is on a PR. `hand-off`
+then arms auto-merge on a held PR as on any other, so removing the label is all
+a person does to let it merge. Absent, a held PR is marked ready and left
+unarmed, because the label is the only thing standing between it and the merge.
+
 **Spec groups are declared there as well.** `## Spec groups` is what
 `/kit:prune-specs <group>` reads; the command owns its format.
 

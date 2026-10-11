@@ -340,9 +340,8 @@ cannot lose a race with a green CI.
   gh pr edit <pr-number> --add-label kit-hold     # only if the comment posted
   ```
 
-  `docs/labels.md` is the rule. A held PR still runs step 4, but step 5 is
-  `gh pr ready <pr-number>` alone — **no auto-merge**, and so no snapshot and no
-  poll, which exist only to time the arming.
+  `docs/labels.md` is the rule. A held PR still runs steps 4 and 5, and step 5's
+  `## Hold check` decides whether it is armed.
 
   If either write fails, the PR **stays in draft** — skip to step 6, report
   which write failed, and say this pass's hold is not in place — a `kit-hold`
@@ -433,13 +432,29 @@ transition run to wait for. Mark ready and arm in the same breath. Absent, or
 any other value, poll as above: the wait is cheap, and arming early on a project
 that skips steps on drafts merges a PR its full CI never saw.
 
-**The arming above consults no label** — only step 3's outcome, which withholds
-it from a PR this pass held. A `kit-hold` set at triage is not special-cased
-here, and that is only safe where the consuming project enforces the hold as a
-**required check** — a held PR then cannot merge however auto-merge is set, so
-the label stops depending on any pass reading it in time. **A project without
-that check must not adopt this step**: there, auto-merge armed on a held PR
-merges it, which is the thing the hold was set to prevent.
+**A held PR is armed only where the project enforces the hold.** Look for a
+`## Hold check` section in the project's `CLAUDE.md`, read as step 4 reads
+`## Ship gate`:
+
+```markdown
+## Hold check
+- required
+```
+
+`required` says the project runs a required check that fails while `kit-hold` is
+on the PR, so a held PR cannot merge however auto-merge is set. Arm it exactly
+as above, whoever set the hold — step 3 or triage. Removing the label is then
+the whole release: the check passes, and the auto-merge armed here merges it.
+Withholding auto-merge there protects nothing. All it does is leave a PR the
+person has just released sitting green and unmerged until they arm it by hand.
+
+Absent, or any other value, a PR carrying `kit-hold` gets `gh pr ready
+<pr-number>` alone — no auto-merge, and so no snapshot and no poll, which exist
+only to time the arming. Read the labels from the PR, not from step 3's outcome,
+since a hold transcribed from triage is on it too. Where only the label stands
+between a held PR and the merge, armed auto-merge merges it as soon as the checks
+go green, which is the thing the hold was set to prevent. A project that enforces
+the check without declaring it gets a PR that waits, never one that merges.
 
 **Arming is this pass's last act on the PR, in both modes.** Step 6 releases the
 lease and reports, and nothing between here and the end of the pass writes to the
@@ -495,12 +510,16 @@ or, where it reads off:
 > check the rollup named.> <Which declared review source, if any, did not
 > arrive, and which the project does not run.>"
 
-or, when step 3 held it:
+or, when it carries `kit-hold`:
 
 > "PR #<N> is open, reviewed, ready and held (`kit-hold`) — <the shape review
 > posted on it is the reason, and `/kit:reshape <N>` offers an in-flight reshape
-> on this branch, or a ticket blocked on it | the kind comment posted on it is the reason>, and auto-merge
-> is not armed."
+> on this branch, or a ticket blocked on it | the kind comment posted on it is
+> the reason | triage set it>. <Auto-merge reads on, and the project's hold
+> check keeps it from merging until the label comes off | auto-merge is not
+> armed, since the project declares no hold check, so it merges only by hand
+> once the label comes off | auto-merge reads off although this pass armed it,
+> and the pass did not re-arm it>. <Any failing check the rollup named.>"
 
 Unattended, the same line goes in the report `/kit:ship-ticket` Step 3 writes.
 Drop the `/kit:reshape` clause where the third answer already ran it.
