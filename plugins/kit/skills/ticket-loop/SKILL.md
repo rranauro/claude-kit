@@ -406,7 +406,9 @@ labels`) — not step 3's outcome, since a hold transcribed from triage is on it
 too. A PR carrying `kit-hold` gets `gh pr ready <pr-number>` alone: no
 auto-merge, and so no snapshot and no poll, which exist only to time the arming.
 Only the label stands between it and the merge, so arming there merges it on
-green.
+green. For the same reason, read the labels once more just before `gh pr merge`,
+and leave the PR unarmed if `kit-hold` has appeared since: a person can add it
+during the poll.
 
 ```
 sha=$(gh pr view <pr-number> --json headRefOid -q .headRefOid)
