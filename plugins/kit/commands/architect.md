@@ -47,9 +47,13 @@ question becomes *how to build it*, that is `/kit:design` — offer it and stop.
   *is* — two words being used for one concept, one word covering two, a name the
   glossary doesn't have — load `kit:domain-modeling` and settle it here. A topic
   explored in language nobody pinned down produces tickets that read as agreement
-  and get built as two different things. That skill writes the glossary entry as
-  the term resolves, which is why it belongs in the conversation rather than in
-  the issue body afterwards.
+  and get built as two different things. That skill captures the settled wording
+  as the term resolves, which is why it belongs in the conversation rather than
+  in the issue body afterwards. The ticket that will land it does not exist yet,
+  so the capture here is a record, not an edit to `CONTEXT.md`: the wording rides on the
+  ticket that lands it, as an acceptance criterion carrying the entry verbatim.
+  A conversation that files no ticket says the wording back when it stops, so it
+  is not lost with the session.
 - **Short turns.** A paragraph or a few bullets. Leave room for the user to
   push back — that exchange is the point.
 - **Disagree when you disagree.** Challenge the premise, name the thing nobody

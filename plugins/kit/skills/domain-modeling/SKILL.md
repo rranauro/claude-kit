@@ -67,7 +67,18 @@ When the user states how something works, check whether the code agrees. If you 
 
 ### Update CONTEXT.md inline
 
-When a term is resolved, update `CONTEXT.md` right there. Don't batch these up: capture them as they happen. Use the format in [CONTEXT-FORMAT.md](./CONTEXT-FORMAT.md).
+When a term is resolved, capture it right there. Don't batch these up: capture them as they happen. Use the format in [CONTEXT-FORMAT.md](./CONTEXT-FORMAT.md).
+
+**Capture is not always a write.** Write the entry into `CONTEXT.md` only in the
+checkout of the ticket that will land it — its worktree, on its own branch. Anywhere
+else — the default branch, another ticket's branch — record the settled wording
+verbatim in the artifact your caller is producing, and leave the file alone; the
+implementer of that ticket writes the entry from it. An edit left in a checkout no
+ticket owns ships with nobody's PR, and every session that starts from that
+checkout inherits vocabulary nobody reviewed. The same holds for an ADR.
+
+Ask git which branch the checkout is on rather than assuming; a session is on
+the default branch far more often than it is in a ticket's worktree.
 
 `CONTEXT.md` should be totally devoid of implementation details. Do not treat `CONTEXT.md` as a spec, a scratch pad, or a repository for implementation decisions. It is a glossary and nothing else.
 
