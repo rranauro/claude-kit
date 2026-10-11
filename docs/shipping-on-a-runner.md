@@ -139,9 +139,7 @@ grant that withholds either leaves every shipped PR sitting green and unlabelled
 with nothing downstream watching for it. An earlier split gave the merge to a CI
 gate instead — a consuming project that has not installed one gets no merge at
 all, which is the failure this grant now avoids. A held PR is armed only where
-the project declares `## Hold check` as `required` in its `CLAUDE.md`, because
-only a required check keeps an armed held PR from merging; `kit:ticket-loop`
-`hand-off` reads the declaration. It must grant `gh pr ready` and the kit's own scripts too. `hand-off`
+the project declares `## Hold check` (see `commands.md`). It must grant `gh pr ready` and the kit's own scripts too. `hand-off`
 takes the PR out of draft with `gh pr ready` before arming, and a pass refused
 it parks with a finished PR left in draft. The scripts are matched by a
 `*/scripts/<name>.sh` wildcard because their path differs by install: relative
