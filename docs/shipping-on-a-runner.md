@@ -138,9 +138,8 @@ final phase arms auto-merge itself and the review round writes its labels, so a
 grant that withholds either leaves every shipped PR sitting green and unlabelled
 with nothing downstream watching for it. An earlier split gave the merge to a CI
 gate instead — a consuming project that has not installed one gets no merge at
-all, which is the failure this grant now avoids. Arming is safe here only where
-the project enforces `kit-hold` as a required check, the same precondition
-`kit:ticket-loop` states for the step. It must grant `gh pr ready` and the kit's own scripts too. `hand-off`
+all, which is the failure this grant now avoids. A held PR is armed only where
+the project declares `## Hold check` (see `commands.md`). It must grant `gh pr ready` and the kit's own scripts too. `hand-off`
 takes the PR out of draft with `gh pr ready` before arming, and a pass refused
 it parks with a finished PR left in draft. The scripts are matched by a
 `*/scripts/<name>.sh` wildcard because their path differs by install: relative
