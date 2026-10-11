@@ -75,22 +75,21 @@ looking good.
 
 **Before drafting anything, search the tracker for the same problem.** Search
 this repo's open issues and those closed in the last 90 days, querying on the
-problem each ticket would state rather than the topic's title. "Go look" covers
-the backlog too: a draft that restates a filed issue reads as new work, and the
-person catches it only if they happen to remember the earlier one. Show what
-the search found beside the draft — or beside the proposed set, before the
-handoff below — with each issue that covers the same problem and one line on
-how, or say plainly that it found none. A silent search reads the same as no
-search.
+problems the tickets would state rather than the topic's title — once, then
+match each draft against what came back. "Go look" covers the backlog too: a
+draft that restates a filed issue reads as new work, and the person catches it
+only if they happen to remember the earlier one. Show what the search found
+beside the draft, or beside the proposed set, with each issue that covers the
+same problem and one line on how — or say plainly that it found none.
 
 Where a draft covers an existing issue, the person chooses, and it is created
 only on the first answer:
 
-- **File it anyway** — create it as usual, cross-linked to the existing issue.
+- **File it anyway** — create it as usual, cross-linked to the existing issue as below.
 - **Extend the existing issue** — draft the addition as a comment on it, shown
   for approval like any draft. Edit that issue's acceptance criteria only when
-  the observable outcome changes and the person says yes to that edit: they are
-  another ticket's binding contract.
+  the observable outcome changes and the person says yes to that edit: they bind
+  another ticket.
 - **Drop the draft.**
 
 On the set path, settle these before handing off, so `kit:to-tickets` cuts only
