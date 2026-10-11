@@ -73,7 +73,30 @@ Only when the user says they want tickets, or you ask "want to turn any of this
 into tickets?" and they agree. Never slide into it because a direction started
 looking good.
 
-**Before drafting anything, ask whether this is a set.** If the tickets are
+**Before drafting anything, search the tracker for the same problem.** Search
+this repo's open issues and those closed in the last 90 days, querying on the
+problem each ticket would state rather than the topic's title. "Go look" covers
+the backlog too: a draft that restates a filed issue reads as new work, and the
+person catches it only if they happen to remember the earlier one. Show what
+the search found beside the draft — or beside the proposed set, before the
+handoff below — with each issue that covers the same problem and one line on
+how, or say plainly that it found none. A silent search reads the same as no
+search.
+
+Where a draft covers an existing issue, the person chooses, and it is created
+only on the first answer:
+
+- **File it anyway** — create it as usual, cross-linked to the existing issue.
+- **Extend the existing issue** — draft the addition as a comment on it, shown
+  for approval like any draft. Edit that issue's acceptance criteria only when
+  the observable outcome changes and the person says yes to that edit: they are
+  another ticket's binding contract.
+- **Drop the draft.**
+
+On the set path, settle these before handing off, so `kit:to-tickets` cuts only
+what is left.
+
+**Then ask whether this is a set.** If the tickets are
 slices of one piece of work rather than separate findings that happened to share
 a conversation, offer to hand off to `kit:to-tickets` and invoke it here — it
 reads the conversation it is already in. It owns dependency-ordered publishing
