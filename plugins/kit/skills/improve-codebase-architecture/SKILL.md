@@ -226,7 +226,10 @@ when the user asks.
 Two side effects are worth doing inline if the conversation continues:
 
 - **A candidate names a concept not in `CONTEXT.md`?** Capture the term —
-  `kit:domain-modeling` says whether that is a write or a record in the report.
+  `kit:domain-modeling` says whether that is a write or a record. A record goes
+  in the report, and into the child ticket's acceptance criteria verbatim if §5
+  files that candidate — the report lives in gitignored `plans/` and the ticket
+  does not.
 - **User rejects a candidate with a load-bearing reason?** Offer an ADR, framed
   as: _"Want me to record this as an ADR so future architecture reviews don't
   re-suggest it?"_ Only offer when the reason would actually be needed by a

@@ -262,7 +262,7 @@ line numbers that will rot.
 [Only if step 4 left a glossary entry or ADR — its settled wording, verbatim]
 ```
 
-Only decisions that were actually examined belong in that last section — in
+Only decisions that were actually examined belong in `Key Decisions & Trade-offs` — in
 practice, the ones grilling put pressure on. A mechanism nobody argued about is
 an assumption, and writing it beside genuine trade-offs launders it into one: the
 implementer can't tell which line cost an hour of discussion and which was typed
