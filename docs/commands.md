@@ -186,6 +186,13 @@ then arms auto-merge on a held PR as on any other, so removing the label is all
 a person does to let it merge. Absent, a held PR is marked ready and left
 unarmed.
 
+**So is what a pass may drive to take screenshots.** `## Screenshot capture`
+names what captures, how it signs in to the app, and which browser uploads the
+image; `kit:visual-pr` owns its format. Absent, no pass captures through anything
+— so an unattended PR names its screenshots instead of showing them — and
+nothing ever uses the person's own signed-in session for the app unless the
+section says it may. Attended, the person is still asked before each capture.
+
 **Spec groups are declared there as well.** `## Spec groups` is what
 `/kit:prune-specs <group>` reads; the command owns its format.
 

@@ -58,7 +58,9 @@ this one does not restate it.
   for is auto: a session whose launcher never pinned the mode prompts for
   nothing, so a deny entry is the only thing left refusing anything. Do not read
   a command that went through as a command that was allowed. Reaching a denied
-  operation is a `kit:park`, never a thing to accomplish another way.
+  operation is a `kit:park`, never a thing to accomplish another way. One
+  exception parks nothing: a screenshot capture refused is a PR that says "Not
+  captured", which `kit:visual-pr` owns — and it is still never taken another way.
 - **Never run a test directory or the full suite.** Named files and examples
   only. Attended, widening needs an ask; unattended it is not yours to take.
   No phase is exempt: CI is the merge gate, so nothing here runs the suite to
