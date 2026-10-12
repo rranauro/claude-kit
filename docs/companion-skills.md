@@ -25,6 +25,26 @@ explicitly, so a command never reaches the upstream copy — but the model
 picking a skill on its own sees both descriptions, and two near-twins make the
 fork stop reliably winning.
 
+## Every piece names its author
+
+A skill, command or agent gets copied into another project on its own, and the
+repo-root `LICENSE` does not go with it. So each one carries a `license:` line
+in its frontmatter — the one place a skill directory, a single-file command and
+a single-file agent all have, and one the model is never handed as
+instructions. A piece written here carries exactly:
+
+```yaml
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
+```
+
+One line rather than the MIT text: it names the terms, the holder and where the
+full text lives, and the permission paragraph in a command or agent body would
+be prompt text read on every run. A vendored skill's line differs, and
+[Vendoring](#vendoring) says how.
+
+`scripts/lint.sh` fails a skill, command or agent that lacks it, so a new piece
+cannot ship anonymous.
+
 ## Vendoring
 
 A skill directory is **vendored** when it contains text taken from somewhere
@@ -63,10 +83,31 @@ repo root, and they do not make the local changes inside the directory the
 upstream author's. Those are ours, under the root licence, alongside the
 upstream text they sit with.
 
+**So the kit's claim never goes in a notice file.** A `LICENSE` or
+`LICENSE-<owner>` in a skill directory still means upstream text, and only
+that. What the kit wrote is claimed in the skill's `license:` line, which names
+every ancestor's copyright first, each with the notice file that carries it, and
+then the kit's changes:
+
+```yaml
+license: MIT — Copyright (c) 2026 Matt Pocock (LICENSE), Copyright (c) 2026 HumanLayer (LICENSE-humanlayer); changes Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
+```
+
+A skill carried unchanged names its ancestors and stops there: `show-me` credits
+HumanLayer alone, because none of its text is the kit's.
+
+**Re-adopting a fork wipes its line**, since `adopt-skill.sh` replaces the whole
+directory from upstream. The lint then fails until whoever re-adopted writes it
+back — deciding, as they do, whether any of the kit's changes survived. Porting
+upstream changes by hand never touches the line.
+
 **It has a row in the table below**, naming the directory, its upstream, and
 which of the two records it.
 
-**`scripts/lint.sh` holds a declared fork to the notice and the row below.** A
+**`scripts/lint.sh` holds a declared fork to its notices, its `license:` line
+and the row below.** Every notice file must be cited in the line and every cited
+file present, so a dropped ancestor fails as surely as a dropped `LICENSE`.
+Whether a fork still differs from upstream is a judgment no script makes. A
 copy that declares nothing cannot be caught that way; the declaration is the
 part a person adding a fork owes.
 

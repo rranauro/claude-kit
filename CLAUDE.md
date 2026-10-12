@@ -14,9 +14,9 @@ vocabulary those files read off an issue; `docs/commands.md` lists the surface;
   treat their absence as a gap.
 - **`scripts/lint.sh` is the whole automated check** — shell parses, JSON
   manifests are JSON, skill frontmatter matches its directory, the kit declares
-  no version, and a vendored skill carries its notice. The first three fail at
-  harness load time rather than at review; the version fails silently at update
-  time; a dropped notice fails nowhere at all. Run it before opening a PR;
+  no version, and every skill, command and agent carries its notice. The first
+  three fail at harness load time rather than at review; the version fails
+  silently at update time; a dropped notice fails nowhere at all. Run it before opening a PR;
   `.github/workflows/lint.yml` runs it again on the PR.
 - **The design skills this plugin ships do not govern this plugin.**
   `kit:rails-codebase-design` and `kit:behavior-placement` are the axis for the

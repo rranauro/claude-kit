@@ -5,9 +5,10 @@ set -euo pipefail
 # by reading the diff: a shell script that no longer parses, a manifest that is
 # no longer JSON, a skill or subagent whose frontmatter stops matching its file
 # — all of which fail at load time in the harness rather than at review time — a
-# plugin version that would stop installs from updating at all, a vendored
-# skill that dropped the notice its licence requires, and an inline skill whose
-# model pin would outlive it.
+# plugin version that would stop installs from updating at all, a piece that
+# would leave the kit without saying who wrote it, a vendored skill that dropped
+# the notice its licence requires, and an inline skill whose model pin would
+# outlive it.
 #
 # Shape only, and it stays under a second so it is worth running before every
 # push. Behaviour is asserted in tests/, which CI runs as its own step.
@@ -43,6 +44,46 @@ check_frontmatter() {
   if [ -n "$name" ] && [ "$name" != "$expected" ]; then
     fail "$md declares name '$name' but lives at '$expected'"
   fi
+}
+
+# A skill, command or agent gets copied out of the kit on its own, and the
+# repo-root LICENSE does not go with it. Its frontmatter is the one place all
+# three kinds can carry a notice the model is never handed as instructions.
+KIT_LICENSE='MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit'
+
+frontmatter_value() {
+  awk -v k="$2" 'NR>1 && /^---$/{exit} $0 ~ "^"k":" {sub("^"k":[[:space:]]*",""); print; exit}' "$1"
+}
+
+check_kit_license() {
+  [ "$(frontmatter_value "$1" license)" = "$KIT_LICENSE" ] ||
+    fail "$1 does not carry the kit's license: line — see docs/companion-skills.md#every-piece-names-its-author"
+}
+
+# A vendored line names each ancestor's notice file as `(LICENSE…)`. Checking
+# both directions, and the count against the credits, is what fails a dropped
+# ancestor rather than only a dropped LICENSE.
+check_vendored_license() {
+  local skill="$1" md="$1/SKILL.md" license n cited credits notices=0
+  license="$(frontmatter_value "$md" license)"
+  [ -n "$license" ] || {
+    fail "$md is vendored but names no license: in its frontmatter — see docs/companion-skills.md#vendoring"
+    return
+  }
+  for n in "$skill"/LICENSE "$skill"/LICENSE-*; do
+    [ -f "$n" ] || continue
+    notices=$((notices + 1))
+    case "$license" in
+      *"($(basename "$n"))"*) ;;
+      *) fail "$md's license: does not credit the ancestor in $(basename "$n")" ;;
+    esac
+  done
+  while IFS= read -r cited; do
+    [ -f "$skill/$cited" ] || fail "$md's license: cites $cited, which $skill does not carry"
+  done < <(printf '%s\n' "$license" | grep -o '(LICENSE[^)]*)' | tr -d '()')
+  credits="$(awk 'NR>1 && /^---$/{exit} /^[[:space:]]+- skill:/{c++} END{print c+0}' "$md")"
+  [ "$notices" -ge "$credits" ] ||
+    fail "$md credits $credits upstreams but $skill carries $notices notice files"
 }
 
 echo "==> shell syntax"
@@ -114,6 +155,9 @@ for skill in plugins/kit/skills/*/; do
       fail "$skill credits an upstream but carries no LICENSE — see docs/companion-skills.md#vendoring"
     grep -q "^| \`$dir_name\` |" docs/companion-skills.md ||
       fail "$skill credits an upstream but has no row in docs/companion-skills.md#what-is-vendored"
+    check_vendored_license "$skill"
+  else
+    check_kit_license "$md"
   fi
 
   [ "$this_failed" -eq 1 ] || echo "  ok   $md"
@@ -124,6 +168,16 @@ for md in plugins/kit/agents/*.md; do
   [ -f "$md" ] || continue
   this_failed=0
   check_frontmatter "$md" "$(basename "$md" .md)" || continue
+  check_kit_license "$md"
+  [ "$this_failed" -eq 1 ] || echo "  ok   $md"
+done
+
+echo "==> command frontmatter"
+for md in plugins/kit/commands/*.md; do
+  [ -f "$md" ] || continue
+  this_failed=0
+  [ "$(head -1 "$md")" = "---" ] || { fail "$md does not open with ---"; continue; }
+  check_kit_license "$md"
   [ "$this_failed" -eq 1 ] || echo "  ok   $md"
 done
 
