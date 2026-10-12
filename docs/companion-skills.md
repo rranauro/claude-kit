@@ -105,8 +105,10 @@ upstream changes by hand never touches the line.
 which of the two records it.
 
 **`scripts/lint.sh` holds a declared fork to its notices, its `license:` line
-and the row below.** Every notice file must be cited in the line and every cited
-file present, so a dropped ancestor fails as surely as a dropped `LICENSE`.
+and the row below.** The line must read exactly as the notice files dictate —
+each one's own `Copyright` line, in order, with the file named after it — and a
+credited skill carries one notice per `credits` entry, so a dropped ancestor or a
+wrong holder fails as surely as a dropped `LICENSE`.
 Whether a fork still differs from upstream is a judgment no script makes. A
 copy that declares nothing cannot be caught that way; the declaration is the
 part a person adding a fork owes.

@@ -62,35 +62,32 @@ check_kit_license() {
     fail "$1 does not carry the kit's license: line — see docs/companion-skills.md#every-piece-names-its-author"
 }
 
-# A vendored line names each ancestor's notice file as `(LICENSE…)`. Checking
-# both directions, and the count against the credits, is what fails a dropped
-# ancestor rather than only a dropped LICENSE.
+# A vendored line is derived, not just checked for citations: MIT, then each
+# notice file's own Copyright line with the file named after it, then the kit's
+# claim if the kit changed the text. Deriving it from the files is what fails a
+# dropped ancestor, a wrong holder, or other terms, rather than only a dropped
+# LICENSE.
 check_vendored_license() {
-  local skill="$1" md="$1/SKILL.md" license n cited credits notices=0
+  local skill="$1" md="$1/SKILL.md" license n holder ancestors="" credits notices=0
   license="$(frontmatter_value "$md" license)"
   [ -n "$license" ] || {
     fail "$md is vendored but names no license: in its frontmatter — see docs/companion-skills.md#vendoring"
     return
   }
-  # An unchanged fork claims nothing, so only a claim that is there is checked.
-  case "$license" in
-    *"; changes "*)
-      [ "${license##*; changes }" = "${KIT_LICENSE#MIT — }" ] ||
-        fail "$md's license: credits its changes in words other than the kit's own line" ;;
-  esac
   for n in "$skill"/LICENSE "$skill"/LICENSE-*; do
     [ -f "$n" ] || continue
     notices=$((notices + 1))
-    case "$license" in
-      *"(${n##*/})"*) ;;
-      *) fail "$md's license: does not credit the ancestor in ${n##*/}" ;;
-    esac
+    holder="$(grep -m1 '^Copyright' "$n")" ||
+      { fail "${n} carries no Copyright line to credit"; continue; }
+    ancestors="${ancestors:+$ancestors, }$holder (${n##*/})"
   done
-  while IFS= read -r cited; do
-    [ -f "$skill/$cited" ] || fail "$md's license: cites $cited, which $skill does not carry"
-  done < <(printf '%s\n' "$license" | grep -o '(LICENSE[^)]*)' | tr -d '()')
+  # An unchanged fork claims nothing, so the kit's clause is the one optional part.
+  [ "$license" = "MIT — $ancestors" ] ||
+    [ "$license" = "MIT — $ancestors; changes ${KIT_LICENSE#MIT — }" ] ||
+    fail "$md's license: should read 'MIT — $ancestors', followed by '; changes ${KIT_LICENSE#MIT — }' where the kit changed it"
+  # Each credits entry is an ancestor, so the two counts move together.
   credits="$(awk 'NR>1 && /^---$/{exit} /^[[:space:]]+- skill:/{c++} END{print c+0}' "$md")"
-  [ "$notices" -ge "$credits" ] ||
+  [ "$credits" -eq 0 ] || [ "$notices" -eq "$credits" ] ||
     fail "$md credits $credits upstreams but $skill carries $notices notice files"
 }
 
