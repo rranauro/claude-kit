@@ -159,7 +159,7 @@ fails as a denied permission, which parks — so a project that declares a gate
 without granting it has made every ticket park rather than installed a check.
 A `## Screenshot capture` rule is granted the same way — its command or browser
 tools in the project's file, never from the declaration — but an ungranted one
-does not park: the PR opens saying what was not captured and why.
+does not park — `kit:visual-pr` says what the PR reports instead.
 
 ## A crashed ticket needs no cleanup of its own
 

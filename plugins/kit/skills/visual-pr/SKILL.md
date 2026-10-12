@@ -248,31 +248,27 @@ the image goes. Read the `## Screenshot capture` section of `CLAUDE.md` at the r
   that cannot sign in that way does not fall back to theirs.
 - **upload** — the browser whose GitHub comment box turns each image into its
   `user-attachments` URL. Dropping an image there yields the URL without posting anything,
-  and `gh` cannot upload one, so without this line nothing is captured: an image no reviewer
-  can see is not evidence.
+  and `gh` cannot upload one — an image no reviewer can see is not evidence.
 
 A line that is missing allows nothing. Then:
 
-- **No section, unattended** — capture nothing. Write "Not captured — no capture rule in
-  CLAUDE.md" and name what each screenshot would have shown, so the reviewer knows what to
-  look at themselves.
-- **No section, attended** — ask once what a pass may drive, and offer to add the section
-  with the answer. Write it only on a yes, then go on as below. On a no, capture nothing and
-  write "Not captured — no capture rule in CLAUDE.md": a run-only answer is not the
-  project's rule, and the person's session is used only where that rule says so.
+- **Section present, unattended** — capture through what the rule names, with no question.
 - **Section present, attended** — the rule says what may be driven, never that you need not
   ask. Name the screenshots you would take, one per criterion they prove, and ask before
-  capturing. On a no, write "Not captured — declined" and name what each would have shown.
-- **Section present, unattended** — capture through what the rule names, with no question.
+  capturing. On a no, write "Not captured — declined".
+- **No section, attended** — ask once: propose the section's three lines with the
+  screenshots they would take, and on a yes write the section and capture. A run-only
+  answer is not the project's rule.
+- **No section, unattended, or attended and declined** — capture nothing. Write "Not
+  captured — no capture rule in CLAUDE.md".
 
-Put each uploaded URL in the body, captioned with its criterion.
+Put each uploaded URL in the body, captioned with its criterion. Every "Not captured" names
+what each screenshot would have shown, so the reviewer knows what to look at themselves.
 
-**Allowed but impossible is not a stop.** No browser to drive, a capture command that
-fails, a sign-in that does not take, an upload refused, a tool the permission grant does not
-include — write "Not captured — <why>", name what each would have shown, and carry on
-writing the body. A missing screenshot is evidence a reviewer grades as missing, not a
-decision anyone has to make, so it never parks the pass. Do not reach for another browser or
-session the rule does not name to get one.
+**Allowed but impossible never parks.** No browser to drive, a capture command that fails, a
+sign-in that does not take, an upload refused, a tool the permission grant does not include
+— write "Not captured — <why>" and carry on writing the body. Do not reach for another
+browser or session the rule does not name to get one.
 
 ### Instructions
 
