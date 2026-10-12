@@ -1,5 +1,6 @@
 ---
 description: Commit the current changes, split by concern, running the project's own test, lint and security gates on what changed. Use when `kit:ticket-loop`, `/kit:new-pull-request`, `/kit:review-copilot` or `/kit:polish-ticket` hands off work to commit.
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 Create git commits for the current changes, split by concern.

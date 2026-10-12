@@ -1,5 +1,6 @@
 ---
 model: opus
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 Walk this project's spec suite, prove which examples can be removed or must be

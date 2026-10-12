@@ -1,5 +1,6 @@
 ---
 description: Push the current branch and open its pull request, with a Gist-first body wired to the issue. Use when `kit:ticket-loop` hands off an implemented branch to open its PR.
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 Create a GitHub pull request for the current branch.

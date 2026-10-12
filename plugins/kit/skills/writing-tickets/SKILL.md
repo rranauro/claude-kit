@@ -1,6 +1,7 @@
 ---
 name: writing-tickets
 description: Draft lean GitHub issues that state the problem and the decision without freezing an implementation. Use when filing an issue or ticket, or when another skill needs the ticket format.
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 # Writing Tickets

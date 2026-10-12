@@ -1,5 +1,6 @@
 ---
 model: opus
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 Walk the user through verifying a change in-app, one step at a time, against a durable checklist that survives detours and session ends.

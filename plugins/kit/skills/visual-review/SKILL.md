@@ -6,6 +6,7 @@ metadata:
     - skill: pr
       author: Matt Pocock
       url: "https://github.com/mattpocock/skills/blob/a7d038f/skills/engineering/pr/SKILL.md"
+license: MIT — Copyright (c) 2026 Matt Pocock (LICENSE); changes Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 The reviewer's side of `visual-pr`. Builds the same read from the diff and the linked issue, whatever the description says — and tells the reviewer where to drill in and where to trust the automation.

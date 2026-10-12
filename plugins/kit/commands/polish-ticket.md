@@ -1,5 +1,6 @@
 ---
 model: opus
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 Run a long-lived cleanup/polish ticket: the user drives the UX, feeds observed problems one at a time, and each one is either fixed inline on the branch or split out as its own ticket.

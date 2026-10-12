@@ -2,6 +2,7 @@
 name: improve-codebase-architecture
 description: Scan a codebase for misshapen objects and present them as a visual HTML report in plans/, ranked strongest to weakest, then file the strongest as tickets under an epic and walk them through triage.
 disable-model-invocation: true
+license: MIT — Copyright (c) 2026 Matt Pocock (LICENSE); changes Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 # Improve Codebase Architecture

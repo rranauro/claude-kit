@@ -1,6 +1,7 @@
 ---
 model: sonnet
 description: Collate the automated reviews on a pull request and address each finding against the code, recording every decision. Use when `kit:ticket-loop` or `/kit:start-review` hands off a PR whose reviews have landed, or when a CI gate calls it unattended.
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 Review and address automated PR review feedback one finding at a time — **GitHub Copilot** (inline + top-level review), the **Claude review** posted by the `pr-review-on-create` hook or `/kit:start-review`, wherever one of those ran, and a **shape review** — `kit:shape-review`'s comment, posted by whoever ran it. Each finding is verified against the actual code before it is acted on, and overlapping findings on the same `(path, line)` are merged into one bucket — agreement across reviewers is called out as a stronger signal.

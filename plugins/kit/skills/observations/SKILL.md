@@ -1,6 +1,7 @@
 ---
 name: observations
 description: Record what a pass learned while running as a checkable claim in a store outside the repo, instead of asking the user about it — the record shape, where the store lives, and the triage that clears it down. Use when a pass closes holding something the ticket did not ask for, or when a command needs the observation format.
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 # Observations

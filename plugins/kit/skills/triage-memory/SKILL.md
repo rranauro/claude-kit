@@ -1,6 +1,7 @@
 ---
 name: triage-memory
 description: Audit a project's auto-memory directory, bin every memory as stale, workflow, duplicate/conflicting, or unclassified, and clear it down with the user's per-bin approval. Use when memory has grown large, a memory turns out to be wrong, or the user asks to triage, prune, or audit memory.
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 # Triage Memory

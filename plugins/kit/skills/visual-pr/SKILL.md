@@ -10,6 +10,7 @@ metadata:
       author: Dex Horthy
       organisation: Humanlayer
       url: "https://github.com/humanlayer/skills/blob/ca7c808/plugins/show-me/skills/show-me/SKILL.md"
+license: MIT — Copyright (c) 2026 Matt Pocock (LICENSE), Copyright (c) 2026 HumanLayer (LICENSE-humanlayer); changes Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 **Arguments:** an issue number, and optionally `unattended`.

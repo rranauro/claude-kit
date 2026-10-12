@@ -1,6 +1,7 @@
 ---
 name: rails-excludable-specs
 description: The axis for judging whether one RSpec example may be left out of a project's default suite run — what makes an example excludable, the evidence rarity and cost each need, what is not a reason, how an excludable example differs from a deletable one, and the tag that excludes it and the runner argument that opts it back in. Use when deciding what a default run should skip, when judging whether one slow or rarely-relevant example earns its place in every run, or when another skill needs the excludable vocabulary.
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 # Rails Excludable Specs

@@ -1,6 +1,7 @@
 ---
 name: ticket-loop
 description: Carry one named ticket from a wired worktree to an open PR — prepare, TDD, simplify, push — attended with gates you answer, or unattended with each gate replaced by a rule and a park where no rule decides. Use when a command has chosen a ticket and needs it implemented.
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 # Ticket Loop

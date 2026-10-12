@@ -1,6 +1,7 @@
 ---
 name: argument-pages
 description: Build a self-contained HTML page that argues one technical position from verified evidence — schema, queries, call sites — for a reviewer to read and act on. Use when a review, design comparison, or schema proposal needs more than terminal scrollback, or when another skill needs the evidence-page format.
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 # Argument Pages

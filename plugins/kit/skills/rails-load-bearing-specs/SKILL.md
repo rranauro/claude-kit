@@ -1,6 +1,7 @@
 ---
 name: rails-load-bearing-specs
 description: The axis for judging whether one RSpec example is load-bearing — the positive definition, the three categories that convict a deletion candidate and the evidence each needs, and what is not a finding. Use when pruning a spec suite, when judging whether one example earns its place, or when another skill needs the load-bearing vocabulary.
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 # Rails Load-Bearing Specs

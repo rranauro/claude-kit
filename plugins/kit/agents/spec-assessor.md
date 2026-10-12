@@ -2,6 +2,7 @@
 name: spec-assessor
 description: Apply kit:rails-load-bearing-specs to one spec file, isolated from the caller's session, and hand back that axis's output contract. Use when /kit:prune-specs fans out its per-file assessment. Pins its own model; launch it with none.
 model: opus
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 Invoke the `kit:rails-load-bearing-specs` skill through the Skill tool and apply

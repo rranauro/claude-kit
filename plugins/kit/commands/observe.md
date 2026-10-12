@@ -1,6 +1,7 @@
 ---
 model: sonnet
 effort: low
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 Record what just surfaced as a checkable observation — and review what has

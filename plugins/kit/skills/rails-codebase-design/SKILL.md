@@ -1,6 +1,7 @@
 ---
 name: rails-codebase-design
 description: The axis for judging object shape in a Rails codebase — what a well-formed class looks like, what to count when one isn't, the structural moves that fix it, and what is not a finding. Use when comparing design approaches, judging a proposed class or extraction, or when another skill needs the object-shape vocabulary.
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 # Rails Codebase Design
