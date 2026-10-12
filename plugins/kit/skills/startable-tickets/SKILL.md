@@ -1,6 +1,7 @@
 ---
 name: startable-tickets
 description: Decide which open tickets an agent may pick up unbidden — the candidate query, the five conditions, and the batched lookups that answer them. Use when sweeping a backlog for work to start, or listing what a sweep would take.
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 # Startable Tickets

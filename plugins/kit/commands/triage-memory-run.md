@@ -1,5 +1,6 @@
 ---
 model: sonnet
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 Audit this project's auto-memory directory and clear it down to what still earns its context.

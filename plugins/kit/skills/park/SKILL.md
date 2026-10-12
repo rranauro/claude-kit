@@ -1,6 +1,7 @@
 ---
 name: park
 description: Stop an unattended pass at a question only a person can answer — the comment, the kit-blocked label, the worktree left in place, and the report line. Use whenever a command running without a user reaches a decision it may not make.
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 # Park

@@ -5,9 +5,10 @@ set -euo pipefail
 # by reading the diff: a shell script that no longer parses, a manifest that is
 # no longer JSON, a skill or subagent whose frontmatter stops matching its file
 # — all of which fail at load time in the harness rather than at review time — a
-# plugin version that would stop installs from updating at all, a vendored
-# skill that dropped the notice its licence requires, and an inline skill whose
-# model pin would outlive it.
+# plugin version that would stop installs from updating at all, a piece that
+# would leave the kit without saying who wrote it, a vendored skill that dropped
+# the notice its licence requires, and an inline skill whose model pin would
+# outlive it.
 #
 # Shape only, and it stays under a second so it is worth running before every
 # push. Behaviour is asserted in tests/, which CI runs as its own step.
@@ -23,26 +24,71 @@ fail() {
   this_failed=1
 }
 
-# A skill and a subagent fail the same way, at load and with nothing said:
-# frontmatter that does not open on line 1 is read as body text, and a file with
-# no name or description is dropped. A name that differs from where the file
-# lives answers to something other than what its path advertises.
+frontmatter_value() {
+  awk -v k="$2" 'NR>1 && /^---$/{exit} $0 ~ "^"k":" {sub("^"k":[[:space:]]*",""); print; exit}' "$1"
+}
+
+# Frontmatter that does not open on line 1 is read as body text. Unclosed, the
+# whole body is frontmatter, and a key written anywhere in it would satisfy
+# every check that reads one.
+check_fences() {
+  [ "$(head -1 "$1")" = "---" ] || { fail "$1 does not open with ---"; return 1; }
+  awk 'NR>1 && /^---$/{f=1; exit} END{exit !f}' "$1" ||
+    { fail "$1 never closes its frontmatter with ---"; return 1; }
+}
+
+# A skill and a subagent fail the same way, at load and with nothing said: a
+# file with no name or description is dropped. A name that differs from where
+# the file lives answers to something other than what its path advertises.
 check_frontmatter() {
   local md="$1" expected="$2" name desc
-  [ "$(head -1 "$md")" = "---" ] || { fail "$md does not open with ---"; return 1; }
-  # Unclosed, the whole body is frontmatter, and a name or description written
-  # anywhere in it would satisfy the checks below.
-  awk 'NR>1 && /^---$/{f=1; exit} END{exit !f}' "$md" ||
-    { fail "$md never closes its frontmatter with ---"; return 1; }
+  check_fences "$md" || return 1
 
-  name="$(awk 'NR>1 && /^---$/{exit} /^name:/{sub(/^name:[[:space:]]*/,""); print; exit}' "$md")"
-  desc="$(awk 'NR>1 && /^---$/{exit} /^description:/{sub(/^description:[[:space:]]*/,""); print; exit}' "$md")"
+  name="$(frontmatter_value "$md" name)"
+  desc="$(frontmatter_value "$md" description)"
 
   [ -n "$name" ] || fail "$md has no name in its frontmatter"
   [ -n "$desc" ] || fail "$md has no description in its frontmatter"
   if [ -n "$name" ] && [ "$name" != "$expected" ]; then
     fail "$md declares name '$name' but lives at '$expected'"
   fi
+}
+
+# docs/companion-skills.md#every-piece-names-its-author has why, and the line.
+KIT_LICENSE='MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit'
+
+check_kit_license() {
+  [ "$(frontmatter_value "$1" license)" = "$KIT_LICENSE" ] ||
+    fail "$1 does not carry the kit's license: line — see docs/companion-skills.md#every-piece-names-its-author"
+}
+
+# A vendored line is derived, not just checked for citations: MIT, then each
+# notice file's own Copyright line with the file named after it, then the kit's
+# claim if the kit changed the text. Deriving it from the files is what fails a
+# dropped ancestor, a wrong holder, or other terms, rather than only a dropped
+# LICENSE.
+check_vendored_license() {
+  local skill="$1" md="$1/SKILL.md" license n holder ancestors="" credits notices=0
+  license="$(frontmatter_value "$md" license)"
+  [ -n "$license" ] || {
+    fail "$md is vendored but names no license: in its frontmatter — see docs/companion-skills.md#vendoring"
+    return
+  }
+  for n in "$skill"/LICENSE "$skill"/LICENSE-*; do
+    [ -f "$n" ] || continue
+    notices=$((notices + 1))
+    holder="$(grep -m1 '^Copyright' "$n")" ||
+      { fail "${n} carries no Copyright line to credit"; continue; }
+    ancestors="${ancestors:+$ancestors, }$holder (${n##*/})"
+  done
+  # An unchanged fork claims nothing, so the kit's clause is the one optional part.
+  [ "$license" = "MIT — $ancestors" ] ||
+    [ "$license" = "MIT — $ancestors; changes ${KIT_LICENSE#MIT — }" ] ||
+    fail "$md's license: should read 'MIT — $ancestors', followed by '; changes ${KIT_LICENSE#MIT — }' where the kit changed it"
+  # Each credits entry is an ancestor, so the two counts move together.
+  credits="$(awk 'NR>1 && /^---$/{exit} /^[[:space:]]+- skill:/{c++} END{print c+0}' "$md")"
+  [ "$credits" -eq 0 ] || [ "$notices" -eq "$credits" ] ||
+    fail "$md credits $credits upstreams but $skill carries $notices notice files"
 }
 
 echo "==> shell syntax"
@@ -114,6 +160,9 @@ for skill in plugins/kit/skills/*/; do
       fail "$skill credits an upstream but carries no LICENSE — see docs/companion-skills.md#vendoring"
     grep -q "^| \`$dir_name\` |" docs/companion-skills.md ||
       fail "$skill credits an upstream but has no row in docs/companion-skills.md#what-is-vendored"
+    check_vendored_license "$skill"
+  else
+    check_kit_license "$md"
   fi
 
   [ "$this_failed" -eq 1 ] || echo "  ok   $md"
@@ -124,6 +173,16 @@ for md in plugins/kit/agents/*.md; do
   [ -f "$md" ] || continue
   this_failed=0
   check_frontmatter "$md" "$(basename "$md" .md)" || continue
+  check_kit_license "$md"
+  [ "$this_failed" -eq 1 ] || echo "  ok   $md"
+done
+
+echo "==> command frontmatter"
+for md in plugins/kit/commands/*.md; do
+  [ -f "$md" ] || continue
+  this_failed=0
+  check_fences "$md" || continue
+  check_kit_license "$md"
   [ "$this_failed" -eq 1 ] || echo "  ok   $md"
 done
 

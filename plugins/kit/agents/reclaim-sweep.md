@@ -3,6 +3,7 @@ name: reclaim-sweep
 description: Sweep this project's dead worktrees unattended, isolated from the caller's session, and hand back what was reclaimed and what was held. Use when a command needs the reclaim sweep run without it filling that command's context.
 model: haiku
 effort: low
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 Invoke the `kit:worktree-reclaim` skill through the Skill tool, unattended and

@@ -1,6 +1,7 @@
 ---
 model: sonnet
 effort: low
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 Report the open tickets a sweep would actually start.

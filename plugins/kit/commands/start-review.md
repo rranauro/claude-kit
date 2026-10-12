@@ -1,5 +1,6 @@
 ---
 model: opus
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 Review someone else's pull request — or your own before anyone sees it — in a dedicated worktree, so the branch can be exercised in a running app without disturbing your own work.

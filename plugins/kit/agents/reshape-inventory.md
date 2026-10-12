@@ -3,6 +3,7 @@ name: reshape-inventory
 description: Gather the evidence a reshape is decided on — the scope, the shape of each namespace in it, and the ranked candidates with their call sites outside the diff — for one shape-held pull request, isolated from the caller's session. Use when kit:reshape step 3 needs its inventory. Pins its own model; launch it with none.
 model: sonnet
 effort: medium
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 The caller hands you a pull request's worktree, its base and head, and its

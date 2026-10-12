@@ -1,6 +1,7 @@
 ---
 name: worktree-conventions
 description: Resolve where a project's git worktrees live and how they are created, provisioned, and removed — by delegating to the project's own command when it has one, and falling back to a built-in layout when it doesn't. Use whenever a command needs to make, find, or remove a worktree.
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 # Worktree Conventions

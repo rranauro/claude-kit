@@ -1,6 +1,7 @@
 ---
 name: reshape
 description: Reshape the namespaces a shape-held pull request touched, with the person at the hold choosing each move — committed on that PR's branch with no ticket, or filed as a ticket blocked on the issues that PR closes. Use when kit:ticket-loop hand-off holds a PR on shape findings and the person takes the reshape, or when a person runs /kit:reshape on a PR held by a shape review.
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 # Reshape

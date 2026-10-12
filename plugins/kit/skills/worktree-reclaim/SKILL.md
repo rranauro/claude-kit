@@ -1,6 +1,7 @@
 ---
 name: worktree-reclaim
 description: Reclaim git worktrees and delete their branches safely — one named target or a sweep, attended or unattended. Use when a ticket has merged, when worktrees have accumulated, or when another command needs a worktree torn down.
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 # Worktree Reclaim

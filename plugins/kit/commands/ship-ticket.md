@@ -1,5 +1,6 @@
 ---
 model: opus
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 Carry one ticket to an open PR — worktree, plan, TDD, simplify, push. Takes the

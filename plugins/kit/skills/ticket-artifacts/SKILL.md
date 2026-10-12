@@ -1,6 +1,7 @@
 ---
 name: ticket-artifacts
 description: Where a plan, a design brief, or a walkthrough is stored and how it is found again — one marked comment on the issue as the store, a gitignored local mirror as the cache. Use whenever a command writes or looks for one of those artifacts.
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 # Ticket Artifacts

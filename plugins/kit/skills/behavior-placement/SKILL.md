@@ -1,6 +1,7 @@
 ---
 name: behavior-placement
 description: Decide where behavior belongs — model, domain object, or service — and whether the answer already exists. Use when designing new classes, reviewing a proposed service, refactoring, or when another skill needs the placement checks.
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 # Behavior Placement

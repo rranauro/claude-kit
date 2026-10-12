@@ -1,6 +1,7 @@
 ---
 name: grilling
 description: Pressure-test a plan, decision, or idea by asserting what is true about it and confirming agreement, raising a decision only where one genuinely exists. Use when the user wants a direction or a ticket's boundary checked before committing to it, or uses any 'grill' trigger phrases.
+license: MIT — Copyright (c) 2026 Matt Pocock (LICENSE); changes Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 Pressure-test a converged direction by **stating what you take to be true and

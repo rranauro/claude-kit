@@ -1,6 +1,7 @@
 ---
 model: opus
 description: Settle how to build a ticket whose problem is already decided — place the behavior, compare approaches, grill the choice, and store the plan on the issue. Use when `/kit:triage`, `kit:start-ticket` or `kit:ticket-loop` hands off a ticket with no settled approach.
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 Design how to build something whose problem is already settled: compare approaches, pressure-test the choice, and write the durable plan.

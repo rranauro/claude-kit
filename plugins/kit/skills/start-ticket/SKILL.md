@@ -1,6 +1,7 @@
 ---
 name: start-ticket
 description: Take a GitHub issue to a wired worktree with its plan verified — the clean-main check, the worktree off origin/main, the gitignored runtime files a fresh worktree lacks, and the qualification test that decides whether the approach is settled. Use when an orchestrator needs a ticket set up for implementation.
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 # Start Ticket

@@ -1,6 +1,7 @@
 ---
 model: sonnet
 description: Remove a git worktree and delete its branch where GitHub accounts for the tip. Use when `/kit:start-review`, `kit:start-ticket` or `/kit:polish-ticket` hands off a worktree to reclaim.
+license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 Reclaim this repo's worktrees — one named target, or a sweep of all of them.
