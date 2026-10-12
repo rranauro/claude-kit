@@ -24,20 +24,28 @@ fail() {
   this_failed=1
 }
 
-# A skill and a subagent fail the same way, at load and with nothing said:
-# frontmatter that does not open on line 1 is read as body text, and a file with
-# no name or description is dropped. A name that differs from where the file
-# lives answers to something other than what its path advertises.
+frontmatter_value() {
+  awk -v k="$2" 'NR>1 && /^---$/{exit} $0 ~ "^"k":" {sub("^"k":[[:space:]]*",""); print; exit}' "$1"
+}
+
+# Frontmatter that does not open on line 1 is read as body text. Unclosed, the
+# whole body is frontmatter, and a key written anywhere in it would satisfy
+# every check that reads one.
+check_fences() {
+  [ "$(head -1 "$1")" = "---" ] || { fail "$1 does not open with ---"; return 1; }
+  awk 'NR>1 && /^---$/{f=1; exit} END{exit !f}' "$1" ||
+    { fail "$1 never closes its frontmatter with ---"; return 1; }
+}
+
+# A skill and a subagent fail the same way, at load and with nothing said: a
+# file with no name or description is dropped. A name that differs from where
+# the file lives answers to something other than what its path advertises.
 check_frontmatter() {
   local md="$1" expected="$2" name desc
-  [ "$(head -1 "$md")" = "---" ] || { fail "$md does not open with ---"; return 1; }
-  # Unclosed, the whole body is frontmatter, and a name or description written
-  # anywhere in it would satisfy the checks below.
-  awk 'NR>1 && /^---$/{f=1; exit} END{exit !f}' "$md" ||
-    { fail "$md never closes its frontmatter with ---"; return 1; }
+  check_fences "$md" || return 1
 
-  name="$(awk 'NR>1 && /^---$/{exit} /^name:/{sub(/^name:[[:space:]]*/,""); print; exit}' "$md")"
-  desc="$(awk 'NR>1 && /^---$/{exit} /^description:/{sub(/^description:[[:space:]]*/,""); print; exit}' "$md")"
+  name="$(frontmatter_value "$md" name)"
+  desc="$(frontmatter_value "$md" description)"
 
   [ -n "$name" ] || fail "$md has no name in its frontmatter"
   [ -n "$desc" ] || fail "$md has no description in its frontmatter"
@@ -46,14 +54,8 @@ check_frontmatter() {
   fi
 }
 
-# A skill, command or agent gets copied out of the kit on its own, and the
-# repo-root LICENSE does not go with it. Its frontmatter is the one place all
-# three kinds can carry a notice the model is never handed as instructions.
+# docs/companion-skills.md#every-piece-names-its-author has why, and the line.
 KIT_LICENSE='MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit'
-
-frontmatter_value() {
-  awk -v k="$2" 'NR>1 && /^---$/{exit} $0 ~ "^"k":" {sub("^"k":[[:space:]]*",""); print; exit}' "$1"
-}
 
 check_kit_license() {
   [ "$(frontmatter_value "$1" license)" = "$KIT_LICENSE" ] ||
@@ -70,12 +72,18 @@ check_vendored_license() {
     fail "$md is vendored but names no license: in its frontmatter — see docs/companion-skills.md#vendoring"
     return
   }
+  # An unchanged fork claims nothing, so only a claim that is there is checked.
+  case "$license" in
+    *"; changes "*)
+      [ "${license##*; changes }" = "${KIT_LICENSE#MIT — }" ] ||
+        fail "$md's license: credits its changes in words other than the kit's own line" ;;
+  esac
   for n in "$skill"/LICENSE "$skill"/LICENSE-*; do
     [ -f "$n" ] || continue
     notices=$((notices + 1))
     case "$license" in
-      *"($(basename "$n"))"*) ;;
-      *) fail "$md's license: does not credit the ancestor in $(basename "$n")" ;;
+      *"(${n##*/})"*) ;;
+      *) fail "$md's license: does not credit the ancestor in ${n##*/}" ;;
     esac
   done
   while IFS= read -r cited; do
@@ -176,7 +184,7 @@ echo "==> command frontmatter"
 for md in plugins/kit/commands/*.md; do
   [ -f "$md" ] || continue
   this_failed=0
-  [ "$(head -1 "$md")" = "---" ] || { fail "$md does not open with ---"; continue; }
+  check_fences "$md" || continue
   check_kit_license "$md"
   [ "$this_failed" -eq 1 ] || echo "  ok   $md"
 done
