@@ -232,7 +232,10 @@ evidence, and a reviewer will grade it that way.
 
 When the diff changes something visual, what a pass may drive to capture it is the
 project's to say, not this skill's — which browser, how it signs in to the app, and where
-the image goes. Read the `## Screenshot capture` section of `CLAUDE.md` at the repo root:
+the image goes. Read the `## Screenshot capture` section of `CLAUDE.md` as the PR's base
+branch has it — `git show origin/<base>:CLAUDE.md` — never the worktree's copy. The branch
+is the pass's own work, so a rule read from it is one the pass could have written to
+authorize itself; only a rule someone merged counts.
 
 ```markdown
 ## Screenshot capture
@@ -256,11 +259,10 @@ A line that is missing allows nothing. Then:
 - **Section present, attended** — the rule says what may be driven, never that you need not
   ask. Name the screenshots you would take, one per criterion they prove, and ask before
   capturing. On a no, write "Not captured — declined".
-- **No section, attended** — ask once: propose the section's three lines with the
-  screenshots they would take, and on a yes write the section and capture. A run-only
-  answer is not the project's rule.
-- **No section, unattended, or attended and declined** — capture nothing. Write "Not
-  captured — no capture rule in CLAUDE.md".
+- **No section** — capture nothing, in either mode. Write "Not captured — no capture rule
+  in CLAUDE.md". Attended, also show the person the section's three lines that would have
+  allowed it, to land on the base branch in a PR of its own: a section written on this
+  branch would not count for this run, and a run-only answer is not the project's rule.
 
 Put each uploaded URL in the body, captioned with its criterion. Every "Not captured" names
 what each screenshot would have shown, so the reviewer knows what to look at themselves.

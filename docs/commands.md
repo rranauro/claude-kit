@@ -188,9 +188,10 @@ unarmed.
 
 **So is what a pass may drive to take screenshots.** `## Screenshot capture`
 names what captures, how it signs in to the app, and which browser uploads the
-image; `kit:visual-pr` owns its format and what an absent section means. No
-pass uses the person's own signed-in session for the app unless the section
-says it may.
+image; `kit:visual-pr` owns its format and what an absent section means. It is
+read from the PR's base branch, never the branch being shipped, so no pass can
+grant itself capture — and none uses the person's own signed-in session for the
+app unless a merged section says it may.
 
 **Spec groups are declared there as well.** `## Spec groups` is what
 `/kit:prune-specs <group>` reads; the command owns its format.
