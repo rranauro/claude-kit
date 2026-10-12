@@ -214,7 +214,7 @@ was resolved.
 
 Concrete proof, from the author, that the change works. Show a before and after.
 
-Screenshots are S-tier — when the environment is set up for it and the change is visual.
+Screenshots are S-tier — when the project's capture rule allows them and the change is visual.
 
 Execution-based evidence is A-tier: test results, console output. Name the guarding spec
 examples and show the run.
@@ -230,18 +230,47 @@ after when the change alters something that already existed. Write "None — no 
 change" only when nothing visual changed — a UX change without screenshots is weak
 evidence, and a reviewer will grade it that way.
 
-When the diff changes something visual, the browser is the person's, so it is driven only
-with their yes:
+When the diff changes something visual, what a pass may drive to capture it is the
+project's to say, not this skill's — which browser, how it signs in to the app, and where
+the image goes. Read the `## Screenshot capture` section of `CLAUDE.md` as the PR's base
+branch has it — `git show origin/<base>:CLAUDE.md` — never the worktree's copy. The branch
+is the pass's own work, so a rule read from it is one the pass could have written to
+authorize itself; only a rule someone merged counts.
 
-- **Attended** — name the screenshots you would take, one per criterion they prove, and ask
-  before driving the browser. On a yes, take them and upload each through a GitHub comment box
-  in that same browser session — dropping an image there yields its `user-attachments` URL
-  without posting anything, and `gh` cannot upload one — then put each URL in the body,
-  captioned with its criterion. On a
-  no, write "Not captured — declined" and name what each would have shown.
-- **Unattended** — never drive the browser. Write "Not captured — opened unattended" and
-  name what each screenshot would have shown, so the reviewer knows what to look at
-  themselves.
+```markdown
+## Screenshot capture
+- capture: `bin/screenshot <url> <out.png>`
+- sign in: the seeded test user from `db/seeds.rb`
+- upload: person's browser
+```
+
+- **capture** — what takes the screenshots: a command of the project's, a separate browser
+  the pass launches, or `person's browser` (new tabs in their Chrome).
+- **sign in** — how the capture gets into the app. Only `person's session` lets it use the
+  person's own signed-in session; anything else names the user it signs in as, and a capture
+  that cannot sign in that way does not fall back to theirs.
+- **upload** — the browser whose GitHub comment box turns each image into its
+  `user-attachments` URL. Dropping an image there yields the URL without posting anything,
+  and `gh` cannot upload one — an image no reviewer can see is not evidence.
+
+A line that is missing allows nothing. Then:
+
+- **Section present, unattended** — capture through what the rule names, with no question.
+- **Section present, attended** — the rule says what may be driven, never that you need not
+  ask. Name the screenshots you would take, one per criterion they prove, and ask before
+  capturing. On a no, write "Not captured — declined".
+- **No section** — capture nothing, in either mode. Write "Not captured — no capture rule
+  in CLAUDE.md". Attended, also show the person the section's three lines that would have
+  allowed it, to land on the base branch in a PR of its own: a section written on this
+  branch would not count for this run, and a run-only answer is not the project's rule.
+
+Put each uploaded URL in the body, captioned with its criterion. Every "Not captured" names
+what each screenshot would have shown, so the reviewer knows what to look at themselves.
+
+**Allowed but impossible never parks.** No browser to drive, a capture command that fails, a
+sign-in that does not take, an upload refused, a tool the permission grant does not include
+— write "Not captured — <why>" and carry on writing the body. Do not reach for another
+browser or session the rule does not name to get one.
 
 ### Instructions
 
