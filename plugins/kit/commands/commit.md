@@ -27,8 +27,11 @@ If the current branch is `<base>`, `main` or `master`, STOP and tell the user. N
 can keep its Rails app in `rx/` with nothing at the root, and RuboCop or Brakeman
 run from the root read the wrong config or find nothing to check. So before
 reading any gate, sort the changed files by app: a file belongs to the nearest
-directory at or above it whose manifest names a gate's tool — a linter, a
-security scanner, a test runner. Nearest *gateable*, not nearest, so an engine's
+directory at or above it that has gates — one whose manifest names a gate's
+tool (a linter, a security scanner, a test runner), or one the project's rules
+or a CI step name as where gates run. Rules or a CI step that name no directory
+name the root, so a repository whose only gate is a script its rules name is one
+app at the root. Nearest *gateable*, not nearest, so an engine's
 linter-less Gemfile does not take its files out of the app above; walk once per
 changed directory, not per file. `hooks/rails-quality-gates.sh` resolves Ruby the
 same way. A single-app repository resolves every file to the root, and nothing
@@ -44,6 +47,11 @@ each app take its gates in this order, stopping at the first that answers:
 3. CI config — `.github/workflows/*.yml` runs the commands the project actually
    considers authoritative; read the steps whose `working-directory` is that app.
 
+**A command taken verbatim keeps the directory its source runs it from** — the
+root, or the directory the rules name, or the step's `working-directory`. Only a
+command read from the app's own manifest runs from the app. A rule written as
+`cd rx && bundle exec rubocop` run again from `rx/` looks for `rx/rx`.
+
 If no app the change touches answers, ask the user how to run tests and linting
 rather than inventing a command. Where some do, a file outside every app is not
 a question — Step 4 reports it. A wrong command that errors is noise; a wrong command that
@@ -51,8 +59,9 @@ silently passes is worse.
 
 **Step 4 — Run the gates on what changed:**
 
-Run each app's gates from that app's directory, on that app's changed files, with
-paths relative to it; a tool that takes no file list runs once on the whole app.
+Run each app's gates from the directory Step 3 resolved for them, on that app's
+changed files, with paths relative to it; a tool that takes no file list runs
+once on the whole app.
 An app's gates never run on another app's files.
 
 - **Tests.** Derive the target set explicitly rather than saying "the affected
@@ -77,7 +86,7 @@ An app's gates never run on another app's files.
   high-confidence warnings without telling the user.
 - If a gate does not exist for an app, skip it and say so, naming the app's
   directory and the gate — don't substitute a different tool. A changed file
-  that no gateable manifest sits above gets the same line: a skipped gate
+  that no app covers gets the same line: a skipped gate
   otherwise reads exactly like a passing one.
 
 **Step 5 — Group the changes into commits:**
