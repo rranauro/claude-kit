@@ -390,7 +390,27 @@ names the grant the operator's project settings lack.
 **5 · Mark it ready, then arm auto-merge once the transition's run has
 registered.**
 
-**Decide first whether a held PR is armed at all.** Look for a `## Hold check`
+**Decide first whether this PR is armed at all.** Look for an `## Auto-merge`
+section in the project's rules:
+
+```markdown
+## Auto-merge
+- off
+```
+
+or `- method: merge` (`squash`, `merge` or `rebase`). `off` says the kit never
+arms auto-merge here: the PR gets `gh pr ready <pr-number>` alone, held or not,
+and is left for a person to merge. `method:` is the flag every `gh pr merge
+--auto` below runs with. Absent, the method is the one the project's rules state
+in their own words (`kit:project-rules`), else `squash`.
+
+**Unless the section says `off`, ask the repository once:** `gh api
+repos/{owner}/{repo} --jq .allow_auto_merge`. `false` is the same outcome as
+`off` — ready alone, left for a person, reported with step 6's line rather than
+as a failure. A token that cannot see the setting gets nothing back: arm as
+below, and treat a refusal saying auto-merge is not allowed the same way.
+
+**Then decide whether a held PR is armed.** Look for a `## Hold check`
 section in the project's rules:
 
 ```markdown
@@ -418,7 +438,7 @@ sha=$(gh pr view <pr-number> --json headRefOid -q .headRefOid)
 gh api repos/{owner}/{repo}/commits/$sha/check-runs --jq '.check_runs[].id'
 gh pr ready <pr-number>
 # poll that same call until an id appears the first one did not report, to 120s
-gh pr merge <pr-number> --auto --squash
+gh pr merge <pr-number> --auto --<method>
 ```
 
 **Arming before the run registers merges the PR against the draft's checks.**
@@ -512,6 +532,13 @@ or, where it reads off:
 > check the rollup named.> <Which declared review source, if any, did not
 > arrive, and which the project does not run.>"
 
+or, where step 5 did not arm it:
+
+> "PR #<N> is open, reviewed, and ready, and left for a person to merge — <the
+> project declares auto-merge off | the repository does not allow auto-merge>.
+> <Any failing check the rollup named.> <Which declared review source, if any,
+> did not arrive, and which the project does not run.>"
+
 or, when it carries `kit-hold`:
 
 > "PR #<N> is open, reviewed, ready and held (`kit-hold`) — <the shape review
@@ -522,8 +549,8 @@ or, when it carries `kit-hold`:
 > armed, since the project declares no hold check, so it merges only by hand
 > once the label comes off>. <Any failing check the rollup named.>"
 
-Where a held PR's auto-merge reads off although this pass armed it, use the
-reads-off line above with the hold's reason added.
+Where a held PR takes the reads-off line or the left-for-a-person line, use
+that line with the hold's reason added.
 
 Unattended, the same line goes in the report `/kit:ship-ticket` Step 3 writes.
 Drop the `/kit:reshape` clause where the third answer already ran it.

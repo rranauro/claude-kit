@@ -49,6 +49,16 @@ closed-round PR with auto-merge still off is the one place it would otherwise
 call `gh pr merge` itself, and `kit-hold` is what tells it not to. Never remove the
 label; clearing it is a human's to do.
 
+**The gate also reads `## Auto-merge` before that call, and the repository's
+`allow_auto_merge`.** A PR the kit left for a person under `- off`, or in a
+repository that does not allow auto-merge, is exactly a closed-round, green,
+unheld PR with auto-merge off — no `kit-hold` is written for it, because the
+rule is the project's and not a decision about one PR. A gate that arms on that
+shape alone overrides the project's `off` on the next firing. Read the section
+from the base branch's tracked `CLAUDE.md`, since a runner has no
+`CLAUDE.local.md`; where it says `off` or the repository answers `false`, the
+gate never calls `gh pr merge`, and where it names a method, that is the flag.
+
 ## The round is closed by a marker, not by the run that closed it
 
 `/kit:review-copilot` posts `<!-- kit-review-closed -->` as a PR comment carrying

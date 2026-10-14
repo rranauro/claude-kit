@@ -313,6 +313,13 @@ Step 5 summary and let the caller continue — a pass that treats this as the en
 its own work leaves the round closed with auto-merge never enabled, which is the
 one state nothing downstream is watching for.
 
+**First, whether anything here may arm at all — in both modes.** Resolve it,
+and `<method>`, from the rules Step 2 read, as `kit:ticket-loop` `hand-off`
+step 5 does. Where that leaves the PR for a person, do not arm and do not ask:
+report it, with step 5's reason, and stop. Write no `kit-hold` — that is the
+project's standing rule, not a decision about this PR, and a CI gate re-running
+this step reads the same rule.
+
 **Run unattended, decide the merge yourself** — see `## Unattended` below, which
 owns that decision. Do not also ask. The record is already written: Step 7.5 does
 that in both modes.
@@ -321,11 +328,9 @@ Otherwise, ask the user before enabling:
 
 > "Review findings addressed and pushed. Enable auto-merge (<method>) for PR #<N>? GitHub will merge once checks pass."
 
-`<method>` is the merge method the project's rules state (`kit:project-rules`), else squash — the one the command below will run.
-
 - On approval, run `gh pr merge <PR#> --auto --<method>` (use the PR number resolved in Step 1).
 - If the command errors because auto-merge is already enabled or the PR is already merged, that's fine — report and continue.
-- If it errors because auto-merge is disabled in repo settings, say so and let the user merge from the GitHub UI; do not fall back to a local merge.
+- If it errors because auto-merge is not allowed for the repository, that is step 5's left-for-a-person outcome, not a failure: say so and let the user merge from the GitHub UI; do not fall back to a local merge.
 - **If the user declines, record it as `kit-hold` on the PR**, then stop:
 
   ```
@@ -387,8 +392,8 @@ decision, and it does not remove the label either — clearing `kit-hold` is the
 human's statement, the same as everywhere else in this file.
 
 **Otherwise, decide the merge.** On a triage that escalated nothing — including
-one that pinned a skipped finding — `gh pr merge <N> --auto --squash`, or the
-merge method the project's rules state (`kit:project-rules`). With a
+one that pinned a skipped finding — `gh pr merge <N> --auto --<method>`, with
+the method Step 8 resolved, unless Step 8 found arming off. With a
 single review round there is nothing further to wait for, and leaving it off
 means the PR sits green until someone notices. Enabling it is idempotent, and
 the merge stays GitHub's to perform once checks pass.
