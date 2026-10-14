@@ -13,7 +13,7 @@
 #
 # Register it in a project's .claude/settings.json rather than the global one, so
 # it fires only for Rails repos. Non-Rails projects simply never enable it, and
-# it no-ops anyway on Ruby no Gemfile carrying both tools sits above.
+# it no-ops anyway on Ruby files with no Gemfile above them carrying both tools.
 # Kill switch: export SKIP_RAILS_GATES=1.
 #
 # A gate that cannot run exits 0 exactly as a gate that passed does, so where a
@@ -61,7 +61,7 @@ carries_gates() {
   [ -f "$1/Gemfile" ] && grep -q 'rubocop' "$1/Gemfile" && grep -q 'brakeman' "$1/Gemfile"
 }
 names_rails() {
-  [ -f "$1/Gemfile" ] && grep -Eq "^[[:space:]]*gem[[:space:]]+['\"](rails|railties)['\"]" "$1/Gemfile"
+  [ -f "$1/Gemfile" ] && grep -Eq "^[[:space:]]*gem[[:space:]]*\\(?[[:space:]]*['\"](rails|railties)['\"]" "$1/Gemfile"
 }
 
 parent() { # dir -> its parent, without a dirname fork per level

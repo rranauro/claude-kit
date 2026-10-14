@@ -207,6 +207,14 @@ assert_eq "$(notice | wc -l | tr -d ' ')" "1" "it is one line"
 assert_eq "$(cat "$LOG")" "" "nothing ran"
 end_sandbox
 
+new_sandbox "a parenthesized rails declaration counts as a Rails app"
+mkdir -p "$REPO/apps/web"
+printf "gem('rails', '~> 7.1')\n" > "$REPO/apps/web/Gemfile"
+stage apps/web/app/models/user.rb
+hook "git commit -m 'Ungated'"
+assert_has "$(notice)" "apps/web" "the skip line still names the app"
+end_sandbox
+
 new_sandbox "the kill switch says it is on"
 gated_gemfile apps/web
 stage apps/web/app/models/user.rb
