@@ -12,6 +12,8 @@ Take a GitHub issue to the point where implementation can begin: read it, create
 
 **Arguments:** $ARGUMENTS
 The argument should be a GitHub issue number (e.g., `kit:start-ticket 42`) or a GitHub issue URL.
+A trailing `unattended` is passed only by `kit:ticket-loop` in that mode; Step 8
+and Step 10 say what it changes.
 
 Each step below carries a stable id in backticks (`safety-check`, `wire-worktree`,
 …). Those ids are the handle other commands reference — `/kit:ship-ticket` and
@@ -109,6 +111,13 @@ both expect the cache to be there. Missing, the handoff no longer breaks — the
 store is the issue, and `kit:ticket-artifacts` falls back to it — but every read
 becomes a network call and every write splits across two directories.
 
+**Unattended, skip the plan-cache link too.** An unattended pass runs as a
+background session isolated in its worktree, and the harness refuses or holds
+any write that lands in the main checkout — through a link included. Every
+mirror write then waits on a permission prompt nobody answers, and the pass
+stalls while still reporting itself as working. `kit:ticket-artifacts` skips the
+mirror in that mode and reads the issue comment, so nothing needs the link.
+
 A fresh worktree contains only tracked files. Anything gitignored but required
 at runtime is missing, and the failures it causes are indirect — blank config,
 a boot-time abort, a re-prompt — so wire these up before handing the worktree
@@ -167,7 +176,8 @@ What this step needs is a **plan** — the why, the chosen shape, and the
 alternatives it beat. It does not care where that is stored, only that it exists
 as something a reader can point at. Two forms count:
 
-- **A stored plan**, read through `kit:ticket-artifacts` — the cache at
+- **A stored plan**, read through `kit:ticket-artifacts` (passing `unattended`
+  when this skill was given it) — the cache at
   `<plans>/<issue-number>-plan.md` if it's there, otherwise the marked
   `plan` comment on the issue, which the skill writes back to the cache as it
   reads. Never conclude there is no plan from a missing file: the file is the
