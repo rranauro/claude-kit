@@ -21,3 +21,4 @@ jobs:
       - run: ./tests/ship-startable.sh
       - run: ./tests/observe.sh
       - run: ./tests/audit-review-records.sh
+      - run: ./tests/rails-quality-gates.sh
