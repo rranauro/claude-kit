@@ -56,10 +56,10 @@ Skip `kit:start-ticket` `plan-implementation` entirely. A cleanup ticket has no 
 
 ### Confirm the work is all in one place
 
-Resuming is where this ticket leaks. Before accepting the worktree, verify:
+Resuming is where this ticket leaks. Resolve `<base>` as `kit:project-rules` *The base branch* says, then before accepting the worktree, verify:
 
 1. `git -C <worktree> status` — clean? Uncommitted changes from a prior session are either work-in-progress the user forgot or a fix that was never committed. Show them and ask which.
-2. `git -C <worktree> log --oneline origin/<base>..HEAD`, with `<base>` resolved as `kit:project-rules` *The base branch* says — the fixes landed so far. This list *is* your memory of the ticket; read it before asking the user what's been done.
+2. `git -C <worktree> log --oneline origin/<base>..HEAD` — the fixes landed so far. This list *is* your memory of the ticket; read it before asking the user what's been done.
 3. `git log --oneline origin/<base>..HEAD` **in the main checkout** — must be empty. Anything here is a fix that landed on the wrong branch.
 4. `git worktree list` — exactly one worktree for this issue number. A second is the trap `kit:start-ticket` warns about: the dev server boots in the stale one and fixes read as "not working".
 

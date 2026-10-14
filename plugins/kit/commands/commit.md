@@ -15,7 +15,7 @@ part a hook can't: deciding what a finding means and fixing it.
 - `git diff HEAD` — see all staged and unstaged changes
 - `git log --oneline -10` — see recent commit message style and conventions
 - Resolve `<base>` as `kit:project-rules` *The base branch* says
-- `git rev-parse --abbrev-ref HEAD` — confirm we are NOT on `<base>`, `main` or `master`
+- `git rev-parse --abbrev-ref HEAD` — the current branch, for Step 2
 - `git diff origin/<base>...HEAD --stat` — see file-level summary of all changes vs `<base>`
 
 **Step 2 — Safety check:**

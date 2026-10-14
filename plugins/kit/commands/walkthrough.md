@@ -96,13 +96,13 @@ gates would sweep it up, say so and leave it out of the staged set explicitly.
 
 ## Step 1 · `derive-steps` — Turn the ticket into observable steps
 
-Read two sources, in this order:
+Resolve `<base>` as `kit:project-rules` *The base branch* says, then read two
+sources, in this order:
 
 1. `gh issue view <number>` — the acceptance criteria. These are *outcomes*
    ("field values render as plain text"), not click paths. They tell you what
    must be true, not how to see it.
-2. `git -C <worktree> diff origin/<base>...HEAD` — the change itself, with
-   `<base>` resolved as `kit:project-rules` *The base branch* says. This is what
+2. `git -C <worktree> diff origin/<base>...HEAD` — the change itself. This is what
    turns an outcome into a path: the templates, controllers, and views the diff
    touches are the screens the user has to reach.
 
