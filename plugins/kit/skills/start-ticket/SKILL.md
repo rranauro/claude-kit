@@ -63,10 +63,10 @@ Where one exists, `create-worktree` delegates to it and `wire-worktree` is
 skipped entirely. Don't decide that here; the skill does.
 
 **Step 7 · `create-worktree` — Create the worktree:**
+- Resolve `<base>`: the base branch the project's rules state (`kit:project-rules`), else `main`. Every `main` in this step means `<base>`.
 - `git fetch origin main` — refresh `origin/main` (don't rely on "up to date" from `git status`; that only reflects the last fetch)
 - **Project owns it:** run its create command, then resolve the resulting path with `git worktree list --porcelain` as the skill describes. Check the new branch's base — a project recipe often cuts from `HEAD` rather than `origin/main` — and offer a rebase if it's behind. Never assume the path; the command may not print it.
 - **Otherwise:** `git worktree add .claude/worktrees/<branch-name> -b <branch-name> origin/main`, under this repo — never as a sibling of the main checkout.
-- A base branch the project's rules state (`kit:project-rules`) replaces `origin/main` in either form.
 
 Either way, hold the resulting absolute path as `<worktree>`. Everything downstream uses it.
 

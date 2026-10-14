@@ -319,9 +319,11 @@ that in both modes.
 
 Otherwise, ask the user before enabling:
 
-> "Review findings addressed and pushed. Enable auto-merge (squash) for PR #<N>? GitHub will merge once checks pass."
+> "Review findings addressed and pushed. Enable auto-merge (<method>) for PR #<N>? GitHub will merge once checks pass."
 
-- On approval, run `gh pr merge <PR#> --auto --squash` (use the PR number resolved in Step 1), or the merge method the project's rules state (`kit:project-rules`).
+`<method>` is the merge method the project's rules state (`kit:project-rules`), else squash — the one the command below will run.
+
+- On approval, run `gh pr merge <PR#> --auto --<method>` (use the PR number resolved in Step 1).
 - If the command errors because auto-merge is already enabled or the PR is already merged, that's fine — report and continue.
 - If it errors because auto-merge is disabled in repo settings, say so and let the user merge from the GitHub UI; do not fall back to a local merge.
 - **If the user declines, record it as `kit-hold` on the PR**, then stop:

@@ -27,8 +27,11 @@ Up to four files, all optional:
 
 **The sub-project** is the nearest directory below the root, holding the paths
 being worked on, that carries its own `CLAUDE.md` — the app in a monorepo, such
-as `rx/` holding the main app. A repository with one project has none, and so
-reads only the toplevel pair.
+as `rx/` holding the main app. The paths being worked on are the diff's, or,
+before there is a diff, the ones the issue and its plan name. A repository with
+one project has none, and so reads only the toplevel pair. **Paths spanning two
+sub-projects, or naming none, read only the toplevel pair** — and say so where
+the step reports, since a sub-project's rules were then not applied.
 
 **Read `CLAUDE.local.md` from the main checkout, never a worktree.** It is
 gitignored, so a fresh worktree does not have it, and its absence there says
@@ -49,6 +52,10 @@ from two files into one section — a merged section is a rule nobody wrote.
 1. **Nearer wins.** The sub-project's files over the toplevel ones.
 2. **At the same level, `CLAUDE.local.md` wins** over `CLAUDE.md`. It is where a
    developer puts what differs for them.
+
+The same order settles *Rules in the project's own words* below: where two
+files say different things about the same act, the winning file's sentence is
+the rule.
 
 **No file has the section → the kit's default.** A project that states no rules
 sees exactly what it saw before any of them were read.
