@@ -17,8 +17,9 @@ picks. A run with nobody present stops before step 1.
 
 ## 1 — Confirm it is a shape hold
 
-The PR must be open and carry `kit-hold`, and its latest `<!-- kit-shape-review
--->` comment must carry findings — found as `/kit:review-copilot` Step 2 finds
+The PR must be open and carry `kit-hold` — the project's spelling, per
+`kit:project-rules` *Labels*; where the project has no hold label, skip that
+check — and its latest `<!-- kit-shape-review -->` comment must carry findings — found as `/kit:review-copilot` Step 2 finds
 it, by marker and latest `updated_at`. Missing any, say which and stop: a hold
 with no shape review is about something else, and this pass has nothing to say
 to it.
@@ -124,8 +125,8 @@ Nothing is committed or pushed, so the next ask needs no recount.
 Which moves landed and the head they left, and which tickets were filed,
 with their numbers and `/kit:triage <n>` beside each — unrouted, a sweep never
 starts one. Where a move landed, the posted shape review is against the
-old head — `/kit:shape-review <n>` judges the new one. `kit-hold` is still on
-and is the person's to clear: `gh pr edit <n> --remove-label kit-hold`.
+old head — `/kit:shape-review <n>` judges the new one. Where the project has a
+hold label, it is still on and is the person's to clear: `gh pr edit <n> --remove-label kit-hold`.
 
 ## Never
 

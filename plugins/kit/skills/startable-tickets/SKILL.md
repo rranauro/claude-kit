@@ -29,7 +29,12 @@ gh issue list --state open --label ready-for-agent [--label <given>] \
 ```
 
 `ready-for-agent` is the canonical spelling of the project's AFK-ready triage
-label; read the project's own mapping where it has one.
+label, and `epic` and `kit-blocked` in Step 3 are canonical too: query and match
+the project's spelling of each, per `kit:project-rules` *Labels*. **A project
+that says it has no AFK-ready label has nothing routed to an agent, so a sweep
+starts nothing** — run no query, and hand back that reason so the caller reports
+it. A named ticket is untouched by this. A project with no `epic` or
+`kit-blocked` label skips that condition.
 
 **The explicit `--limit` is load-bearing.** `gh issue list` defaults to 30,
 newest first, so the tickets it drops are the oldest — the lowest numbers, which

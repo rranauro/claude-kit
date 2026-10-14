@@ -45,6 +45,11 @@ whole scheme exists to make rare and to make legible when it happens.
    write is refused rather than ignored: say so, because a sweep picks the
    ticket straight back up. `docs/labels.md` is the rule for both, and the repo
    owner's one-line fix.
+
+   The label is the project's spelling of `kit-blocked`, per `kit:project-rules`
+   *Labels*. **A project that says it has none gets the comment alone**, and
+   that is a recorded park, not a failed one: the worktree step 3 leaves in place
+   is what keeps a sweep off the ticket, and the report says so.
 3. **Leave the worktree and any commits in place.** The next attempt resumes
    rather than rebuilds, and a parked ticket with its work-so-far on disk is
    worth more than a clean tree.

@@ -544,6 +544,34 @@ assert_missing_path "$MAIN/.claude/worktrees/alpha" "another label is not a hold
 assert_has "$out" "branch-kept	alpha" "and the open PR still keeps its branch"
 end_sandbox
 
+new_sandbox "AC9 a project's own hold label holds the worktree"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 open null "" "Status: On Hold"
+out="$(run --act --hold-label "Status: On Hold")"
+assert_present_path "$MAIN/.claude/worktrees/alpha" \
+  "the project's spelling of kit-hold holds the checkout"
+assert_has "$out" "Status: On Hold" "and the hold names the label that caused it"
+end_sandbox
+
+new_sandbox "AC9 with a project hold label, kit-hold is just another label"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 open null "" kit-hold
+run --act --hold-label "Status: On Hold" >/dev/null
+assert_missing_path "$MAIN/.claude/worktrees/alpha" \
+  "the canonical name means nothing where the project spells it otherwise"
+end_sandbox
+
+new_sandbox "AC9 a project with no hold label holds nothing on a label"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 open null "" kit-hold
+run --act --hold-label "" >/dev/null
+assert_missing_path "$MAIN/.claude/worktrees/alpha" \
+  "an empty hold label skips the hold check"
+end_sandbox
+
 new_sandbox "AC9 a question GitHub cannot answer holds the directory"
 add_worktree alpha
 push_branch alpha

@@ -80,6 +80,27 @@ so where the step reports. When it is genuinely unclear which act a sentence
 governs, attended ask; unattended follow the kit's default and say which
 sentence you could not apply.
 
+## Labels
+
+**A label a prompt file names is the canonical name of a role** — the spelling
+`CONTEXT.md` defines, such as `bug`, `ready-for-agent` or `kit-hold`. Before
+reading or writing one, take the project's spelling from what its rules say,
+however they say it: "our bugs are `Type: Bug`", a table, a list under any
+heading. That is the project's label mapping; there is no other.
+
+- **The project names its own label for the role** → read and write that one,
+  wherever the prompt file says the canonical name: a `--label` filter, an
+  `--add-label`, a check of what a PR or issue carries.
+- **The project says it has none** → skip the label. Do not write it, query on
+  it, or wait for it. Where the label carries a decision, the step that makes
+  the decision says what happens without it; the decision itself never loosens
+  because its mark was skipped.
+- **The project says nothing about it** → the canonical name, exactly as before
+  any rules were read.
+
+Say where the step reports which labels were translated or skipped. A reader
+cites this section rather than restating it.
+
 ## Recording a setting
 
 Some readers offer to record an answer so the next session need not ask again.

@@ -43,6 +43,11 @@ was recording, so the reader knows the decision stands without its mark. Never
 treat a rejected `gh pr edit --add-label` or `gh issue edit --add-label` as a
 no-op, and never create the label to get past it.
 
+**A label the project says it does not use is a different case**, and is
+skipped rather than reported: the project chose its vocabulary, and the kit
+reads it through `kit:project-rules` *Labels*. Skipping the mark never skips
+the decision — each reader that carries one says what holds it instead.
+
 The fix is one command, and it belongs to whoever owns the repo:
 
 ```

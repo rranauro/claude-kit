@@ -6,11 +6,16 @@
 #
 #   worktree-reclaim.sh [--repo DIR] [--target BRANCH|PATH] [--act]
 #                       [--remove-cmd CMD] [--worktree-root DIR]
+#                       [--hold-label NAME]
 #   worktree-reclaim.sh [--repo DIR] --account BRANCH
 #
 # --worktree-root is the caller asserting that the directory holds nothing but
 # worktrees it placed, and it is the only thing that licenses sweeping husks git
 # no longer names. Omit it and no directory is ever listed.
+#
+# --hold-label is the project's spelling of `kit-hold`, which this script
+# cannot read from the project's prose itself; empty says the project has no
+# hold label, so no label holds a worktree.
 #
 # --account answers the branch question alone, exiting 0 only when GitHub
 # accounts for the tip. It is the seam for any other caller that deletes a
@@ -32,6 +37,7 @@ act=0
 remove_cmd=""
 worktree_root=""
 account_only=""
+hold_label="kit-hold"
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -41,6 +47,7 @@ while [ $# -gt 0 ]; do
     --remove-cmd)    remove_cmd="$2"; shift 2 ;;
     --worktree-root) worktree_root="$2"; shift 2 ;;
     --account)       account_only="$2"; shift 2 ;;
+    --hold-label)    hold_label="$2"; shift 2 ;;
     *) echo "worktree-reclaim: unknown argument: $1" >&2; exit 2 ;;
   esac
 done
@@ -231,16 +238,18 @@ if merged:
 elif closed:
     print("CLOSED", closed[0].get("number", 0))
 else:
+    hold = sys.argv[1]
     held = [p for p in d
-            if any(l.get("name") == "kit-hold" for l in p.get("labels") or [])]
+            if hold and any(l.get("name") == hold for l in p.get("labels") or [])]
     print("HELD" if held else "OPEN", (held or d)[0].get("number", 0))
-' 2>/dev/null)"
+' "$hold_label" 2>/dev/null)"
 
   case "$parsed" in
     ""|error)
       ACCOUNTED="no"
       ACC_REASON="GitHub could not be asked, so tip $tip is unaccounted"
-      HOLD_REASON="GitHub could not be asked, so a kit-hold could not be ruled out"
+      [ -n "$hold_label" ] &&
+        HOLD_REASON="GitHub could not be asked, so a $hold_label could not be ruled out"
       return ;;
     none)
       # No PR is associated with this exact commit. The remaining question is
@@ -259,7 +268,7 @@ else:
       ACCOUNTED="yes"; ACC_REASON="PR #$num $state, tip $tip received" ;;
     HELD)
       ACCOUNTED="no"; ACC_REASON="PR #$num is OPEN, not a terminal state"
-      HOLD_REASON="PR #$num is open and carries kit-hold, so a walkthrough is in flight" ;;
+      HOLD_REASON="PR #$num is open and carries $hold_label, so a walkthrough is in flight" ;;
     *)
       ACCOUNTED="no"; ACC_REASON="PR #$num is $state, not a terminal state" ;;
   esac

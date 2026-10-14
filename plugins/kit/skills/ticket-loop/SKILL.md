@@ -70,6 +70,9 @@ this one does not restate it.
 - **Apply the project's own rules.** Invoke `kit:project-rules` once, in
   `prepare`, and take every section a phase below reads from that one read. This
   skill does not restate them.
+- **Every label below is named canonically.** Read and write the project's
+  spelling of each, and skip one the project says it has none of — `kit:project-rules`
+  *Labels*. Where a skipped `kit-hold` changes what a step does, the step says so.
 
 ---
 
@@ -330,6 +333,9 @@ cannot lose a race with a green CI.
   gh pr edit <pr-number> --add-label kit-pinned   # only if the comment posted
   ```
 
+  A project with no `kit-pinned` label gets the comment and the records, and no
+  label write.
+
   Then invoke `kit:observations` and record each finding — one record per
   finding, passing `--pr <pr-number>`. The `claim` is the finding's heading and
   its **Call site now** `file:line`; the `check` greps that file for the
@@ -345,7 +351,9 @@ cannot lose a race with a green CI.
   ```
 
   `docs/labels.md` is the rule. A held PR still runs steps 4 and 5, and step 5's
-  `## Hold check` decides whether it is armed.
+  `## Hold check` decides whether it is armed. **A project with no `kit-hold`
+  label** gets the comment alone, and the hold is still this pass's decision:
+  carry it to step 5, which leaves the PR unarmed.
 
   If either write fails, the PR **stays in draft** — skip to step 6, report
   which write failed, and say this pass's hold is not in place — a `kit-hold`
@@ -354,8 +362,10 @@ cannot lose a race with a green CI.
 
 **Then hold it for its kind, if its plan was derived.** Two facts `prepare`
 already has, so look neither up again: the plan it resolved opens with
-`/kit:design`'s `Designed unattended` line, and the issue's labels carry none of
-`bug`, `enhancement`, `improve-codebase`, `technical-debt`. Both true means
+`/kit:design`'s `Designed unattended` line, and the issue carries no label the
+project spells for `bug`, `enhancement`, `improve-codebase` or `technical-debt`
+— `kit:project-rules` *Labels*, so `Type: Bug` counts where the project says it
+stands for `bug`. Both true means
 nobody has looked at a result whose acceptance is someone looking. It is the
 plan's line that decides, not whether this run designed it: a firing that
 resumes a stored derived plan owes the same hold.
@@ -426,7 +436,8 @@ green and unmerged until someone arms it by hand.
 
 Absent, or any other value, read the PR's labels (`gh pr view <pr-number> --json
 labels`) — not step 3's outcome, since a hold transcribed from triage is on it
-too. A PR carrying `kit-hold` gets `gh pr ready <pr-number>` alone: no
+too. A PR carrying `kit-hold` — or, in a project with no `kit-hold` label, one
+step 3 decided to hold — gets `gh pr ready <pr-number>` alone: no
 auto-merge, and so no snapshot and no poll, which exist only to time the arming.
 Only the label stands between it and the merge, so arming there merges it on
 green. For the same reason, read the labels once more just before `gh pr merge`,

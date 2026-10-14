@@ -199,8 +199,8 @@ the artifacts are the evidence, and the evidence is readable either way. Gating
 on the label as well sends a fully designed issue back to `/kit:design` because
 nobody applied a sticker — routine on projects where the same person files and
 implements and never labels their own tickets. Read the label where it exists —
-checking the project's own label mapping, since the canonical spelling is not the
-only one — for the freshness dating below and as corroboration. Never withhold
+in the project's spelling, which `kit:project-rules` *Labels* resolves — for the
+freshness dating below and as corroboration. Never withhold
 qualification for its absence, and don't ask the user to go add it.
 
 This is not in tension with `/kit:ship-ticket`, whose sweep *does* require the label
