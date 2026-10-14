@@ -66,7 +66,7 @@ notes) — but read them when they bear on the topic, not as an opening ritual.
 
 If the topic is "this whole area feels wrong" rather than a specific question,
 offer `kit:improve-codebase-architecture` — a scan-and-report is a better opening
-move than reading files ad hoc. It ends at a ranked report in `plans/`; reading
+move than reading files ad hoc. It ends at a ranked report in the plan cache; reading
 it together is a fine place for the conversation to go next, and picking a
 candidate off it is the user's call, not a step.
 
@@ -139,4 +139,4 @@ will be picked up immediately or its shape is genuinely non-obvious.
 
 - Make implementation changes. This is discussion only.
 - Create issues before the user explicitly says they're ready.
-- Write a `plans/` file. That's `/kit:design`'s output.
+- Write a file into the plan cache. That's `/kit:design`'s output.

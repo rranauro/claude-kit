@@ -63,8 +63,9 @@ Techniques are the easy part. Everything between them is where the workflow live
   arrives at all, on a ticket that continues as a `/kit:polish-ticket` when the
   walk turns something up.
 - **Handoff across a context boundary.** `/kit:design` stores a plan on the issue
-  it belongs to, mirrored into a gitignored `plans/` cache that `kit:start-ticket`
-  symlinks into every worktree, so the intended move is to converge, drop the
+  it belongs to, mirrored into an untracked local cache — `plans/` unless the
+  project names another — that `kit:start-ticket` links into every worktree when
+  it sits inside the repository, so the intended move is to converge, drop the
   plan, clear context, and run `kit:start-ticket` on it immediately — a clean
   window to implement in, against the repo the plan was written for. Storing it
   on the issue is what makes the boundary crossable by someone other than you:
@@ -77,8 +78,11 @@ Techniques are the easy part. Everything between them is where the workflow live
   gitignored file the app needs to boot. `kit:start-ticket` wires those back up, and
   enforces one worktree per issue — two is a trap that hides your own changes.
 - **Nothing to adopt.** No label vocabulary, no triage states, no `docs/agents/`
-  config, no block written into your `CLAUDE.md`. These commands read issues and
-  open PRs; how you triage, label, and run your process stays yours.
+  config, nothing written into a file you track. Where the kit offers to remember
+  a setting it is your `CLAUDE.local.md` or nowhere, and a rule you state in your
+  own words about labels, merging or PR bodies beats the kit's default. These
+  commands read issues and open PRs; how you triage, label, and run your process
+  stays yours.
 - **A review loop that distrusts reviewers.** `/kit:review-copilot` merges findings
   from multiple bots into one bucket per line and checks each claim against the
   actual code before acting on it — a "missing nil check" on a provably non-nil

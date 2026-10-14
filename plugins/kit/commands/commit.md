@@ -14,18 +14,20 @@ part a hook can't: deciding what a finding means and fixing it.
 - `git status` — see all modified and untracked files (never use -uall)
 - `git diff HEAD` — see all staged and unstaged changes
 - `git log --oneline -10` — see recent commit message style and conventions
-- `git rev-parse --abbrev-ref HEAD` — confirm we are NOT on main or master
-- `git diff main...HEAD --stat` — see file-level summary of all changes vs main
+- Resolve `<base>` as `kit:project-rules` *The base branch* says
+- `git rev-parse --abbrev-ref HEAD` — the current branch, for Step 2
+- `git diff origin/<base>...HEAD --stat` — see file-level summary of all changes vs `<base>`
 
 **Step 2 — Safety check:**
-If the current branch is `main` or `master`, STOP and tell the user. Never commit directly to main.
+If the current branch is `<base>`, `main` or `master`, STOP and tell the user. Never commit directly to the base branch.
 
 **Step 3 — Identify the project's quality gates:**
 
 Do not guess the toolchain. Read it from the project, in this order, and stop at
 the first that answers:
 
-1. `CLAUDE.md` — if it names the test/lint/security commands, use those verbatim.
+1. The project's rules, found as `kit:project-rules` says — if they name the
+   test/lint/security commands, use those verbatim.
 2. The manifest and its scripts — `package.json`, `Makefile`, `Gemfile`,
    `pyproject.toml`, `Cargo.toml`, `go.mod`.
 3. CI config — `.github/workflows/*.yml` runs the commands the project actually
@@ -39,7 +41,7 @@ silently passes is worse.
 
 - **Tests.** Derive the target set explicitly rather than saying "the affected
   tests" and improvising:
-  1. List the changed sources: `git diff main...HEAD --name-only`.
+  1. List the changed sources: `git diff origin/<base>...HEAD --name-only`.
   2. Map each to its test by the project's own convention — `app/models/foo.rb` →
      `spec/models/foo_spec.rb` under RSpec, `src/foo.ts` → `src/foo.test.ts`
      under Jest, and so on. Read an existing pair to confirm the convention
@@ -110,7 +112,7 @@ Name the running model in the trailer if you know it (e.g.
 
 **Step 8 — Confirm:**
 Run `git status` to verify the working tree is clean, and
-`git log --oneline main..HEAD` to show the user the commits as a set.
+`git log --oneline origin/<base>..HEAD` to show the user the commits as a set.
 
 **Arguments:** $ARGUMENTS
 If the user passed arguments, treat them as guidance for the commit message or scope (e.g., `/kit:commit fix auth bug` → focus the message on the auth fix).

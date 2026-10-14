@@ -233,10 +233,9 @@ evidence, and a reviewer will grade it that way.
 
 When the diff changes something visual, what a pass may drive to capture it is the
 project's to say, not this skill's — which browser, how it signs in to the app, and where
-the image goes. Read the `## Screenshot capture` section of `CLAUDE.md` as the PR's base
-branch has it — `git show origin/<base>:CLAUDE.md` — never the worktree's copy. The branch
-is the pass's own work, so a rule read from it is one the pass could have written to
-authorize itself; only a rule someone merged counts.
+the image goes. Read the `## Screenshot capture` section of the project's rules, taken **from the base
+branch** as `kit:project-rules` says, never the worktree's copy: a rule read from the
+pass's own branch is one the pass could have written to authorize itself.
 
 ```markdown
 ## Screenshot capture
@@ -261,9 +260,10 @@ A line that is missing allows nothing. Then:
   ask. Name the screenshots you would take, one per criterion they prove, and ask before
   capturing. On a no, write "Not captured — declined".
 - **No section** — capture nothing, in either mode. Write "Not captured — no capture rule
-  in CLAUDE.md". Attended, also show the person the section's three lines that would have
-  allowed it, to land on the base branch in a PR of its own: a section written on this
-  branch would not count for this run, and a run-only answer is not the project's rule.
+  in the project's rules". Attended, also show the person the section's three lines that
+  would have allowed it, for their `CLAUDE.local.md` or to land on the base branch in a PR
+  of its own: a section written on this branch would not count for this run, and a
+  run-only answer is not the project's rule.
 
 Put each uploaded URL in the body, captioned with its criterion. Every "Not captured" names
 what each screenshot would have shown, so the reviewer knows what to look at themselves.
@@ -297,7 +297,8 @@ possibilities — who or what is hit if this is wrong, and how a failure would s
 
 ## Output
 
-Read the `## Visual PR and review output` section of `CLAUDE.md` at the repo root:
+Read the `## Visual PR and review output` section of the project's rules, found as
+`kit:project-rules` says:
 
 ```markdown
 ## Visual PR and review output
@@ -309,8 +310,9 @@ Read the `## Visual PR and review output` section of `CLAUDE.md` at the repo roo
 - **Location** — the directory, relative to the repository root, with `<n>` the PR number. Before a PR exists, use the branch name for `<n>`.
 
 If the section is missing, ask once for both values, offering `markdown` and
-`tmp/reviews/pr-<n>/` as defaults. Then offer to add the section to `CLAUDE.md`,
-and write it only on a yes. If they decline, use the answers for this run only.
+`tmp/reviews/pr-<n>/` as defaults. Then offer to record it
+(`kit:project-rules`, *Recording a setting*); declined, use the answers for this
+run only.
 
 Unattended, ask nothing and offer nothing. With the section missing, write `markdown` to a
 fresh temporary directory outside the worktree: the PR is the copy anyone will read, and an

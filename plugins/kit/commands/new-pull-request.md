@@ -12,7 +12,10 @@ for a pull request.
 - If the branch has not been pushed or is behind, push it with `git push -u origin <branch>`.
 
 **Step 2 — Analyze all changes:**
-- Read the full diff with `git diff main...HEAD` to understand every change.
+- Resolve `<base>` as `kit:project-rules` *The base branch* says. `gh pr create`
+  below takes `--base <base>`, since the PR's default target is the repository's
+  default branch and a stated base may differ from it.
+- Read the full diff with `git diff origin/<base>...HEAD` to understand every change.
 - Review ALL commits (not just the latest) to build a complete picture.
 - If the branch name starts with a number (e.g., `218-...`), that's the issue number.
 
@@ -28,13 +31,17 @@ a PR the review skill cannot rely on. It also writes the issue reference.
   that when it intends to close the review round itself before the PR is ready
   to merge; without the token nothing here changes.
 
+A rule the project states about PR bodies (`kit:project-rules`) governs this
+body over the defaults here.
+
 ```
-gh pr create --title "the pr title" --body-file <the visual-pr-body.md it wrote, plus the trailer>
+gh pr create --base <base> --title "the pr title" --body-file <the visual-pr-body.md it wrote, plus the footer>
 ```
 
-Name the running model in the trailer if you know it (e.g.
-`Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>`); otherwise leave it as
-`Claude`. Do not hardcode a model version in this file — it goes stale.
+**The footer is the one the host's attribution instruction prescribes for PR
+descriptions**, or none if it prescribes none. Never a `Co-Authored-By` line:
+that is a commit trailer (`kit:commit` writes it), inert in a PR body and at odds
+with the host's footer.
 
 **Step 3b — Carry a hold forward, if the issue asked for one:**
 
@@ -79,8 +86,8 @@ this same edit is what holds it.
 **Step 4 — Confirm:**
 Print the PR URL so the user can review it.
 
-**Step 5 — Save ticket context to `tickets/`:**
-After the PR is created, write a summary file to `tickets/<pr-number>-<branch>.md`. It records why the change was made for whoever debugs it later — `/target-debug` reads these if you have it installed, and they stand on their own if you don't. Add `tickets/` to `.gitignore` if it isn't there already; these are local working notes, not repo content.
+**Step 5 — Save ticket context to the scratch notes:**
+After the PR is created, write a summary file to `<tickets>/<pr-number>-<branch>.md`, taking `<tickets>` from `kit:working-files`. It records why the change was made for whoever debugs it later — `/target-debug` reads these if you have it installed, and they stand on their own if you don't. These are local working notes, not repo content, and that skill keeps them out of git.
 
 Format:
 ```markdown
@@ -96,10 +103,10 @@ Format:
 <Bullet list of non-obvious choices made — trade-offs, alternatives rejected, architectural constraints>
 
 ## Files Touched
-<`git diff --stat main...HEAD`, grouped by concern>
+<`git diff --stat origin/<base>...HEAD`, grouped by concern>
 ```
 
-Create the `tickets/` directory if it doesn't exist. Tell the user the file has been saved.
+Tell the user the file has been saved.
 
 **Arguments:** $ARGUMENTS
 Bare `draft` and `unattended` tokens are read by Step 3 and are not guidance.

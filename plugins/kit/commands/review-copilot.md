@@ -20,13 +20,13 @@ Pull from these sources in parallel:
 
 - **Copilot inline:** `gh api repos/{owner}/{repo}/pulls/{number}/comments --jq '.[] | select(.user.login | test("copilot|github-actions"; "i")) | {source: "copilot-inline", id, path, line, body, diff_hunk}'`
 - **Copilot top-level review:** `gh api repos/{owner}/{repo}/pulls/{number}/reviews --jq '.[] | select(.user.login | test("copilot|github-actions"; "i")) | {source: "copilot-review", id, state, body}'`
-- **Claude review:** `gh api repos/{owner}/{repo}/issues/{number}/comments --jq '.[] | select(.body | startswith("<!-- claude-pr-review -->")) | {source: "claude-review", id, body}'` — note this hits the **issues** endpoint (PR-level comments), not pulls/comments. The reviewer posts under the human user's gh account, so the `<!-- claude-pr-review -->` HTML marker (set by `scripts/pr-review.sh`) is the authoritative way to find it. It's posted automatically by the `pr-review-on-create` hook wherever a project has registered it, or by a manual `/kit:start-review`; absent either, treat that like any empty source.
+- **Claude review:** `gh api repos/{owner}/{repo}/issues/{number}/comments --jq '.[] | select(.body | startswith("<!-- claude-pr-review -->")) | {source: "claude-review", id, body}'` — note this hits the **issues** endpoint (PR-level comments), not pulls/comments. The reviewer posts under the human user's gh account, so the `<!-- claude-pr-review -->` HTML marker (set by `pr-review.sh`) is the authoritative way to find it. It's posted automatically by the `pr-review-on-create` hook wherever a project has registered it, or by a manual `/kit:start-review`; absent either, treat that like any empty source.
 - **Shape review:** `gh api --paginate repos/{owner}/{repo}/issues/{number}/comments --jq '.[] | select(.body | startswith("<!-- kit-shape-review -->")) | {source: "shape-review", id, updated_at, body}' | jq -s 'max_by(.updated_at) // empty'` — the same endpoint as the Claude review. `--paginate` applies `--jq` page by page, so the latest is picked by the second `jq` over every page's matches; picking it inside `--jq` sees only one page of thirty. **Find it by the marker, never by author**: the common case is a reviewer who edited what `kit:shape-review` printed and posted it from their own account. Address the body as GitHub returns it, edits included, and never re-run the shape pass to regenerate it. **Where several marked comments exist, the most recently updated is the review** — a reviewer who reposts rather than edits means the new one, and addressing both applies the wording they replaced.
 
 > **Match logins case-insensitively** (the `"i"` flag is required). Copilot's *inline* comments are authored by login `Copilot` (capital C), while its top-level review bot is `copilot-pull-request-reviewer[bot]` (lowercase). Without `"i"` the inline pass silently returns nothing — the most important findings get missed.
 
-**Read `## Review sources` from the project's `CLAUDE.md`** (`copilot`,
-`claude-review`; absent, both). It changes no fetch and no finding — only how
+**Read `## Review sources` from the project's rules** (`kit:project-rules`) —
+`copilot`, `claude-review`; absent, both. It changes no fetch and no finding — only how
 Step 5 names an empty source: **not run** if undeclared, **missing** if declared.
 
 If all fetched sources are empty, tell the user "No automated review comments found", skip to Step 5 to name each source not run or missing, and close the round at Step 7.5. Stopping here leaves a round nobody can tell from one that never ran.
@@ -56,7 +56,7 @@ The shape review is one marker comment too, in the format `kit:shape-review` §5
 - Each `` ### <n>. <count name> — `<Class#method>` `` section is one finding. Key it on the `file:line` its **Call site now** line names.
 - The **After** panels are the fix the reviewer proposes, and **Costs** / **Placement** are its reasoning — carry all three as the finding text.
 - A heading ending `— contested` carries several **After — <move>** blocks and marks none preferred. Carry them all; Step 3 does not pick one.
-- The `<details><summary>Inventory</summary>` block is not a finding. A comment reading `**No shape findings.**` is an empty source.
+- The `<details><summary>Inventory</summary>` block is not a finding, and neither is the `**Not judged:**` line. A comment reading `**No shape findings.**` is an empty source.
 
 If the `<!-- claude-pr-review -->` comment is not present (the hook isn't registered for this project, nobody ran `/kit:start-review`, or it found nothing), there are no Claude findings to merge; build the buckets from the sources that did land.
 
@@ -313,17 +313,24 @@ Step 5 summary and let the caller continue — a pass that treats this as the en
 its own work leaves the round closed with auto-merge never enabled, which is the
 one state nothing downstream is watching for.
 
+**First, whether anything here may arm at all — in both modes.** Resolve it,
+and `<method>`, from the rules Step 2 read, as `kit:ticket-loop` `hand-off`
+step 5 does. Where that leaves the PR for a person, do not arm and do not ask:
+report it, with step 5's reason, and stop. Write no `kit-hold` — that is the
+project's standing rule, not a decision about this PR, and a CI gate re-running
+this step reads the same rule.
+
 **Run unattended, decide the merge yourself** — see `## Unattended` below, which
 owns that decision. Do not also ask. The record is already written: Step 7.5 does
 that in both modes.
 
 Otherwise, ask the user before enabling:
 
-> "Review findings addressed and pushed. Enable auto-merge (squash) for PR #<N>? GitHub will merge once checks pass."
+> "Review findings addressed and pushed. Enable auto-merge (<method>) for PR #<N>? GitHub will merge once checks pass."
 
-- On approval, run `gh pr merge <PR#> --auto --squash` (use the PR number resolved in Step 1).
+- On approval, run `gh pr merge <PR#> --auto --<method>` (use the PR number resolved in Step 1).
 - If the command errors because auto-merge is already enabled or the PR is already merged, that's fine — report and continue.
-- If it errors because auto-merge is disabled in repo settings, say so and let the user merge from the GitHub UI; do not fall back to a local merge.
+- If it errors because auto-merge is not allowed for the repository, that is step 5's left-for-a-person outcome, not a failure: say so and let the user merge from the GitHub UI; do not fall back to a local merge.
 - **If the user declines, record it as `kit-hold` on the PR**, then stop:
 
   ```
@@ -385,7 +392,8 @@ decision, and it does not remove the label either — clearing `kit-hold` is the
 human's statement, the same as everywhere else in this file.
 
 **Otherwise, decide the merge.** On a triage that escalated nothing — including
-one that pinned a skipped finding — `gh pr merge <N> --auto --squash`. With a
+one that pinned a skipped finding — `gh pr merge <N> --auto --<method>`, with
+the method Step 8 resolved, unless Step 8 found arming off. With a
 single review round there is nothing further to wait for, and leaving it off
 means the PR sits green until someone notices. Enabling it is idempotent, and
 the merge stays GitHub's to perform once checks pass.

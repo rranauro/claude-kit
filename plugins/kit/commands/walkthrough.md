@@ -54,7 +54,7 @@ Constituent skills:
 ## The artifact
 
 The `walkthrough` artifact, stored by `kit:ticket-artifacts` — the live copy in
-the cache at `plans/<issue>-walkthrough.md`, which the worktree shares with the
+the cache at `<plans>/<issue>-walkthrough.md`, which the worktree shares with the
 main checkout, and a marked comment on the issue that outlives both.
 
 **The cache is the live position; the comment is the record.** Write the file on
@@ -96,12 +96,13 @@ gates would sweep it up, say so and leave it out of the staged set explicitly.
 
 ## Step 1 · `derive-steps` — Turn the ticket into observable steps
 
-Read two sources, in this order:
+Resolve `<base>` as `kit:project-rules` *The base branch* says, then read two
+sources, in this order:
 
 1. `gh issue view <number>` — the acceptance criteria. These are *outcomes*
    ("field values render as plain text"), not click paths. They tell you what
    must be true, not how to see it.
-2. `git -C <worktree> diff origin/main...HEAD` — the change itself. This is what
+2. `git -C <worktree> diff origin/<base>...HEAD` — the change itself. This is what
    turns an outcome into a path: the templates, controllers, and views the diff
    touches are the screens the user has to reach.
 
@@ -117,7 +118,7 @@ are one step.
 Write each step as: what to do → what should happen. Concrete enough that the
 user doesn't have to guess which button, short enough to read in one breath.
 
-If the branch has no worktree yet, or `git log origin/main..HEAD` is empty,
+If the branch has no worktree yet, or `git log origin/<base>..HEAD` is empty,
 there is nothing to walk — stop and say so.
 
 ---

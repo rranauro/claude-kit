@@ -33,7 +33,7 @@ lets it push back: a claim no cheap command can test is a claim that has not bee
 stated sharply enough yet, and the fix is to sharpen the claim rather than to
 reach for a heavier check.
 
-Append it with `plugins/kit/scripts/observe.sh`, report the line it prints, and
+Append it with `${CLAUDE_PLUGIN_ROOT}/scripts/observe.sh`, report the line it prints, and
 **return to what you were doing**. The interruption ends here; that is the entire
 point.
 
@@ -42,7 +42,7 @@ point.
 ## `list` — what is in the drawer
 
 ```
-plugins/kit/scripts/observe.sh list
+${CLAUDE_PLUGIN_ROOT}/scripts/observe.sh list
 ```
 
 One line per record and the store's size. Nothing counts it on a schedule, so the
@@ -55,9 +55,9 @@ Report it and stop. Listing decides nothing.
 
 ## `triage` — review it and clear it down
 
-Run the skill's triage protocol. Its shape in one line: `observe.sh recheck` bins
+Run the skill's triage protocol. Its shape in one line: `${CLAUDE_PLUGIN_ROOT}/scripts/observe.sh recheck` bins
 every record by whether its witness still holds, and the user decides each bin
-before `observe.sh drop` clears it.
+before `${CLAUDE_PLUGIN_ROOT}/scripts/observe.sh drop` clears it.
 
 **This is its own pass, on its own invocation.** Triage against a session already
 carrying a ticket is the thing the store exists to prevent, arriving from the

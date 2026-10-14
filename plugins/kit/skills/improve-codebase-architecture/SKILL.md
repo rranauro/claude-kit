@@ -31,6 +31,10 @@ project's own design vocabulary:
 - The domain language in `CONTEXT.md` names the concepts; ADRs in `docs/adr/`
   record decisions this command should not re-litigate.
 
+`CONTEXT.md`, `docs/adr/` and `plans/` in this skill and its report format are
+the defaults: each means the location `kit:working-files` resolves for this
+project.
+
 Those two skills supply vocabulary and checks, not a procedure. Keep the survey
 at survey altitude: a candidate is a *direction* worth a day of someone's
 attention, not a designed class.
@@ -143,18 +147,16 @@ is in, and never merge the two.
 ### 3. Present candidates as an HTML report
 
 Write the report into the repository's `plans/` directory, so it sits beside the
-plans the other commands write and stays findable weeks later. Resolve the repo
-root with `git rev-parse --show-toplevel` from the main checkout, `mkdir -p` the
-directory if needed, and write to
+plans the other commands write and stays findable weeks later. Take its path
+from `kit:working-files`, ready to write, and write to
 `plans/architecture-review-<area>-<YYYY-MM-DD>.html`, where `<area>` is a short
 slug for what was scanned (`plans/architecture-review-themes-2026-08-23.html`).
 Same-day reruns over the same area overwrite; a different area gets its own file.
 
-`plans/` is gitignored and symlinked into every worktree by `kit:start-ticket`,
-so the report survives the session without landing in the repo. Add `/plans` to
-`.gitignore` if it isn't there already. Never write the report to `$TMPDIR` or
-any other path outside the project — a hashed temp path is unrecoverable the
-moment the terminal scrollback is gone, which is the same as not writing it.
+`plans/` is kept out of git, so the report survives the session without
+landing in the repo. Never write the report to `$TMPDIR` or any other ad hoc
+temporary path in place of that location — a hashed temp path is unrecoverable the moment the terminal scrollback
+is gone, which is the same as not writing it.
 
 Open it for the user — `xdg-open <path>` on Linux, `open <path>` on macOS,
 `start <path>` on Windows — and tell them the path relative to the repo root.
@@ -163,20 +165,19 @@ Open it for the user — `xdg-open <path>` on Linux, `open <path>` on macOS,
 `Strong` / `Worth exploring` / `Speculative` badge, so the page reads as a
 ranking from top to bottom rather than a list to be searched.
 
-The report uses **Tailwind via CDN** for layout and styling, and **Mermaid via
-CDN** for diagrams where a graph/flow/sequence reliably communicates the
-structure. Mix Mermaid with hand-crafted CSS/SVG visuals: use Mermaid when
-relationships are graph-shaped (who constructs a class and who calls it is
-exactly that), and hand-built divs/SVG when you want something more editorial.
-Each candidate gets a **before/after visualisation**. Be visual.
+The report is **self-contained** — inline styling, hand-built diagrams, no
+external script or stylesheet; [HTML-REPORT.md](HTML-REPORT.md) says why. Each
+candidate gets a **before/after visualisation**. Be visual.
 
 For each candidate, render a card with:
 
 - **Files** — which files and classes are involved, with `file:line`
 - **Count** — which count from §2 fired, and its number ("arity of 6"; "three
   class methods threading `page`"; "a hash with four literal keys")
-- **Cost** — both halves §2 requires, the cost then the reach. Mandatory; a card
-  missing either does not ship
+- **Cost** — §2's closer: the caller it burdens, or the change it makes harder.
+  Mandatory
+- **Reach** — §2's walk: the entry points that get to it, or what was searched
+  when it found none. Mandatory
 - **Solution** — one sentence on what would change, in the shape it would take:
   fold onto the model, reuse the existing derivation, name the structure
 - **Before / After diagram** — side-by-side, custom-drawn
@@ -287,9 +288,9 @@ One per surviving candidate, in rank order, each carrying:
   that sentence of any ticket carrying implementation detail, and this one
   always does. Without it the shape arrives wearing an authority a read-only
   scan cannot confer, and gets built.
-- **The Cost — both halves, the reach with it — and the counts stated as what
-  the scan observed, and a criterion telling the implementer to confirm them
-  before designing against them.** The scan reads; it runs nothing. A miscounted
+- **The Cost, the Reach, and the counts, stated as what the scan observed, and
+  a criterion telling the implementer to confirm them before designing against
+  them.** The scan reads; it runs nothing. A miscounted
   caller or a cascade it did not know was declared reaches the ticket
   indistinguishable from a fact, and every reader downstream inherits it — the
   ticket's own premise is the thing least likely to be rechecked. The reach
@@ -333,7 +334,7 @@ label a child to cover the gap — the label is triage's claim, not the scan's.
   ticket at a time.
 - Design a candidate in the report. One constructor line is the ceiling.
 - File a child whose problem statement asserts the scan's findings as verified.
-- Ship a card whose Cost is missing either half §2 requires.
+- Ship a card missing its Cost or its Reach.
 - Discard a candidate because its reach could not be determined. §2 says why.
 - Score a class down for anything on the not-a-finding list.
 - Propose relocating a file as the finding. Ownership first, layout after.

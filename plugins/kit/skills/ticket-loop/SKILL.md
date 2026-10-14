@@ -47,7 +47,7 @@ this one does not restate it.
   stays at the main checkout.
 - **Never merge locally, and never bring the base into the branch at all.** The
   PR merges on GitHub, through the auto-merge `hand-off` arms. Integrating
-  `main` *into* the branch is a different act and equally not a pass's: `git
+  the base *into* the branch is a different act and equally not a pass's: `git
   merge`, `git rebase` and `gh pr update-branch` are one operation under three
   names, and a PR that has fallen behind its base is the operator's to carry
   forward. A pass that integrates has moved the head its review round was
@@ -67,21 +67,22 @@ this one does not restate it.
   No phase is exempt: CI is the merge gate, so nothing here runs the suite to
   decide whether a PR may leave draft either. The one carve-out is the
   project's declared ship gate, `hand-off` step 4.
-- **Apply the project's own rules from `CLAUDE.md`.** This skill does not restate
-  them.
+- **Apply the project's own rules.** Invoke `kit:project-rules` once, in
+  `prepare`, and take every section a phase below reads from that one read. This
+  skill does not restate them.
 
 ---
 
 ## Phase 1 · `prepare` — Worktree and plan
 
 Invoke `kit:start-ticket <number>` via the Skill tool. Its mechanical half — the
-clean-main check, the worktree off `origin/main`, the branch name, the gitignored
+clean-main check, the worktree off the base branch, the branch name, the gitignored
 runtime wiring — asks nothing and runs identically in both modes.
 
 Its Step 10 is the gate. Attended, answer its questions as written: is the plan
 still fresh, its anchor-verification pass when it is not, then the summary and
 "proceed or adjust". Do not improvise a plan, do not require a stored plan when
-the issue already says what a plan would, and do not read `plans/` directly — a
+the issue already says what a plan would, and do not read the plan cache directly — a
 missing file is not a missing plan; `kit:ticket-artifacts` resolves it.
 
 Unattended, each of those becomes a rule:
@@ -136,8 +137,8 @@ reading.
 Not delegated — this is the work itself. Identical in both modes; there is no
 gate here, only the convergence rule at the end.
 
-Use the project's own test framework and layout — read them from `CLAUDE.md`, the
-manifest, or CI config rather than assuming. The Rails/RSpec form below is the
+Use the project's own test framework and layout — read them from the project's
+rules, the manifest, or CI config rather than assuming. The Rails/RSpec form below is the
 worked example; substitute the equivalent for your stack.
 
 **Test placement — extend before adding.** For each requirement in the plan, find
@@ -252,7 +253,7 @@ sweep reclaiming it mid-write is exactly what the lease prevents. The unlock is
 the last step below.
 
 **1 · Wait for the reviews the project runs.** Look for a `## Review sources`
-section in the project's `CLAUDE.md`, read as step 4 reads `## Ship gate`:
+section in the project's rules:
 
 ```markdown
 ## Review sources
@@ -263,7 +264,7 @@ The names are `copilot` and `claude-review`. Pass what it lists, comma-joined;
 absent, pass nothing and both are expected.
 
 ```
-plugins/kit/scripts/await-reviews.sh <pr-number> [--sources <listed>]
+${CLAUDE_PLUGIN_ROOT}/scripts/await-reviews.sh <pr-number> [--sources <listed>]
 ```
 
 It waits for CI to complete, requests the Copilot review, then blocks until
@@ -307,7 +308,9 @@ It runs here because the round's fixes are pushed, so it judges the head that
 will merge (it pushes nothing itself), and auto-merge is not yet armed, so a hold
 cannot lose a race with a green CI.
 
-- **`**No shape findings.**`** — post nothing and carry on to step 4.
+- **`**No shape findings.**`** — post nothing and carry on to step 4. Where it
+  carries a `**Not judged:**` line, post it with `gh pr comment`, no label — it
+  is the only record that changed code went unreviewed.
 - **No marked comment comes back** — the pass failed. Say so wherever this phase
   reports and carry on as if clean: a hold with no review to give its reason is
   worse than leaving the shape unjudged.
@@ -370,8 +373,7 @@ Where the shape hold already applied `kit-hold`, post the comment and skip the
 label write.
 
 **4 · Run the project's ship gate, if it declares one.** Look for a `## Ship
-gate` section in the project's `CLAUDE.md`, read as `kit:worktree-conventions`
-reads `## Worktrees`:
+gate` section in the project's rules:
 
 ```markdown
 ## Ship gate
@@ -390,8 +392,28 @@ names the grant the operator's project settings lack.
 **5 · Mark it ready, then arm auto-merge once the transition's run has
 registered.**
 
-**Decide first whether a held PR is armed at all.** Look for a `## Hold check`
-section in the project's `CLAUDE.md`, read as step 4 reads `## Ship gate`:
+**Decide first whether this PR is armed at all.** Look for an `## Auto-merge`
+section in the project's rules:
+
+```markdown
+## Auto-merge
+- off
+```
+
+or `- method: merge` (`squash`, `merge` or `rebase`). `off` says the kit never
+arms auto-merge here: the PR gets `gh pr ready <pr-number>` alone, held or not,
+and is left for a person to merge. `method:` is the flag every `gh pr merge
+--auto` below runs with. Absent, the method is the one the project's rules state
+in their own words (`kit:project-rules`), else `squash`.
+
+**Unless the section says `off`, ask the repository once:** `gh api
+repos/{owner}/{repo} --jq .allow_auto_merge`. `false` is the same outcome as
+`off` — ready alone, left for a person, reported with step 6's line rather than
+as a failure. A token that cannot see the setting gets nothing back: arm as
+below, and treat a refusal saying auto-merge is not allowed the same way.
+
+**Then decide whether a held PR is armed.** Look for a `## Hold check`
+section in the project's rules:
 
 ```markdown
 ## Hold check
@@ -418,7 +440,7 @@ sha=$(gh pr view <pr-number> --json headRefOid -q .headRefOid)
 gh api repos/{owner}/{repo}/commits/$sha/check-runs --jq '.check_runs[].id'
 gh pr ready <pr-number>
 # poll that same call until an id appears the first one did not report, to 120s
-gh pr merge <pr-number> --auto --squash
+gh pr merge <pr-number> --auto --<method>
 ```
 
 **Arming before the run registers merges the PR against the draft's checks.**
@@ -445,7 +467,7 @@ CI rather than failing here.
 
 **Skip the snapshot and the poll where the project declares that drafts run the
 full checks.** Look for a `## Draft checks` section in the project's
-`CLAUDE.md`, read as step 4 reads `## Ship gate`:
+rules:
 
 ```markdown
 ## Draft checks
@@ -512,6 +534,13 @@ or, where it reads off:
 > check the rollup named.> <Which declared review source, if any, did not
 > arrive, and which the project does not run.>"
 
+or, where step 5 did not arm it:
+
+> "PR #<N> is open, reviewed, and ready, and left for a person to merge — <the
+> project declares auto-merge off | the repository does not allow auto-merge>.
+> <Any failing check the rollup named.> <Which declared review source, if any,
+> did not arrive, and which the project does not run.>"
+
 or, when it carries `kit-hold`:
 
 > "PR #<N> is open, reviewed, ready and held (`kit-hold`) — <the shape review
@@ -522,8 +551,8 @@ or, when it carries `kit-hold`:
 > armed, since the project declares no hold check, so it merges only by hand
 > once the label comes off>. <Any failing check the rollup named.>"
 
-Where a held PR's auto-merge reads off although this pass armed it, use the
-reads-off line above with the hold's reason added.
+Where a held PR takes the reads-off line or the left-for-a-person line, use
+that line with the hold's reason added.
 
 Unattended, the same line goes in the report `/kit:ship-ticket` Step 3 writes.
 Drop the `/kit:reshape` clause where the third answer already ran it.

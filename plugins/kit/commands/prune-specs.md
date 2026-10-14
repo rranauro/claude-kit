@@ -10,8 +10,8 @@ rewritten, and file them as a ticket each way. It decides; it never deletes.
 project declares. Without one, the run takes the next group in the rotation
 below. Run it from the main checkout, against a clean tree.
 
-A group is declared in the project's `CLAUDE.md`, one line per group naming its
-top-level spec directories:
+A group is declared in the project's rules (`kit:project-rules`), one line per
+group naming its top-level spec directories:
 
 ```markdown
 ## Spec groups
@@ -97,7 +97,8 @@ evidence is a run of specs against the same mutation, which is this command's.
 ## Step 1 · `enumerate` — Find the files and the runner
 
 Read the project's spec directory and its test command from the project itself —
-`CLAUDE.md` first, then the manifest, then CI config. Do not assume `spec/` or
+the project's rules (`kit:project-rules`) first, then the manifest, then CI
+config. Do not assume `spec/` or
 `bundle exec rspec`; a wrong runner that errors is noise and one that silently
 passes is worse.
 
