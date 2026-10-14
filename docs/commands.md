@@ -145,6 +145,7 @@ handoff is added.
 | `kit:worktree-reclaim` | The other end: reclaiming a worktree, one named target or a sweep, attended or not. Splits the directory from the branch — a checkout is restorable in one command, so freeing one costs nothing, while a branch is deleted **only where GitHub accounts for its tip**. That test is why the skill exists: a squash-merge and work that was never pushed produce an identical `git branch -d` refusal, and every previous copy read it as the first and force-deleted the second. Its mechanical half is `scripts/worktree-reclaim.sh`, pinned by `tests/worktree-reclaim.sh` against throwaway repositories. |
 | `kit:worktree-conventions` | Where worktrees live and who creates them — delegates to the project's own command when it has one, and detects the resulting path from git rather than assuming it. See [worktrees](worktrees.md). |
 | `kit:project-rules` | One lookup for every kit section — the toplevel and sub-project `CLAUDE.md` and the `CLAUDE.local.md` beside either, read once per pass. **Per section, the nearer file wins, and at the same level `CLAUDE.local.md` beats `CLAUDE.md`**; sections are never merged. It exists so a rule a developer wrote somewhere reasonable is not honoured by one reader and missed by the next, and so a setting the kit remembers lands in `CLAUDE.local.md` rather than a file the project tracks. |
+| `kit:working-files` | Where the kit keeps a project's working files — the plan cache, the PR scratch notes, the glossary and the ADR directory — read from `## Working files`, each defaulting to its toplevel location. Every reader asks it rather than building the path, so a project that moves one moves it for all of them. It also keeps a local one out of git through the clone's `info/exclude`, **never a tracked `.gitignore`**: these writes run from the main checkout, where an added line is a change no ticket owns. |
 | `kit:triage-memory` | Clears down an auto-memory directory that has grown past its usefulness — bins every memory as stale, workflow, duplicate, or unclassified, and trades continuously-loaded memory for a `WORKFLOW.md` that's read only when the work calls for it. |
 
 ## Assumptions
@@ -196,6 +197,11 @@ app unless a merged section says it may.
 
 **Spec groups are declared there as well.** `## Spec groups` is what
 `/kit:prune-specs <group>` reads; the command owns its format.
+
+**So is where the kit's working files live.** `## Working files` moves the plan
+cache, the PR scratch notes, the glossary or the ADR directory off the root, one
+key each; `kit:working-files` owns its format. Absent, every one stays where it
+always was.
 
 **External commands these call.** Beyond the [companion skills](companion-skills.md),
 the workflow invokes `/simplify` (`kit:ticket-loop` `simplify`), `/loop` (drives
