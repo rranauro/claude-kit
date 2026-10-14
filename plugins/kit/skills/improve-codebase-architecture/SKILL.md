@@ -175,10 +175,10 @@ For each candidate, render a card with:
 - **Files** — which files and classes are involved, with `file:line`
 - **Count** — which count from §2 fired, and its number ("arity of 6"; "three
   class methods threading `page`"; "a hash with four literal keys")
-- **Cost** — the caller it burdens, or the change it makes harder: §2's closer.
-  Mandatory; a card without one does not ship
-- **Reach** — the entry points that get to it, or that you searched and found
-  none, and what you searched. Mandatory, for the reason §2 gives
+- **Cost** — §2's closer: the caller it burdens, or the change it makes harder.
+  Mandatory
+- **Reach** — §2's walk: the entry points that get to it, or what was searched
+  when it found none. Mandatory
 - **Solution** — one sentence on what would change, in the shape it would take:
   fold onto the model, reuse the existing derivation, name the structure
 - **Before / After diagram** — side-by-side, custom-drawn
