@@ -5,7 +5,7 @@
 # prose. See plugins/kit/skills/worktree-reclaim/SKILL.md.
 #
 #   worktree-reclaim.sh [--repo DIR] [--target BRANCH|PATH] [--act]
-#                       [--remove-cmd "CMD [<branch>] [<path>]"] [--worktree-root DIR]
+#                       [--remove-cmd CMD] [--worktree-root DIR]
 #   worktree-reclaim.sh [--repo DIR] --account BRANCH
 #
 # --worktree-root is the caller asserting that the directory holds nothing but
