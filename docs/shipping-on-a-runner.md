@@ -114,27 +114,23 @@ every call at a minimum duration and treats an under-floor return as a hard
 stop, not a quiet "nothing startable" — the failure mode that's actually
 dangerous to a run nobody is watching.
 
-Unlike the CI gate, this runner doesn't need to construct a
-`plugin_marketplaces` registration by hand, and it does not rely on the target
-checkout's `.claude/settings.json` either. Print mode does not load the project
-setting source, so however the kit reaches an interactive session against that
-repo — an enabled marketplace entry, an inline `.claude/` plugin — none of it is
-in scope for a `claude -p` call, and `/kit:list` comes back "Unknown command".
-The runner loads the kit itself instead: every call, `-p` and `--bg` alike,
-passes `--plugin-dir` set to the plugin the script lives in. Nothing has to be
-registered or enabled in the target repo for `/kit:` to resolve, and two things
-follow for whoever sets one up:
+Unlike the CI gate, this runner constructs no `plugin_marketplaces`
+registration, and nothing in the target repo decides whether `/kit:` resolves.
+`ship-startable.sh` passes `--plugin-dir`, set to the plugin it lives in, on
+every call — `-p` and `--bg` alike — because print mode does not load the
+project setting source: however the kit reaches an interactive session against
+that repo, a `claude -p` call never sees it, and `/kit:list` comes back
+"Unknown command".
 
-- **The kit that runs is the copy you invoked the script from.** Run it from a
-  clone and the tickets ship on that clone's checkout of the kit, not on
-  whatever version the target repo's sessions have installed. Run it from the
-  installed plugin's own `scripts/` directory to keep the two the same.
-- **Configuring the target repo's settings does not fix a run that fails to
-  resolve.** Look at the path the script was run from instead.
+**So the kit a run ships with is the copy the script was launched from.** From a
+clone, tickets ship on that clone's kit, not on whatever the target repo's
+sessions have installed; launch it from the installed plugin's own `scripts/` to
+keep the two the same. A run whose commands do not resolve is fixed at that
+path, not in the target repo's settings.
 
 Still worth a real smoke test against one ticket before trusting the runner
-with a whole epic — the floor-duration check above is the safety net if a
-command does not resolve.
+with a whole epic — the per-call minimum-duration floor above is the safety net
+if a command does not resolve.
 
 ## The permission grant is broader than tending's, on the same split
 
