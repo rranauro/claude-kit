@@ -116,10 +116,13 @@ gh pr view <n> --json comments \
 If that returns a review, use it — don't re-run. It's the persistent copy and it
 already lives where colleagues can see it.
 
-**Otherwise collect the detached run** from `fire-review`, at the path its
-launch line printed.
+**Otherwise collect the detached run** from `fire-review`, by what its launch
+line said: a file it is `writing to:`, or — on your own PR — the marked comment
+above once it is `posting as a PR comment`. A comment check that ran before the
+detached review finished says nothing, so poll the same query rather than read
+an empty result as no review.
 
-Wait for the file rather than re-running — a second invocation duplicates the
+Wait for the file or the comment rather than re-running — a second invocation duplicates the
 work and the token spend. If it never arrives, read the tail of the log for the
 failure and report it. **A detached run that dies is silent by construction**;
 the log is the only place it surfaces, so never read the absence of an error as

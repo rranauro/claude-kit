@@ -25,8 +25,10 @@ The file lands in the main checkout, under the project the PR changes — found
 from the PR's own file list, not the local diff, because `/kit:start-review`
 runs it from the main checkout where that diff is empty. A project that declares
 a `Location:` under `## Visual PR and review output`, in the files and order
-`kit:project-rules` gives, gets it there, beside what
-`kit:visual-pr` and `kit:visual-review` write; otherwise it goes to
+`kit:project-rules` gives, gets it there — the setting `kit:visual-pr` and
+`kit:visual-review` read, though a relative one resolves inside the project
+the review is filed under, so in a monorepo it need not sit beside what they
+write; otherwise it goes to
 `tmp/reviews/pr-<n>/` where that is gitignored, and inside `.git` where it is
 not, so a review never shows up as untracked work. The script prints the path,
 which is the only copy of it a caller should read.

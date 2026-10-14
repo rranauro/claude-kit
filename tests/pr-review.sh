@@ -51,7 +51,9 @@ new_sandbox() {
 case "$*" in
   "repo view"*)         echo "owner/repo" ;;
   "api user"*)          echo "me" ;;
-  *"--json author"*)    echo "colleague"; echo "2 files changed, +5 -1"; cat "$PR_FILES" ;;
+  *"--json author"*)    echo "colleague"; echo "2 files changed, +5 -1" ;;
+  # The REST endpoint pages; `gh pr view --json files` would stop at 100.
+  *"/pulls/7/files"*)   cat "$PR_FILES" ;;
 esac
 exit 0
 GH
@@ -97,6 +99,13 @@ mkdir -p "$MAIN/rx"; touch "$MAIN/rx/Gemfile"; echo "tmp/" > "$MAIN/.gitignore";
 pr_files rx/app/models/user.rb rx/app/views/users/show.html.erb
 review
 assert_file "$MAIN/rx/tmp/reviews/pr-7/claude-review.md" "written under rx/, though main's diff is empty"
+end_sandbox
+
+new_sandbox "a PR past 100 files is placed from all of them"
+mkdir -p "$MAIN/rx" "$MAIN/admin"; touch "$MAIN/rx/Gemfile" "$MAIN/admin/package.json"; echo "tmp/" > "$MAIN/.gitignore"; commit
+pr_files $(for i in $(seq 1 120); do echo "rx/app/models/m$i.rb"; done) admin/src/index.ts
+review
+assert_file "$MAIN/tmp/reviews/pr-7/claude-review.md" "a PR spanning two projects lands at the root"
 end_sandbox
 
 new_sandbox "a review run from a linked worktree still lands in the main checkout"
