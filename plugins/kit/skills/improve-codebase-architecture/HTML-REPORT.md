@@ -28,7 +28,7 @@ don't replace it with utility classes.
     <style>
       :root {
         --ground: #fafaf9; --ink: #0f172a; --muted: #64748b; --rule: #e2e8f0;
-        --accent: #059669; --cost: #dc2626; --warn: #d97706; --owner: #1e293b;
+        --accent: #047857; --cost: #dc2626; --warn: #b45309; --owner: #1e293b;
       }
       body { margin: 0; background: var(--ground); color: var(--ink);
              font: 16px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
@@ -61,6 +61,8 @@ don't replace it with utility classes.
       .diagram rect.cost { stroke: var(--cost); stroke-width: 2; }
       .diagram rect.owned { fill: var(--owner); }
       .diagram text.owned { fill: #fff; }
+      .diagram marker path { fill: var(--ink); }
+      .diagram marker.cost path { fill: var(--cost); }
     </style>
   </head>
   <body>
@@ -132,7 +134,8 @@ them uses what it reads." Draw it as one inline `<svg>` inside a `.diagram`: a
 column of caller boxes on the left, the class in the middle, the owning model on
 the right, edges as `<path>`s between them. Colour the costly box and its edges
 with `cost`, and give the owning model the `owned` fill — the scaffold's rules
-colour them, so the SVG carries no hex. Set a `viewBox` so it scales with the
+colour them, so the SVG carries no hex. A marker does not inherit its path's
+stroke, so a cost edge ends in the `cost` marker, not the plain one. Set a `viewBox` so it scales with the
 column rather than overflowing it.
 
 ```html
@@ -141,6 +144,10 @@ column rather than overflowing it.
        aria-label="OrdersController and ImportJob both construct Order::Intake, which reads Order">
     <defs>
       <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5"
+              markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M0 0L10 5L0 10z" />
+      </marker>
+      <marker id="arrow-cost" class="cost" viewBox="0 0 10 10" refX="10" refY="5"
               markerWidth="6" markerHeight="6" orient="auto-start-reverse">
         <path d="M0 0L10 5L0 10z" />
       </marker>
@@ -153,8 +160,8 @@ column rather than overflowing it.
       <rect class="owned" x="410" y="80" width="100" height="32" />
       <text class="owned" x="460" y="100">Order</text>
     </g>
-    <path class="edge cost" d="M160 46 L200 90" marker-end="url(#arrow)" />
-    <path class="edge cost" d="M160 146 L200 104" marker-end="url(#arrow)" />
+    <path class="edge cost" d="M160 46 L200 90" marker-end="url(#arrow-cost)" />
+    <path class="edge cost" d="M160 146 L200 104" marker-end="url(#arrow-cost)" />
     <path class="edge call" d="M370 96 L410 96" marker-end="url(#arrow)" />
   </svg>
 </div>
