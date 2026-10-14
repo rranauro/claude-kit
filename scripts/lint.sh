@@ -8,8 +8,7 @@ set -euo pipefail
 # plugin version that would stop installs from updating at all, a piece that
 # would leave the kit without saying who wrote it, a vendored skill that dropped
 # the notice its licence requires, an inline skill whose model pin would
-# outlive it, and a prompt file that runs a kit script by a path only this
-# checkout has.
+# outlive it, and a kit script named by a path only this checkout has.
 #
 # Shape only, and it stays under a second so it is worth running before every
 # push. Behaviour is asserted in tests/, which CI runs as its own step.
