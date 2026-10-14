@@ -23,21 +23,39 @@ If the current branch is `<base>`, `main` or `master`, STOP and tell the user. N
 
 **Step 3 — Identify the project's quality gates:**
 
-Do not guess the toolchain. Read it from the project, in this order, and stop at
-the first that answers:
+**Gates belong to the app a file lives in, not to the repository.** A monorepo
+can keep its Rails app in `rx/` with nothing at the root, and RuboCop or Brakeman
+run from the root read the wrong config or find nothing to check. So before
+reading any gate, sort the changed files by app: a file belongs to the nearest
+directory at or above it whose manifest names a gate's tool — a linter, a
+security scanner, a test runner — the walk Bundler and npm
+make to find their own root. Nearest *gateable*, not nearest: an engine's own
+`gemspec` Gemfile inside a Rails app names no linter, so its files fall through to
+the app above, which is how `hooks/rails-quality-gates.sh` resolves the same
+question. A single-app repository resolves every file to the root, and nothing
+below changes for it.
+
+Do not guess the toolchain. For each app, read it in this order, and stop at the
+first that answers:
 
 1. The project's rules, found as `kit:project-rules` says — if they name the
    test/lint/security commands, use those verbatim.
-2. The manifest and its scripts — `package.json`, `Makefile`, `Gemfile`,
-   `pyproject.toml`, `Cargo.toml`, `go.mod`.
+2. The app's manifest and its scripts — `package.json`, `Makefile`, `Gemfile`,
+   `pyproject.toml`, `Cargo.toml`, `go.mod`, in that app's directory.
 3. CI config — `.github/workflows/*.yml` runs the commands the project actually
-   considers authoritative.
+   considers authoritative; read the steps whose `working-directory` is that app.
 
-If none of those answer, ask the user how to run tests and linting rather than
-inventing a command. A wrong command that errors is noise; a wrong command that
+If no app the change touches answers, ask the user how to run tests and linting
+rather than inventing a command. Where some do, a changed file outside all of
+them is reported under Step 4, not asked about — a README edit beside a Rails
+app is not a question. A wrong command that errors is noise; a wrong command that
 silently passes is worse.
 
 **Step 4 — Run the gates on what changed:**
+
+Run each app's gates from that app's directory, on that app's changed files, with
+their paths made relative to it — where the tool takes files at all; a scanner
+that reads the whole app runs on the whole app. An app's gates never run on another app's files.
 
 - **Tests.** Derive the target set explicitly rather than saying "the affected
   tests" and improvising:
@@ -59,8 +77,10 @@ silently passes is worse.
 - **Security scan:** if the project has one wired up, run it. Show any findings
   with file and line numbers and attempt a fix. Do not commit unresolved
   high-confidence warnings without telling the user.
-- If a gate does not exist for this project, skip it and say so — don't
-  substitute a different tool.
+- If a gate does not exist for an app, skip it and say so, naming the app's
+  directory and the gate — don't substitute a different tool. A changed file
+  that no gateable manifest sits above gets the same line: a skipped gate
+  otherwise reads exactly like a passing one.
 
 **Step 5 — Group the changes into commits:**
 
