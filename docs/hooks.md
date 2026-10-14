@@ -10,8 +10,16 @@ and posts it as a comment. Kill switch: `export SKIP_PR_REVIEW=1`.
 
 `rails-quality-gates.sh` — a `PreToolUse` hook that holds `git commit` to RuboCop
 and Brakeman on the staged Ruby files, blocking the commit with the tool output
-so Claude fixes it and retries. No-ops unless the `Gemfile` carries both. Kill
-switch: `export SKIP_RAILS_GATES=1`.
+so Claude fixes it and retries. Each file is gated by the nearest `Gemfile` above
+it that carries both tools, with the tools run from that app's directory. A Rails
+app nested below the repository root is therefore gated like one at the root.
+Kill switch: `export SKIP_RAILS_GATES=1`.
+
+A skipped gate looks exactly like a passing one, so where a commit stages Ruby in
+a Rails app and nothing gated it, the hook prints one line saying which app was
+skipped and why. That covers a `Gemfile` without both tools and the kill switch
+being set. A commit with no Ruby staged, or none inside a Rails app, prints
+nothing.
 
 ## Registering them
 
