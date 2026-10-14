@@ -26,9 +26,19 @@ gh pr view <n> --json headRefOid,baseRefOid
 git fetch origin pull/<n>/head        # lands in FETCH_HEAD; creates no branch
 git diff <base>...<head> -- '*.rb' '*_controller.js'
 git show <head>:<path>                # a whole file, when a hunk cannot say what a method reads of self
+git diff --name-only <base>...<head> -- . ':!*.rb' ':!*_controller.js'
 ```
 
 Cite `file:line` at the head SHA.
+
+**The filter is the axis's reach, not the diff's.** `kit:rails-codebase-design`
+scores Ruby and Stimulus; a React component or a server-rendered template has
+no axis here, and judging one on Ruby terms is the misreading its §4 warns of.
+So the last command lists what the filter left out, and from it pick the files
+that hold code — a component, a module, a template or partial. Data, config,
+docs, lockfiles, styles and images carry no object shape; leave them off. Those
+files are not judged, and the comment says so by name: a review that skipped
+them reads as clean otherwise.
 
 ## 2 — Inventory what the diff introduces
 
@@ -130,6 +140,8 @@ count with several callers above one with one.
 
 **<n> findings, <c> contested**
 
+**Not judged:** `<path>`, `<path>` — no axis here for this code; read it yourself.
+
 ### 1. <count name> — `<Class#method>` — contested
 
 **Call site now** (`<file:line>`)
@@ -190,6 +202,11 @@ one nobody looked at. **With no findings**, the line under the heading reads
 `**No shape findings.**` and the inventory is open rather than folded, since it
 is now the whole content. A filtered diff that is empty says so in place of the
 table.
+
+**The `**Not judged:**` line is present whenever Gather picked a file, and
+absent when it picked none** — findings or not, so a Ruby-only PR gets the
+comment it always did. With no findings it sits under `**No shape findings.**`,
+which without it would claim more than this pass read.
 
 ## 6 — Deliver
 
