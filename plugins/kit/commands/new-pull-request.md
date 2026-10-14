@@ -38,11 +38,10 @@ body over the defaults here.
 gh pr create --base <base> --title "the pr title" --body-file <the visual-pr-body.md it wrote, plus the footer>
 ```
 
-**The footer is whatever is prescribed for PR descriptions** — by the project's
-rules first, then by the host's own attribution instruction — and nothing when
-neither prescribes one. Never a `Co-Authored-By` line: that is a commit trailer,
-`kit:commit` writes it where it means something, and in a PR body it is inert at
-best and contradicts the host's footer at worst.
+**The footer is the one the host's attribution instruction prescribes for PR
+descriptions**, or none if it prescribes none. Never a `Co-Authored-By` line:
+that is a commit trailer (`kit:commit` writes it), inert in a PR body and at odds
+with the host's footer.
 
 **Step 3b — Carry a hold forward, if the issue asked for one:**
 
