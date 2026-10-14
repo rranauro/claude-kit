@@ -35,12 +35,14 @@ A rule the project states about PR bodies (`kit:project-rules`) governs this
 body over the defaults here.
 
 ```
-gh pr create --base <base> --title "the pr title" --body-file <the visual-pr-body.md it wrote, plus the trailer>
+gh pr create --base <base> --title "the pr title" --body-file <the visual-pr-body.md it wrote, plus the footer>
 ```
 
-Name the running model in the trailer if you know it (e.g.
-`Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>`); otherwise leave it as
-`Claude`. Do not hardcode a model version in this file — it goes stale.
+**The footer is whatever is prescribed for PR descriptions** — by the project's
+rules first, then by the host's own attribution instruction — and nothing when
+neither prescribes one. Never a `Co-Authored-By` line: that is a commit trailer,
+`kit:commit` writes it where it means something, and in a PR body it is inert at
+best and contradicts the host's footer at worst.
 
 **Step 3b — Carry a hold forward, if the issue asked for one:**
 
