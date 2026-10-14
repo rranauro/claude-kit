@@ -16,8 +16,8 @@ and never place a worktree somewhere the project didn't choose.
 
 ## Step 1 — Read the convention
 
-Look for a `## Worktrees` section in the project's `CLAUDE.md` (root first, then
-any that applies to the path you're working in):
+Look for a `## Worktrees` section in the project's rules, found as
+`kit:project-rules` says — a sub-project's or a `CLAUDE.local.md` can hold it:
 
 ```markdown
 ## Worktrees
@@ -39,8 +39,9 @@ any that applies to the path you're working in):
 
 If there's no such section, check whether the project obviously has one anyway —
 a `worktree` recipe in a `justfile`, a `make worktree` target, a script named for
-it. If you find one, **ask** before using it, and offer to record the answer in
-`CLAUDE.md` so the next session doesn't re-derive it.
+it. If you find one, **ask** before using it, and offer to record the answer as
+`kit:project-rules` *Recording a setting* allows, so the next session doesn't
+re-derive it.
 
 Absent both, use the fallback in Step 4.
 

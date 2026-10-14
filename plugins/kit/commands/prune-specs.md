@@ -10,8 +10,8 @@ rewritten, and file them as a ticket each way. It decides; it never deletes.
 project declares. Without one, the run takes the next group in the rotation
 below. Run it from the main checkout, against a clean tree.
 
-A group is declared in the project's `CLAUDE.md`, one line per group naming its
-top-level spec directories:
+A group is declared in the project's rules (`kit:project-rules`), one line per
+group naming its top-level spec directories:
 
 ```markdown
 ## Spec groups

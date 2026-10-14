@@ -25,7 +25,7 @@ Pull from these sources in parallel:
 
 > **Match logins case-insensitively** (the `"i"` flag is required). Copilot's *inline* comments are authored by login `Copilot` (capital C), while its top-level review bot is `copilot-pull-request-reviewer[bot]` (lowercase). Without `"i"` the inline pass silently returns nothing — the most important findings get missed.
 
-**Read `## Review sources` from the project's `CLAUDE.md`** (`copilot`,
+**Read `## Review sources` from the project's rules** (`kit:project-rules`; `copilot`,
 `claude-review`; absent, both). It changes no fetch and no finding — only how
 Step 5 names an empty source: **not run** if undeclared, **missing** if declared.
 
