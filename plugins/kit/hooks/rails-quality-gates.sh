@@ -64,53 +64,38 @@ names_rails() {
   [ -f "$1/Gemfile" ] && grep -Eq "^[[:space:]]*gem[[:space:]]+['\"](rails|railties)['\"]" "$1/Gemfile"
 }
 
-# One "gated|ungated <TAB> app-dir <TAB> file" line per file in a Rails app or
-# under a gateable Gemfile; Ruby in neither is not this hook's business.
-# A read loop, not `mapfile` or an associative array: macOS ships bash 3.2.
-RESOLVED=""
+parent() { # dir -> its parent, without a dirname fork per level
+  case "$1" in */*) printf '%s' "${1%/*}" ;; *) printf '.' ;; esac
+}
+
+# GATED: one "app-dir <TAB> file" row per file under a gateable Gemfile.
+# UNGATED: the Rails apps a staged file sits in that nothing could gate. Ruby in
+# neither is not this hook's business.
+# Strings, not `mapfile` or an associative array: macOS ships bash 3.2.
+GATED=""
+UNGATED=""
 while IFS= read -r f; do
   [ -n "$f" ] || continue
-  dir=$(dirname "$f")
+  dir=$(parent "$f")
   rails=""
-  kind=""
   while :; do
-    if carries_gates "$dir"; then kind=gated; break; fi
+    if carries_gates "$dir"; then
+      GATED+="$dir	$f
+"
+      rails=""
+      break
+    fi
     [ -z "$rails" ] && names_rails "$dir" && rails="$dir"
     [ "$dir" = "." ] && break
-    dir=$(dirname "$dir")
+    dir=$(parent "$dir")
   done
-  if [ -n "$kind" ]; then
-    RESOLVED+="gated	$dir	$f
+  [ -n "$rails" ] && UNGATED+="$rails
 "
-  elif [ -n "$rails" ]; then
-    RESOLVED+="ungated	$rails	$f
-"
-  fi
 done <<EOF
 $RB_LIST
 EOF
 
-[ -n "$RESOLVED" ] || exit 0
-
-apps_of() { # kind
-  printf '%s' "$RESOLVED" | awk -F'\t' -v k="$1" '$1 == k { print $2 }' | sort -u
-}
-label() { # app-dir
-  if [ "$1" = "." ]; then printf 'the app at the repository root'; else printf '%s' "$1"; fi
-}
-
-NOTICE=""
-if [ -n "${SKIP_RAILS_GATES:-}" ]; then
-  NOTICE="Rails quality gates skipped: SKIP_RAILS_GATES is set, so RuboCop and Brakeman did not run on this commit."
-else
-  UNGATED=""
-  while IFS= read -r app; do
-    [ -n "$app" ] && UNGATED+="${UNGATED:+, }$(label "$app")"
-  done <<EOF
-$(apps_of ungated)
-EOF
-  [ -n "$UNGATED" ] && NOTICE="Rails quality gates skipped for $UNGATED: no Gemfile at or above it carries both rubocop and brakeman."
-fi
+[ -n "$GATED$UNGATED" ] || exit 0
 
 # A systemMessage is what reaches the person; plain stdout on exit 0 only
 # reaches the transcript view.
@@ -118,7 +103,18 @@ say_notice() {
   NOTICE="$NOTICE" python3 -c 'import json, os; print(json.dumps({"systemMessage": os.environ["NOTICE"]}))'
 }
 
-[ -n "${SKIP_RAILS_GATES:-}" ] && { say_notice; exit 0; }
+if [ -n "${SKIP_RAILS_GATES:-}" ]; then
+  NOTICE="Rails quality gates skipped: SKIP_RAILS_GATES is set, so RuboCop and Brakeman did not run on this commit."
+  say_notice
+  exit 0
+fi
+
+NOTICE=""
+if [ -n "$UNGATED" ]; then
+  NAMES=$(printf '%s' "$UNGATED" | sort -u \
+    | sed 's|^\.$|the app at the repository root|' | paste -sd, - | sed 's/,/, /g')
+  NOTICE="Rails quality gates skipped for $NAMES: no Gemfile at or above it carries both rubocop and brakeman."
+fi
 
 FAILURES=""
 
@@ -145,19 +141,18 @@ while IFS= read -r app; do
   where=""
   [ "$app" = "." ] || where=" in $app"
 
+  # Never empty: every app listed here owns at least one row, which is what
+  # keeps "${RB_FILES[@]}" clear of bash 3.2's `set -u` trap below.
   RB_FILES=()
-  while IFS='	' read -r kind dir f; do
-    [ "$kind" = gated ] && [ "$dir" = "$app" ] && RB_FILES+=("${f#"$app"/}")
+  while IFS='	' read -r dir f; do
+    [ "$dir" = "$app" ] && RB_FILES+=("${f#"$app"/}")
   done <<EOF
-$RESOLVED
+$GATED
 EOF
 
   # --- RuboCop, scoped to what's being committed ------------------------------
-  # Guard the count before expanding: "${arr[@]}" on an empty array trips
-  # `set -u` on bash 3.2.
-  if [ "${#RB_FILES[@]}" -gt 0 ]; then
-    if ! RUBOCOP_OUT=$(cd "$app" && bundle exec rubocop --force-exclusion "${RB_FILES[@]}" 2>&1); then
-      FAILURES+="RuboCop failed on the staged Ruby files${where}:
+  if ! RUBOCOP_OUT=$(cd "$app" && bundle exec rubocop --force-exclusion "${RB_FILES[@]}" 2>&1); then
+    FAILURES+="RuboCop failed on the staged Ruby files${where}:
 
 $(trim "$RUBOCOP_OUT")
 
@@ -165,7 +160,6 @@ Run \`bundle exec rubocop -A\` on those files${where:+ from $app} for the autoco
 then decide the rest by hand — do not blanket-disable cops to get past this gate.
 
 "
-    fi
   fi
 
   # --- Brakeman, whole app (it has no meaningful per-file mode) ---------------
@@ -183,7 +177,7 @@ commit body rather than silently ignoring it.
     fi
   fi
 done <<EOF
-$(apps_of gated)
+$(printf '%s' "$GATED" | cut -f1 | sort -u)
 EOF
 
 if [ -z "$FAILURES" ]; then
