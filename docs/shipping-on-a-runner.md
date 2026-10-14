@@ -142,8 +142,8 @@ all, which is the failure this grant now avoids. A held PR is armed only where
 the project declares `## Hold check` (see `commands.md`). It must grant `gh pr ready` and the kit's own scripts too. `hand-off`
 takes the PR out of draft with `gh pr ready` before arming, and a pass refused
 it parks with a finished PR left in draft. The scripts are matched by a
-`*/scripts/<name>.sh` wildcard because their path differs by install: relative
-in this repo, an expanded `${CLAUDE_PLUGIN_ROOT}` in a consuming project.
+`*/scripts/<name>.sh` wildcard because the `${CLAUDE_PLUGIN_ROOT}` a prompt
+file names them by expands to a different absolute path in every install.
 Worktree cleanup is granted only through `worktree-reclaim.sh`, never as a raw
 `rm -rf .claude/worktrees/*` rule: a wildcard there also matches a path that
 climbs out with `..`.

@@ -56,7 +56,7 @@ not the topic.
 ## Writing one
 
 ```bash
-plugins/kit/scripts/observe.sh \
+${CLAUDE_PLUGIN_ROOT}/scripts/observe.sh \
   --by "kit:grilling" \
   --claim "<what the repo can contradict>" \
   --check "<the command that tests it>" \
@@ -104,7 +104,7 @@ on the PR. `docs/tending-on-a-runner.md` owns that case.
 The store is reviewed in its own pass, never inside the pass that wrote to it.
 `/kit:observe triage` is the entry point; this is the protocol it runs.
 
-**1 · Re-run every check.** `observe.sh recheck` does it in one pass and reports
+**1 · Re-run every check.** `${CLAUDE_PLUGIN_ROOT}/scripts/observe.sh recheck` does it in one pass and reports
 each record as holding or moved.
 
 **2 · Bin each record by what the recheck said**, since that is evidence rather
@@ -120,7 +120,7 @@ than a judgement:
 - **Holds, and the user decides against it** — a drop, and the useful kind. The
   claim was checkable and still true, and it is still not worth doing.
 
-**3 · Clear down what was binned**: `observe.sh drop <slug> ...`. It rewrites the
+**3 · Clear down what was binned**: `${CLAUDE_PLUGIN_ROOT}/scripts/observe.sh drop <slug> ...`. It rewrites the
 store atomically; every other write is a single-line append.
 
 **Nothing survives triage untouched.** A record left in place with a fresher read
