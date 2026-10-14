@@ -14,9 +14,11 @@ vocabulary those files read off an issue; `docs/commands.md` lists the surface;
   treat their absence as a gap.
 - **`scripts/lint.sh` is the whole automated check** — shell parses, JSON
   manifests are JSON, skill frontmatter matches its directory, the kit declares
-  no version, and every skill, command and agent carries its notice. The first
+  no version, every skill, command and agent carries its notice, and every kit
+  script a prompt file runs is named from `${CLAUDE_PLUGIN_ROOT}`. The first
   three fail at harness load time rather than at review; the version fails
-  silently at update time; a dropped notice fails nowhere at all. Run it before
+  silently at update time; a dropped notice fails nowhere at all; and a
+  repo-relative script path works here and fails in every other project. Run it before
   opening a PR; `.github/workflows/lint.yml` runs it again on the PR.
 - **The design skills this plugin ships do not govern this plugin.**
   `kit:rails-codebase-design` and `kit:behavior-placement` are the axis for the

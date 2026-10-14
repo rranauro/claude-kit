@@ -7,8 +7,9 @@ set -euo pipefail
 # — all of which fail at load time in the harness rather than at review time — a
 # plugin version that would stop installs from updating at all, a piece that
 # would leave the kit without saying who wrote it, a vendored skill that dropped
-# the notice its licence requires, and an inline skill whose model pin would
-# outlive it.
+# the notice its licence requires, an inline skill whose model pin would
+# outlive it, and a prompt file that runs a kit script by a path only this
+# checkout has.
 #
 # Shape only, and it stays under a second so it is worth running before every
 # push. Behaviour is asserted in tests/, which CI runs as its own step.
@@ -185,6 +186,26 @@ for md in plugins/kit/commands/*.md; do
   check_kit_license "$md"
   [ "$this_failed" -eq 1 ] || echo "  ok   $md"
 done
+
+echo "==> kit script paths"
+# A prompt file runs in whatever project installed the plugin, where a
+# repo-relative path to a kit script names nothing — and it still works from
+# this checkout, so nothing here would ever notice. ship-startable.sh is the one
+# script a person types from a claude-kit checkout, so its path is right as
+# written.
+this_failed=0
+while IFS= read -r hit; do
+  path="${hit#*:*:}"
+  name="${path##*/}"
+  [ -f "plugins/kit/scripts/$name" ] || continue
+  [ "$name" = "ship-startable.sh" ] && continue
+  case "$path" in
+    '${CLAUDE_PLUGIN_ROOT}/scripts/'*) ;;
+    *) fail "${hit%:"$path"} runs $path by a repo-relative path — name it \${CLAUDE_PLUGIN_ROOT}/scripts/$name" ;;
+  esac
+done < <(grep -rnoE --include='*.md' '[^[:space:]`(]*scripts/[A-Za-z0-9_-]+\.sh' \
+  plugins/kit/commands plugins/kit/agents plugins/kit/skills)
+[ "$this_failed" -eq 1 ] || echo "  ok   prompt files name kit scripts from \${CLAUDE_PLUGIN_ROOT}"
 
 echo
 if [ "$failed" -eq 0 ]; then
