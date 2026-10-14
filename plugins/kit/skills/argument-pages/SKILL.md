@@ -99,11 +99,11 @@ someone finding it in the repo in two years, gets whatever the file contains and
 nothing else.
 
 **Destination.** Publish as an artifact when the tool is available; the reader
-gets a link rather than a path. Otherwise write it into the project's `plans/`
-directory, never a temp path. Either way the source file stays in the repo so
+gets a link rather than a path. Otherwise write it into the project's plan
+cache, which `kit:working-files` resolves, never a temp path. Either way the source file stays in the repo so
 the page can be regenerated and re-published to the same URL.
 
-**Pair it with a plan file.** The page argues; a markdown file in `plans/`
+**Pair it with a plan file.** The page argues; a markdown file in the plan cache
 carries the same conclusion plus the verified code, the file:line citations, and
 the open questions. The page is for the colleague, the plan file is what survives
 a context clear.
