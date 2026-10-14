@@ -77,7 +77,8 @@ this one does not restate it.
 
 ## Phase 1 · `prepare` — Worktree and plan
 
-Invoke `kit:start-ticket <number>` via the Skill tool. Its mechanical half — the
+Invoke `kit:start-ticket <number>` via the Skill tool, adding `unattended` in that
+mode so it leaves the plan cache unlinked. Its mechanical half — the
 clean-main check, the worktree off the base branch, the branch name, the gitignored
 runtime wiring — asks nothing and runs identically in both modes.
 

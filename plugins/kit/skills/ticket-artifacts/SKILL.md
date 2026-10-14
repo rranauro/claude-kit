@@ -47,10 +47,16 @@ from `kit:working-files` — the main checkout's plan cache, ready to write.
 `kit:start-ticket` links it into every worktree as well, so the checkout and its
 worktrees share one cache.
 
-Write both in the same step, always. A command that writes only the comment
+Write both in the same step, always — except unattended, below. A command that writes only the comment
 leaves the offline path broken; one that writes only the file has stored nothing
 durable. The mirror costs a file write and buys the case that matters most in
 practice — reading a plan with no network, in a worktree, mid-implementation.
+
+**Unattended, write the comment only.** A caller passing `unattended` runs as a
+background session isolated in its worktree, where a write into the main
+checkout's cache is refused or held at a permission prompt nobody answers. Skip
+the mirror, and skip the read's write-back too. The comment is the store, so
+nothing is lost; the next attended read rebuilds the cache from it.
 
 **No issue number, no store.** A plan from a conversation that never became a
 ticket goes to `<plans>/<short-slug>-plan.md` and stays local. There is nothing to
@@ -62,7 +68,7 @@ attach it to, and inventing an issue to hold it is worse than losing it.
    worktree already has.
 2. **Then the marked comment.** If the file is absent, fetch the issue's comments
    and take the body under the marker. Write it back to the cache path as you go,
-   so the second read in the same session is free.
+   so the second read in the same session is free — unless unattended.
 3. **Then nothing.** Absence is a real answer — `plan-implementation` treats it
    as "no settled approach yet" and invokes `/kit:design`. Do not synthesize an
    artifact from the issue body to fill the gap.
