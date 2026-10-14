@@ -190,8 +190,8 @@ unarmed.
 **And whether the kit arms auto-merge at all.** `## Auto-merge` with `- off`
 leaves every PR the kit opens for a person to merge, held or not; `- method:
 merge` (or `rebase`, `squash`) is the method every arm uses. A repository that
-does not allow auto-merge reads as `off` without a declaration, and is reported
-as that rather than as a failed arm. Absent, the kit arms with `--squash`.
+does not allow auto-merge reads as `off` without a declaration. `kit:ticket-loop`
+`hand-off` owns the default and the report.
 
 **So is what a pass may drive to take screenshots.** `## Screenshot capture`
 names what captures, how it signs in to the app, and which browser uploads the
