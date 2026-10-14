@@ -165,13 +165,9 @@ Open it for the user — `xdg-open <path>` on Linux, `open <path>` on macOS,
 `Strong` / `Worth exploring` / `Speculative` badge, so the page reads as a
 ranking from top to bottom rather than a list to be searched.
 
-The report is **self-contained**: its styling is one inline `<style>` block and
-its diagrams are hand-built divs and inline SVG, with no external script or
-stylesheet. A published artifact's CSP blocks every host but Google Fonts, the
-same rule `kit:argument-pages` states, so a Tailwind or Mermaid `<script src>`
-ships a report with no styling and its diagrams as raw text — and a reader
-opening the local file offline gets the same page. Each candidate gets a
-**before/after visualisation**. Be visual.
+The report is **self-contained** — inline styling, hand-built diagrams, no
+external script or stylesheet; [HTML-REPORT.md](HTML-REPORT.md) says why. Each
+candidate gets a **before/after visualisation**. Be visual.
 
 For each candidate, render a card with:
 

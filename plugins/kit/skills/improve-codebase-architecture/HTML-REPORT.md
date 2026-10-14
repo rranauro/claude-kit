@@ -3,17 +3,15 @@
 The architectural review is rendered as a single self-contained HTML file in the
 repository's `plans/` directory — never a temp path. Everything it needs is in
 the file: one inline `<style>` block for the styling, hand-built divs and inline
-SVG for the diagrams. Vary the diagram patterns below rather than drawing every
-candidate the same way, or it'll start to look generic.
+SVG for the diagrams.
 
 ## Self-contained, always
 
 **No external script and no external stylesheet.** A published artifact runs
-under a CSP that blocks every host except Google Fonts — `kit:argument-pages`
-states the same rule for its pages — so a CDN `<script src>` silently does
-nothing: Tailwind classes style nothing and a Mermaid block prints as source
-text. A reader opening the local file offline gets the same broken page. Fonts
-may come from `fonts.googleapis.com` with a real fallback stack, or not at all.
+under a CSP that admits only the hosts `kit:argument-pages` names, and a reader
+opening the local file offline gets no host at all. A CDN script that does not
+load leaves utility classes styling nothing and diagram source printed as text.
+Inline everything and the page renders the same in all three places.
 
 ## Scaffold
 
@@ -58,6 +56,11 @@ don't replace it with utility classes.
       .box.cost, .edge.cost { border-color: var(--cost); stroke: var(--cost); }
       .edge { stroke: var(--ink); fill: none; }
       .edge.call { stroke-dasharray: 4 4; }
+      .diagram svg { font: 11px ui-monospace, monospace; }
+      .diagram rect { fill: #fff; stroke: var(--ink); }
+      .diagram rect.cost { stroke: var(--cost); stroke-width: 2; }
+      .diagram rect.owned { fill: var(--owner); }
+      .diagram text.owned { fill: #fff; }
     </style>
   </head>
   <body>
@@ -128,8 +131,9 @@ Use it when the point is "these four callers all construct it, and only one of
 them uses what it reads." Draw it as one inline `<svg>` inside a `.diagram`: a
 column of caller boxes on the left, the class in the middle, the owning model on
 the right, edges as `<path>`s between them. Colour the costly box and its edges
-with `cost`, and give the owning model the `owned` fill. Set a `viewBox` so it
-scales with the column rather than overflowing it.
+with `cost`, and give the owning model the `owned` fill — the scaffold's rules
+colour them, so the SVG carries no hex. Set a `viewBox` so it scales with the
+column rather than overflowing it.
 
 ```html
 <div class="diagram">
@@ -141,15 +145,13 @@ scales with the column rather than overflowing it.
         <path d="M0 0L10 5L0 10z" />
       </marker>
     </defs>
-    <g font-size="11" font-family="ui-monospace, monospace">
-      <rect x="10" y="30" width="150" height="32" fill="#fff" stroke="#0f172a" />
-      <text x="85" y="50" text-anchor="middle">OrdersController</text>
-      <rect x="10" y="130" width="150" height="32" fill="#fff" stroke="#0f172a" />
-      <text x="85" y="150" text-anchor="middle">ImportJob</text>
-      <rect x="200" y="80" width="170" height="32" fill="#fff" stroke="#dc2626" stroke-width="2" />
-      <text x="285" y="100" text-anchor="middle">Order::Intake.for_order</text>
-      <rect x="410" y="80" width="100" height="32" fill="#1e293b" />
-      <text x="460" y="100" text-anchor="middle" fill="#fff">Order</text>
+    <g text-anchor="middle">
+      <rect x="10" y="30" width="150" height="32" /><text x="85" y="50">OrdersController</text>
+      <rect x="10" y="130" width="150" height="32" /><text x="85" y="150">ImportJob</text>
+      <rect class="cost" x="200" y="80" width="170" height="32" />
+      <text x="285" y="100">Order::Intake.for_order</text>
+      <rect class="owned" x="410" y="80" width="100" height="32" />
+      <text class="owned" x="460" y="100">Order</text>
     </g>
     <path class="edge cost" d="M160 46 L200 90" marker-end="url(#arrow)" />
     <path class="edge cost" d="M160 146 L200 104" marker-end="url(#arrow)" />
@@ -158,13 +160,13 @@ scales with the column rather than overflowing it.
 </div>
 ```
 
-### Hand-built boxes-and-arrows (when the after has one owner)
+### Nested boxes (when the after has one owner)
 
-Classes as `.box` divs with borders and labels. Arrows as inline SVG `<line>` or
-`<path>` elements positioned absolutely over the `.diagram`, which is the
-relative container. Reach for this when you want the "after" diagram to feel like
-one model owning its data with the extracted class dissolved into it — an
-`owned` box with the old class drawn inside it, not beside it.
+Classes as `.box` divs, nested to show ownership: the "after" diagram as one
+`owned` box with the extracted class drawn inside it, dissolved into the model
+rather than beside it. Nesting carries the relationship, so it needs no arrows;
+where one does need an arrow, draw the boxes in the same SVG as the caller graph
+does rather than laying a path over flowed divs whose positions you cannot see.
 
 ### Constructor bars (good for arity and unnamed structure)
 
@@ -188,14 +190,13 @@ symbol. After: the same keys as method names on one box, call sites reading
 ## Style guidance
 
 - Lean editorial, not corporate-dashboard. Generous whitespace. Serif optional
-  for headings; the scaffold's serif stack works with its stone and slate.
+  for headings; the scaffold carries a serif stack for them.
 - Colour sparingly: one accent (emerald or indigo) plus red for the cost and
   amber for warnings.
 - Keep diagrams ~320px tall so before/after sits comfortably side by side without
   scrolling.
 - Use small uppercase, letter-spaced labels for classes inside diagrams — `.box`
   does it — so they read as schematic, not as UI.
-- No scripts at all. The report is static: no app code and no interactivity.
 
 ## Top recommendation section
 
