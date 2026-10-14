@@ -77,8 +77,11 @@ Techniques are the easy part. Everything between them is where the workflow live
   gitignored file the app needs to boot. `kit:start-ticket` wires those back up, and
   enforces one worktree per issue — two is a trap that hides your own changes.
 - **Nothing to adopt.** No label vocabulary, no triage states, no `docs/agents/`
-  config, no block written into your `CLAUDE.md`. These commands read issues and
-  open PRs; how you triage, label, and run your process stays yours.
+  config, nothing written into a file you track. Where the kit offers to remember
+  a setting it is your `CLAUDE.local.md` or nowhere, and a rule you state in your
+  own words about labels, merging or PR bodies beats the kit's default. These
+  commands read issues and open PRs; how you triage, label, and run your process
+  stays yours.
 - **A review loop that distrusts reviewers.** `/kit:review-copilot` merges findings
   from multiple bots into one bucket per line and checks each claim against the
   actual code before acting on it — a "missing nil check" on a provably non-nil

@@ -25,8 +25,8 @@ Pull from these sources in parallel:
 
 > **Match logins case-insensitively** (the `"i"` flag is required). Copilot's *inline* comments are authored by login `Copilot` (capital C), while its top-level review bot is `copilot-pull-request-reviewer[bot]` (lowercase). Without `"i"` the inline pass silently returns nothing — the most important findings get missed.
 
-**Read `## Review sources` from the project's `CLAUDE.md`** (`copilot`,
-`claude-review`; absent, both). It changes no fetch and no finding — only how
+**Read `## Review sources` from the project's rules** (`kit:project-rules`) —
+`copilot`, `claude-review`; absent, both. It changes no fetch and no finding — only how
 Step 5 names an empty source: **not run** if undeclared, **missing** if declared.
 
 If all fetched sources are empty, tell the user "No automated review comments found", skip to Step 5 to name each source not run or missing, and close the round at Step 7.5. Stopping here leaves a round nobody can tell from one that never ran.
@@ -319,9 +319,11 @@ that in both modes.
 
 Otherwise, ask the user before enabling:
 
-> "Review findings addressed and pushed. Enable auto-merge (squash) for PR #<N>? GitHub will merge once checks pass."
+> "Review findings addressed and pushed. Enable auto-merge (<method>) for PR #<N>? GitHub will merge once checks pass."
 
-- On approval, run `gh pr merge <PR#> --auto --squash` (use the PR number resolved in Step 1).
+`<method>` is the merge method the project's rules state (`kit:project-rules`), else squash — the one the command below will run.
+
+- On approval, run `gh pr merge <PR#> --auto --<method>` (use the PR number resolved in Step 1).
 - If the command errors because auto-merge is already enabled or the PR is already merged, that's fine — report and continue.
 - If it errors because auto-merge is disabled in repo settings, say so and let the user merge from the GitHub UI; do not fall back to a local merge.
 - **If the user declines, record it as `kit-hold` on the PR**, then stop:
@@ -385,7 +387,8 @@ decision, and it does not remove the label either — clearing `kit-hold` is the
 human's statement, the same as everywhere else in this file.
 
 **Otherwise, decide the merge.** On a triage that escalated nothing — including
-one that pinned a skipped finding — `gh pr merge <N> --auto --squash`. With a
+one that pinned a skipped finding — `gh pr merge <N> --auto --squash`, or the
+merge method the project's rules state (`kit:project-rules`). With a
 single review round there is nothing further to wait for, and leaving it off
 means the PR sits green until someone notices. Enabling it is idempotent, and
 the merge stays GitHub's to perform once checks pass.

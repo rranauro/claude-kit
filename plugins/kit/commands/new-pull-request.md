@@ -12,6 +12,9 @@ for a pull request.
 - If the branch has not been pushed or is behind, push it with `git push -u origin <branch>`.
 
 **Step 2 — Analyze all changes:**
+- Resolve `<base>`: the base branch the project's rules state (`kit:project-rules`),
+  else `main`. Every `main` in this command means `<base>`, and `gh pr create`
+  below takes `--base <base>` when it is not `main`.
 - Read the full diff with `git diff main...HEAD` to understand every change.
 - Review ALL commits (not just the latest) to build a complete picture.
 - If the branch name starts with a number (e.g., `218-...`), that's the issue number.
@@ -27,6 +30,9 @@ a PR the review skill cannot rely on. It also writes the issue reference.
 - **If the arguments carry a `draft` token, add `--draft`.** A caller asks for
   that when it intends to close the review round itself before the PR is ready
   to merge; without the token nothing here changes.
+
+A rule the project states about PR bodies (`kit:project-rules`) governs this
+body over the defaults here.
 
 ```
 gh pr create --title "the pr title" --body-file <the visual-pr-body.md it wrote, plus the trailer>

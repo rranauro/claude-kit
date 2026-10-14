@@ -26,7 +26,7 @@
 #   3. Wait for the declared reviews, and name on stdout any that did not
 #      arrive.
 #
-# Which reviews a project runs is declared in its CLAUDE.md, but the caller
+# Which reviews a project runs is declared in its rules (kit:project-rules); the caller
 # reads that and passes `--sources`; this file never does. Omitted, both are
 # expected. A source left out is reported as not run rather than missing,
 # because waiting the ceiling out on a reviewer the project never runs is the

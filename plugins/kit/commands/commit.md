@@ -25,7 +25,8 @@ If the current branch is `main` or `master`, STOP and tell the user. Never commi
 Do not guess the toolchain. Read it from the project, in this order, and stop at
 the first that answers:
 
-1. `CLAUDE.md` — if it names the test/lint/security commands, use those verbatim.
+1. The project's rules, found as `kit:project-rules` says — if they name the
+   test/lint/security commands, use those verbatim.
 2. The manifest and its scripts — `package.json`, `Makefile`, `Gemfile`,
    `pyproject.toml`, `Cargo.toml`, `go.mod`.
 3. CI config — `.github/workflows/*.yml` runs the commands the project actually

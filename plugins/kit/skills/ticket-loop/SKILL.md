@@ -67,8 +67,9 @@ this one does not restate it.
   No phase is exempt: CI is the merge gate, so nothing here runs the suite to
   decide whether a PR may leave draft either. The one carve-out is the
   project's declared ship gate, `hand-off` step 4.
-- **Apply the project's own rules from `CLAUDE.md`.** This skill does not restate
-  them.
+- **Apply the project's own rules.** Invoke `kit:project-rules` once, in
+  `prepare`, and take every section a phase below reads from that one read. This
+  skill does not restate them.
 
 ---
 
@@ -136,8 +137,8 @@ reading.
 Not delegated — this is the work itself. Identical in both modes; there is no
 gate here, only the convergence rule at the end.
 
-Use the project's own test framework and layout — read them from `CLAUDE.md`, the
-manifest, or CI config rather than assuming. The Rails/RSpec form below is the
+Use the project's own test framework and layout — read them from the project's
+rules, the manifest, or CI config rather than assuming. The Rails/RSpec form below is the
 worked example; substitute the equivalent for your stack.
 
 **Test placement — extend before adding.** For each requirement in the plan, find
@@ -252,7 +253,7 @@ sweep reclaiming it mid-write is exactly what the lease prevents. The unlock is
 the last step below.
 
 **1 · Wait for the reviews the project runs.** Look for a `## Review sources`
-section in the project's `CLAUDE.md`, read as step 4 reads `## Ship gate`:
+section in the project's rules:
 
 ```markdown
 ## Review sources
@@ -370,8 +371,7 @@ Where the shape hold already applied `kit-hold`, post the comment and skip the
 label write.
 
 **4 · Run the project's ship gate, if it declares one.** Look for a `## Ship
-gate` section in the project's `CLAUDE.md`, read as `kit:worktree-conventions`
-reads `## Worktrees`:
+gate` section in the project's rules:
 
 ```markdown
 ## Ship gate
@@ -391,7 +391,7 @@ names the grant the operator's project settings lack.
 registered.**
 
 **Decide first whether a held PR is armed at all.** Look for a `## Hold check`
-section in the project's `CLAUDE.md`, read as step 4 reads `## Ship gate`:
+section in the project's rules:
 
 ```markdown
 ## Hold check
@@ -445,7 +445,7 @@ CI rather than failing here.
 
 **Skip the snapshot and the poll where the project declares that drafts run the
 full checks.** Look for a `## Draft checks` section in the project's
-`CLAUDE.md`, read as step 4 reads `## Ship gate`:
+rules:
 
 ```markdown
 ## Draft checks
