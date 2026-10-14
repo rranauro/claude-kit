@@ -28,15 +28,14 @@ can keep its Rails app in `rx/` with nothing at the root, and RuboCop or Brakema
 run from the root read the wrong config or find nothing to check. So before
 reading any gate, sort the changed files by app: a file belongs to the nearest
 directory at or above it whose manifest names a gate's tool — a linter, a
-security scanner, a test runner — the walk Bundler and npm
-make to find their own root. Nearest *gateable*, not nearest: an engine's own
-`gemspec` Gemfile inside a Rails app names no linter, so its files fall through to
-the app above, which is how `hooks/rails-quality-gates.sh` resolves the same
-question. A single-app repository resolves every file to the root, and nothing
+security scanner, a test runner. Nearest *gateable*, not nearest, so an engine's
+linter-less Gemfile does not take its files out of the app above; walk once per
+changed directory, not per file. `hooks/rails-quality-gates.sh` resolves Ruby the
+same way. A single-app repository resolves every file to the root, and nothing
 below changes for it.
 
-Do not guess the toolchain. For each app, read it in this order, and stop at the
-first that answers:
+Do not guess the toolchain. Read the project's rules and CI config once, then for
+each app take its gates in this order, stopping at the first that answers:
 
 1. The project's rules, found as `kit:project-rules` says — if they name the
    test/lint/security commands, use those verbatim.
@@ -46,16 +45,15 @@ first that answers:
    considers authoritative; read the steps whose `working-directory` is that app.
 
 If no app the change touches answers, ask the user how to run tests and linting
-rather than inventing a command. Where some do, a changed file outside all of
-them is reported under Step 4, not asked about — a README edit beside a Rails
-app is not a question. A wrong command that errors is noise; a wrong command that
+rather than inventing a command. Where some do, a file outside every app is not
+a question — Step 4 reports it. A wrong command that errors is noise; a wrong command that
 silently passes is worse.
 
 **Step 4 — Run the gates on what changed:**
 
 Run each app's gates from that app's directory, on that app's changed files, with
-their paths made relative to it — where the tool takes files at all; a scanner
-that reads the whole app runs on the whole app. An app's gates never run on another app's files.
+paths relative to it; a tool that takes no file list runs once on the whole app.
+An app's gates never run on another app's files.
 
 - **Tests.** Derive the target set explicitly rather than saying "the affected
   tests" and improvising:
