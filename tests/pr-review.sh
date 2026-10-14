@@ -51,8 +51,7 @@ new_sandbox() {
 case "$*" in
   "repo view"*)         echo "owner/repo" ;;
   "api user"*)          echo "me" ;;
-  *"--json author"*)    echo "colleague" ;;
-  *"--json files"*)     cat "$PR_FILES" ;;
+  *"--json author"*)    echo "colleague"; echo "2 files changed, +5 -1"; cat "$PR_FILES" ;;
 esac
 exit 0
 GH
@@ -137,6 +136,22 @@ printf '## Visual PR and review output\n- Location: mine/pr-<n>/\n' > "$MAIN/rx/
 pr_files rx/app/models/user.rb
 review
 assert_file "$MAIN/rx/mine/pr-7/claude-review.md" "the sub-project's CLAUDE.local.md decided it"
+end_sandbox
+
+new_sandbox "the rules come from the nearest CLAUDE.md, wherever the build marker is"
+mkdir -p "$MAIN/rx/engines/billing"; touch "$MAIN/rx/engines/billing/Gemfile"
+printf '## Visual PR and review output\n- Location: from-rx/pr-<n>/\n' > "$MAIN/rx/CLAUDE.md"
+commit
+pr_files rx/engines/billing/lib/invoice.rb
+review
+assert_file "$MAIN/rx/engines/billing/from-rx/pr-7/claude-review.md" "rx/CLAUDE.md applied above the engine"
+end_sandbox
+
+new_sandbox "the logged size is the PR's, not the empty local diff"
+touch "$MAIN/Gemfile"; echo "/tmp" > "$MAIN/.gitignore"; commit
+pr_files app/models/user.rb
+review
+assert_has "$(cat "$HOME"/.claude/logs/pr-review/*.log)" "changed=[2 files changed, +5 -1]" "the log carries the PR's size"
 end_sandbox
 
 # --- detached -----------------------------------------------------------
