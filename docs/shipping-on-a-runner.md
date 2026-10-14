@@ -115,17 +115,26 @@ stop, not a quiet "nothing startable" — the failure mode that's actually
 dangerous to a run nobody is watching.
 
 Unlike the CI gate, this runner doesn't need to construct a
-`plugin_marketplaces` registration by hand: it relies on the target checkout's
-own tracked `.claude/settings.json` (`extraKnownMarketplaces` +
-`enabledPlugins`), the same project-level config that already makes `/kit:`
-commands resolve for every interactive session against that repo. That's
-`claude -p`'s *default* `--setting-sources`, not something the script adds —
-which is also why a probe finding that plugin commands don't resolve headlessly
-doesn't apply here *if it passed* `--setting-sources ''`: that excludes the
-marketplace registration the commands resolve through, so it measures the
-exclusion rather than headless mode. Still worth a real
-smoke test against one ticket before trusting the runner with a whole epic —
-the floor-duration check above is the safety net if that assumption is wrong.
+`plugin_marketplaces` registration by hand, and it does not rely on the target
+checkout's `.claude/settings.json` either. Print mode does not load the project
+setting source, so however the kit reaches an interactive session against that
+repo — an enabled marketplace entry, an inline `.claude/` plugin — none of it is
+in scope for a `claude -p` call, and `/kit:list` comes back "Unknown command".
+The runner loads the kit itself instead: every call, `-p` and `--bg` alike,
+passes `--plugin-dir` set to the plugin the script lives in. Nothing has to be
+registered or enabled in the target repo for `/kit:` to resolve, and two things
+follow for whoever sets one up:
+
+- **The kit that runs is the copy you invoked the script from.** Run it from a
+  clone and the tickets ship on that clone's checkout of the kit, not on
+  whatever version the target repo's sessions have installed. Run it from the
+  installed plugin's own `scripts/` directory to keep the two the same.
+- **Configuring the target repo's settings does not fix a run that fails to
+  resolve.** Look at the path the script was run from instead.
+
+Still worth a real smoke test against one ticket before trusting the runner
+with a whole epic — the floor-duration check above is the safety net if a
+command does not resolve.
 
 ## The permission grant is broader than tending's, on the same split
 
