@@ -67,10 +67,9 @@ this one does not restate it.
   No phase is exempt: CI is the merge gate, so nothing here runs the suite to
   decide whether a PR may leave draft either. The one carve-out is the
   project's declared ship gate, `hand-off` step 4.
-- **Apply the project's own rules, found as `kit:project-rules` says** — its
-  `CLAUDE.md`, a sub-project's, and the `CLAUDE.local.md` beside either. This
-  skill does not restate them, and a rule there about labels, merging, PR bodies
-  or the base branch beats the default a phase below names.
+- **Apply the project's own rules.** Invoke `kit:project-rules` once, in
+  `prepare`, and take every section a phase below reads from that one read. This
+  skill does not restate them.
 
 ---
 
@@ -254,7 +253,7 @@ sweep reclaiming it mid-write is exactly what the lease prevents. The unlock is
 the last step below.
 
 **1 · Wait for the reviews the project runs.** Look for a `## Review sources`
-section in the project's rules, read as step 4 reads `## Ship gate`:
+section in the project's rules:
 
 ```markdown
 ## Review sources
@@ -372,7 +371,7 @@ Where the shape hold already applied `kit-hold`, post the comment and skip the
 label write.
 
 **4 · Run the project's ship gate, if it declares one.** Look for a `## Ship
-gate` section in the project's rules, found as `kit:project-rules` says:
+gate` section in the project's rules:
 
 ```markdown
 ## Ship gate
@@ -392,7 +391,7 @@ names the grant the operator's project settings lack.
 registered.**
 
 **Decide first whether a held PR is armed at all.** Look for a `## Hold check`
-section in the project's rules, read as step 4 reads `## Ship gate`:
+section in the project's rules:
 
 ```markdown
 ## Hold check
@@ -446,7 +445,7 @@ CI rather than failing here.
 
 **Skip the snapshot and the poll where the project declares that drafts run the
 full checks.** Look for a `## Draft checks` section in the project's
-rules, read as step 4 reads `## Ship gate`:
+rules:
 
 ```markdown
 ## Draft checks

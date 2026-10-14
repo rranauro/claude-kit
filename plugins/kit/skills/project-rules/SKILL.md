@@ -35,6 +35,11 @@ gitignored, so a fresh worktree does not have it, and its absence there says
 nothing about the project. The main checkout is the first `worktree` line
 of `git worktree list --porcelain`.
 
+**Read them once per pass.** Resolve the sub-project and the main checkout, read
+the files that exist, and take every section — and every sentence *Rules in the project's
+own words* covers — from that read. Re-read a file only if the pass itself wrote
+it.
+
 ## Which one wins
 
 **Per section, and whole.** Find the section in each file that has it; the
@@ -48,8 +53,7 @@ from two files into one section — a merged section is a rule nobody wrote.
 **No file has the section → the kit's default.** A project that states no rules
 sees exactly what it saw before any of them were read.
 
-A section the reading skill says to take **from the base branch** —
-`## Screenshot capture` is the one today — is read from the base branch's
+A section the reading skill says to take **from the base branch** is read from the base branch's
 tracked files (`git show origin/<base>:<path>`), never the worktree's, and from
 the main checkout's `CLAUDE.local.md`. The branch is the pass's own work; the
 local file is the developer's.
@@ -63,8 +67,7 @@ matching act, under any heading or none, and beats the kit's default for it.**
 "PRs merge with a merge commit" changes the merge the kit would arm;
 "never apply `bug`; we use `Type: Bug`" changes the label it would write.
 
-Apply it before the act, not after it: check what the files say just before
-writing a label, arming a merge, writing a PR body, or cutting a branch. When a
+Apply it before each of those acts, from the sentences the first read noted. When a
 rule and a kit default conflict and the rule is clear, follow the rule and say
 so where the step reports. When it is genuinely unclear which act a sentence
 governs, attended ask; unattended follow the kit's default and say which

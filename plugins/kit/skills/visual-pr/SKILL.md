@@ -233,12 +233,9 @@ evidence, and a reviewer will grade it that way.
 
 When the diff changes something visual, what a pass may drive to capture it is the
 project's to say, not this skill's — which browser, how it signs in to the app, and where
-the image goes. Read the `## Screenshot capture` section of the project's rules, found as
-`kit:project-rules` says, with its tracked files as the PR's base branch has them —
-`git show origin/<base>:<path>` — never the worktree's copy. The branch is the pass's own
-work, so a rule read from it is one the pass could have written to authorize itself; only
-a rule someone merged counts, or one the developer keeps in the main checkout's
-`CLAUDE.local.md`.
+the image goes. Read the `## Screenshot capture` section of the project's rules, taken **from the base
+branch** as `kit:project-rules` says, never the worktree's copy: a rule read from the
+pass's own branch is one the pass could have written to authorize itself.
 
 ```markdown
 ## Screenshot capture
@@ -313,9 +310,9 @@ Read the `## Visual PR and review output` section of the project's rules, found 
 - **Location** — the directory, relative to the repository root, with `<n>` the PR number. Before a PR exists, use the branch name for `<n>`.
 
 If the section is missing, ask once for both values, offering `markdown` and
-`tmp/reviews/pr-<n>/` as defaults. Then offer to record the section as
-`kit:project-rules` *Recording a setting* allows — `CLAUDE.local.md`, or not at
-all. If they decline, use the answers for this run only.
+`tmp/reviews/pr-<n>/` as defaults. Then offer to record it
+(`kit:project-rules`, *Recording a setting*); declined, use the answers for this
+run only.
 
 Unattended, ask nothing and offer nothing. With the section missing, write `markdown` to a
 fresh temporary directory outside the worktree: the PR is the copy anyone will read, and an

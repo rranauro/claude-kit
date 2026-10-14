@@ -97,7 +97,8 @@ evidence is a run of specs against the same mutation, which is this command's.
 ## Step 1 · `enumerate` — Find the files and the runner
 
 Read the project's spec directory and its test command from the project itself —
-`CLAUDE.md` first, then the manifest, then CI config. Do not assume `spec/` or
+the project's rules (`kit:project-rules`) first, then the manifest, then CI
+config. Do not assume `spec/` or
 `bundle exec rspec`; a wrong runner that errors is noise and one that silently
 passes is worse.
 

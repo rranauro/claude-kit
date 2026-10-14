@@ -28,6 +28,9 @@ a PR the review skill cannot rely on. It also writes the issue reference.
   that when it intends to close the review round itself before the PR is ready
   to merge; without the token nothing here changes.
 
+A rule the project states about PR bodies or the base branch
+(`kit:project-rules`) governs this call over the defaults here.
+
 ```
 gh pr create --title "the pr title" --body-file <the visual-pr-body.md it wrote, plus the trailer>
 ```

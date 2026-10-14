@@ -221,8 +221,8 @@ Read the `## Visual PR and review output` section of the project's rules, found 
   directory, never the monorepo root.
 
 If the section is missing, ask once for both values, offering `markdown` and
-`tmp/reviews/pr-<n>/` as defaults. Then offer to record the section as
-`kit:project-rules` *Recording a setting* allows — `CLAUDE.local.md`, or not at
-all. If they decline, use the answers for this run only.
+`tmp/reviews/pr-<n>/` as defaults. Then offer to record it
+(`kit:project-rules`, *Recording a setting*); declined, use the answers for this
+run only.
 
 Then relay the verdict line and the top finding in chat, with the file path. Don't repeat the page.

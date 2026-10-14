@@ -17,7 +17,7 @@ and never place a worktree somewhere the project didn't choose.
 ## Step 1 — Read the convention
 
 Look for a `## Worktrees` section in the project's rules, found as
-`kit:project-rules` says — a sub-project's or a `CLAUDE.local.md` can hold it:
+`kit:project-rules` says:
 
 ```markdown
 ## Worktrees
