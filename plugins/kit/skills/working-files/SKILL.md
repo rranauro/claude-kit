@@ -82,8 +82,8 @@ checkout, usually on the default branch, so an added line is a tracked change no
 ticket owns — it ships with whoever's PR picks it up next, or with nobody's.
 `info/exclude` under the common directory is per-clone and covers every worktree
 of it; `${CLAUDE_PLUGIN_ROOT}/scripts/observe.sh` keeps the observation store out
-of git the same way, and ADR 0005 says why. A project that wants the entry tracked lands it in a PR of
-its own.
+of git the same way, and ADR 0005 says why. A project that wants the entry tracked
+lands it in a PR of its own.
 
 The glossary and the ADR directory are never excluded: they are repository
 content.
