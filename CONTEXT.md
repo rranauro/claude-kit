@@ -144,6 +144,12 @@ reader's to weigh, and no pass asserts it. `kit:asking-a-human` is the one
 statement of the test it belongs to.
 _Avoid_: impact, blast radius, criticality
 
+**Cost**:
+What a scan candidate names about who pays — the caller it burdens, or the
+change it makes harder. Distinct from its reach, the entry points that get to
+it; a card carries both.
+_Avoid_: impact, blast radius
+
 ### Judging a spec
 
 **Load-bearing**:
