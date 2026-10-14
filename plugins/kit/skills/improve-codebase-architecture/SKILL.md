@@ -165,12 +165,9 @@ Open it for the user — `xdg-open <path>` on Linux, `open <path>` on macOS,
 `Strong` / `Worth exploring` / `Speculative` badge, so the page reads as a
 ranking from top to bottom rather than a list to be searched.
 
-The report uses **Tailwind via CDN** for layout and styling, and **Mermaid via
-CDN** for diagrams where a graph/flow/sequence reliably communicates the
-structure. Mix Mermaid with hand-crafted CSS/SVG visuals: use Mermaid when
-relationships are graph-shaped (who constructs a class and who calls it is
-exactly that), and hand-built divs/SVG when you want something more editorial.
-Each candidate gets a **before/after visualisation**. Be visual.
+The report is **self-contained** — inline styling, hand-built diagrams, no
+external script or stylesheet; [HTML-REPORT.md](HTML-REPORT.md) says why. Each
+candidate gets a **before/after visualisation**. Be visual.
 
 For each candidate, render a card with:
 

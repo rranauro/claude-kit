@@ -264,7 +264,7 @@ The names are `copilot` and `claude-review`. Pass what it lists, comma-joined;
 absent, pass nothing and both are expected.
 
 ```
-plugins/kit/scripts/await-reviews.sh <pr-number> [--sources <listed>]
+${CLAUDE_PLUGIN_ROOT}/scripts/await-reviews.sh <pr-number> [--sources <listed>]
 ```
 
 It waits for CI to complete, requests the Copilot review, then blocks until
