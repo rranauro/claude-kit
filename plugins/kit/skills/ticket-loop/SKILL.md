@@ -390,7 +390,39 @@ names the grant the operator's project settings lack.
 **5 · Mark it ready, then arm auto-merge once the transition's run has
 registered.**
 
-**Decide first whether a held PR is armed at all.** Look for a `## Hold check`
+**Decide first whether this PR is armed at all.** Look for an `## Auto-merge`
+section in the project's rules:
+
+```markdown
+## Auto-merge
+- off
+```
+
+or
+
+```markdown
+## Auto-merge
+- method: merge
+```
+
+`off` says the kit never arms auto-merge here: the PR gets `gh pr ready
+<pr-number>` alone, held or not and whatever `## Hold check` says, and is left
+for a person to merge. `method:` takes `squash`, `merge` or `rebase` and is the
+flag every `gh pr merge --auto` below runs with. Absent, the method is `squash`
+— or the one a sentence in the project's rules states, which `kit:project-rules`
+already makes the rule for this act.
+
+**Then ask the repository, once:** `gh api repos/{owner}/{repo} --jq
+.allow_auto_merge`. `false` is the same outcome as `off` — ready alone, left for
+a person — and is a fact about the repository, not a failure, so report it as
+one. A token that cannot see the setting gets nothing back; arm as below, and
+read a refusal saying auto-merge is not allowed as that same outcome rather than
+as an error.
+
+Either way the report says the PR was left for a person to merge, and why: the
+project declares auto-merge off, or the repository does not allow it.
+
+**Then decide whether a held PR is armed.** Look for a `## Hold check`
 section in the project's rules:
 
 ```markdown
@@ -418,7 +450,7 @@ sha=$(gh pr view <pr-number> --json headRefOid -q .headRefOid)
 gh api repos/{owner}/{repo}/commits/$sha/check-runs --jq '.check_runs[].id'
 gh pr ready <pr-number>
 # poll that same call until an id appears the first one did not report, to 120s
-gh pr merge <pr-number> --auto --squash
+gh pr merge <pr-number> --auto --<method>
 ```
 
 **Arming before the run registers merges the PR against the draft's checks.**
@@ -511,6 +543,15 @@ or, where it reads off:
 > armed it and did not re-arm it, so nothing here will merge the PR. <Any failing
 > check the rollup named.> <Which declared review source, if any, did not
 > arrive, and which the project does not run.>"
+
+or, where step 5 did not arm it:
+
+> "PR #<N> is open, reviewed, and ready, and left for a person to merge — <the
+> project declares auto-merge off | the repository does not allow auto-merge>.
+> <Any failing check the rollup named.> <Which declared review source, if any,
+> did not arrive, and which the project does not run.>"
+
+Add the hold's reason when it also carries `kit-hold`.
 
 or, when it carries `kit-hold`:
 

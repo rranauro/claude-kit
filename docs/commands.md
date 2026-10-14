@@ -187,6 +187,12 @@ then arms auto-merge on a held PR as on any other, so removing the label is all
 a person does to let it merge. Absent, a held PR is marked ready and left
 unarmed.
 
+**And whether the kit arms auto-merge at all.** `## Auto-merge` with `- off`
+leaves every PR the kit opens for a person to merge, held or not; `- method:
+merge` (or `rebase`, `squash`) is the method every arm uses. A repository that
+does not allow auto-merge reads as `off` without a declaration, and is reported
+as that rather than as a failed arm. Absent, the kit arms with `--squash`.
+
 **So is what a pass may drive to take screenshots.** `## Screenshot capture`
 names what captures, how it signs in to the app, and which browser uploads the
 image; `kit:visual-pr` owns its format and what an absent section means. It is
