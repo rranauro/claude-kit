@@ -300,16 +300,16 @@ substitute() { # text placeholder value
 }
 
 remove_argv() { # branch path -> REMOVE_ARGV
-  local branch="$1" path="$2" word placed=""
+  local branch="$1" path="$2" word
   local -a words
   read -ra words <<< "$remove_cmd"
   REMOVE_ARGV=()
   for word in "${words[@]}"; do
-    case "$word" in *"<branch>"*|*"<path>"*) placed=1 ;; esac
     word="$(substitute "$word" "<branch>" "$branch")"
     REMOVE_ARGV+=("$(substitute "$word" "<path>" "$path")")
   done
-  [ -n "$placed" ] || REMOVE_ARGV+=("$branch")
+  [[ "$remove_cmd" == *"<branch>"* || "$remove_cmd" == *"<path>"* ]] ||
+    REMOVE_ARGV+=("$branch")
 }
 
 reclaim_path() { # path branch -> 0 when the path is gone; REMOVE_REFUSAL on a refusal

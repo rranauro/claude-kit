@@ -26,12 +26,9 @@ or drops a registered subdomain is doing something no generic
 `git worktree remove` can reconstruct, and skipping it leaks that resource on
 every cleanup.
 
-The `remove` line is run as written, with `<branch>` and `<path>` replaced by the
-worktree's branch and absolute path; a line naming neither gets the branch as its
-one argument. So the example above receives the branch alone, and a recipe that
-needs the path declares `<path>`. When it exits non-zero, the worktree and its
-branch stay put and its output is reported — a refusing teardown is a safety
-check the kit has no standing to override.
+The `remove` line is the call: the example above receives the branch alone, and
+`kit:worktree-conventions` Step 1 says how to ask for the path. Its non-zero exit
+leaves the worktree where it is — Step 3 says why.
 
 ## Ownership while a pass is working
 
