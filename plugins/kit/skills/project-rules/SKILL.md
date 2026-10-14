@@ -1,6 +1,6 @@
 ---
 name: project-rules
-description: Find what a project says about how the kit runs there — which files hold its rules, which one wins when two speak, how a rule in the project's own words overrides a kit default, and where a setting may be recorded. Use whenever a command or skill reads a kit section such as `## Ship gate` or `## Worktrees`, before a GitHub write the kit has a default for, or when offering to record a setting.
+description: Find what a project says about how the kit runs there — which files hold its rules, which one wins when two speak, how a rule in the project's own words overrides a kit default, and where a setting may be recorded. Use whenever a command or skill reads a kit section such as `## Ship gate` or `## Worktrees`, before a GitHub write the kit has a default for, when a step needs the base branch, or when offering to record a setting.
 license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
@@ -79,6 +79,25 @@ rule and a kit default conflict and the rule is clear, follow the rule and say
 so where the step reports. When it is genuinely unclear which act a sentence
 governs, attended ask; unattended follow the kit's default and say which
 sentence you could not apply.
+
+## The base branch
+
+`<base>` is the branch a ticket's worktree is cut from and every diff, log and
+pull request is taken against. Resolve it once per pass, taking the first that
+answers:
+
+1. **The branch the project's rules state**, under any heading — the rule above.
+2. **The remote's default branch:**
+   `git symbolic-ref --quiet --short refs/remotes/origin/HEAD`, with `origin/`
+   stripped. A clone sets that ref; a checkout built with `git remote add` may
+   not, so where it is unset ask the host:
+   `gh repo view --json defaultBranchRef -q .defaultBranchRef.name`.
+3. **`main`.**
+
+Writing `main` where `<base>` belongs breaks a `master`, `develop` or `trunk`
+project silently. `origin/main` does not exist there, so the worktree cannot
+be cut — and where a stale `main` does exist, the diff is taken against the
+wrong history and nothing errors.
 
 ## Recording a setting
 

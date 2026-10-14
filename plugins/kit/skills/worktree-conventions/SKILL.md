@@ -64,14 +64,15 @@ one without knowing the layout.
 
 **Verify the base.** A project's create command commonly cuts the branch from
 `HEAD` — whatever you happened to be sitting on — while this suite bases work on
-`origin/main`. After delegating:
+`origin/<base>`, resolved as `kit:project-rules` *The base branch* says. After
+delegating:
 
 ```
-git fetch origin main
-git -C <worktree> merge-base --is-ancestor origin/main HEAD || echo behind
+git fetch origin <base>
+git -C <worktree> merge-base --is-ancestor origin/<base> HEAD || echo behind
 ```
 
-If the branch is behind, say so and offer to rebase onto `origin/main`. Don't
+If the branch is behind, say so and offer to rebase onto `origin/<base>`. Don't
 rebase silently: the project may cut from `HEAD` deliberately for stacked work.
 
 ## Step 3 — Remove by delegating
@@ -92,7 +93,7 @@ With no project convention, this suite owns the layout:
 ```
 
 Inside the repo, never as a sibling of the main checkout. Create with
-`git worktree add .claude/worktrees/<branch> -b <branch> origin/main`, then run
+`git worktree add .claude/worktrees/<branch> -b <branch> origin/<base>`, then run
 `kit:start-ticket`'s `wire-worktree` to link the gitignored files the app needs to
 boot.
 

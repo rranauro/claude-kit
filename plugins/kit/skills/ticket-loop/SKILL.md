@@ -47,7 +47,7 @@ this one does not restate it.
   stays at the main checkout.
 - **Never merge locally, and never bring the base into the branch at all.** The
   PR merges on GitHub, through the auto-merge `hand-off` arms. Integrating
-  `main` *into* the branch is a different act and equally not a pass's: `git
+  the base *into* the branch is a different act and equally not a pass's: `git
   merge`, `git rebase` and `gh pr update-branch` are one operation under three
   names, and a PR that has fallen behind its base is the operator's to carry
   forward. A pass that integrates has moved the head its review round was
@@ -76,7 +76,7 @@ this one does not restate it.
 ## Phase 1 · `prepare` — Worktree and plan
 
 Invoke `kit:start-ticket <number>` via the Skill tool. Its mechanical half — the
-clean-main check, the worktree off `origin/main`, the branch name, the gitignored
+clean-main check, the worktree off the base branch, the branch name, the gitignored
 runtime wiring — asks nothing and runs identically in both modes.
 
 Its Step 10 is the gate. Attended, answer its questions as written: is the plan
