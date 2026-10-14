@@ -687,6 +687,46 @@ assert_has "$out" "refusing: migrations still applied on the shared database" \
 assert_lacks "$out" "removed	" "and nothing reports it removed"
 end_sandbox
 
+# A teardown that unregisters the worktree and then refuses leaves a directory
+# git no longer names — exactly what the husk sweep looks for.
+new_sandbox "AC7 a refusal is not swept as a husk in the same run"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 closed '"2024-01-01T00:00:00Z"'
+cat > "$SANDBOX/bin/project-remove" <<GH
+#!/usr/bin/env bash
+git -C "$MAIN" worktree remove --force "\$2"
+mkdir -p "\$2" && echo kept > "\$2/rollback.log"
+echo "rollback failed" >&2
+exit 1
+GH
+chmod +x "$SANDBOX/bin/project-remove"
+out="$("$SCRIPT" --repo "$MAIN" --remove-cmd 'project-remove <branch> <path>' \
+  --worktree-root "$MAIN/.claude/worktrees" --act </dev/null 2>&1)"
+assert_present_path "$MAIN/.claude/worktrees/alpha/rollback.log" \
+  "the refused directory survives the husk sweep"
+assert_lacks "$out" "swept	" "and nothing reports it swept"
+assert_branch_kept alpha "and its branch is kept"
+end_sandbox
+
+new_sandbox "AC7 a quoted argument in the declaration stays one argument"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 closed '"2024-01-01T00:00:00Z"'
+cat > "$SANDBOX/bin/project-remove" <<GH
+#!/usr/bin/env bash
+printf '%s|' "\$@" > "$SANDBOX/remove-was-called"
+git -C "$MAIN" worktree remove --force "\$3"
+GH
+chmod +x "$SANDBOX/bin/project-remove"
+"$SCRIPT" --repo "$MAIN" --remove-cmd \
+  'project-remove --reason "finished work" "<path>"' --act </dev/null >/dev/null 2>&1
+assert_has "$(cat "$SANDBOX/remove-was-called" 2>/dev/null || echo)" \
+  "--reason|finished work|$MAIN/.claude/worktrees/alpha|" \
+  "quotes group an argument and are not passed through"
+assert_missing_path "$MAIN/.claude/worktrees/alpha" "the worktree is gone"
+end_sandbox
+
 # ========================================================================
 # AC2/AC3 · The same test, reachable by any other caller that deletes a
 #           branch, so no caller carries its own copy of the escalation.

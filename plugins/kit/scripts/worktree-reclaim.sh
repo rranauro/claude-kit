@@ -299,15 +299,24 @@ substitute() { # text placeholder value
   printf '%s' "$out$text"
 }
 
+# Tokenized with shell quoting but never evaluated, so `--reason "finished
+# work"` stays one argument without the declaration becoming code. Empty when
+# the line does not parse.
 remove_argv() { # branch path -> REMOVE_ARGV
   local branch="$1" path="$2" word
-  local -a words
-  read -ra words <<< "$remove_cmd"
   REMOVE_ARGV=()
-  for word in "${words[@]}"; do
+  while IFS= read -r -d '' word; do
     word="$(substitute "$word" "<branch>" "$branch")"
     REMOVE_ARGV+=("$(substitute "$word" "<path>" "$path")")
-  done
+  done < <(python3 -c '
+import shlex, sys
+try:
+    words = shlex.split(sys.argv[1])
+except ValueError:
+    sys.exit(1)
+sys.stdout.write("".join(w + "\0" for w in words))
+' "$remove_cmd")
+  [ "${#REMOVE_ARGV[@]}" -gt 0 ] || return 1
   [[ "$remove_cmd" == *"<branch>"* || "$remove_cmd" == *"<path>"* ]] ||
     REMOVE_ARGV+=("$branch")
 }
@@ -321,7 +330,10 @@ reclaim_path() { # path branch -> 0 when the path is gone; REMOVE_REFUSAL on a r
   if [ -n "$remove_cmd" ]; then
     # The project's own teardown replaces `git worktree remove` rather than
     # preceding it; kit:worktree-conventions Step 3 says why.
-    remove_argv "$branch" "$path"
+    if ! remove_argv "$branch" "$path"; then
+      REMOVE_REFUSAL="remove command could not be parsed: $remove_cmd"
+      return 1
+    fi
     output="$("${REMOVE_ARGV[@]}" </dev/null 2>&1)"; status=$?
     if [ "$status" -ne 0 ]; then
       # A refusal is the project's safety check, and it holds even where the
@@ -345,6 +357,7 @@ reclaim_path() { # path branch -> 0 when the path is gone; REMOVE_REFUSAL on a r
 # --- main ---------------------------------------------------------------
 
 selected=""
+refused=""
 while IFS=$'\t' read -r path branch; do
   [ -n "$path" ] || continue
   if [ -n "$target" ] && [ "$branch" != "$target" ] && [ "$path" != "$target" ]; then
@@ -381,6 +394,9 @@ while IFS=$'\t' read -r path branch; do
 
   if ! reclaim_path "$path" "$branch"; then
     emit held "$path" "${REMOVE_REFUSAL:-could not be removed}"
+    # A teardown that unregistered the worktree before refusing leaves exactly
+    # what the husk sweep below looks for.
+    [ -n "$REMOVE_REFUSAL" ] && refused="$refused$path"$'\n'
     continue
   fi
   emit removed "$path"
@@ -412,6 +428,7 @@ if [ -z "$target" ] && [ -n "$worktree_root" ] && [ -d "$worktree_root" ]; then
     [ -e "$candidate" ] || continue
     resolved="$(cd "$candidate" 2>/dev/null && pwd -P)" || resolved="$candidate"
     printf '%s\n' "$live" | grep -Fxq "$resolved" && continue
+    printf '%s' "$refused" | grep -Fxq -e "$candidate" -e "$resolved" && continue
     emit orphan "$candidate"
     [ "$act" -eq 1 ] && sweep_dir "$candidate"
   done

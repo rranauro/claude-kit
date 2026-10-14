@@ -34,7 +34,8 @@ any that applies to the path you're working in):
   call:** `<branch>` and `<path>` are replaced by the worktree's branch and
   absolute path, and nothing else is passed. A line naming neither placeholder
   gets the branch appended as its one argument. A project wanting the path
-  writes `<path>`.
+  writes `<path>`. Shell quotes group an argument, but the line is never run
+  through a shell, so pipes, `&&` and variables are passed through as literal text.
 - **provisions** — `yes` means create also installs dependencies and wires
   runtime files. Then `kit:start-ticket`'s `wire-worktree` must be **skipped
   entirely**, not merged with — re-symlinking on top of a real install is how
