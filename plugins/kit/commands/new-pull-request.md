@@ -35,7 +35,7 @@ A rule the project states about PR bodies (`kit:project-rules`) governs this
 body over the defaults here.
 
 ```
-gh pr create --title "the pr title" --body-file <the visual-pr-body.md it wrote, plus the trailer>
+gh pr create --base <base> --title "the pr title" --body-file <the visual-pr-body.md it wrote, plus the trailer>
 ```
 
 Name the running model in the trailer if you know it (e.g.

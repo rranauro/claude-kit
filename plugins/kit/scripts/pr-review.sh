@@ -126,6 +126,7 @@ base_ref() {
   [ -n "$ref" ] && [ "${ref#origin/}" = "$ref" ] && ref="origin/$ref"
   printf '%s\n' "${ref:-origin/main}"
 }
+BASE_REF="$(base_ref)"
 
 # Which project the branch touches, detected from a build artifact rather than a
 # directory name: walk up from the changed files' common directory to the first one
@@ -133,9 +134,8 @@ base_ref() {
 # review belongs under the project it reviews; a single-project repo, and a diff
 # spanning two projects, both resolve to the root.
 project_dir() {
-  local root="$1" base_ref mb common marker
-  base_ref="$(base_ref)"
-  mb="$(git merge-base HEAD "$base_ref" 2>/dev/null)" || return 0
+  local root="$1" mb common marker
+  mb="$(git merge-base HEAD "$BASE_REF" 2>/dev/null)" || return 0
   [ -n "$mb" ] || return 0
   common="$(git diff --name-only "$mb" 2>/dev/null | awk -F/ '
     NR==1 { n = NF - 1; for (i = 1; i <= n; i++) p[i] = $i; next }
@@ -243,7 +243,7 @@ CLAUDE_BIN="$(command -v claude || true)"
 # Log the diff size so an unexpectedly expensive run is visible after the fact.
 # Advisory only — no auto-downgrade.
 CHANGED="$(
-  mb="$(git merge-base HEAD "$(base_ref)" 2>/dev/null)" || exit 0
+  mb="$(git merge-base HEAD "$BASE_REF" 2>/dev/null)" || exit 0
   [ -n "$mb" ] || exit 0
   git diff --shortstat "$mb" 2>/dev/null | tail -1
 )"
