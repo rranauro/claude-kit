@@ -114,18 +114,23 @@ every call at a minimum duration and treats an under-floor return as a hard
 stop, not a quiet "nothing startable" — the failure mode that's actually
 dangerous to a run nobody is watching.
 
-Unlike the CI gate, this runner doesn't need to construct a
-`plugin_marketplaces` registration by hand: it relies on the target checkout's
-own tracked `.claude/settings.json` (`extraKnownMarketplaces` +
-`enabledPlugins`), the same project-level config that already makes `/kit:`
-commands resolve for every interactive session against that repo. That's
-`claude -p`'s *default* `--setting-sources`, not something the script adds —
-which is also why a probe finding that plugin commands don't resolve headlessly
-doesn't apply here *if it passed* `--setting-sources ''`: that excludes the
-marketplace registration the commands resolve through, so it measures the
-exclusion rather than headless mode. Still worth a real
-smoke test against one ticket before trusting the runner with a whole epic —
-the floor-duration check above is the safety net if that assumption is wrong.
+Unlike the CI gate, this runner constructs no `plugin_marketplaces`
+registration, and nothing in the target repo decides whether `/kit:` resolves.
+`ship-startable.sh` passes `--plugin-dir`, set to the plugin it lives in, on
+every call — `-p` and `--bg` alike — because print mode does not load the
+project setting source: however the kit reaches an interactive session against
+that repo, a `claude -p` call never sees it, and `/kit:list` comes back
+"Unknown command".
+
+**So the kit a run ships with is the copy the script was launched from.** From a
+clone, tickets ship on that clone's kit, not on whatever the target repo's
+sessions have installed; launch it from the installed plugin's own `scripts/` to
+keep the two the same. A run whose commands do not resolve is fixed at that
+path, not in the target repo's settings.
+
+Still worth a real smoke test against one ticket before trusting the runner
+with a whole epic — the per-call minimum-duration floor above is the safety net
+if a command does not resolve.
 
 ## The permission grant is broader than tending's, on the same split
 
@@ -142,8 +147,8 @@ all, which is the failure this grant now avoids. A held PR is armed only where
 the project declares `## Hold check` (see `commands.md`). It must grant `gh pr ready` and the kit's own scripts too. `hand-off`
 takes the PR out of draft with `gh pr ready` before arming, and a pass refused
 it parks with a finished PR left in draft. The scripts are matched by a
-`*/scripts/<name>.sh` wildcard because their path differs by install: relative
-in this repo, an expanded `${CLAUDE_PLUGIN_ROOT}` in a consuming project.
+`*/scripts/<name>.sh` wildcard because the `${CLAUDE_PLUGIN_ROOT}` a prompt
+file names them by expands to a different absolute path in every install.
 Worktree cleanup is granted only through `worktree-reclaim.sh`, never as a raw
 `rm -rf .claude/worktrees/*` rule: a wildcard there also matches a path that
 climbs out with `..`.

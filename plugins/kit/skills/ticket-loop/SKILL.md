@@ -47,7 +47,7 @@ this one does not restate it.
   stays at the main checkout.
 - **Never merge locally, and never bring the base into the branch at all.** The
   PR merges on GitHub, through the auto-merge `hand-off` arms. Integrating
-  `main` *into* the branch is a different act and equally not a pass's: `git
+  the base *into* the branch is a different act and equally not a pass's: `git
   merge`, `git rebase` and `gh pr update-branch` are one operation under three
   names, and a PR that has fallen behind its base is the operator's to carry
   forward. A pass that integrates has moved the head its review round was
@@ -78,7 +78,7 @@ this one does not restate it.
 ## Phase 1 · `prepare` — Worktree and plan
 
 Invoke `kit:start-ticket <number>` via the Skill tool. Its mechanical half — the
-clean-main check, the worktree off `origin/main`, the branch name, the gitignored
+clean-main check, the worktree off the base branch, the branch name, the gitignored
 runtime wiring — asks nothing and runs identically in both modes.
 
 Its Step 10 is the gate. Attended, answer its questions as written: is the plan
@@ -266,7 +266,7 @@ The names are `copilot` and `claude-review`. Pass what it lists, comma-joined;
 absent, pass nothing and both are expected.
 
 ```
-plugins/kit/scripts/await-reviews.sh <pr-number> [--sources <listed>]
+${CLAUDE_PLUGIN_ROOT}/scripts/await-reviews.sh <pr-number> [--sources <listed>]
 ```
 
 It waits for CI to complete, requests the Copilot review, then blocks until
@@ -310,7 +310,9 @@ It runs here because the round's fixes are pushed, so it judges the head that
 will merge (it pushes nothing itself), and auto-merge is not yet armed, so a hold
 cannot lose a race with a green CI.
 
-- **`**No shape findings.**`** — post nothing and carry on to step 4.
+- **`**No shape findings.**`** — post nothing and carry on to step 4. Where it
+  carries a `**Not judged:**` line, post it with `gh pr comment`, no label — it
+  is the only record that changed code went unreviewed.
 - **No marked comment comes back** — the pass failed. Say so wherever this phase
   reports and carry on as if clean: a hold with no review to give its reason is
   worse than leaving the shape unjudged.

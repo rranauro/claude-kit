@@ -12,10 +12,10 @@ for a pull request.
 - If the branch has not been pushed or is behind, push it with `git push -u origin <branch>`.
 
 **Step 2 — Analyze all changes:**
-- Resolve `<base>`: the base branch the project's rules state (`kit:project-rules`),
-  else `main`. Every `main` in this command means `<base>`, and `gh pr create`
-  below takes `--base <base>` when it is not `main`.
-- Read the full diff with `git diff main...HEAD` to understand every change.
+- Resolve `<base>` as `kit:project-rules` *The base branch* says. `gh pr create`
+  below takes `--base <base>`, since the PR's default target is the repository's
+  default branch and a stated base may differ from it.
+- Read the full diff with `git diff origin/<base>...HEAD` to understand every change.
 - Review ALL commits (not just the latest) to build a complete picture.
 - If the branch name starts with a number (e.g., `218-...`), that's the issue number.
 
@@ -35,12 +35,13 @@ A rule the project states about PR bodies (`kit:project-rules`) governs this
 body over the defaults here.
 
 ```
-gh pr create --title "the pr title" --body-file <the visual-pr-body.md it wrote, plus the trailer>
+gh pr create --base <base> --title "the pr title" --body-file <the visual-pr-body.md it wrote, plus the footer>
 ```
 
-Name the running model in the trailer if you know it (e.g.
-`Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>`); otherwise leave it as
-`Claude`. Do not hardcode a model version in this file — it goes stale.
+**The footer is the one the host's attribution instruction prescribes for PR
+descriptions**, or none if it prescribes none. Never a `Co-Authored-By` line:
+that is a commit trailer (`kit:commit` writes it), inert in a PR body and at odds
+with the host's footer.
 
 **Step 3b — Carry a hold forward, if the issue asked for one:**
 
@@ -103,7 +104,7 @@ Format:
 <Bullet list of non-obvious choices made — trade-offs, alternatives rejected, architectural constraints>
 
 ## Files Touched
-<`git diff --stat main...HEAD`, grouped by concern>
+<`git diff --stat origin/<base>...HEAD`, grouped by concern>
 ```
 
 Tell the user the file has been saved.

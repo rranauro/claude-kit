@@ -9,7 +9,7 @@ license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/cla
 Reclaiming a worktree at one cardinality and at many is the same act, so it is
 one skill. An optional target selects a single worktree; no argument sweeps.
 
-**The mechanical half is not written here.** `scripts/worktree-reclaim.sh` in
+**The mechanical half is not written here.** `worktree-reclaim.sh` in
 this plugin does the inventory, the verdicts, and the acting, because those are
 deterministic and a paragraph of instructions cannot be asserted against a
 throwaway repository. `tests/worktree-reclaim.sh` is where the behaviour is
@@ -61,7 +61,7 @@ including when GitHub could not be reached, the branch stays and is reported.
 argument and the alternatives it beat; do not re-derive it here.
 
 Any other caller that deletes a branch asks the same way, through
-`worktree-reclaim.sh --account <branch>`.
+`${CLAUDE_PLUGIN_ROOT}/scripts/worktree-reclaim.sh --account <branch>`.
 
 ## Phases
 
@@ -88,7 +88,7 @@ stopped does it in its own remove command.
 ### 2 · `inventory` and 3 · `verdicts` — run the script
 
 ```
-scripts/worktree-reclaim.sh --repo <main-checkout> [--target <branch|path>] \
+${CLAUDE_PLUGIN_ROOT}/scripts/worktree-reclaim.sh --repo <main-checkout> [--target <branch|path>] \
   [--worktree-root <dir>] [--remove-cmd <cmd>]
 ```
 

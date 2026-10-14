@@ -1,12 +1,12 @@
 ---
 name: start-ticket
-description: Take a GitHub issue to a wired worktree with its plan verified — the clean-main check, the worktree off origin/main, the gitignored runtime files a fresh worktree lacks, and the qualification test that decides whether the approach is settled. Use when an orchestrator needs a ticket set up for implementation.
+description: Take a GitHub issue to a wired worktree with its plan verified — the clean-main check, the worktree off the base branch, the gitignored runtime files a fresh worktree lacks, and the qualification test that decides whether the approach is settled. Use when an orchestrator needs a ticket set up for implementation.
 license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 # Start Ticket
 
-Take a GitHub issue to the point where implementation can begin: read it, create a worktree off `origin/main`, wire up what a fresh worktree lacks, and confirm the approach is settled.
+Take a GitHub issue to the point where implementation can begin: read it, create a worktree off `origin/<base>`, wire up what a fresh worktree lacks, and confirm the approach is settled.
 
 **This is shared mechanism, not an entry point.** `kit:ticket-loop` invokes it as its first phase and carries the ticket further; running it alone stops at a wired worktree, which is strictly less. It is a skill rather than a command for that reason.
 
@@ -41,9 +41,9 @@ If there are uncommitted changes, STOP and warn the user. Suggest they commit or
 - Summarize the issue for the user: title, key requirements, acceptance criteria if any
 
 **Step 4 · `branching-strategy` — Decide the branching strategy:**
-- **Default:** a new worktree off `origin/main` (proceed to `confirm-branch-name`).
+- **Default:** a new worktree off `origin/<base>` (proceed to `confirm-branch-name`).
 - **Bundle onto current branch:** if the issue is a small follow-up to in-flight work on the current branch, ask the user whether to bundle. If yes, skip `confirm-branch-name` through `wire-worktree` and go straight to `worktree-paths` — no new worktree, no new branch.
-- **Stack on a parent branch:** if the issue depends on an unmerged feature branch, ask whether to stack. If yes, replace `origin/main` with the parent branch name in `create-worktree`'s `git worktree add`.
+- **Stack on a parent branch:** if the issue depends on an unmerged feature branch, ask whether to stack. If yes, replace `origin/<base>` with the parent branch name in `create-worktree`'s `git worktree add`.
 
 **Step 5 · `confirm-branch-name` — Confirm the branch name:**
 - Format: `<issue-number>-<short-description>` (e.g., `42-add-user-avatar`)
@@ -63,10 +63,10 @@ Where one exists, `create-worktree` delegates to it and `wire-worktree` is
 skipped entirely. Don't decide that here; the skill does.
 
 **Step 7 · `create-worktree` — Create the worktree:**
-- Resolve `<base>`: the base branch the project's rules state (`kit:project-rules`), else `main`. Every `main` in this step means `<base>`.
-- `git fetch origin main` — refresh `origin/main` (don't rely on "up to date" from `git status`; that only reflects the last fetch)
-- **Project owns it:** run its create command, then resolve the resulting path with `git worktree list --porcelain` as the skill describes. Check the new branch's base — a project recipe often cuts from `HEAD` rather than `origin/main` — and offer a rebase if it's behind. Never assume the path; the command may not print it.
-- **Otherwise:** `git worktree add .claude/worktrees/<branch-name> -b <branch-name> origin/main`, under this repo — never as a sibling of the main checkout.
+- Resolve `<base>` as `kit:project-rules` *The base branch* says.
+- `git fetch origin <base>` — refresh `origin/<base>` (don't rely on "up to date" from `git status`; that only reflects the last fetch)
+- **Project owns it:** run its create command, then resolve the resulting path with `git worktree list --porcelain` as the skill describes. Check the new branch's base — a project recipe often cuts from `HEAD` rather than `origin/<base>` — and offer a rebase if it's behind. Never assume the path; the command may not print it.
+- **Otherwise:** `git worktree add .claude/worktrees/<branch-name> -b <branch-name> origin/<base>`, under this repo — never as a sibling of the main checkout.
 
 Either way, hold the resulting absolute path as `<worktree>`. Everything downstream uses it.
 
