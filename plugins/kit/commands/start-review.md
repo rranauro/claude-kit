@@ -90,13 +90,16 @@ Unless `collect-review` below finds one already posted, start it detached first:
 ${CLAUDE_PLUGIN_ROOT}/scripts/pr-review.sh --detach --source start-review <n>
 ```
 
-Run it from the **main checkout**, not the review worktree — the script resolves
-its output directory relative to the repo, and the main checkout is what keeps
-the artifact alive after the worktree is gone.
+Run it from the **main checkout**, not the review worktree — the script writes
+into the main checkout, which is what keeps the artifact alive after the worktree
+is gone.
 
-`--detach` returns immediately and logs to
-`~/.claude/logs/pr-review/<ts>-pr<n>.log`. Tell the user it's running and where
-the log is, then go finish wiring the worktree.
+`--detach` returns immediately with one line naming the file it will write — or,
+on your own PR, saying it will post a comment instead — and the log under
+`~/.claude/logs/pr-review/`. **Hold that file path** — the script
+owns where a review lands, and `collect-review` reads the path it printed rather
+than one written down here. Tell the user it's running and where the log is,
+then go finish wiring the worktree.
 
 ---
 
@@ -113,11 +116,8 @@ gh pr view <n> --json comments \
 If that returns a review, use it — don't re-run. It's the persistent copy and it
 already lives where colleagues can see it.
 
-**Otherwise collect the detached run** from `fire-review`. It writes to:
-
-```
-<main-checkout>/reviews/pr-<n>/claude-review.md
-```
+**Otherwise collect the detached run** from `fire-review`, at the path its
+launch line printed.
 
 Wait for the file rather than re-running — a second invocation duplicates the
 work and the token spend. If it never arrives, read the tail of the log for the
@@ -126,7 +126,8 @@ the log is the only place it surfaces, so never read the absence of an error as
 success.
 
 If `fire-review` was skipped (resuming an old session, worktree already there),
-run it in the foreground instead — same command without `--detach`.
+run it in the foreground instead — same command without `--detach`. It prints the
+path it wrote on completion.
 
 **Relay a ≤120-word TL;DR. Do not re-expand the review.** A verdict line, AC
 alignment, finding counts, the top concern (say so if it's tagged
@@ -226,6 +227,6 @@ has no PR, so nothing accounts for its tip — which is the correct answer for a
 branch whose commits exist nowhere else. Delete it yourself once you are finished
 with the review.
 
-The artifacts under `<main-checkout>/reviews/pr-<n>/` are **not** touched by
-worktree removal. That's the point of writing them there. Remove that directory
-only if the user asks to clear the artifacts too.
+The review file `fire-review` named lives in the main checkout, so it is **not**
+touched by worktree removal. That's the point of writing it there. Remove its
+directory only if the user asks to clear the artifacts too.
