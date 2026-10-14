@@ -85,8 +85,8 @@ this same edit is what holds it.
 **Step 4 — Confirm:**
 Print the PR URL so the user can review it.
 
-**Step 5 — Save ticket context to `tickets/`:**
-After the PR is created, write a summary file to `tickets/<pr-number>-<branch>.md`. It records why the change was made for whoever debugs it later — `/target-debug` reads these if you have it installed, and they stand on their own if you don't. Add `tickets/` to `.gitignore` if it isn't there already; these are local working notes, not repo content.
+**Step 5 — Save ticket context to the scratch notes:**
+After the PR is created, write a summary file to `<tickets>/<pr-number>-<branch>.md`, taking `<tickets>` from `kit:working-files`. It records why the change was made for whoever debugs it later — `/target-debug` reads these if you have it installed, and they stand on their own if you don't. These are local working notes, not repo content, and that skill keeps them out of git.
 
 Format:
 ```markdown
@@ -105,7 +105,7 @@ Format:
 <`git diff --stat main...HEAD`, grouped by concern>
 ```
 
-Create the `tickets/` directory if it doesn't exist. Tell the user the file has been saved.
+Tell the user the file has been saved.
 
 **Arguments:** $ARGUMENTS
 Bare `draft` and `unattended` tokens are read by Step 3 and are not guidance.

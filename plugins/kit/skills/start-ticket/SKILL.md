@@ -98,12 +98,12 @@ hand stays leased until they `git worktree unlock` it or the lease runs out.
 **Step 8 · `wire-worktree` — Wire up the worktree:**
 
 **If `worktree-layout` reported that the project's create command provisions,
-skip everything below except the `plans/` link.** It already installed
+skip everything below except the plan-cache link.** It already installed
 dependencies and wired runtime files; symlinking on top of that replaces a real
 `node_modules` with a link, which fails later and far from here. Say you skipped
 it and why.
 
-The `plans/` link is the exception. No project recipe knows this suite exists, so
+The plan-cache link is the exception. No project recipe knows this suite exists, so
 nothing else will ever create it, and `plan-implementation` and `/kit:walkthrough`
 both expect the cache to be there. Missing, the handoff no longer breaks — the
 store is the issue, and `kit:ticket-artifacts` falls back to it — but every read
@@ -144,14 +144,16 @@ changes.
   `ln -sfn $MAIN/<path>/node_modules $WT/<path>/node_modules`
   Use `-n` on both, or a re-run links *inside* the existing directory instead of
   replacing it.
-- **The shared `plans/` directory**, so the worktree reads and writes the same
-  gitignored artifact cache as the main checkout. Without the link a fresh
-  worktree has no `plans/` at all, so every artifact read costs a `gh` round trip
-  and every artifact written lands somewhere the checkout can't see:
-  `mkdir -p $MAIN/plans`
-  `ln -sfn $MAIN/plans $WT/plans`
-  Use `-n` so the link is created *as* `plans` rather than inside an existing
-  directory. `plans/` is gitignored, so the symlink won't dirty the worktree.
+- **The shared plan cache**, so the worktree reads and writes the same artifact
+  cache as the main checkout. Without the link a fresh worktree has no cache at
+  all, so every artifact read costs a `gh` round trip and every artifact written
+  lands somewhere the checkout can't see. Take `<plans>` from
+  `kit:working-files`; if it says the cache is inside the repository, link it at
+  the same path relative to the root, `<rel>`:
+  `mkdir -p "$(dirname "$WT/<rel>")"`
+  `ln -sfn "<plans>" "$WT/<rel>"`
+  Use `-n` so the link is created *as* the cache rather than inside an existing
+  directory. A cache outside the repository needs no link.
 - **Uploaded-file storage** is often wired by the project's own boot script. If
   yours does that, say so and let it — don't create the link yourself and risk
   conflicting with it.
@@ -166,7 +168,7 @@ alternatives it beat. It does not care where that is stored, only that it exists
 as something a reader can point at. Two forms count:
 
 - **A stored plan**, read through `kit:ticket-artifacts` — the cache at
-  `<worktree>/plans/<issue-number>-plan.md` if it's there, otherwise the marked
+  `<plans>/<issue-number>-plan.md` if it's there, otherwise the marked
   `plan` comment on the issue, which the skill writes back to the cache as it
   reads. Never conclude there is no plan from a missing file: the file is the
   cache and the comment is the store, and a fresh clone, a rebuilt worktree, or
@@ -238,7 +240,7 @@ is a different question, and `kit:ticket-artifacts` settles it the same way.)
 
 **If no plan is present**, do NOT improvise an ad-hoc plan and do NOT start implementing. The ticket has no settled approach yet, so the required next step is to **invoke `kit:design` through the Skill tool** before proceeding.
 - Pass it this issue number. The issue states the problem; `kit:design`'s job is the *how* — placement, approaches, the grilling pass, and the durable handoff artifact.
-- It stores the plan itself, via `kit:ticket-artifacts` — the marked comment on the issue plus the `$MAIN/plans/<issue-number>-plan.md` mirror. Don't write either file here.
+- It stores the plan itself, via `kit:ticket-artifacts` — the marked comment on the issue plus the `<plans>/<issue-number>-plan.md` mirror. Don't write either file here.
 - Once it's written, re-enter this step at the **"If the plan is present"** branch above: present the summary, run the anchor-verification pass, and ask the user whether to proceed or adjust before any implementation.
 - **An unspecified issue is not a failure of the issue.** Falling through to here is the normal path for a ticket filed as a lean problem statement, which is how `/kit:architect` writes them. Don't report it as something missing or push the user to go back and rewrite the ticket.
 

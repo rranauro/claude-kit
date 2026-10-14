@@ -31,6 +31,10 @@ project's own design vocabulary:
 - The domain language in `CONTEXT.md` names the concepts; ADRs in `docs/adr/`
   record decisions this command should not re-litigate.
 
+`CONTEXT.md`, `docs/adr/` and `plans/` in this skill and its report format are
+the defaults: each means the location `kit:working-files` resolves for this
+project.
+
 Those two skills supply vocabulary and checks, not a procedure. Keep the survey
 at survey altitude: a candidate is a *direction* worth a day of someone's
 attention, not a designed class.
@@ -143,18 +147,16 @@ is in, and never merge the two.
 ### 3. Present candidates as an HTML report
 
 Write the report into the repository's `plans/` directory, so it sits beside the
-plans the other commands write and stays findable weeks later. Resolve the repo
-root with `git rev-parse --show-toplevel` from the main checkout, `mkdir -p` the
-directory if needed, and write to
+plans the other commands write and stays findable weeks later. Take its path
+from `kit:working-files`, ready to write, and write to
 `plans/architecture-review-<area>-<YYYY-MM-DD>.html`, where `<area>` is a short
 slug for what was scanned (`plans/architecture-review-themes-2026-08-23.html`).
 Same-day reruns over the same area overwrite; a different area gets its own file.
 
-`plans/` is gitignored and symlinked into every worktree by `kit:start-ticket`,
-so the report survives the session without landing in the repo. Add `/plans` to
-`.gitignore` if it isn't there already. Never write the report to `$TMPDIR` or
-any other path outside the project — a hashed temp path is unrecoverable the
-moment the terminal scrollback is gone, which is the same as not writing it.
+`plans/` is kept out of git, so the report survives the session without
+landing in the repo. Never write the report to `$TMPDIR` or any other ad hoc
+temporary path in place of that location — a hashed temp path is unrecoverable the moment the terminal scrollback
+is gone, which is the same as not writing it.
 
 Open it for the user — `xdg-open <path>` on Linux, `open <path>` on macOS,
 `start <path>` on Windows — and tell them the path relative to the repo root.

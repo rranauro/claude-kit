@@ -54,7 +54,7 @@ Constituent skills:
 ## The artifact
 
 The `walkthrough` artifact, stored by `kit:ticket-artifacts` — the live copy in
-the cache at `plans/<issue>-walkthrough.md`, which the worktree shares with the
+the cache at `<plans>/<issue>-walkthrough.md`, which the worktree shares with the
 main checkout, and a marked comment on the issue that outlives both.
 
 **The cache is the live position; the comment is the record.** Write the file on

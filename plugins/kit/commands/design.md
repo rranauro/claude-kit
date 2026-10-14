@@ -229,18 +229,18 @@ again; invoke it rather than reproducing the mechanics here.
 ### Where the plan goes
 
 **There is an issue number:** store it as the `plan` artifact — the marked
-comment on the issue, updated in place, and the `plans/<issue-number>-plan.md`
-mirror. Both, in one step. This is the default now regardless of who invoked the
-command: the same reasoning reaches an agent that never had your `plans/`
-directory, and a direct invocation is no longer a plan that dies with the
-machine.
+comment on the issue, updated in place, and the `<plans>/<issue-number>-plan.md`
+mirror. Both, in one step. This
+is the default now regardless of who invoked the command: the same reasoning
+reaches an agent that never had your plan cache, and a direct invocation is no
+longer a plan that dies with the machine.
 
 The issue is already public, so posting there discloses nothing the ticket
 didn't. What it does add is permanence — say what you're about to store before
 you store it, and take a no. A conversation the user wanted to think in rather
 than publish is theirs to keep local.
 
-**There is no issue number:** write `plans/<short-slug>-plan.md` and stop.
+**There is no issue number:** write `<plans>/<short-slug>-plan.md` and stop.
 Nothing to attach it to; don't offer to file an issue to hold it.
 
 Keep it short. Capture the durable reasoning the lean issue intentionally omits —

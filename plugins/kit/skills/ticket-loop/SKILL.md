@@ -82,7 +82,7 @@ runtime wiring — asks nothing and runs identically in both modes.
 Its Step 10 is the gate. Attended, answer its questions as written: is the plan
 still fresh, its anchor-verification pass when it is not, then the summary and
 "proceed or adjust". Do not improvise a plan, do not require a stored plan when
-the issue already says what a plan would, and do not read `plans/` directly — a
+the issue already says what a plan would, and do not read the plan cache directly — a
 missing file is not a missing plan; `kit:ticket-artifacts` resolves it.
 
 Unattended, each of those becomes a rule:
