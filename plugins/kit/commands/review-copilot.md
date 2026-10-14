@@ -56,7 +56,7 @@ The shape review is one marker comment too, in the format `kit:shape-review` §5
 - Each `` ### <n>. <count name> — `<Class#method>` `` section is one finding. Key it on the `file:line` its **Call site now** line names.
 - The **After** panels are the fix the reviewer proposes, and **Costs** / **Placement** are its reasoning — carry all three as the finding text.
 - A heading ending `— contested` carries several **After — <move>** blocks and marks none preferred. Carry them all; Step 3 does not pick one.
-- The `<details><summary>Inventory</summary>` block is not a finding, and neither is the `**Not judged:**` line — it names what the pass did not read, not something to fix. A comment reading `**No shape findings.**` is an empty source.
+- The `<details><summary>Inventory</summary>` block is not a finding, and neither is the `**Not judged:**` line. A comment reading `**No shape findings.**` is an empty source.
 
 If the `<!-- claude-pr-review -->` comment is not present (the hook isn't registered for this project, nobody ran `/kit:start-review`, or it found nothing), there are no Claude findings to merge; build the buckets from the sources that did land.
 

@@ -309,9 +309,8 @@ will merge (it pushes nothing itself), and auto-merge is not yet armed, so a hol
 cannot lose a race with a green CI.
 
 - **`**No shape findings.**`** — post nothing and carry on to step 4. Where it
-  carries a `**Not judged:**` line, post it with `gh pr comment` and no label:
-  that line is the only record a reader gets that changed code went unreviewed,
-  and posting nothing would leave the PR reading as judged clean.
+  carries a `**Not judged:**` line, post it with `gh pr comment`, no label — it
+  is the only record that changed code went unreviewed.
 - **No marked comment comes back** — the pass failed. Say so wherever this phase
   reports and carry on as if clean: a hold with no review to give its reason is
   worse than leaving the shape unjudged.
