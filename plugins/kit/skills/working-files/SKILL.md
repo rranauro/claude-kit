@@ -41,9 +41,12 @@ always had.
 
 **A path is relative to the repository root, whichever file declared it.** A
 sub-project's `CLAUDE.md` writing `plans: rx/tmp/plans` means the same directory
-the toplevel one would, so a line copied between files cannot silently move. An
-absolute path is allowed and means outside the repository — it belongs in
-`CLAUDE.local.md`, since no other developer has that directory.
+the toplevel one would, so a line copied between files cannot silently move.
+**`plans` and `tickets` may also be absolute**, meaning outside the repository —
+that belongs in `CLAUDE.local.md`, since no other developer has that directory.
+`glossary` and `adr` may not: they are tracked content whose edits ship in the
+caller's PR, and a file outside the checkout ships in none. Treat an absolute
+one as absent and say so.
 
 ## What a caller gets back
 
@@ -51,8 +54,8 @@ absolute path is allowed and means outside the repository — it belongs in
 key (`plans`, `tickets`) is joined to the main checkout `kit:project-rules`
 already resolved — never a worktree, where a cache dies with the ticket. A
 tracked key (`glossary`, `adr`) is joined to the checkout the caller is writing
-in, because its edits ship in that checkout's PR. An absolute path is returned
-as written. Say with each local one whether it is inside the repository.
+in, because its edits ship in that checkout's PR. An absolute local path is
+returned as written. Say with each local one whether it is inside the repository.
 
 **Resolve all four once per pass, from the single rules read, and reuse them.**
 A caller that already holds `<plans>` from earlier in the pass uses it rather
@@ -64,10 +67,13 @@ out of git:
 
 ```
 git -C <main checkout> check-ignore -q <path relative to the root> \
-  || echo "/<path relative to the root>" >> "$(git -C <main checkout> rev-parse --git-common-dir)/info/exclude"
+  || echo "/<path relative to the root>" >> "$(git -C <main checkout> rev-parse --absolute-git-dir)/info/exclude"
 ```
 
-`mkdir -p` the `info/` directory first if it is missing. So no writer creates,
+`--absolute-git-dir`, because `--git-common-dir` answers relative to the
+directory git was asked about, and appending from anywhere else misses the file.
+Asked of the main checkout, its git directory is the common one every worktree
+reads. `mkdir -p` the `info/` directory first if it is missing. So no writer creates,
 excludes or defaults a location itself, and whichever writer touches it first, it
 is handled the same way.
 

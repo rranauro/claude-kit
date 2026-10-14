@@ -100,8 +100,8 @@ nothing else.
 
 **Destination.** Publish as an artifact when the tool is available; the reader
 gets a link rather than a path. Otherwise write it into the plan cache
-`kit:working-files` resolves, never a temp path. Either way the source file stays in the repo so
-the page can be regenerated and re-published to the same URL.
+`kit:working-files` resolves, never a temp path. Either way the source file stays
+in that cache so the page can be regenerated and re-published to the same URL.
 
 **Pair it with a plan file.** The page argues; a markdown file in the plan cache
 carries the same conclusion plus the verified code, the file:line citations, and

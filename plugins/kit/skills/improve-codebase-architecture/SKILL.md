@@ -153,10 +153,9 @@ from `kit:working-files`, ready to write, and write to
 slug for what was scanned (`plans/architecture-review-themes-2026-08-23.html`).
 Same-day reruns over the same area overwrite; a different area gets its own file.
 
-`plans/` is kept out of git and linked into every worktree by
-`kit:start-ticket`, so the report survives the session without landing in the
-repo. Never write the report to `$TMPDIR` or any other path outside the
-project — a hashed temp path is unrecoverable the moment the terminal scrollback
+`plans/` is kept out of git, so the report survives the session without
+landing in the repo. Never write the report to `$TMPDIR` or any other ad hoc
+temporary path in place of that location — a hashed temp path is unrecoverable the moment the terminal scrollback
 is gone, which is the same as not writing it.
 
 Open it for the user — `xdg-open <path>` on Linux, `open <path>` on macOS,
