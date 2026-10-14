@@ -1,6 +1,6 @@
 ---
 name: project-rules
-description: Find what a project says about how the kit runs there — which files hold its rules, which one wins when two speak, how a rule in the project's own words overrides a kit default, and where a setting may be recorded. Use whenever a command or skill reads a kit section such as `## Ship gate` or `## Worktrees`, before a GitHub write the kit has a default for, or when offering to record a setting.
+description: Find what a project says about how the kit runs there — which files hold its rules, which one wins when two speak, how a rule in the project's own words overrides a kit default, and where a setting may be recorded. Use whenever a command or skill reads a kit section such as `## Ship gate` or `## Worktrees`, before a GitHub write the kit has a default for, before reading or writing any label a prompt file names, or when offering to record a setting.
 license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
@@ -86,7 +86,8 @@ sentence you could not apply.
 `CONTEXT.md` defines, such as `bug`, `ready-for-agent` or `kit-hold`. Before
 reading or writing one, take the project's spelling from what its rules say,
 however they say it: "our bugs are `Type: Bug`", a table, a list under any
-heading. That is the project's label mapping; there is no other.
+heading. That is the project's label mapping; there is no other, and it comes
+from the pass's one read above — never re-read for a label.
 
 - **The project names its own label for the role** → read and write that one,
   wherever the prompt file says the canonical name: a `--label` filter, an
@@ -99,7 +100,8 @@ heading. That is the project's label mapping; there is no other.
   any rules were read.
 
 Say where the step reports which labels were translated or skipped. A reader
-cites this section rather than restating it.
+cites this section as "in the project's spelling (`kit:project-rules`
+*Labels*)" and states only what its decision does without the label.
 
 ## Recording a setting
 

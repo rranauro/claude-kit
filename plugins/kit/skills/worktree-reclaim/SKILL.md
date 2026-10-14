@@ -92,10 +92,8 @@ scripts/worktree-reclaim.sh --repo <main-checkout> [--target <branch|path>] \
   [--worktree-root <dir>] [--remove-cmd <cmd>]
 ```
 
-Pass `--hold-label` only where the project spells `kit-hold` otherwise —
-`kit:project-rules` *Labels* — with its label, or empty where it says it has
-none. The script cannot read the project's prose, so this is the one place the
-spelling reaches it.
+Pass `--hold-label` only where the project spells `kit-hold` otherwise
+(`kit:project-rules` *Labels*): its label, or empty where it says it has none.
 
 Without `--act` it changes nothing and prints one `verdict` record per worktree:
 

@@ -147,8 +147,8 @@ where the candidate comes from and which checks apply.
 nobody asked for, and you asked. Neither is required here.
 
 Four checks still apply, because each is a claim about the ticket or the world
-rather than a routing sticker. Match `epic` and `kit-blocked` in the project's
-spelling, and skip one it says it has none of — `kit:project-rules` *Labels*:
+rather than a routing sticker. Each label is in the project's spelling
+(`kit:project-rules` *Labels*):
 
 - **`epic`** — refuse it and say so. There is nothing in a container to
   implement, so naming one is a mistake rather than permission.

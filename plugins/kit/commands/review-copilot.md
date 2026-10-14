@@ -295,17 +295,11 @@ Leave the label uncreated and let the repo owner run `gh label create <name>`.
 An unattended pass may not mint vocabulary the whole repo then inherits, which
 is why the grant denies it; `docs/labels.md` carries that argument.
 
-**Every label in this command is named canonically**, the Step 1 read included:
-write and match the project's spelling, per `kit:project-rules` *Labels*. **A
-label the project says it has none of is skipped, not refused** — no write, and
-nothing reported as failed. Each record the label stood beside still lands, and
-the decision stays as it was:
-
-- **No `kit-review-closed`** — the marker comment alone closes the round.
-- **No `kit-pinned`** — the summary and the observation carry the finding.
-- **No `kit-hold`** — an escalation follows the failed-hold branch above: the
-  summary states it, `kit-review-closed` is withheld, and nothing is merged. Say
-  the project has no hold label rather than that a write failed.
+Every label in this command, the Step 1 read included, is in the project's
+spelling (`kit:project-rules` *Labels*). **Where the project has no `kit-hold`**, an escalation
+follows the failed-hold branch above — the summary states it,
+`kit-review-closed` is withheld, nothing is merged — and the report says the
+project has no hold label rather than that a write failed.
 
 **Step 8 · `enable-auto-merge` — Enable auto-merge (gated):**
 
