@@ -397,7 +397,8 @@ cover.
 
 ### Both tickets
 
-Each carries **`technical-debt`**, and `kit:writing-tickets` owns the body.
+Each carries **`technical-debt`**, in the project's spelling
+(`kit:project-rules` *Labels*), and `kit:writing-tickets` owns the body.
 Leave `ready-for-agent` off — that is a
 person's claim that a ticket is safe to pick up unbidden, and this command filed
 it.

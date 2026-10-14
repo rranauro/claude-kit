@@ -1,6 +1,6 @@
 ---
 name: project-rules
-description: Find what a project says about how the kit runs there — which files hold its rules, which one wins when two speak, how a rule in the project's own words overrides a kit default, and where a setting may be recorded. Use whenever a command or skill reads a kit section such as `## Ship gate` or `## Worktrees`, before a GitHub write the kit has a default for, when a step needs the base branch, or when offering to record a setting.
+description: Find what a project says about how the kit runs there — which files hold its rules, which one wins when two speak, how a rule in the project's own words overrides a kit default, and where a setting may be recorded. Use whenever a command or skill reads a kit section such as `## Ship gate` or `## Worktrees`, before a GitHub write the kit has a default for, before reading or writing any label a prompt file names, when a step needs the base branch, or when offering to record a setting.
 license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
@@ -79,6 +79,29 @@ rule and a kit default conflict and the rule is clear, follow the rule and say
 so where the step reports. When it is genuinely unclear which act a sentence
 governs, attended ask; unattended follow the kit's default and say which
 sentence you could not apply.
+
+## Labels
+
+**A label a prompt file names is the canonical name of a role** — the spelling
+`CONTEXT.md` defines, such as `bug`, `ready-for-agent` or `kit-hold`. Before
+reading or writing one, take the project's spelling from what its rules say,
+however they say it: "our bugs are `Type: Bug`", a table, a list under any
+heading. That is the project's label mapping; there is no other, and it comes
+from the pass's one read above — never re-read for a label.
+
+- **The project names its own label for the role** → read and write that one,
+  wherever the prompt file says the canonical name: a `--label` filter, an
+  `--add-label`, a check of what a PR or issue carries.
+- **The project says it has none** → skip the label. Do not write it, query on
+  it, or wait for it. Where the label carries a decision, the step that makes
+  the decision says what happens without it; the decision itself never loosens
+  because its mark was skipped.
+- **The project says nothing about it** → the canonical name, exactly as before
+  any rules were read.
+
+Say where the step reports which labels were translated or skipped. A reader
+cites this section as "in the project's spelling (`kit:project-rules`
+*Labels*)" and states only what its decision does without the label.
 
 ## The base branch
 

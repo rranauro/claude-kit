@@ -43,13 +43,16 @@ this to get to the interesting part.
 
 ### Assign the kind
 
-A ticket **leaves this step carrying exactly one kind label** — the project's
-mapping owns the strings; the canonical five are `bug`, `enhancement`,
-`improve-codebase`, `technical-debt`, and `user-experience`. Two kinds is two
-answers to one question, and nothing downstream picks a winner.
+A ticket **leaves this step carrying exactly one kind label** — in the project's
+spelling (`kit:project-rules` *Labels*); the canonical five are `bug`,
+`enhancement`, `improve-codebase`, `technical-debt`, and `user-experience`. Two
+kinds is two answers to one question, and nothing downstream picks a winner.
 
 That is a post-condition, not an instruction to apply one: act when a ticket
-carries no kind, or two.
+carries no kind, or two. **Where the project has no label for the kind you
+chose**, the ticket carries none: say which kind you decided in the triage
+comment, and that an unattended pass will read it as kindless and hold its PR
+for a look.
 
 The kind is not a topic. It answers one question: **can this ticket's acceptance
 be asserted without a human eye?** A test that goes green, a shape count,
@@ -281,7 +284,7 @@ marker as free text; it is parsed, and a token that is not a number either break
 the check or is silently dropped.
 
 **Apply the AFK-ready label** — `ready-for-agent` in the canonical vocabulary,
-or the project's own mapping where it differs.
+in the project's spelling (`kit:project-rules` *Labels*).
 
 Be clear with the user about what the label does, because it is narrower than
 "this ticket is vetted" and says less than its name suggests:

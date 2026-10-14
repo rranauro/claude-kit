@@ -291,14 +291,16 @@ the body's "Blocked by" section. `/kit:ship-ticket` skips a `kit-blocked` ticket
 and reports the reason, so the ticket stays labelled and visible rather than
 being withheld.
 
-**Then ask whether the PR should be held:**
+**Then ask whether the PR should be held** — unless the project has no hold
+label, which leaves nothing to carry the answer:
 
 ```
 Hold the PR for in-app verification before it merges? (y/N)
 ```
 
-If yes, `gh issue edit <n> --add-label kit-hold` — and if that write is refused,
-say the hold is not in place, since nothing downstream will report its absence. `/kit:new-pull-request`
+If yes, `gh issue edit <n> --add-label kit-hold`, in the project's spelling
+(`kit:project-rules` *Labels*) — and if that write is refused, say the hold is not
+in place, since nothing downstream will report its absence. `/kit:new-pull-request`
 transcribes it onto the PR, so the hold is in place before the CI gate can reach
 it.
 

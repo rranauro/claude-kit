@@ -295,6 +295,12 @@ Leave the label uncreated and let the repo owner run `gh label create <name>`.
 An unattended pass may not mint vocabulary the whole repo then inherits, which
 is why the grant denies it; `docs/labels.md` carries that argument.
 
+Every label in this command, the Step 1 read included, is in the project's
+spelling (`kit:project-rules` *Labels*). **Where the project has no `kit-hold`**, an escalation
+follows the failed-hold branch above — the summary states it,
+`kit-review-closed` is withheld, nothing is merged — and the report says the
+project has no hold label rather than that a write failed.
+
 **Step 8 · `enable-auto-merge` — Enable auto-merge (gated):**
 
 The first-pass automated review round is now closed, which is the precondition

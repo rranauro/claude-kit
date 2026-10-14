@@ -46,7 +46,8 @@ with the host's footer.
 **Step 3b — Carry a hold forward, if the issue asked for one:**
 
 If this PR names an issue — `Closes` or `Part of` — check whether that issue
-carries `kit-hold`:
+carries `kit-hold`, in the project's spelling (`kit:project-rules` *Labels*). A
+project with no hold label has no hold to carry; skip this step.
 
 ```
 gh issue view <issue-number> --json labels -q '.labels[].name'

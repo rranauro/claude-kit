@@ -21,7 +21,8 @@ The PR must be open and carry `kit-hold`, and its latest `<!-- kit-shape-review
 -->` comment must carry findings — found as `/kit:review-copilot` Step 2 finds
 it, by marker and latest `updated_at`. Missing any, say which and stop: a hold
 with no shape review is about something else, and this pass has nothing to say
-to it.
+to it. The label is in the project's spelling (`kit:project-rules` *Labels*);
+where the project has none, the open PR and its findings are the whole check.
 
 **Compare the review's heading SHA with `headRefOid`.** Where they differ, say
 so: the posted findings describe a head the branch has moved past — a review
@@ -125,7 +126,8 @@ Which moves landed and the head they left, and which tickets were filed,
 with their numbers and `/kit:triage <n>` beside each — unrouted, a sweep never
 starts one. Where a move landed, the posted shape review is against the
 old head — `/kit:shape-review <n>` judges the new one. `kit-hold` is still on
-and is the person's to clear: `gh pr edit <n> --remove-label kit-hold`.
+and is the person's to clear: `gh pr edit <n> --remove-label kit-hold`, in the
+project's spelling; a project with no hold label has nothing to clear.
 
 ## Never
 
