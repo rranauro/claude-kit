@@ -31,7 +31,7 @@ _Avoid_: Client, buyer, account
 
 ## Single vs multi-context repos
 
-**Single context (most repos):** One `CONTEXT.md` at the repo root, or wherever `kit:working-files` says the project keeps its glossary.
+**Single context (most repos):** One `CONTEXT.md` at the repo root.
 
 **Multiple contexts:** A `CONTEXT-MAP.md` at the repo root lists the contexts, where they live, and how they relate to each other:
 
@@ -54,7 +54,7 @@ _Avoid_: Client, buyer, account
 The skill infers which structure applies:
 
 - If `CONTEXT-MAP.md` exists, read it to find contexts
-- If only the single-context glossary exists, single context
-- If neither exists, create the single-context glossary lazily when the first term is resolved
+- If only a root `CONTEXT.md` exists, single context
+- If neither exists, create a root `CONTEXT.md` lazily when the first term is resolved
 
 When multiple contexts exist, infer which one the current topic relates to. If unclear, ask.

@@ -63,7 +63,7 @@ Techniques are the easy part. Everything between them is where the workflow live
   arrives at all, on a ticket that continues as a `/kit:polish-ticket` when the
   walk turns something up.
 - **Handoff across a context boundary.** `/kit:design` stores a plan on the issue
-  it belongs to, mirrored into a gitignored `plans/` cache that `kit:start-ticket`
+  it belongs to, mirrored into an untracked `plans/` cache that `kit:start-ticket`
   symlinks into every worktree, so the intended move is to converge, drop the
   plan, clear context, and run `kit:start-ticket` on it immediately — a clean
   window to implement in, against the repo the plan was written for. Storing it

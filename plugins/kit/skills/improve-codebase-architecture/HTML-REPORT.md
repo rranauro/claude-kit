@@ -1,7 +1,7 @@
 # HTML Report Format
 
 The architectural review is rendered as a single self-contained HTML file in the
-project's plan cache, which `kit:working-files` resolves — never a temp path. Tailwind and Mermaid both
+repository's `plans/` directory — never a temp path. Tailwind and Mermaid both
 come from CDNs. Mermaid handles graph-shaped diagrams reliably (who constructs a
 class and who calls it is exactly that); hand-built divs and inline SVG handle
 the more editorial visuals. Mix the two: don't lean on Mermaid for everything,

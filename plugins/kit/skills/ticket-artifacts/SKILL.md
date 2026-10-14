@@ -42,12 +42,10 @@ the "which copy is newer" question disappear: there is one copy.
 
 ## The cache
 
-Mirror the same body to `<plans>/<issue-number>-<kind>.md`, where `<plans>` is
-the location `kit:working-files` resolves — `plans/` at the root of the **main
-checkout** unless the project names another — and `mkdir -p` it. Keep it out of
-git as that skill says, never by editing a tracked `.gitignore`.
-`kit:start-ticket` links the directory into every worktree, so a worktree reads
-and writes the same cache as the checkout that owns it.
+Mirror the same body to `<plans>/<issue-number>-<kind>.md`, taking `<plans>`
+from `kit:working-files` — the main checkout's plan cache, ready to write.
+`kit:start-ticket` links it into every worktree as well, so the checkout and its
+worktrees share one cache.
 
 Write both in the same step, always. A command that writes only the comment
 leaves the offline path broken; one that writes only the file has stored nothing
@@ -60,8 +58,8 @@ attach it to, and inventing an issue to hold it is worse than losing it.
 
 ## The read
 
-1. **Local file first** — `<cwd>/<plans>/<n>-<kind>.md`, or under the absolute
-   location itself. Free, and it's the copy a worktree already has.
+1. **Local file first** — `<plans>/<n>-<kind>.md`. Free, and it's the copy a
+   worktree already has.
 2. **Then the marked comment.** If the file is absent, fetch the issue's comments
    and take the body under the marker. Write it back to the cache path as you go,
    so the second read in the same session is free.

@@ -1,6 +1,6 @@
 ---
 name: improve-codebase-architecture
-description: Scan a codebase for misshapen objects and present them as a visual HTML report in the plan cache, ranked strongest to weakest, then file the strongest as tickets under an epic and walk them through triage.
+description: Scan a codebase for misshapen objects and present them as a visual HTML report in plans/, ranked strongest to weakest, then file the strongest as tickets under an epic and walk them through triage.
 disable-model-invocation: true
 license: MIT — Copyright (c) 2026 Matt Pocock (LICENSE); changes Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
@@ -28,9 +28,12 @@ project's own design vocabulary:
 - Invoke `kit:behavior-placement` when a candidate's *owner* is in question —
   whether behavior belongs on the model, in a domain object, or in a service.
   Used as a filter here, not as a design step.
-- The domain language in the glossary names the concepts; the ADRs record
-  decisions this command should not re-litigate. `kit:working-files` says where
-  each lives — `CONTEXT.md` and `docs/adr/` unless the project names others.
+- The domain language in `CONTEXT.md` names the concepts; ADRs in `docs/adr/`
+  record decisions this command should not re-litigate.
+
+`CONTEXT.md`, `docs/adr/` and `plans/` in this skill and its report format are
+the defaults: each means the location `kit:working-files` resolves for this
+project.
 
 Those two skills supply vocabulary and checks, not a procedure. Keep the survey
 at survey altitude: a candidate is a *direction* worth a day of someone's
@@ -51,7 +54,7 @@ recently changed. Decide *where* to look before you look:
   and let those paths pull your attention first. If the changes are scattered
   with no clear hot spot, widen the net.
 
-Read the project's domain glossary and any ADRs in the area
+Read the project's domain glossary (`CONTEXT.md`) and any ADRs in the area
 you're touching first.
 
 Then spawn sub-agents to walk the codebase. Look for every count in
@@ -143,20 +146,18 @@ is in, and never merge the two.
 
 ### 3. Present candidates as an HTML report
 
-Write the report into the project's plan cache, so it sits beside the plans the
-other commands write and stays findable weeks later. `kit:working-files` resolves
-it — `plans/` in the main checkout unless the project names another — so
-`mkdir -p` it if needed and write to
-`<plans>/architecture-review-<area>-<YYYY-MM-DD>.html`, where `<area>` is a short
+Write the report into the repository's `plans/` directory, so it sits beside the
+plans the other commands write and stays findable weeks later. Take its path
+from `kit:working-files`, ready to write, and write to
+`plans/architecture-review-<area>-<YYYY-MM-DD>.html`, where `<area>` is a short
 slug for what was scanned (`plans/architecture-review-themes-2026-08-23.html`).
 Same-day reruns over the same area overwrite; a different area gets its own file.
 
-The plan cache is kept out of git and linked into every worktree by
+`plans/` is kept out of git and linked into every worktree by
 `kit:start-ticket`, so the report survives the session without landing in the
-repo. Keep it out of git as `kit:working-files` says, never by editing a tracked
-`.gitignore`. Never write the report to `$TMPDIR` or
-any other path outside the project — a hashed temp path is unrecoverable the
-moment the terminal scrollback is gone, which is the same as not writing it.
+repo. Never write the report to `$TMPDIR` or any other path outside the
+project — a hashed temp path is unrecoverable the moment the terminal scrollback
+is gone, which is the same as not writing it.
 
 Open it for the user — `xdg-open <path>` on Linux, `open <path>` on macOS,
 `start <path>` on Windows — and tell them the path relative to the repo root.
@@ -230,10 +231,10 @@ when the user asks.
 
 Two side effects are worth doing inline if the conversation continues:
 
-- **A candidate names a concept not in the glossary?** Capture the term —
+- **A candidate names a concept not in `CONTEXT.md`?** Capture the term —
   `kit:domain-modeling` says whether that is a write or a record. A record goes
   in the report, and into the child ticket's acceptance criteria verbatim if §5
-  files that candidate — the report lives in the untracked plan cache and the ticket
+  files that candidate — the report lives in gitignored `plans/` and the ticket
   does not.
 - **User rejects a candidate with a load-bearing reason?** Offer an ADR, framed
   as: _"Want me to record this as an ADR so future architecture reviews don't
@@ -250,7 +251,7 @@ shape here.
 ### 5. File the `Strong` band
 
 Turn the top band into work `/kit:ship-ticket` can pick up. This is the only
-part of a run that writes outside the plan cache.
+part of a run that writes outside `plans/`.
 
 **The badge is the gate.** §1 tells you to cast wide and calls two candidates
 under-searched — right for a survey, and the reason every card must not become a
@@ -272,7 +273,7 @@ each one's open/closed state, so that list stays accurate on its own. A
 checkbox beside them would be a second state, and nothing in the kit ticks one.
 
 Store the ranking on it through `kit:ticket-artifacts`, kind `ranking`. Cite the
-HTML report's path beside it as a local convenience: the plan cache is untracked, so
+HTML report's path beside it as a local convenience: `plans/` is gitignored, so
 the path is dead from a fresh clone and the comment is what survives.
 
 #### The children
@@ -341,4 +342,4 @@ label a child to cover the gap — the label is triage's claim, not the scan's.
 - Discard a candidate because its reach could not be determined. §2 says why.
 - Score a class down for anything on the not-a-finding list.
 - Propose relocating a file as the finding. Ownership first, layout after.
-- Write the report anywhere but the project's plan cache.
+- Write the report anywhere but the repo's `plans/` directory.

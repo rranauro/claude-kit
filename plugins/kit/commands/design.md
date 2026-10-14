@@ -230,7 +230,7 @@ again; invoke it rather than reproducing the mechanics here.
 
 **There is an issue number:** store it as the `plan` artifact — the marked
 comment on the issue, updated in place, and the `<plans>/<issue-number>-plan.md`
-mirror, in the plan cache `kit:working-files` resolves. Both, in one step. This
+mirror. Both, in one step. This
 is the default now regardless of who invoked the command: the same reasoning
 reaches an agent that never had your plan cache, and a direct invocation is no
 longer a plan that dies with the machine.

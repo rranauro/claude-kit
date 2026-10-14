@@ -134,7 +134,7 @@ handoff is added.
 | `kit:to-tickets` | Cuts an epic into tracer-bullet tickets, each declaring which tickets must merge before it can start. Adopted from mattpocock/skills; the local fork adds a machine-readable edge marker so `/kit:ship-ticket` can pick them up on its own, an out-of-scope section so each ticket stands as its own brief, and a final **walkthrough ticket** for the sets whose composed result only a person can judge — blocked by every slice, routed to a human, its acceptance the walk itself, and continuing as a `/kit:polish-ticket` when the walk finds something. |
 | `kit:show-me` | Explains the current topic visually — pseudocode, a call or component tree, a Mermaid diagram, a shape-matched `diff`, or one focused HTML page — picking the smallest view that makes the point. User-invoked only (`/kit:show-me`). Adopted unchanged from humanlayer/skills. |
 | `kit:writing-tickets` | Lean issues that state the problem and the decision without freezing an implementation. |
-| `kit:ticket-artifacts` | Where a plan, brief, or walkthrough is stored and how it's found again. One marked comment per kind on the issue is the store — updated in place, so an issue never accumulates superseded copies — and gitignored `plans/<n>-<kind>.md` is a cache of it. Collapses three storage rules and three recovery paths into one, and gives the walkthrough a life beyond the worktree it was written in. |
+| `kit:ticket-artifacts` | Where a plan, brief, or walkthrough is stored and how it's found again. One marked comment per kind on the issue is the store — updated in place, so an issue never accumulates superseded copies — and `plans/<n>-<kind>.md`, kept out of git, is a cache of it. Collapses three storage rules and three recovery paths into one, and gives the walkthrough a life beyond the worktree it was written in. |
 | `kit:shape-review` | Judges the object shape one pull request's diff introduces, placement included, on `kit:rails-codebase-design` — the reviewer for a PR whose author was an unattended agent, where `kit:visual-review` defers placement to the author. Prints one marked comment for a person to post or edit, and changes nothing; `/kit:review-copilot` addresses a posted one on the PR's own branch. Run it as `/kit:shape-review <pr>`; `kit:ticket-loop` `hand-off` runs it too. |
 | `kit:reshape` | The in-flight reshape a shape hold offers. Ranks moves across the namespaces the held PR touched, each with the call sites outside the diff it would reach, and commits the one the person picks on the held branch, with no ticket — or files it as a ticket blocked on the issues the held PR closes. `kit-hold` stays. |
 | `kit:argument-pages` | A self-contained HTML page arguing one technical position — a schema proposal, a design comparison, a review whose evidence is spread across files the reader would otherwise have to open. Its one rule is that nothing on the page is asserted from memory: every code block is emitted output, every claim carries a `file:line`. Owns the six moves (verdict first, then objects, insight, worked example, mechanism, recommendations), the honesty gates that keep a persuasion device fair, and `ENTITY-DIAGRAM` — hand-built table cards rather than mermaid, so a row can be tinted and a column badged. Publishes as an artifact where the tool exists, else into `plans/`. |
@@ -198,10 +198,8 @@ app unless a merged section says it may.
 **Spec groups are declared there as well.** `## Spec groups` is what
 `/kit:prune-specs <group>` reads; the command owns its format.
 
-**So is where the kit's working files live.** `## Working files` moves the plan
-cache, the PR scratch notes, the glossary or the ADR directory off the root, one
-key each; `kit:working-files` owns its format. Absent, every one stays where it
-always was.
+**So is where the kit's working files live.** `## Working files` is what
+`kit:working-files` reads; the skill owns its format.
 
 **External commands these call.** Beyond the [companion skills](companion-skills.md),
 the workflow invokes `/simplify` (`kit:ticket-loop` `simplify`), `/loop` (drives

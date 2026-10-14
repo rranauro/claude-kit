@@ -48,10 +48,9 @@ If a `CONTEXT-MAP.md` exists at the root, the repo has multiple contexts. The ma
 
 Create files lazily: only when you have something to write. If no `CONTEXT.md` exists, create one when the first term is resolved. If no `docs/adr/` exists, create it when the first ADR is needed.
 
-**Those are the defaults, not fixed paths.** A project can move the single-context
-glossary and the ADR directory off the root, and `kit:working-files` resolves
-where each one is — read, create and number them there. Every `CONTEXT.md` and
-`docs/adr/` in this skill and its two formats means that resolved location. A
+**Those are the defaults, not fixed paths.** Every single-context `CONTEXT.md` and
+top-level `docs/adr/` in this skill and its two formats means the location
+`kit:working-files` resolves — read, create and number them there. A
 `CONTEXT-MAP.md` layout is not covered; its contexts live where the map says.
 
 ## During the session

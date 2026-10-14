@@ -45,24 +45,31 @@ the toplevel one would, so a line copied between files cannot silently move. An
 absolute path is allowed and means outside the repository — it belongs in
 `CLAUDE.local.md`, since no other developer has that directory.
 
-**Resolve the local ones against the main checkout** — the first `worktree` line
-of `git worktree list --porcelain` — never a worktree. A cache in a worktree dies
-with the ticket. `kit:start-ticket` links the `plans` location into each worktree
-at the same relative path, so a read from inside one finds the same files. The
-tracked ones resolve against whatever checkout the caller is writing in, because
-their edits ship in that checkout's PR.
+## What a caller gets back
 
-## Keeping a local one out of git
+**One absolute path per key**, so no caller picks its own base directory. A local
+key (`plans`, `tickets`) is joined to the main checkout `kit:project-rules`
+already resolved — never a worktree, where a cache dies with the ticket. A
+tracked key (`glossary`, `adr`) is joined to the checkout the caller is writing
+in, because its edits ship in that checkout's PR. An absolute path is returned
+as written. Say with each local one whether it is inside the repository.
 
-A local location must not show up as untracked work. Before the first write to
-one:
+**Resolve all four once per pass, from the single rules read, and reuse them.**
+A caller that already holds `<plans>` from earlier in the pass uses it rather
+than asking again.
+
+**A local location is ready to write the moment it is resolved.** On its first
+resolution in a pass, `mkdir -p` it and, if it is inside the repository, keep it
+out of git:
 
 ```
-git -C <main checkout> check-ignore -q <relative path> \
-  || echo "/<relative path>" >> "$(git -C <main checkout> rev-parse --git-common-dir)/info/exclude"
+git -C <main checkout> check-ignore -q <path relative to the root> \
+  || echo "/<path relative to the root>" >> "$(git -C <main checkout> rev-parse --git-common-dir)/info/exclude"
 ```
 
-`mkdir -p "$(dirname <exclude file>)"` first if `info/` is missing.
+`mkdir -p` the `info/` directory first if it is missing. So no writer creates,
+excludes or defaults a location itself, and whichever writer touches it first, it
+is handled the same way.
 
 **Never edit a tracked `.gitignore` to do it.** These writes run from the main
 checkout, usually on the default branch, so an added line is a tracked change no
@@ -72,14 +79,10 @@ of it; `scripts/observe.sh` keeps the observation store out of git the same way,
 and ADR 0005 says why. A project that wants the entry tracked lands it in a PR of
 its own.
 
-An absolute path outside the repository needs neither the exclude nor the
-worktree link. The glossary and the ADR directory are never excluded: they are
-repository content.
+The glossary and the ADR directory are never excluded: they are repository
+content.
 
 ## Never
 
-- Build one of these paths from the git toplevel without reading the section.
 - Move files already at an old location when the section changes. The project
   moves them, or leaves them.
-- Resolve `CONTEXT-MAP.md` here. A multi-context layout is `kit:domain-modeling`'s
-  own, and this section names only the single-context glossary.
