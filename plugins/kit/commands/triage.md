@@ -49,7 +49,10 @@ spelling (`kit:project-rules` *Labels*); the canonical five are `bug`,
 kinds is two answers to one question, and nothing downstream picks a winner.
 
 That is a post-condition, not an instruction to apply one: act when a ticket
-carries no kind, or two.
+carries no kind, or two. **Where the project has no label for the kind you
+chose**, the ticket carries none: say which kind you decided in the triage
+comment, and that an unattended pass will read it as kindless and hold its PR
+for a look.
 
 The kind is not a topic. It answers one question: **can this ticket's acceptance
 be asserted without a human eye?** A test that goes green, a shape count,

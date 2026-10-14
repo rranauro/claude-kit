@@ -21,7 +21,8 @@ whole scheme exists to make rare and to make legible when it happens.
 
 ## The protocol
 
-1. **Comment on the issue with the decision it needs.** Run
+1. **Comment on the issue with the decision it needs**, opening on
+   `<!-- kit-park -->` on its own first line. Run
    `kit:asking-a-human` over the question first and write what it passes. That
    skill is the whole test for whether a question is fit to ask; a park's
    comment is held to it, and this step adds nothing to it. What one looks like:
@@ -48,8 +49,8 @@ whole scheme exists to make rare and to make legible when it happens.
 
    The label is in the project's spelling (`kit:project-rules` *Labels*).
    **A project that says it has none gets the comment alone**, and that is a
-   recorded park, not a failed one: the worktree step 3 leaves in place
-   is what keeps a sweep off the ticket, and the report says so.
+   recorded park, not a failed one: `kit:startable-tickets` reads the marker in
+   the label's place, so a sweep stays off the ticket until a person replies.
 3. **Leave the worktree and any commits in place.** The next attempt resumes
    rather than rebuilds, and a parked ticket with its work-so-far on disk is
    worth more than a clean tree.

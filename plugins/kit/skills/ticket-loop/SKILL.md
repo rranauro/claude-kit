@@ -415,7 +415,10 @@ repos/{owner}/{repo} --jq .allow_auto_merge`. `false` is the same outcome as
 as a failure. A token that cannot see the setting gets nothing back: arm as
 below, and treat a refusal saying auto-merge is not allowed the same way.
 
-**Then decide whether a held PR is armed.** Look for a `## Hold check`
+**Then decide whether a held PR is armed.** **A project with no `kit-hold`
+label** skips `## Hold check` and both label reads below, since none of them has
+a label to see: step 3's decision alone says whether the PR is held, and a held
+one gets `gh pr ready <pr-number>` alone. Otherwise, look for a `## Hold check`
 section in the project's rules:
 
 ```markdown
@@ -431,9 +434,7 @@ green and unmerged until someone arms it by hand.
 
 Absent, or any other value, read the PR's labels (`gh pr view <pr-number> --json
 labels`) — not step 3's outcome, since a hold transcribed from triage is on it
-too. **A project with no `kit-hold` label** has no label to read: step 3's
-decision alone says whether the PR is held, and both label reads here are
-skipped. A held PR gets `gh pr ready <pr-number>` alone: no
+too. A held PR gets `gh pr ready <pr-number>` alone: no
 auto-merge, and so no snapshot and no poll, which exist only to time the arming.
 Only the label stands between it and the merge, so arming there merges it on
 green. For the same reason, read the labels once more just before `gh pr merge`,

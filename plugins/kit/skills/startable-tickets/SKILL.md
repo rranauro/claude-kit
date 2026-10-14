@@ -75,7 +75,10 @@ A ticket is **startable** when all of these hold:
    `Closes #<issue>`, so a merged PR closes its ticket — a closed blocker means
    the work landed on `main`. An empty marker is trivially satisfied.
 3. It does **not** carry the `epic` label.
-4. It does **not** carry the `kit-blocked` label.
+4. It does **not** carry the `kit-blocked` label. **Where the project has no
+   such label**, its latest comment does not open with `<!-- kit-park -->` — a
+   park nobody has answered yet. Ask for `comments` in Step 1's `--json` only
+   then, so this costs no extra query.
 5. It has not already been carried — no open PR is linked to it under
    `already-carried` below, and no live worktree names it.
 
