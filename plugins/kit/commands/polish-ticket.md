@@ -29,7 +29,7 @@ Constituent skills:
 
 ## Mandatory constraints
 
-- **One branch, one worktree, many small commits.** Every fix lands on the cleanup branch. Never commit to `main`.
+- **One branch, one worktree, many small commits.** Every fix lands on the cleanup branch. Never commit to the base branch.
 - **All work happens in the worktree.** Once located, every Read/Edit/Write targets its path — resolved from `git worktree list --porcelain`, not assumed. The tool cwd stays at the main checkout.
 - **Ask before editing, every time.** Approval for one fix is not approval for the next. The user is walking the UI; they decide what gets touched.
 - **Durable state lives in git and the issue, not in context.** This ticket outlives its sessions. If a decision isn't in a commit message, the issue body, or a filed ticket, it is lost.
@@ -50,7 +50,7 @@ Keep any free-text remainder — the user often names the existing worktree path
 Delegated to `kit:start-ticket` `safety-check` through `worktree-paths`. Both entry paths route through it:
 
 - **Resuming** (the common case) — `safety-check` finds an existing worktree on an `<issue>-*` branch and offers Resume. Take it. The worktree is already provisioned; do not re-run `wire-worktree`.
-- **Starting fresh** — no worktree matches the issue prefix. `kit:start-ticket` creates one off `origin/main` and wires it.
+- **Starting fresh** — no worktree matches the issue prefix. `kit:start-ticket` creates one off `origin/<base>` and wires it.
 
 Skip `kit:start-ticket` `plan-implementation` entirely. A cleanup ticket has no settled architecture to hand off, and **do not invoke `/kit:architect` for the epic itself** — that's what `file-ticket` is for, per split-out item. If a `plan` artifact happens to exist, read it as context and move on — through `kit:ticket-artifacts`, cache then comment, like every other read of it. A cleanup ticket is a poor reason to invent a second read path: a fresh worktree or clone has no cache, and "no local file" is not "no plan".
 
@@ -59,8 +59,8 @@ Skip `kit:start-ticket` `plan-implementation` entirely. A cleanup ticket has no 
 Resuming is where this ticket leaks. Before accepting the worktree, verify:
 
 1. `git -C <worktree> status` — clean? Uncommitted changes from a prior session are either work-in-progress the user forgot or a fix that was never committed. Show them and ask which.
-2. `git -C <worktree> log --oneline origin/main..HEAD` — the fixes landed so far. This list *is* your memory of the ticket; read it before asking the user what's been done.
-3. `git log --oneline origin/main..HEAD` **in the main checkout** — must be empty. Anything here is a fix that landed on the wrong branch.
+2. `git -C <worktree> log --oneline origin/<base>..HEAD`, with `<base>` resolved as `kit:project-rules` *The base branch* says — the fixes landed so far. This list *is* your memory of the ticket; read it before asking the user what's been done.
+3. `git log --oneline origin/<base>..HEAD` **in the main checkout** — must be empty. Anything here is a fix that landed on the wrong branch.
 4. `git worktree list` — exactly one worktree for this issue number. A second is the trap `kit:start-ticket` warns about: the dev server boots in the stale one and fixes read as "not working".
 
 Report the commit list back to the user as the resume summary, then enter `intake`.
@@ -164,7 +164,7 @@ Do this when something meaningful closes, not after every commit.
 
 The user calls this, not you. A cleanup ticket has no natural end; ask at natural pauses ("that's the last one I've got for now") whether to land what's on the branch.
 
-Landing does **not** require the epic to be finished. A cleanup branch is better shipped in batches than held open for weeks — a long-lived branch drifts from `main` and its review gets unreviewable.
+Landing does **not** require the epic to be finished. A cleanup branch is better shipped in batches than held open for weeks — a long-lived branch drifts from its base and its review gets unreviewable.
 
 Hand off to `kit:ticket-loop` starting at its `simplify` phase — `prepare` and `tdd` are already done by this skill's loop. So: `/simplify` over the accumulated diff, then `open-pr` and `hand-off`, which closes the review round in the worktree and marks the PR ready with auto-merge on.
 
@@ -173,7 +173,7 @@ Two adjustments for a multi-fix branch:
 - **The PR body is the fix list.** One line per commit, in the user's terms. Reviewers need to see the scope is many-small, not one-large.
 - **`Closes #<epic>` only if the epic is actually done.** Mid-stream batches must not auto-close it — use `Part of #<epic>` instead. This is the most common mistake in this workflow: `/kit:new-pull-request` reads the issue from the branch prefix and writes `Closes` when it judges the diff satisfies it, so check the body it generates and downgrade the keyword when the epic lives on.
 
-If the epic continues after the merge, `/kit:worktree-gc` removes the worktree — and the next batch starts over at `locate-work`, which will create a fresh one off the updated `origin/main`.
+If the epic continues after the merge, `/kit:worktree-gc` removes the worktree — and the next batch starts over at `locate-work`, which will create a fresh one off the updated `origin/<base>`.
 
 ---
 
@@ -182,4 +182,4 @@ If the epic continues after the merge, `/kit:worktree-gc` removes the worktree �
 - **Session ends mid-loop.** Fine by design. Everything accepted is committed; everything deferred is a filed issue. Re-invoke `/kit:polish-ticket <issue>` and `locate-work` reconstructs the state from `git log`.
 - **A fix turns out bigger than triaged.** Stop, revert or stash, and re-triage as `file-ticket`. Do not push through a growing change on a cleanup branch — that's how a polish PR becomes unreviewable.
 - **The user reports something already fixed on the branch.** Likely a stale server, or the second-worktree trap from `locate-work`. Check which worktree the app is booted from before re-investigating.
-- **The branch drifts far behind `main`.** Rebase or ship a batch. Don't let it accumulate silently.
+- **The branch drifts far behind its base.** Rebase or ship a batch. Don't let it accumulate silently.
