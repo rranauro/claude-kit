@@ -26,6 +26,13 @@ or drops a registered subdomain is doing something no generic
 `git worktree remove` can reconstruct, and skipping it leaks that resource on
 every cleanup.
 
+The `remove` line is run as written, with `<branch>` and `<path>` replaced by the
+worktree's branch and absolute path; a line naming neither gets the branch as its
+one argument. So the example above receives the branch alone, and a recipe that
+needs the path declares `<path>`. When it exits non-zero, the worktree and its
+branch stay put and its output is reported — a refusing teardown is a safety
+check the kit has no standing to override.
+
 ## Ownership while a pass is working
 
 Passes run concurrently by design — `plugins/kit/scripts/ship-startable.sh` exists

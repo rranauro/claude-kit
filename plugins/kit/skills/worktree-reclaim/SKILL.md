@@ -71,9 +71,10 @@ Any other caller that deletes a branch asks the same way, through
 
 Run `kit:worktree-conventions`. Two of its answers become flags:
 
-- **A remove command**, passed as `--remove-cmd`. It is invoked as
-  `<cmd> <branch> <path>` and **replaces** `git worktree remove` rather than
-  preceding it — Step 3 of that skill says why.
+- **A remove command**, passed as `--remove-cmd` exactly as the project declared
+  it, placeholders and all — that skill's Step 1 says what it receives. It
+  **replaces** `git worktree remove` rather than preceding it, and its non-zero
+  exit holds the worktree rather than sweeping it — Step 3 says why.
 - **Its sweep rule**, which decides whether you may name a `--worktree-root`.
   Pass one only for a directory holding nothing but worktrees this suite placed;
   the root is the assertion, and without it the script lists no directory at all.
@@ -121,7 +122,8 @@ Say what happened, from the records rather than from what you expected:
   it is worthless if nobody is told. These accumulate silently otherwise.
 - `held` — with the reason. A `kit:ship` lease is a pass still working and a
   `kit-hold` PR is a walkthrough waiting on a person; either way, say which
-  ticket or PR owns it.
+  ticket or PR owns it. A `remove command exited` reason is the project's
+  teardown refusing — quote the output it carries, since that is the reason.
 - `orphan` — husks git had stopped tracking.
 
 If no `--worktree-root` was passed, say that husks were not swept and why, so

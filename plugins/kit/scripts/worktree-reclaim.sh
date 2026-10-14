@@ -5,7 +5,7 @@
 # prose. See plugins/kit/skills/worktree-reclaim/SKILL.md.
 #
 #   worktree-reclaim.sh [--repo DIR] [--target BRANCH|PATH] [--act]
-#                       [--remove-cmd CMD] [--worktree-root DIR]
+#                       [--remove-cmd "CMD [<branch>] [<path>]"] [--worktree-root DIR]
 #   worktree-reclaim.sh [--repo DIR] --account BRANCH
 #
 # --worktree-root is the caller asserting that the directory holds nothing but
@@ -285,15 +285,54 @@ sweep_dir() { # path
   [ -e "$1" ] || emit swept "$1"
 }
 
-reclaim_path() { # path branch -> 0 when the path is gone
-  local path="$1" branch="$2"
+# The declared line is the call, so the documented example and what runs are the
+# same text: a recipe written to `remove: just del-worktree <branch>` would
+# reject a second argument it never declared.
+# Not `${word//<path>/$path}`: bash 5.2 expands `&` in that replacement, and
+# 3.2 keeps the quotes that would stop it.
+substitute() { # text placeholder value
+  local text="$1" out=""
+  while [[ "$text" == *"$2"* ]]; do
+    out="$out${text%%"$2"*}$3"
+    text="${text#*"$2"}"
+  done
+  printf '%s' "$out$text"
+}
+
+remove_argv() { # branch path -> REMOVE_ARGV
+  local branch="$1" path="$2" word placed=""
+  local -a words
+  read -ra words <<< "$remove_cmd"
+  REMOVE_ARGV=()
+  for word in "${words[@]}"; do
+    case "$word" in *"<branch>"*|*"<path>"*) placed=1 ;; esac
+    word="$(substitute "$word" "<branch>" "$branch")"
+    REMOVE_ARGV+=("$(substitute "$word" "<path>" "$path")")
+  done
+  [ -n "$placed" ] || REMOVE_ARGV+=("$branch")
+}
+
+reclaim_path() { # path branch -> 0 when the path is gone; REMOVE_REFUSAL on a refusal
+  local path="$1" branch="$2" output status
+  REMOVE_REFUSAL=""
   # Only an expired lease reaches here still locked — a held worktree never gets
   # this far — and `git worktree remove` refuses a lock however stale it is.
   git worktree unlock "$path" >/dev/null 2>&1
   if [ -n "$remove_cmd" ]; then
     # The project's own teardown replaces `git worktree remove` rather than
     # preceding it; kit:worktree-conventions Step 3 says why.
-    $remove_cmd "$branch" "$path" >/dev/null 2>&1
+    remove_argv "$branch" "$path"
+    output="$("${REMOVE_ARGV[@]}" </dev/null 2>&1)"; status=$?
+    if [ "$status" -ne 0 ]; then
+      # A refusal is the project's safety check, and it holds even where the
+      # directory is already gone: a teardown that failed halfway must not go on
+      # to delete the branch on the kit's authority. The tail is where a failing
+      # command's error is, and a record is one line.
+      output="$(printf '%s' "$output" | tr '\t\n' '  ')"
+      [ "${#output}" -gt 300 ] && output="…${output: -300}"
+      REMOVE_REFUSAL="remove command exited $status${output:+: $output}"
+      return 1
+    fi
   else
     git worktree remove --force "$path" >/dev/null 2>&1
   fi
@@ -341,7 +380,7 @@ while IFS=$'\t' read -r path branch; do
   [ "$act" -eq 1 ] || continue
 
   if ! reclaim_path "$path" "$branch"; then
-    emit held "$path" "could not be removed"
+    emit held "$path" "${REMOVE_REFUSAL:-could not be removed}"
     continue
   fi
   emit removed "$path"
