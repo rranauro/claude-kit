@@ -294,15 +294,66 @@ sweep_dir() { # path
   [ -e "$1" ] || emit swept "$1"
 }
 
-reclaim_path() { # path branch -> 0 when the path is gone
-  local path="$1" branch="$2"
+# The declared line is the call, so the documented example and what runs are the
+# same text: a recipe written to `remove: just del-worktree <branch>` would
+# reject a second argument it never declared.
+# Not `${word//<path>/$path}`: bash 5.2 expands `&` in that replacement, and
+# 3.2 keeps the quotes that would stop it.
+substitute() { # text placeholder value
+  local text="$1" out=""
+  while [[ "$text" == *"$2"* ]]; do
+    out="$out${text%%"$2"*}$3"
+    text="${text#*"$2"}"
+  done
+  printf '%s' "$out$text"
+}
+
+# Tokenized with shell quoting but never evaluated, so `--reason "finished
+# work"` stays one argument without the declaration becoming code. Empty when
+# the line does not parse.
+remove_argv() { # branch path -> REMOVE_ARGV
+  local branch="$1" path="$2" word
+  REMOVE_ARGV=()
+  while IFS= read -r -d '' word; do
+    word="$(substitute "$word" "<branch>" "$branch")"
+    REMOVE_ARGV+=("$(substitute "$word" "<path>" "$path")")
+  done < <(python3 -c '
+import shlex, sys
+try:
+    words = shlex.split(sys.argv[1])
+except ValueError:
+    sys.exit(1)
+sys.stdout.write("".join(w + "\0" for w in words))
+' "$remove_cmd")
+  [ "${#REMOVE_ARGV[@]}" -gt 0 ] || return 1
+  [[ "$remove_cmd" == *"<branch>"* || "$remove_cmd" == *"<path>"* ]] ||
+    REMOVE_ARGV+=("$branch")
+}
+
+reclaim_path() { # path branch -> 0 when the path is gone; REMOVE_REFUSAL on a refusal
+  local path="$1" branch="$2" output status
+  REMOVE_REFUSAL=""
   # Only an expired lease reaches here still locked — a held worktree never gets
   # this far — and `git worktree remove` refuses a lock however stale it is.
   git worktree unlock "$path" >/dev/null 2>&1
   if [ -n "$remove_cmd" ]; then
     # The project's own teardown replaces `git worktree remove` rather than
     # preceding it; kit:worktree-conventions Step 3 says why.
-    $remove_cmd "$branch" "$path" >/dev/null 2>&1
+    if ! remove_argv "$branch" "$path"; then
+      REMOVE_REFUSAL="remove command could not be parsed: $remove_cmd"
+      return 1
+    fi
+    output="$("${REMOVE_ARGV[@]}" </dev/null 2>&1)"; status=$?
+    if [ "$status" -ne 0 ]; then
+      # A refusal is the project's safety check, and it holds even where the
+      # directory is already gone: a teardown that failed halfway must not go on
+      # to delete the branch on the kit's authority. The tail is where a failing
+      # command's error is, and a record is one line.
+      output="$(printf '%s' "$output" | tr '\t\n' '  ')"
+      [ "${#output}" -gt 300 ] && output="…${output: -300}"
+      REMOVE_REFUSAL="remove command exited $status${output:+: $output}"
+      return 1
+    fi
   else
     git worktree remove --force "$path" >/dev/null 2>&1
   fi
@@ -315,6 +366,7 @@ reclaim_path() { # path branch -> 0 when the path is gone
 # --- main ---------------------------------------------------------------
 
 selected=""
+refused=""
 while IFS=$'\t' read -r path branch; do
   [ -n "$path" ] || continue
   if [ -n "$target" ] && [ "$branch" != "$target" ] && [ "$path" != "$target" ]; then
@@ -350,7 +402,10 @@ while IFS=$'\t' read -r path branch; do
   [ "$act" -eq 1 ] || continue
 
   if ! reclaim_path "$path" "$branch"; then
-    emit held "$path" "could not be removed"
+    emit held "$path" "${REMOVE_REFUSAL:-could not be removed}"
+    # A teardown that unregistered the worktree before refusing leaves exactly
+    # what the husk sweep below looks for.
+    [ -n "$REMOVE_REFUSAL" ] && refused="$refused$path"$'\n'
     continue
   fi
   emit removed "$path"
@@ -382,6 +437,7 @@ if [ -z "$target" ] && [ -n "$worktree_root" ] && [ -d "$worktree_root" ]; then
     [ -e "$candidate" ] || continue
     resolved="$(cd "$candidate" 2>/dev/null && pwd -P)" || resolved="$candidate"
     printf '%s\n' "$live" | grep -Fxq "$resolved" && continue
+    printf '%s' "$refused" | grep -Fxq -e "$candidate" -e "$resolved" && continue
     emit orphan "$candidate"
     [ "$act" -eq 1 ] && sweep_dir "$candidate"
   done

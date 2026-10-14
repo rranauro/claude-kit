@@ -30,7 +30,12 @@ Look for a `## Worktrees` section in the project's rules, found as
   `git worktree add`.
 - **remove** — tears one down. Often does more than `git worktree remove`; a
   recipe that also unlinks a dev proxy is the common case, and skipping it
-  leaves a dangling link nothing will ever clean up.
+  leaves a dangling link nothing will ever clean up. **The declared line is the
+  call:** `<branch>` and `<path>` are replaced by the worktree's branch and
+  absolute path, and nothing else is passed. A line naming neither placeholder
+  gets the branch appended as its one argument. A project wanting the path
+  writes `<path>`. Shell quotes group an argument, but the line is never run
+  through a shell, so pipes, `&&` and variables are passed through as literal text.
 - **provisions** — `yes` means create also installs dependencies and wires
   runtime files. Then `kit:start-ticket`'s `wire-worktree` must be **skipped
   entirely**, not merged with — re-symlinking on top of a real install is how
@@ -81,6 +86,12 @@ If the convention names a **remove** command, use it, and do not follow it with 
 raw `git worktree remove` — it already ran one. What it adds around that (proxy
 links, generated config, registered subdomains) is precisely the part you cannot
 reconstruct, which is why it exists.
+
+**A non-zero exit is a refusal, and it stands.** The project's teardown is
+checking something the kit cannot see — migrations still applied to a shared
+database, a process still running. Leave the worktree and its branch in place,
+even where the directory is already gone, and report the command's own output:
+that output is the only record of why it refused.
 
 If it names no remove command, `kit:worktree-reclaim` removes it.
 

@@ -26,6 +26,10 @@ or drops a registered subdomain is doing something no generic
 `git worktree remove` can reconstruct, and skipping it leaks that resource on
 every cleanup.
 
+The `remove` line is the call: the example above receives the branch alone, and
+`kit:worktree-conventions` Step 1 says how to ask for the path. Its non-zero exit
+leaves the worktree where it is — Step 3 says why.
+
 ## Ownership while a pass is working
 
 Passes run concurrently by design — `plugins/kit/scripts/ship-startable.sh` exists

@@ -647,10 +647,111 @@ echo "\$@" > "$SANDBOX/remove-was-called"
 git -C "$MAIN" worktree remove --force "\$2"
 GH
 chmod +x "$SANDBOX/bin/project-remove"
-"$SCRIPT" --repo "$MAIN" --remove-cmd project-remove --act </dev/null >/dev/null 2>&1
+"$SCRIPT" --repo "$MAIN" --remove-cmd 'project-remove <branch> <path>' --act \
+  </dev/null >/dev/null 2>&1
 assert_present_path "$SANDBOX/remove-was-called" "the project's remove command ran"
+assert_has "$(cat "$SANDBOX/remove-was-called" 2>/dev/null || echo)" \
+  "alpha $MAIN/.claude/worktrees/alpha" "and was handed the branch and path it named"
+assert_missing_path "$MAIN/.claude/worktrees/alpha" "the worktree is gone"
+end_sandbox
+
+# The documented example declares one argument, and a recipe written to it
+# rejects a second — so the declared line has to be the call, not a prefix.
+new_sandbox "AC7 a command written to the documented example receives its one argument"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 closed '"2024-01-01T00:00:00Z"'
+cat > "$SANDBOX/bin/project-remove" <<GH
+#!/usr/bin/env bash
+[ \$# -eq 1 ] || { echo "expected 1 argument, got \$#" >&2; exit 1; }
+echo "\$@" > "$SANDBOX/remove-was-called"
+git -C "$MAIN" worktree remove --force "$MAIN/.claude/worktrees/\$1"
+GH
+chmod +x "$SANDBOX/bin/project-remove"
+out="$("$SCRIPT" --repo "$MAIN" --remove-cmd 'project-remove <branch>' --act </dev/null 2>&1)"
 assert_has "$(cat "$SANDBOX/remove-was-called" 2>/dev/null || echo)" "alpha" \
-  "and was handed the branch"
+  "the command ran with the branch alone"
+assert_has "$out" "removed	$MAIN/.claude/worktrees/alpha" "and the worktree is reclaimed"
+assert_branch_gone alpha "and its accounted branch is deleted"
+end_sandbox
+
+new_sandbox "AC7 a remove command with no placeholder is handed the branch"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 closed '"2024-01-01T00:00:00Z"'
+cat > "$SANDBOX/bin/project-remove" <<GH
+#!/usr/bin/env bash
+echo "\$#:\$@" > "$SANDBOX/remove-was-called"
+git -C "$MAIN" worktree remove --force "$MAIN/.claude/worktrees/\$1"
+GH
+chmod +x "$SANDBOX/bin/project-remove"
+"$SCRIPT" --repo "$MAIN" --remove-cmd project-remove --act </dev/null >/dev/null 2>&1
+assert_has "$(cat "$SANDBOX/remove-was-called" 2>/dev/null || echo)" "1:alpha" \
+  "the branch is its one argument"
+assert_missing_path "$MAIN/.claude/worktrees/alpha" "the worktree is gone"
+end_sandbox
+
+# A project's teardown refuses for a reason the kit cannot see — unapplied
+# migrations on a shared database, a process still running. Sweeping the path
+# anyway overrides that check and discards why it refused.
+new_sandbox "AC7 a remove command that refuses is honoured"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 closed '"2024-01-01T00:00:00Z"'
+cat > "$SANDBOX/bin/project-remove" <<'GH'
+#!/usr/bin/env bash
+echo "rolling back alpha"
+echo "refusing: migrations still applied on the shared database" >&2
+exit 3
+GH
+chmod +x "$SANDBOX/bin/project-remove"
+out="$("$SCRIPT" --repo "$MAIN" --remove-cmd 'project-remove <branch>' --act </dev/null 2>&1)"
+assert_present_path "$MAIN/.claude/worktrees/alpha/file.txt" "the worktree is left in place"
+assert_branch_kept alpha "and its branch is kept"
+assert_has "$out" "held	$MAIN/.claude/worktrees/alpha	remove command exited 3" \
+  "and it is reported held with the exit status"
+assert_has "$out" "refusing: migrations still applied on the shared database" \
+  "with the command's own error output"
+assert_lacks "$out" "removed	" "and nothing reports it removed"
+end_sandbox
+
+# A teardown that unregisters the worktree and then refuses leaves a directory
+# git no longer names — exactly what the husk sweep looks for.
+new_sandbox "AC7 a refusal is not swept as a husk in the same run"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 closed '"2024-01-01T00:00:00Z"'
+cat > "$SANDBOX/bin/project-remove" <<GH
+#!/usr/bin/env bash
+git -C "$MAIN" worktree remove --force "\$2"
+mkdir -p "\$2" && echo kept > "\$2/rollback.log"
+echo "rollback failed" >&2
+exit 1
+GH
+chmod +x "$SANDBOX/bin/project-remove"
+out="$("$SCRIPT" --repo "$MAIN" --remove-cmd 'project-remove <branch> <path>' \
+  --worktree-root "$MAIN/.claude/worktrees" --act </dev/null 2>&1)"
+assert_present_path "$MAIN/.claude/worktrees/alpha/rollback.log" \
+  "the refused directory survives the husk sweep"
+assert_lacks "$out" "swept	" "and nothing reports it swept"
+assert_branch_kept alpha "and its branch is kept"
+end_sandbox
+
+new_sandbox "AC7 a quoted argument in the declaration stays one argument"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 closed '"2024-01-01T00:00:00Z"'
+cat > "$SANDBOX/bin/project-remove" <<GH
+#!/usr/bin/env bash
+printf '%s|' "\$@" > "$SANDBOX/remove-was-called"
+git -C "$MAIN" worktree remove --force "\$3"
+GH
+chmod +x "$SANDBOX/bin/project-remove"
+"$SCRIPT" --repo "$MAIN" --remove-cmd \
+  'project-remove --reason "finished work" "<path>"' --act </dev/null >/dev/null 2>&1
+assert_has "$(cat "$SANDBOX/remove-was-called" 2>/dev/null || echo)" \
+  "--reason|finished work|$MAIN/.claude/worktrees/alpha|" \
+  "quotes group an argument and are not passed through"
 assert_missing_path "$MAIN/.claude/worktrees/alpha" "the worktree is gone"
 end_sandbox
 
