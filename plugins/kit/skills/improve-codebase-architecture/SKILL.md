@@ -249,69 +249,75 @@ shape here.
 
 ### Leads from merged shape reviews
 
-§1's survey is one source of leads. Shape reviews are another: a review whose
-findings each had one clear fix was posted on its PR, the PR was pinned, and it
-merged with them unapplied (`kit:ticket-loop` `hand-off` step 3). Each finding
-already names its count, its call site and its After. Gather them after §1 has
-settled the direction and before §2.
+§1's survey is one source of leads. Shape reviews on PRs that merged pinned with
+their findings unapplied (`kit:ticket-loop` `hand-off` step 3) are another, and
+each finding already names its count, its call site and its After. Gather them
+before §2.
 
-**Read the PRs, never the observation store.** The store lives in one checkout,
-and a runner discards it; the posted comment and `kit-pinned` survive
-everywhere. Reading the PRs is what gives a scan from a fresh clone or a CI
-runner the same leads as one from the checkout that recorded them.
+**Read them from the PRs.** The observation recorded beside each one lives in a
+single checkout, which a runner discards. The posted comment and `kit-pinned`
+survive everywhere, so a scan from a fresh clone or a CI runner gets the same
+leads as one from the checkout that recorded them.
 
-**The window is since the last scan of this scope.** A scan epic is an issue
-labelled `epic` that carries a `ranking` artifact (`kit:ticket-artifacts`). Take
-the newest one whose **Scan scope** line (§5) names:
+**The window is since the last scan of this scope.** A scan epic is labelled
+`epic` and carries a `ranking` artifact (`kit:ticket-artifacts`). One call lists
+the candidates, with labels in the project's spelling (`kit:project-rules`
+*Labels*):
 
-- **the same direction, when the user named one.** Read it as an area, not as
-  words: "the Order model" and "`Order`" are one scope.
+```
+gh issue list --label epic --state all --search '"Scan scope" in:body' \
+  --json number,createdAt,body,comments
+```
+
+Take the newest one that has the `ranking` marker among its comments and whose
+**Scan scope** line (§5) names:
+
+- **the same direction, when the user named one.** Read it as an area rather
+  than as words: "the Order model" and "`Order`" are one scope.
 - **`unscoped`, when they did not.** A run whose area §1 inferred from hot spots
   is unscoped as well.
 
 Leads come from PRs merged since that epic was opened, or from every pinned PR
-when no such epic exists. An epic with no **Scan scope** line matches no scope.
+when no such epic exists.
 
-**One call fetches the PRs.** Labels are in the project's spelling
-(`kit:project-rules` *Labels*):
+**One call fetches the reviews**, keeping only the marked comments:
 
 ```
 gh pr list --state merged --label kit-pinned --search "merged:>=<epic's createdAt date>" \
-  --limit 200 --json number,url,mergedAt,comments
+  --limit 200 --json number,url,comments \
+  --jq '.[] | {number, url, reviews: [.comments[] | select(.body | startswith("<!-- kit-shape-review -->")) | .body]} | select(.reviews != [])'
 ```
 
-Drop `--search` when there is no epic. In each PR, the review is the newest
-comment whose body opens on `<!-- kit-shape-review -->`. Match it by the marker,
-never the author, as `/kit:review-copilot` Step 2 does. Pick it by `createdAt`,
-since this call returns no `updated_at`; an edit already shows in the body it
-returns. A pinned PR with no marked comment was pinned by its review round rather
-than a shape review, and it adds nothing.
+Drop `--search` when there is no epic. A pinned PR the call leaves out was pinned
+by its review round rather than a shape review. Where a PR carries one marked
+comment, that comment is the review. Where it carries several, which one is the
+review is `/kit:review-copilot` Step 2's rule, so run its shape-review lookup for
+that PR. This call returns no `updated_at` to pick by.
 
-**A lead is one uncontested finding**: a `###` heading in that comment that does
-not end `— contested`, accreted interface findings included. Contested findings
-belong to `kit:reshape` and never become leads here. With a direction named, keep
-only the findings whose **Call site now** file lies inside it.
+**A lead is one uncontested finding**: a heading in the review, as
+`kit:shape-review` §5 writes it, that does not end `— contested`. Accreted
+interface findings count. Contested findings belong to `kit:reshape`. With a
+direction named, keep only the findings whose **Call site now** file lies inside
+it.
 
-**Re-check each against the code before it counts.** Grep the **Call site now**
-file for the call-site line the finding quotes. If the line or the file is gone,
-drop the finding, since what the review judged is no longer there. Say in §4's
-closing lines how many were dropped, and from which PRs. A survivor's `file:line`
-is wherever the line now sits.
+**Re-check each against the code before it counts**, using the same test
+`kit:ticket-loop` records as the observation's `check`: grep the **Call site
+now** file for the line the finding quotes. If the line or the file is gone,
+drop the finding, and say in §4's closing lines how many were dropped and from
+which PRs. A survivor's `file:line` is wherever the line now sits.
 
-**Survivors enter §2 as leads, not findings.** They skip §1's sub-agents, because
+**Survivors enter §2 as leads, not findings.** They skip §1's sub-agents, since
 each already names its location, and they run every gate there: the deletion
 test, the cost, the not-a-finding list, and a reach walked fresh. The review's
-reach was the PR's at the time. A finding the review passed can still fail here,
-because the scan sees callers the diff did not. Rank the survivors among the
-scan's own candidates, in whichever section they fall.
+reach was the diff's, and the scan sees callers the diff did not. Rank the
+survivors among the scan's own candidates, in whichever section they fall.
 
 **A lead the survey also found is one candidate.** The same count on the same
 object makes one card. A review that saw a pattern at one call site, which the
-survey finds at five, has given the scan its finding; the card names the review's
-PR.
+survey finds at five, has handed the scan its finding.
 
 **The card names the PR.** Every candidate a lead fed carries one more line in
-§3, **Raised by**, which links `#<pr>`. §5 carries it into the child.
+§3, **Raised by**, which links `#<pr>`.
 
 ### 5. File the `Strong` band
 
@@ -338,10 +344,9 @@ each one's open/closed state, so that list stays accurate on its own. A
 checkbox beside them would be a second state, and nothing in the kit ticks one.
 
 **Its body carries a `**Scan scope:**` line**, giving the direction as the user
-named it, or `unscoped` when §1 inferred the area. The next run's window reads
-this line to find its predecessor (*Leads from merged shape reviews*). Never
-match on the title instead: titles are written by hand and drift, so a scoped
-rerun would miss its predecessor and re-take every lead.
+named it, or `unscoped` when §1 inferred the area. *Leads from merged shape
+reviews* matches on it. Never match on the title: titles are written by hand and
+drift, so a rerun would miss its predecessor and re-take every lead.
 
 Store the ranking on it through `kit:ticket-artifacts`, kind `ranking`. Cite the
 HTML report's path beside it as a local convenience: `plans/` is gitignored, so

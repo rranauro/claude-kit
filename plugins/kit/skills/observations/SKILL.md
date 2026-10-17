@@ -116,10 +116,7 @@ than a judgement:
   line, so a re-observation of the same thing later is not a surprise.
 - **Holds, and the claim still reads as real** — it goes to its `action`. File it
   with `kit:writing-tickets`, carrying `surfaced` across verbatim; or make the
-  edit now if it is small and located. **An `action` naming the architecture
-  scan is never filed as a ticket.** Only the scan applies `improve-codebase`,
-  and it reads the lead from the PR the record names. Run the scan over that
-  area, or drop the record, since the posted review keeps the lead either way.
+  edit now if it is small and located.
 - **Holds, and the user decides against it** — a drop, and the useful kind. The
   claim was checkable and still true, and it is still not worth doing.
 
