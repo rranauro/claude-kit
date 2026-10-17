@@ -57,6 +57,9 @@ recently changed. Decide *where* to look before you look:
 Read the project's domain glossary (`CONTEXT.md`) and any ADRs in the area
 you're touching first.
 
+Once the direction is settled, gather the leads past shape reviews left —
+*Leads from merged shape reviews*, below the FORK marker.
+
 Then spawn sub-agents to walk the codebase. Look for every count in
 `kit:rails-codebase-design` §2, applied as §2 defines it, because each one
 either fires or doesn't and carries a file and a line. Hand each sub-agent §2
@@ -244,6 +247,88 @@ shape here.
 
 <!-- FORK: everything below this marker is local. Keep it when porting upstream changes. -->
 
+### Leads from merged shape reviews
+
+§1's survey is one source of leads. Shape reviews on PRs that merged pinned with
+their findings unapplied (`kit:ticket-loop` `hand-off` step 3) are another, and
+each finding already names its count, its call site and its After. Gather them
+before §2.
+
+**Read them from the PRs.** The observation recorded beside each one lives in a
+single checkout, which a runner discards. The posted comment and `kit-pinned`
+survive everywhere, so a scan from a fresh clone or a CI runner gets the same
+leads as one from the checkout that recorded them.
+
+**The window is since the last scan of this scope.** A scan epic is labelled
+`epic` and carries a `ranking` artifact (`kit:ticket-artifacts`). One call lists
+the candidates, with labels in the project's spelling (`kit:project-rules`
+*Labels*):
+
+```
+gh issue list --label epic --state all --search '"Scan scope" in:body' \
+  --limit 1000 --json number,createdAt,body,comments
+```
+
+A list as long as its limit was cut off, and the predecessor may be past the cut.
+Raise the limit and run it again, rather than treating the scope as never
+scanned. Then take the newest one that has the `ranking` marker among its comments and whose
+**Scan scope** line (§5) names:
+
+- **the same direction, when the user named one.** Read it as an area rather
+  than as words: "the Order model" and "`Order`" are one scope.
+- **`unscoped`, when they did not.** A run whose area §1 inferred from hot spots
+  is unscoped as well.
+
+Leads come from PRs merged since that epic was opened, or from every pinned PR
+when no such epic exists.
+
+**One call fetches the reviews**, keeping only the marked comments, and leaving
+out PRs that still carry `kit-hold`, which belong to the person at the hold even
+once merged:
+
+```
+gh pr list --state merged --label kit-pinned \
+  --search "-label:kit-hold merged:>=<epic's createdAt date>" \
+  --limit 1000 --json number,url,comments \
+  --jq '{fetched: length, prs: [.[] | {number, url, reviews: [.comments[] | select(.body | startswith("<!-- kit-shape-review -->")) | .body]} | select(.reviews != [])]}'
+```
+
+Drop the `merged:` term when there is no epic. **`fetched` equal to the limit
+means the window was cut off.** Split it by merge date and run the call once per
+part. A PR left out now falls behind the epic this run may file, and no later
+window reaches it. A pinned PR the call leaves out was pinned
+by its review round rather than a shape review. Where a PR carries one marked
+comment, that comment is the review. Where it carries several, which one is the
+review is `/kit:review-copilot` Step 2's rule, so run its shape-review lookup for
+that PR. This call returns no `updated_at` to pick by.
+
+**A lead is one uncontested finding**: a heading in the review, as
+`kit:shape-review` §5 writes it, that does not end `— contested`. Accreted
+interface findings count. Contested findings belong to `kit:reshape`. With a
+direction named, keep a finding when its subject (the `Class#method` in its
+heading) or its **Call site now** file lies inside the direction. An accreted
+interface finding's call site is the added member's caller, which can sit
+anywhere.
+
+**Re-check each against the code before it counts**, using the same test
+`kit:ticket-loop` records as the observation's `check`: grep the **Call site
+now** file for the line the finding quotes. If the line or the file is gone,
+drop the finding, and say in §4's closing lines how many were dropped and from
+which PRs. A survivor's `file:line` is wherever the line now sits.
+
+**Survivors enter §2 as leads, not findings.** They skip §1's sub-agents, since
+each already names its location, and they run every gate there: the deletion
+test, the cost, the not-a-finding list, and a reach walked fresh. The review's
+reach was the diff's, and the scan sees callers the diff did not. Rank the
+survivors among the scan's own candidates, in whichever section they fall.
+
+**A lead the survey also found is one candidate.** The same count on the same
+object makes one card. A review that saw a pattern at one call site, which the
+survey finds at five, has handed the scan its finding.
+
+**The card names the PR.** Every candidate a lead fed carries one more line in
+§3, **Raised by**, which links `#<pr>`.
+
 ### 5. File the `Strong` band
 
 Turn the top band into work `/kit:ship-ticket` can pick up. This is the only
@@ -267,6 +352,11 @@ One issue per run, labelled `epic` and nothing else. It names the area and the
 date, and lists its children as bare `#123` references — the tracker renders
 each one's open/closed state, so that list stays accurate on its own. A
 checkbox beside them would be a second state, and nothing in the kit ticks one.
+
+**Its body carries a `**Scan scope:**` line**, giving the direction as the user
+named it, or `unscoped` when §1 inferred the area. *Leads from merged shape
+reviews* matches on it. Never match on the title: titles are written by hand and
+drift, so a rerun would miss its predecessor and re-take every lead.
 
 Store the ranking on it through `kit:ticket-artifacts`, kind `ranking`. Cite the
 HTML report's path beside it as a local convenience: `plans/` is gitignored, so
@@ -302,6 +392,9 @@ One per surviving candidate, in rank order, each carrying:
   `improve-codebase` acceptance is, which is why they can be written here.
 - **Out of scope**, naming the neighbouring cards this ticket leaves alone.
   Someone implementing off a ranked list will otherwise take the next one down.
+- **The PR from the card's Raised by line**, where it has one, linked in the
+  problem statement. The review posted there is research the implementer would
+  otherwise redo.
 
 A child is filed *specified*, not *settled*: the plan artifact and the AFK-ready
 label are `/kit:triage`'s to add.
@@ -339,3 +432,4 @@ label a child to cover the gap — the label is triage's claim, not the scan's.
 - Score a class down for anything on the not-a-finding list.
 - Propose relocating a file as the finding. Ownership first, layout after.
 - Write the report anywhere but the repo's `plans/` directory.
+- Take leads from the observation store. The pinned PRs are the record.
