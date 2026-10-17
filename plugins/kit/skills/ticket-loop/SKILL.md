@@ -339,7 +339,9 @@ cannot lose a race with a green CI.
   finding, passing `--pr <pr-number>`. The `claim` is the finding's heading and
   its **Call site now** `file:line`; the `check` greps that file for the
   call-site line; `surfaced` says the shape review found it uncontested and the
-  PR merged with it unapplied; the `action` is an `improve-codebase` ticket.
+  PR merged with it unapplied; the `action` is the next
+  `kit:improve-codebase-architecture` scan over this area, which reads the
+  posted review as a lead.
   Report each line the script prints. A failed write follows `docs/labels.md`:
   report it and carry on to step 4, since nothing here was a hold.
 - **Findings, unattended, one or more contested** — hold it, record first:
