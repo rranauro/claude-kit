@@ -266,10 +266,12 @@ the candidates, with labels in the project's spelling (`kit:project-rules`
 
 ```
 gh issue list --label epic --state all --search '"Scan scope" in:body' \
-  --json number,createdAt,body,comments
+  --limit 1000 --json number,createdAt,body,comments
 ```
 
-Take the newest one that has the `ranking` marker among its comments and whose
+A list as long as its limit was cut off, and the predecessor may be past the cut.
+Raise the limit and run it again, rather than treating the scope as never
+scanned. Then take the newest one that has the `ranking` marker among its comments and whose
 **Scan scope** line (§5) names:
 
 - **the same direction, when the user named one.** Read it as an area rather
@@ -280,15 +282,21 @@ Take the newest one that has the `ranking` marker among its comments and whose
 Leads come from PRs merged since that epic was opened, or from every pinned PR
 when no such epic exists.
 
-**One call fetches the reviews**, keeping only the marked comments:
+**One call fetches the reviews**, keeping only the marked comments, and leaving
+out PRs that still carry `kit-hold`, which belong to the person at the hold even
+once merged:
 
 ```
-gh pr list --state merged --label kit-pinned --search "merged:>=<epic's createdAt date>" \
-  --limit 200 --json number,url,comments \
-  --jq '.[] | {number, url, reviews: [.comments[] | select(.body | startswith("<!-- kit-shape-review -->")) | .body]} | select(.reviews != [])'
+gh pr list --state merged --label kit-pinned \
+  --search "-label:kit-hold merged:>=<epic's createdAt date>" \
+  --limit 1000 --json number,url,comments \
+  --jq '{fetched: length, prs: [.[] | {number, url, reviews: [.comments[] | select(.body | startswith("<!-- kit-shape-review -->")) | .body]} | select(.reviews != [])]}'
 ```
 
-Drop `--search` when there is no epic. A pinned PR the call leaves out was pinned
+Drop the `merged:` term when there is no epic. **`fetched` equal to the limit
+means the window was cut off.** Split it by merge date and run the call once per
+part. A PR left out now falls behind the epic this run may file, and no later
+window reaches it. A pinned PR the call leaves out was pinned
 by its review round rather than a shape review. Where a PR carries one marked
 comment, that comment is the review. Where it carries several, which one is the
 review is `/kit:review-copilot` Step 2's rule, so run its shape-review lookup for
@@ -297,8 +305,10 @@ that PR. This call returns no `updated_at` to pick by.
 **A lead is one uncontested finding**: a heading in the review, as
 `kit:shape-review` §5 writes it, that does not end `— contested`. Accreted
 interface findings count. Contested findings belong to `kit:reshape`. With a
-direction named, keep only the findings whose **Call site now** file lies inside
-it.
+direction named, keep a finding when its subject (the `Class#method` in its
+heading) or its **Call site now** file lies inside the direction. An accreted
+interface finding's call site is the added member's caller, which can sit
+anywhere.
 
 **Re-check each against the code before it counts**, using the same test
 `kit:ticket-loop` records as the observation's `check`: grep the **Call site
