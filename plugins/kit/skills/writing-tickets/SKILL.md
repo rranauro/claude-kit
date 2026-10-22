@@ -112,6 +112,28 @@ what it received, by whatever path — and one sentence naming those consumers a
 the directions that must hold is often the entire binding set. A diagnosis
 ticket carrying seven criteria has usually copied its findings across the line.
 
+## A bug says what it left behind, and what must keep working
+
+This section applies to a bug and to nothing else. A ticket of any other kind is
+not asked for either fact, and its format does not change.
+
+A bug's failing case is one criterion. Two facts the failing case does not carry
+decide whether the ticket can be designed without asking anyone:
+
+- **What the bug has already done to stored data.** A fix that stops new damage
+  leaves the rows it already wrote wrong — a rewritten name, a missing derived
+  value — and whether this ticket repairs them is a scope question. Unanswered,
+  the unattended design pass parks on it, and "decide in triage" parks it
+  later. State one of: **nothing**; **handled by this ticket**; or **handled by a
+  separate ticket**, named, which is then this one's blocker.
+- **What must still hold after the fix.** One criterion naming the behavior that
+  has to survive, beside the case that fails today, with a consumer as its
+  subject like any other. An unattended bug fix is not held for a look, so this
+  criterion and CI are what stand between a derived design and `main`.
+
+The first fact goes in the body, in domain vocabulary, as a sentence. The second
+is binding, so it goes in the acceptance criteria.
+
 ## Slice a body of work vertically
 
 When one conversation produces several tickets, the split is a design decision,
