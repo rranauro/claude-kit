@@ -263,6 +263,11 @@ data, anything destructive; criteria that cannot be tested. One that holds goes 
 the person the way step 2 puts a scope change, and an unbounded constraint that
 stays unbounded is the `kit-blocked` case below.
 
+**An answer that changes the plan's scope, approach, criteria or assumptions sends
+you back through step 3** to refresh the stored plan before anything is published.
+`kit:start-ticket` treats a stored plan as settled, so a plan left describing the
+ticket as it was is followed by a run that never saw the answer.
+
 **A ticket with nothing deferred and none of the three conditions costs no
 question.** This is a read, not a prompt. It also does not touch the label:
 `ready-for-agent` is applied to every ticket this command routes to an agent, and
