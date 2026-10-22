@@ -232,8 +232,42 @@ anywhere, so a design reached any other way starts without it.
 ## 4 — Publish
 
 `/kit:design` has stored the plan — or, on the already-settled path, it was
-already there and this is the only step that runs. Two things remain, and both
-need the user's approval:
+already there and this is the only step that runs. Settle what the ticket still
+defers first, then two things remain, and both need the user's approval.
+
+**Settle what the ticket defers.** This runs on both routes, because a ticket that
+skipped steps 2–3 is the one most likely to carry its own deferrals. The label
+below sends the ticket to a pass with nobody present, and that pass parks on the
+first question it finds — spending a worktree to reach one you could have put to
+the person in front of you. Read the body and comments for three things:
+
+- **A decision deferred to a pass that has already run.** "Decide in triage",
+  "to be settled at design", an either/or left standing in the body.
+- **A check handed to the implementer.** "Implementer to check whether…",
+  "confirm that…".
+- **A claim made only by reading the code.** "Not verified", "appears to", a
+  cause named with no reproduction.
+
+Take each in turn. What the code can settle, settle and write into the body, so
+the answer is on the ticket rather than in this session. What it cannot, ask the
+person — one question per deferral, through `kit:asking-a-human`. A claim that
+can be reproduced, reproduce; one that cannot goes into the body as an explicit
+**Not verified** item, so `/kit:design` is told the claim is a lead rather than a
+fact. **A ticket leaves this step carrying no deferral to a pass that has
+already run**, whether or not a person answered it.
+
+Then put the ticket to the three conditions `/kit:design` *Park on* names for an
+unattended run, now, while a person is here: a fix that would widen, narrow or
+split scope; a constraint the criteria do not bound — security, tenancy, stored
+data, anything destructive; criteria that cannot be tested. One that holds goes to
+the person the way step 2 puts a scope change, and an unbounded constraint that
+stays unbounded is the `kit-blocked` case below.
+
+**A ticket with nothing deferred and none of the three conditions costs no
+question.** This is a read, not a prompt. It also does not touch the label:
+`ready-for-agent` is applied to every ticket this command routes to an agent, and
+what this settles is the question a run would otherwise park on, never whether
+the ticket is visible (ADR 0001).
 
 **Bring the issue body up to the bar.** The brief is reasoning; the body has to
 state **testable acceptance criteria** and **what is out of scope**. That pair is
