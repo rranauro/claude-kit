@@ -42,6 +42,13 @@ summary.** Two summaries of one observation drift, and the checkable one is the
 one that has to survive. The cost is nuance — *"the Parked list has no durable
 home"* becomes a statement about a named file — and it is worth paying.
 
+**`check` prints something that differs between a true and a false claim.** An
+empty answer is refused at write: it cannot tell "holds" from "false". Prefer
+`grep -c`, or `... && echo yes || echo no`, over `grep -n` of a line you expect
+to move. Line-number prefixes are ignored at recheck, but only text is compared.
+Write paths relative to the repo root; a path under `.claude/worktrees/` is
+refused, since that directory is gone once the ticket merges.
+
 **`check` is cheap, local and read-only.** No network, no test suite. Triage
 re-runs every record's check, once per row; unconstrained, opening the drawer
 fires a `gh` call or a suite run per entry and becomes something you schedule
@@ -105,7 +112,13 @@ The store is reviewed in its own pass, never inside the pass that wrote to it.
 `/kit:observe triage` is the entry point; this is the protocol it runs.
 
 **1 · Re-run every check.** `${CLAUDE_PLUGIN_ROOT}/scripts/observe.sh recheck` does it in one pass and reports
-each record as holding or moved.
+each record as holding, moved, or gone. *Gone* means the path the check reads no
+longer exists: the check can no longer answer, which is evidence about the check
+and not the claim. Rewrite it against the file's new home, or drop the record.
+
+`observe.sh rewitness <slug> ...` re-captures a record's witness from the main
+checkout without touching its claim. Use it on records written before their
+code merged, whose witness is empty or reflects the branch rather than main.
 
 **2 · Bin each record by what the recheck said**, since that is evidence rather
 than a judgement:
@@ -114,6 +127,8 @@ than a judgement:
   against. Read the claim once against what the check now says. Either the
   observation was acted on, or it was wrong; both are a drop. Say which in one
   line, so a re-observation of the same thing later is not a surprise.
+- **Gone** — the check cannot answer. Rewrite it against the file's new home and
+  re-record, or drop the record; either way the claim itself is unjudged.
 - **Holds, and the claim still reads as real** — it goes to its `action`. File it
   with `kit:writing-tickets`, carrying `surfaced` across verbatim; or make the
   edit now if it is small and located.

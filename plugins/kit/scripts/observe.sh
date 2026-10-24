@@ -23,6 +23,7 @@ usage:
              --surfaced <text> --action <text> [--issue N] [--pr N]
   observe.sh list
   observe.sh recheck [<slug> ...]
+  observe.sh rewitness <slug> [<slug> ...]
   observe.sh drop <slug> [<slug> ...]
 USAGE
 }
@@ -61,6 +62,21 @@ count() { grep -c . "$STORE" 2>/dev/null || echo 0; }
 # Run a check where it will be re-run: the main checkout the claim is about,
 # never the worktree the producing pass happens to be standing in.
 run_check() { (cd "$MAIN_ROOT" && bash -c "$1" 2>&1); }
+
+# A witness is compared across edits that do not touch the claim, and the commonest
+# one is a line shifting: `grep -n` prints `42:text` and the same text at 57 is the
+# same answer. Strip the number, leave the text, so only a changed answer is moved.
+# Only a check that asks grep for line numbers has any to strip: elsewhere a leading
+# `3-column` or `2026-10-24` is the answer, and unnumbering it would hide a change.
+# Covers `N:text`, `N-text` (context lines) and `file:N:text`; `file-N-text` context
+# lines are left alone, since a dash in a filename cannot be told from the separator.
+unnumber() {
+  if printf '%s' "$1" | grep -Eq 'grep.*([[:space:]]-[A-Za-z]*n|--line-number)'; then
+    sed -E -e 's/^[0-9]+([:-])/\1/' -e 's/^([^:[:space:]]+):[0-9]+:/\1:/'
+  else
+    cat
+  fi
+}
 
 # --- reading ------------------------------------------------------------
 
@@ -110,6 +126,17 @@ elif mode == "checks":
         for f in ("id", "claim", "check", "witness"):
             sys.stdout.write((r.get(f) or "") + "\0")
 
+elif mode == "rewitness":
+    # Pairs of id, new witness, NUL-separated, in the file named by OBS_PAIRS.
+    import os
+    parts = open(os.environ["OBS_PAIRS"]).read().split("\0")
+    new = {parts[i]: parts[i + 1] for i in range(0, len(parts) - 1, 2)}
+    for r in records:
+        if r.get("id") in new:
+            w = new[r["id"]]
+            r["witness"] = w if len(w) <= 4000 else w[:4000] + "\n… truncated"
+        print(json.dumps(r, ensure_ascii=False))
+
 elif mode == "drop":
     missing = want - {r.get("id") for r in records}
     if missing:
@@ -154,13 +181,33 @@ append() {
   # passes --issue, which wins.
   [ -n "$issue" ] || issue="$(printf '%s' "$branch" | sed -n 's/^\([0-9][0-9]*\)-.*/\1/p')"
 
+  # A worktree is deleted when its ticket merges, and the check is re-run from the
+  # main checkout: a check naming one reads as moved forever, whatever the repo says.
+  case "$check" in
+    *.claude/worktrees/*) misuse "--check names a worktree path; it is re-run from the main checkout, so write it relative to the repo root" ;;
+  esac
+
+  # Run it here, not inside the python call, so an empty answer can be refused: a
+  # check that prints nothing cannot tell a claim that holds from one that is false.
+  # Run where the pass is standing, not in the main checkout: the claim is usually
+  # about code the pass's own branch added, which main does not have until it merges.
+  # (Running it in main wrote an empty witness for every such claim.) Recheck runs it
+  # in main later, so the record reads as moved until the PR lands, then holds.
+  local witness
+  witness="$(cd "$(git rev-parse --show-toplevel)" && bash -c "$check" 2>&1)"
+  [ -n "$witness" ] || misuse "--check printed nothing; a witness must differ between a true and a false claim (try grep -c, or ... && echo yes || echo no)"
+
+  case "$witness" in
+    *"No such file or directory"*) misuse "--check reads a path that does not exist here; a witness that is already an error can never read as gone later" ;;
+  esac
+
   ensure_excluded
   mkdir -p "$(dirname "$STORE")"
 
   # One interpreter for the whole append: it reads the store for taken slugs,
   # derives a free one, writes the record, and reports what the caller prints.
   OBS_STORE="$STORE" OBS_BY="$by" OBS_CLAIM="$claim" OBS_CHECK="$check" \
-  OBS_WITNESS="$(run_check "$check")" OBS_SURFACED="$surfaced" \
+  OBS_WITNESS="$witness" OBS_SURFACED="$surfaced" \
   OBS_ACTION="$action" OBS_REPO="$repo" OBS_BRANCH="$branch" \
   OBS_ISSUE="$issue" OBS_PR="$pr" \
   python3 - <<'PY'
@@ -237,8 +284,14 @@ do_recheck() {
      && IFS= read -r -d '' check && IFS= read -r -d '' was; do
     any=1
     now="$(run_check "$check")"
-    if [ "$now" = "$was" ]; then
+    if [ "$(printf '%s' "$now" | unnumber "$check")" = "$(printf '%s' "$was" | unnumber "$check")" ]; then
       printf 'holds  %s  %s\n' "$id" "$claim"
+    elif printf '%s' "$now" | grep -q 'No such file or directory' \
+         && ! printf '%s' "$was" | grep -q 'No such file or directory'; then
+      # The path the check reads is gone, so the check can no longer answer. That is
+      # not evidence about the claim either way: rewrite the check or drop the record.
+      printf 'gone   %s  %s\n' "$id" "$claim"
+      printf '       now: %s\n' "$now" | sed -n '1,3p'
     else
       printf 'moved  %s  %s\n' "$id" "$claim"
       printf '       was: %s\n' "$was" | sed -n '1,10p'
@@ -246,6 +299,38 @@ do_recheck() {
     fi
   done < <(readers checks "$@")
   [ "$any" = 1 ] || echo "no observations in $STORE"
+}
+
+# Re-capture the witness of records whose check could not answer when they were
+# written — typically a claim about code still in an unmerged PR, which main lacked
+# and so witnessed as empty. Runs the check from the main checkout, where recheck
+# will, so the record holds from here until the repo moves. It does not judge the
+# claim: a record rewitnessed is a record whose recheck means something again.
+# An empty answer is skipped, for the reason an empty witness is refused at write.
+do_rewitness() {
+  [ $# -gt 0 ] || misuse "rewitness needs at least one slug"
+  [ -f "$STORE" ] || die "no observations in $STORE"
+  local id claim check was now pairs n=0 skipped=0
+  pairs="$(mktemp "$STORE.pairs.XXXXXX")"
+  while IFS= read -r -d '' id    && IFS= read -r -d '' claim \
+     && IFS= read -r -d '' check && IFS= read -r -d '' was; do
+    now="$(run_check "$check")"
+    if [ -z "$now" ]; then
+      skipped=$((skipped + 1)); printf 'skipped %s — check printed nothing\n' "$id" >&2
+    else
+      printf '%s\0%s\0' "$id" "$now" >> "$pairs"; n=$((n + 1))
+    fi
+  done < <(readers checks "$@")
+  # `readers checks` ignores slugs it does not know, so count what it found.
+  if [ $((n + skipped)) -ne $# ]; then
+    rm -f "$pairs"; die "no such observation among: $*"
+  fi
+  local tmp; tmp="$(mktemp "$STORE.XXXXXX")"
+  if ! OBS_PAIRS="$pairs" readers rewitness > "$tmp"; then
+    rm -f "$pairs" "$tmp"; die "could not rewrite $STORE"
+  fi
+  rm -f "$pairs"; mv "$tmp" "$STORE"
+  printf 'rewitnessed %d, skipped %d — %s in %s\n' "$n" "$skipped" "$(count) observations" "$STORE"
 }
 
 # The only write that is not a single-line append, so it is the only one that
@@ -270,6 +355,7 @@ case "${1-}" in
   "")      misuse "nothing to do" ;;
   list)    readers list ;;
   recheck) shift; do_recheck "$@" ;;
+  rewitness) shift; do_rewitness "$@" ;;
   drop)    shift; do_drop "$@" ;;
   -h|--help) usage; exit 0 ;;
   *)       append "$@" ;;

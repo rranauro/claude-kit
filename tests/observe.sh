@@ -116,7 +116,7 @@ record() { # cwd extra-args...
   (cd "$cwd" && "$SCRIPT" \
     --by "kit:grilling" \
     --claim "plugins/kit/skills/grilling/SKILL.md names no destination for the Parked list" \
-    --check "grep -c Parked plugins/kit/skills/grilling/SKILL.md" \
+    --check "grep -c hello README.md" \
     --surfaced "Grilling #150 ended with three parked items and nowhere to put them." \
     --action "this backlog" \
     "$@" 2>&1)
@@ -319,6 +319,108 @@ record "$MAIN" --check "cat README.md" >/dev/null
 echo goodbye > "$MAIN/README.md"
 out="$( (cd "$MAIN/.claude/worktrees/150-closing-observation" && "$SCRIPT" recheck) 2>&1 )"
 assert_has "$out" "moved" "the check sees the main checkout it was written against"
+end_sandbox
+
+new_sandbox "recheck ignores a line number that shifted under an unchanged claim"
+printf 'a\nneedle here\n' > "$MAIN/README.md"
+record "$MAIN" --check "grep -n needle README.md" >/dev/null
+printf 'a\nb\nc\nneedle here\n' > "$MAIN/README.md"
+out="$( (cd "$MAIN" && "$SCRIPT" recheck) 2>&1 )"
+assert_has "$out" "holds" "grep -n output that only moved lines still holds"
+printf 'a\nb\nc\nthe needle was reworded\n' > "$MAIN/README.md"
+out="$( (cd "$MAIN" && "$SCRIPT" recheck) 2>&1 )"
+assert_has "$out" "moved" "but changed text still reads as moved"
+end_sandbox
+
+new_sandbox "recheck ignores a shifted line number in the file:line: form"
+printf 'needle one\n' > "$MAIN/README.md"
+record "$MAIN" --check "grep -Hn needle README.md" >/dev/null
+printf 'x\nx\nneedle one\n' > "$MAIN/README.md"
+out="$( (cd "$MAIN" && "$SCRIPT" recheck) 2>&1 )"
+assert_has "$out" "holds" "README.md:N: prefixes are compared without N"
+end_sandbox
+
+new_sandbox "recheck names a check whose path has gone, apart from a moved answer"
+printf 'needle\n' > "$MAIN/gone.txt"
+(cd "$MAIN" && git add gone.txt && git commit -qm gone)
+record "$MAIN" --check "grep -c needle gone.txt" >/dev/null
+rm "$MAIN/gone.txt"
+out="$( (cd "$MAIN" && "$SCRIPT" recheck) 2>&1 )"
+assert_has "$out" "gone " "a check that now fails on a missing path reads as gone"
+assert_lacks "$out" "moved" "and not as moved"
+end_sandbox
+
+new_sandbox "a check is witnessed against the branch the pass is on, not main"
+add_worktree 150-closing-observation
+WT="$MAIN/.claude/worktrees/150-closing-observation"
+echo 'only on the branch' > "$WT/branch_only.txt"
+out="$(record "$WT" --check "cat branch_only.txt")"
+assert_has "$out" "observed" "code main lacks can still be recorded against"
+assert_has "$(field 1 witness)" "only on the branch" "and the witness is what the branch answered"
+end_sandbox
+
+new_sandbox "a check that prints nothing is refused"
+out="$(record "$MAIN" --check "grep -c nomatch README.md | grep -v '^0$'")"
+st=$?
+assert_eq "$st" 2 "an empty witness is a usage error"
+assert_has "$out" "printed nothing" "and says why"
+assert_eq "$(lines)" "0" "nothing is written"
+end_sandbox
+
+new_sandbox "a check whose witness is a missing-path error is refused"
+out="$(record "$MAIN" --check "grep -c x no_such_file.txt")"
+st=$?
+assert_eq "$st" 2 "a missing path is a usage error"
+assert_has "$out" "does not exist" "and says why"
+assert_eq "$(lines)" "0" "nothing is written"
+end_sandbox
+
+new_sandbox "recheck keeps a leading number that grep did not print"
+printf '3-column layout\n' > "$MAIN/README.md"
+record "$MAIN" --check "cat README.md" >/dev/null
+printf '4-column layout\n' > "$MAIN/README.md"
+out="$( (cd "$MAIN" && "$SCRIPT" recheck) 2>&1 )"
+assert_has "$out" "moved" "a changed leading number is a moved answer without -n"
+end_sandbox
+
+new_sandbox "a check that reaches into a worktree is refused"
+out="$(record "$MAIN" --check "grep -c x .claude/worktrees/12-foo/app/a.rb")"
+st=$?
+assert_eq "$st" 2 "a worktree path is a usage error"
+assert_has "$out" "worktree" "the message names the worktree"
+assert_eq "$(lines)" "0" "nothing is written"
+end_sandbox
+
+new_sandbox "rewitness re-captures the named records' witness from the main checkout"
+record "$MAIN" --check "cat README.md" >/dev/null
+record "$MAIN" --claim "CONTEXT.md has no entry for an observation" --check "cat README.md" >/dev/null
+echo goodbye > "$MAIN/README.md"
+first="$(field 1 id)"
+out="$( (cd "$MAIN" && "$SCRIPT" rewitness "$first") 2>&1 )"
+assert_eq "$?" 0 "the rewitness succeeds"
+assert_has "$out" "rewitnessed" "and reports what it did"
+assert_has "$(field 1 witness)" "goodbye" "the named record carries the new answer"
+assert_lacks "$(field 2 witness)" "goodbye" "the other record is untouched"
+assert_eq "$(lines)" "2" "no record is lost"
+assert_jsonl_valid "and the store is still valid JSONL"
+out="$( (cd "$MAIN" && "$SCRIPT" recheck "$first") 2>&1 )"
+assert_has "$out" "holds" "the record now holds"
+end_sandbox
+
+new_sandbox "rewitness leaves a record alone when its check now prints nothing"
+record "$MAIN" --check "cat README.md" >/dev/null
+before="$(field 1 witness)"
+: > "$MAIN/README.md"
+out="$( (cd "$MAIN" && "$SCRIPT" rewitness "$(field 1 id)") 2>&1 )"
+assert_has "$out" "skipped" "an empty answer is reported as skipped"
+assert_eq "$(field 1 witness)" "$before" "and the old witness stays"
+end_sandbox
+
+new_sandbox "rewitness of an unknown slug changes nothing"
+record "$MAIN" >/dev/null
+out="$( (cd "$MAIN" && "$SCRIPT" rewitness no-such-slug) 2>&1 )"
+assert_eq "$?" 1 "an unknown slug is an error"
+assert_eq "$(lines)" "1" "and the store is left as it was"
 end_sandbox
 
 new_sandbox "drop clears down the records named and keeps the rest"
