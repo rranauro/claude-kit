@@ -116,6 +116,10 @@ each record as holding, moved, or gone. *Gone* means the path the check reads no
 longer exists: the check can no longer answer, which is evidence about the check
 and not the claim. Rewrite it against the file's new home, or drop the record.
 
+`observe.sh rewitness <slug> ...` re-captures a record's witness from the main
+checkout without touching its claim. Use it on records written before their
+code merged, whose witness is empty or reflects the branch rather than main.
+
 **2 · Bin each record by what the recheck said**, since that is evidence rather
 than a judgement:
 

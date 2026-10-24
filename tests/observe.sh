@@ -391,6 +391,38 @@ assert_has "$out" "worktree" "the message names the worktree"
 assert_eq "$(lines)" "0" "nothing is written"
 end_sandbox
 
+new_sandbox "rewitness re-captures the named records' witness from the main checkout"
+record "$MAIN" --check "cat README.md" >/dev/null
+record "$MAIN" --claim "CONTEXT.md has no entry for an observation" --check "cat README.md" >/dev/null
+echo goodbye > "$MAIN/README.md"
+first="$(field 1 id)"
+out="$( (cd "$MAIN" && "$SCRIPT" rewitness "$first") 2>&1 )"
+assert_eq "$?" 0 "the rewitness succeeds"
+assert_has "$out" "rewitnessed" "and reports what it did"
+assert_has "$(field 1 witness)" "goodbye" "the named record carries the new answer"
+assert_lacks "$(field 2 witness)" "goodbye" "the other record is untouched"
+assert_eq "$(lines)" "2" "no record is lost"
+assert_jsonl_valid "and the store is still valid JSONL"
+out="$( (cd "$MAIN" && "$SCRIPT" recheck "$first") 2>&1 )"
+assert_has "$out" "holds" "the record now holds"
+end_sandbox
+
+new_sandbox "rewitness leaves a record alone when its check now prints nothing"
+record "$MAIN" --check "cat README.md" >/dev/null
+before="$(field 1 witness)"
+: > "$MAIN/README.md"
+out="$( (cd "$MAIN" && "$SCRIPT" rewitness "$(field 1 id)") 2>&1 )"
+assert_has "$out" "skipped" "an empty answer is reported as skipped"
+assert_eq "$(field 1 witness)" "$before" "and the old witness stays"
+end_sandbox
+
+new_sandbox "rewitness of an unknown slug changes nothing"
+record "$MAIN" >/dev/null
+out="$( (cd "$MAIN" && "$SCRIPT" rewitness no-such-slug) 2>&1 )"
+assert_eq "$?" 1 "an unknown slug is an error"
+assert_eq "$(lines)" "1" "and the store is left as it was"
+end_sandbox
+
 new_sandbox "drop clears down the records named and keeps the rest"
 record "$MAIN" >/dev/null
 record "$MAIN" --claim "docs/commands.md lists no entry for /kit:observe" >/dev/null
