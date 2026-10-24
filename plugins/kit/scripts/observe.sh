@@ -62,6 +62,12 @@ count() { grep -c . "$STORE" 2>/dev/null || echo 0; }
 # never the worktree the producing pass happens to be standing in.
 run_check() { (cd "$MAIN_ROOT" && bash -c "$1" 2>&1); }
 
+# A witness is compared across edits that do not touch the claim, and the commonest
+# one is a line shifting: `grep -n` prints `42:text` and the same text at 57 is the
+# same answer. Strip the number, leave the text, so only a changed answer is moved.
+# Both `N:text` and `file:N:text` (and the `-` context separator) are covered.
+unnumber() { sed -E -e 's/^[0-9]+([:-])/\1/' -e 's/^([^:[:space:]]+):[0-9]+:/\1:/'; }
+
 # --- reading ------------------------------------------------------------
 
 # Every mode tolerates a line that will not parse. Nothing validates the store
@@ -154,13 +160,25 @@ append() {
   # passes --issue, which wins.
   [ -n "$issue" ] || issue="$(printf '%s' "$branch" | sed -n 's/^\([0-9][0-9]*\)-.*/\1/p')"
 
+  # A worktree is deleted when its ticket merges, and the check is re-run from the
+  # main checkout: a check naming one reads as moved forever, whatever the repo says.
+  case "$check" in
+    *.claude/worktrees/*) misuse "--check names a worktree path; it is re-run from the main checkout, so write it relative to the repo root" ;;
+  esac
+
+  # Run it here, not inside the python call, so an empty answer can be refused: a
+  # check that prints nothing cannot tell a claim that holds from one that is false.
+  local witness
+  witness="$(run_check "$check")"
+  [ -n "$witness" ] || misuse "--check printed nothing; a witness must differ between a true and a false claim (try grep -c, or ... && echo yes || echo no)"
+
   ensure_excluded
   mkdir -p "$(dirname "$STORE")"
 
   # One interpreter for the whole append: it reads the store for taken slugs,
   # derives a free one, writes the record, and reports what the caller prints.
   OBS_STORE="$STORE" OBS_BY="$by" OBS_CLAIM="$claim" OBS_CHECK="$check" \
-  OBS_WITNESS="$(run_check "$check")" OBS_SURFACED="$surfaced" \
+  OBS_WITNESS="$witness" OBS_SURFACED="$surfaced" \
   OBS_ACTION="$action" OBS_REPO="$repo" OBS_BRANCH="$branch" \
   OBS_ISSUE="$issue" OBS_PR="$pr" \
   python3 - <<'PY'
@@ -237,8 +255,14 @@ do_recheck() {
      && IFS= read -r -d '' check && IFS= read -r -d '' was; do
     any=1
     now="$(run_check "$check")"
-    if [ "$now" = "$was" ]; then
+    if [ "$(printf '%s' "$now" | unnumber)" = "$(printf '%s' "$was" | unnumber)" ]; then
       printf 'holds  %s  %s\n' "$id" "$claim"
+    elif printf '%s' "$now" | grep -q 'No such file or directory' \
+         && ! printf '%s' "$was" | grep -q 'No such file or directory'; then
+      # The path the check reads is gone, so the check can no longer answer. That is
+      # not evidence about the claim either way: rewrite the check or drop the record.
+      printf 'gone   %s  %s\n' "$id" "$claim"
+      printf '       now: %s\n' "$now" | sed -n '1,3p'
     else
       printf 'moved  %s  %s\n' "$id" "$claim"
       printf '       was: %s\n' "$was" | sed -n '1,10p'

@@ -321,6 +321,49 @@ out="$( (cd "$MAIN/.claude/worktrees/150-closing-observation" && "$SCRIPT" reche
 assert_has "$out" "moved" "the check sees the main checkout it was written against"
 end_sandbox
 
+new_sandbox "recheck ignores a line number that shifted under an unchanged claim"
+printf 'a\nneedle here\n' > "$MAIN/README.md"
+record "$MAIN" --check "grep -n needle README.md" >/dev/null
+printf 'a\nb\nc\nneedle here\n' > "$MAIN/README.md"
+out="$( (cd "$MAIN" && "$SCRIPT" recheck) 2>&1 )"
+assert_has "$out" "holds" "grep -n output that only moved lines still holds"
+printf 'a\nb\nc\nthe needle was reworded\n' > "$MAIN/README.md"
+out="$( (cd "$MAIN" && "$SCRIPT" recheck) 2>&1 )"
+assert_has "$out" "moved" "but changed text still reads as moved"
+end_sandbox
+
+new_sandbox "recheck ignores a shifted line number in the file:line: form"
+printf 'needle one\n' > "$MAIN/README.md"
+record "$MAIN" --check "grep -Hn needle README.md" >/dev/null
+printf 'x\nx\nneedle one\n' > "$MAIN/README.md"
+out="$( (cd "$MAIN" && "$SCRIPT" recheck) 2>&1 )"
+assert_has "$out" "holds" "README.md:N: prefixes are compared without N"
+end_sandbox
+
+new_sandbox "recheck names a check whose path has gone, apart from a moved answer"
+printf 'needle\n' > "$MAIN/gone.txt"
+(cd "$MAIN" && git add gone.txt && git commit -qm gone)
+record "$MAIN" --check "grep -c needle gone.txt" >/dev/null
+rm "$MAIN/gone.txt"
+out="$( (cd "$MAIN" && "$SCRIPT" recheck) 2>&1 )"
+assert_has "$out" "gone " "a check that now fails on a missing path reads as gone"
+assert_lacks "$out" "moved" "and not as moved"
+end_sandbox
+
+new_sandbox "a check that prints nothing is refused"
+out="$(record "$MAIN" --check "grep -c nomatch README.md | grep -v '^0$'")"
+st=$?
+assert_eq "$st" 2 "an empty witness is a usage error"
+assert_has "$out" "printed nothing" "and says why"
+assert_eq "$(lines)" "0" "nothing is written"
+end_sandbox
+
+new_sandbox "a check that reaches into a worktree is refused"
+out="$(record "$MAIN" --check "grep -c x .claude/worktrees/12-foo/app/a.rb")"
+assert_has "$out" "worktree" "the message names the worktree"
+assert_eq "$(lines)" "0" "nothing is written"
+end_sandbox
+
 new_sandbox "drop clears down the records named and keeps the rest"
 record "$MAIN" >/dev/null
 record "$MAIN" --claim "docs/commands.md lists no entry for /kit:observe" >/dev/null
