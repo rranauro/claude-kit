@@ -116,7 +116,7 @@ record() { # cwd extra-args...
   (cd "$cwd" && "$SCRIPT" \
     --by "kit:grilling" \
     --claim "plugins/kit/skills/grilling/SKILL.md names no destination for the Parked list" \
-    --check "grep -c Parked plugins/kit/skills/grilling/SKILL.md" \
+    --check "grep -c hello README.md" \
     --surfaced "Grilling #150 ended with three parked items and nowhere to put them." \
     --action "this backlog" \
     "$@" 2>&1)
@@ -367,8 +367,26 @@ assert_has "$out" "printed nothing" "and says why"
 assert_eq "$(lines)" "0" "nothing is written"
 end_sandbox
 
+new_sandbox "a check whose witness is a missing-path error is refused"
+out="$(record "$MAIN" --check "grep -c x no_such_file.txt")"
+st=$?
+assert_eq "$st" 2 "a missing path is a usage error"
+assert_has "$out" "does not exist" "and says why"
+assert_eq "$(lines)" "0" "nothing is written"
+end_sandbox
+
+new_sandbox "recheck keeps a leading number that grep did not print"
+printf '3-column layout\n' > "$MAIN/README.md"
+record "$MAIN" --check "cat README.md" >/dev/null
+printf '4-column layout\n' > "$MAIN/README.md"
+out="$( (cd "$MAIN" && "$SCRIPT" recheck) 2>&1 )"
+assert_has "$out" "moved" "a changed leading number is a moved answer without -n"
+end_sandbox
+
 new_sandbox "a check that reaches into a worktree is refused"
 out="$(record "$MAIN" --check "grep -c x .claude/worktrees/12-foo/app/a.rb")"
+st=$?
+assert_eq "$st" 2 "a worktree path is a usage error"
 assert_has "$out" "worktree" "the message names the worktree"
 assert_eq "$(lines)" "0" "nothing is written"
 end_sandbox

@@ -123,6 +123,8 @@ than a judgement:
   against. Read the claim once against what the check now says. Either the
   observation was acted on, or it was wrong; both are a drop. Say which in one
   line, so a re-observation of the same thing later is not a surprise.
+- **Gone** — the check cannot answer. Rewrite it against the file's new home and
+  re-record, or drop the record; either way the claim itself is unjudged.
 - **Holds, and the claim still reads as real** — it goes to its `action`. File it
   with `kit:writing-tickets`, carrying `surfaced` across verbatim; or make the
   edit now if it is small and located.

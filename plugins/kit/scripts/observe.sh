@@ -65,8 +65,17 @@ run_check() { (cd "$MAIN_ROOT" && bash -c "$1" 2>&1); }
 # A witness is compared across edits that do not touch the claim, and the commonest
 # one is a line shifting: `grep -n` prints `42:text` and the same text at 57 is the
 # same answer. Strip the number, leave the text, so only a changed answer is moved.
-# Both `N:text` and `file:N:text` (and the `-` context separator) are covered.
-unnumber() { sed -E -e 's/^[0-9]+([:-])/\1/' -e 's/^([^:[:space:]]+):[0-9]+:/\1:/'; }
+# Only a check that asks grep for line numbers has any to strip: elsewhere a leading
+# `3-column` or `2026-10-24` is the answer, and unnumbering it would hide a change.
+# Covers `N:text`, `N-text` (context lines) and `file:N:text`; `file-N-text` context
+# lines are left alone, since a dash in a filename cannot be told from the separator.
+unnumber() {
+  if printf '%s' "$1" | grep -Eq 'grep.*([[:space:]]-[A-Za-z]*n|--line-number)'; then
+    sed -E -e 's/^[0-9]+([:-])/\1/' -e 's/^([^:[:space:]]+):[0-9]+:/\1:/'
+  else
+    cat
+  fi
+}
 
 # --- reading ------------------------------------------------------------
 
@@ -176,6 +185,10 @@ append() {
   witness="$(cd "$(git rev-parse --show-toplevel)" && bash -c "$check" 2>&1)"
   [ -n "$witness" ] || misuse "--check printed nothing; a witness must differ between a true and a false claim (try grep -c, or ... && echo yes || echo no)"
 
+  case "$witness" in
+    *"No such file or directory"*) misuse "--check reads a path that does not exist here; a witness that is already an error can never read as gone later" ;;
+  esac
+
   ensure_excluded
   mkdir -p "$(dirname "$STORE")"
 
@@ -259,7 +272,7 @@ do_recheck() {
      && IFS= read -r -d '' check && IFS= read -r -d '' was; do
     any=1
     now="$(run_check "$check")"
-    if [ "$(printf '%s' "$now" | unnumber)" = "$(printf '%s' "$was" | unnumber)" ]; then
+    if [ "$(printf '%s' "$now" | unnumber "$check")" = "$(printf '%s' "$was" | unnumber "$check")" ]; then
       printf 'holds  %s  %s\n' "$id" "$claim"
     elif printf '%s' "$now" | grep -q 'No such file or directory' \
          && ! printf '%s' "$was" | grep -q 'No such file or directory'; then
