@@ -350,6 +350,15 @@ assert_has "$out" "gone " "a check that now fails on a missing path reads as gon
 assert_lacks "$out" "moved" "and not as moved"
 end_sandbox
 
+new_sandbox "a check is witnessed against the branch the pass is on, not main"
+add_worktree 150-closing-observation
+WT="$MAIN/.claude/worktrees/150-closing-observation"
+echo 'only on the branch' > "$WT/branch_only.txt"
+out="$(record "$WT" --check "cat branch_only.txt")"
+assert_has "$out" "observed" "code main lacks can still be recorded against"
+assert_has "$(field 1 witness)" "only on the branch" "and the witness is what the branch answered"
+end_sandbox
+
 new_sandbox "a check that prints nothing is refused"
 out="$(record "$MAIN" --check "grep -c nomatch README.md | grep -v '^0$'")"
 st=$?

@@ -168,8 +168,12 @@ append() {
 
   # Run it here, not inside the python call, so an empty answer can be refused: a
   # check that prints nothing cannot tell a claim that holds from one that is false.
+  # Run where the pass is standing, not in the main checkout: the claim is usually
+  # about code the pass's own branch added, which main does not have until it merges.
+  # (Running it in main wrote an empty witness for every such claim.) Recheck runs it
+  # in main later, so the record reads as moved until the PR lands, then holds.
   local witness
-  witness="$(run_check "$check")"
+  witness="$(cd "$(git rev-parse --show-toplevel)" && bash -c "$check" 2>&1)"
   [ -n "$witness" ] || misuse "--check printed nothing; a witness must differ between a true and a false claim (try grep -c, or ... && echo yes || echo no)"
 
   ensure_excluded
