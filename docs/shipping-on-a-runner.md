@@ -200,9 +200,10 @@ A project that declares a `## Ship gate` in its `CLAUDE.md` grants that command
 there too; the kit never grants it from the declaration. Ungranted, the gate
 fails as a denied permission, which parks — so a project that declares a gate
 without granting it has made every ticket park rather than installed a check.
-A `## Screenshot capture` rule is granted the same way — its command or browser
-tools in the project's file, never from the declaration — but an ungranted one
-does not park — `kit:visual-pr` says what the PR reports instead.
+A `## Screenshot capture` rule or `pr-screenshots` skill is granted the same
+way: its command or browser tools in the project's file, never from the
+declaration. An ungranted one does not park, and `kit:visual-pr` says what the
+PR reports instead.
 
 ## A crashed ticket needs no cleanup of its own
 
