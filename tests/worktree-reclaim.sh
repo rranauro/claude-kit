@@ -552,8 +552,10 @@ new_sandbox "the script writes the lease it reads"
 out="$("$SCRIPT" --lease 42 2>&1)"
 assert_has "$out" "kit:ship #42 since " "the reason is in the lease format"
 assert_has "$out" " awake 500000" "and stamps the awake clock the reader uses"
+# A process clock reads milliseconds and stamps 0. Not the 60s floor: a CI
+# runner can be under a minute past boot when this runs.
 reading="$(env -u KIT_AWAKE_NOW "$SCRIPT" --lease 42 2>&1 | sed -n 's/.* awake //p')"
-if [ -n "$reading" ] && [ "$reading" -ge 60 ] 2>/dev/null
+if [ -n "$reading" ] && [ "$reading" -ge 1 ] 2>/dev/null
 then ok "an unseamed reading counts from boot, not from the process"
 else bad "an unseamed reading counts from boot, not from the process"
      printf '       read: %s\n' "$reading" >&2; fi
