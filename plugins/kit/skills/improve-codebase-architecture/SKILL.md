@@ -254,10 +254,10 @@ their findings unapplied (`kit:ticket-loop` `hand-off` step 3) are another, and
 each finding already names its count, its call site and its After. Gather them
 before §2.
 
-**Read them from the PRs.** The observation recorded beside each one lives in a
-single checkout, which a runner discards. The posted comment and `kit-pinned`
-survive everywhere, so a scan from a fresh clone or a CI runner gets the same
-leads as one from the checkout that recorded them.
+**Read them from the PRs.** The posted comment and `kit-pinned` are the only
+record a merged shape finding leaves, and they survive everywhere, so a scan
+from a fresh clone or a CI runner gets the same leads as one from the checkout
+that merged them.
 
 **The window is since the last scan of this scope.** A scan epic is labelled
 `epic` and carries a `ranking` artifact (`kit:ticket-artifacts`). One call lists
@@ -310,8 +310,7 @@ heading) or its **Call site now** file lies inside the direction. An accreted
 interface finding's call site is the added member's caller, which can sit
 anywhere.
 
-**Re-check each against the code before it counts**, using the same test
-`kit:ticket-loop` records as the observation's `check`: grep the **Call site
+**Re-check each against the code before it counts**: grep the **Call site
 now** file for the line the finding quotes. If the line or the file is gone,
 drop the finding, and say in §4's closing lines how many were dropped and from
 which PRs. A survivor's `file:line` is wherever the line now sits.

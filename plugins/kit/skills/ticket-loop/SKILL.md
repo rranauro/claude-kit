@@ -321,8 +321,8 @@ cannot lose a race with a green CI.
   whether to post the review and hold the PR, or post it and let it merge
   unheld, or post it, hold it, and reshape now. Never hold without saying so.
   With nothing contested the axis has already picked every fix, so say arming is
-  what an unattended run would do. The second answer pins and records as the
-  uncontested case below does. The third is the first followed by invoking
+  what an unattended run would do. The second answer pins as the uncontested
+  case below does. The third is the first followed by invoking
   `kit:reshape <pr-number>` through the Skill tool, here, before step 4 — it
   pushes, and step 4 has to attest the head it leaves.
 - **Findings, unattended, none contested** — the count line reads
@@ -335,17 +335,12 @@ cannot lose a race with a green CI.
   gh pr edit <pr-number> --add-label kit-pinned   # only if the comment posted
   ```
 
-  Then invoke `kit:observations` and record each finding — one record per
-  finding, passing `--pr <pr-number>`. The `claim` is the finding's heading and
-  its **Call site now** `file:line`; the `check` greps that file for the
-  call-site line; `surfaced` says the shape review found it uncontested and the
-  PR merged with it unapplied; the `action` is the next
-  `kit:improve-codebase-architecture` scan over the call site's area, and never
-  a ticket of its own — the scan reads the posted review as a lead, and only it
-  files an `improve-codebase` ticket. Write that whole sentence into the
-  `action`, since triage routes a record by it.
-  Report each line the script prints. A failed write follows `docs/labels.md`:
-  report it and carry on to step 4, since nothing here was a hold.
+  **Record no observation.** The posted review and `kit-pinned` are the whole
+  record: `kit:improve-codebase-architecture` takes each finding from the pinned
+  PR as a lead and re-checks it against the code, and a copy in the store would
+  have no reader but triage, which could only delete it.
+  A failed write follows `docs/labels.md`: report it and carry on to step 4,
+  since nothing here was a hold.
 - **Findings, unattended, one or more contested** — hold it, record first:
 
   ```
