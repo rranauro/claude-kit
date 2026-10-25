@@ -104,8 +104,9 @@ _Avoid_: hold, do-not-merge
 **kit-pinned**:
 The PR merged carrying a question nobody has answered — a review finding real
 enough to record that the pass had a reason to skip. Written by the review pass
-alongside an observation holding the discussion, and named for the PR so the diff
-and the round summary are one lookup away. Blocks nothing: it exists so the
+alongside an observation holding the discussion, or by the hand-off beside an
+uncontested shape review, which is its own record — and named for the PR so the
+diff and the round summary are one lookup away. Blocks nothing: it exists so the
 merged PRs with an open question can be listed, which a store on one machine
 cannot do. Distinct from **kit-hold**, which stops a merge because something
 could not be established; an observation stops nothing because everything was.
