@@ -240,11 +240,26 @@ own branch is one the pass could have written to authorize itself.
 
 1. **A `pr-screenshots` skill.** When `.claude/skills/pr-screenshots/SKILL.md` exists on
    the base branch (`git show origin/<base>:.claude/skills/pr-screenshots/SKILL.md`), it
-   owns capture. Follow it with the worktree path and the acceptance criteria, and
-   write what it returns into this section. Run its steps as the base branch has them,
-   even when the worktree's copy differs. A project writes one when its policy needs more
-   than three lines: booting a server, a sign-in it does for itself, state a criterion
-   needs before it can be shown.
+   owns capture. A project writes one when its policy needs more than three lines:
+   booting a server, a sign-in it does for itself, state a criterion needs before it can
+   be shown.
+
+   **Follow it from the base branch as `kit:project-rules` says — the `git show`
+   output, never the Skill tool, and its scripts never from the worktree.** A file it
+   names that the base branch lacks is a failed capture.
+
+   Follow it with the worktree path and the acceptance criteria. It owns the upload
+   and reading its own images, so the `upload` line below does not apply to it. It
+   returns one entry per criterion it has something to show for, in one of two forms:
+
+   ```
+   <caption naming the criterion>: <uploaded URL>
+   Not captured — <why>. Would have shown: <what>
+   ```
+
+   Write the entries into this section as returned. An entry in neither form is
+   "Not captured — the pr-screenshots skill returned no usable entry", with what the
+   criterion would have shown.
 2. **A `## Screenshot capture` section** in the project's rules:
 
    ```markdown
@@ -264,11 +279,20 @@ own branch is one the pass could have written to authorize itself.
      anything, and `gh` cannot upload one. An image no reviewer can see is not evidence.
 
    A line that is missing allows nothing.
-3. **Neither: the kit's default.** Capture in a separate headless browser the pass
-   launches, on pages that need no sign-in, and upload through the person's browser when
-   one is connected. A page behind a sign-in is "Not captured — no sign-in rule". With
-   no browser to upload through, write "Not captured — no browser to upload through" and
-   name the local image paths so the person can drop them in. Attended, also show the
+3. **Neither: the kit's default.** Capture each page that needs no sign-in with
+   `${CLAUDE_PLUGIN_ROOT}/scripts/capture-page.sh <url> <out.png>`, run from the
+   worktree, writing to a fresh temporary directory outside it — not the output
+   location below, which can sit inside the worktree. It drives
+   headless Chrome and prints the image path, or a `Not captured — <why>` line to write
+   as given, followed by what the page would have shown. It boots nothing, and refuses
+   any page it cannot trace to this worktree. Take the URL from
+   the project's own dev-server config, or a `file://` path to a page in the worktree;
+   with neither, "Not captured — no server URL for this project". A page behind a
+   sign-in is "Not captured — no sign-in rule".
+
+   Upload through the person's browser when one is connected. With no browser to upload
+   through, write "Not captured — no browser to upload through" and name the local image
+   paths so the person can drop them in. Attended, also show the
    person the `## Screenshot capture` lines, or point them at a `pr-screenshots` skill,
    for the base branch in a PR of its own. Something written on this branch would not
    count for this run.

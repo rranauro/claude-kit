@@ -65,6 +65,13 @@ tracked files (`git show origin/<base>:<path>`), never the worktree's, and from
 the main checkout's `CLAUDE.local.md`. The branch is the pass's own work; the
 local file is the developer's.
 
+The same holds for a project skill taken from the base branch, and for every
+file it names. Follow the `git show` output as instructions rather than
+invoking the skill by name — the Skill tool loads the worktree's copy. Read a
+file it names with `git show` too, and run a script it names from a copy that
+`git show` writes outside the worktree, never from the worktree's path. A file
+the base branch lacks is missing, not one to take from the worktree.
+
 ## Rules in the project's own words
 
 A project does not have to use a kit heading to be heard. **Anything these files

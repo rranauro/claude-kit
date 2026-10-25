@@ -42,7 +42,8 @@
       "Bash(*/scripts/worktree-reclaim.sh*)",
       "Bash(*/scripts/pr-review.sh*)",
       "Bash(*/scripts/observe.sh*)",
-      "Bash(*/scripts/pr-body-left.sh*)"
+      "Bash(*/scripts/pr-body-left.sh*)",
+      "Bash(*/scripts/capture-page.sh*)"
     ],
     "deny": [
       "Bash(gh issue create:*)",
