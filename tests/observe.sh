@@ -113,15 +113,6 @@ new_sandbox() {
   git -C "$MAIN" commit -qm initial
 }
 
-# PATH with every directory holding an `rg` left out, so a check calling it
-# fails the way it does in a shell where `rg` is only a session's function.
-no_rg_path() {
-  local d out=""
-  local IFS=:
-  for d in $PATH; do [ -x "$d/rg" ] || out="${out:+$out:}$d"; done
-  printf '%s' "$out"
-}
-
 end_sandbox() {
   [ -n "${SANDBOX:-}" ] && rm -rf "$SANDBOX"
 }
@@ -492,6 +483,19 @@ assert_has "$out" "nosuchcmd_318" "and named"
 assert_eq "$(lines)" "0" "nothing is written"
 end_sandbox
 
+new_sandbox "a missing command inside a nested bash is refused"
+out="$(record "$MAIN" --check "bash -c 'nosuchcmd_318 README.md'")"
+assert_eq "$?" 2 "the nested shell reports through the same handler"
+assert_has "$out" "nosuchcmd_318" "and the command is named"
+assert_eq "$(lines)" "0" "nothing is written"
+end_sandbox
+
+new_sandbox "a command exec cannot find is refused"
+out="$(record "$MAIN" --check "exec nosuchcmd_318 README.md")"
+assert_eq "$?" 2 "exit 127 counts as a missing command"
+assert_eq "$(lines)" "0" "nothing is written"
+end_sandbox
+
 new_sandbox "a check whose answer mentions a missing command is not refused"
 echo 'bash: rg: command not found' > "$MAIN/README.md"
 out="$(record "$MAIN" --check "grep -c 'command not found' README.md")"
@@ -503,11 +507,11 @@ new_sandbox "recheck reports a check that cannot run as unrunnable, not holding"
 record "$MAIN" >/dev/null
 # A record written before the refusal: its witness is already the error, so a
 # plain diff would read it as holding forever.
-set_fields 1 check "rg -c hello README.md" witness "bash: rg: command not found"
-out="$( (cd "$MAIN" && PATH="$(no_rg_path)" "$SCRIPT" recheck) 2>&1 )"
+set_fields 1 check "nosuchcmd_318 -c hello README.md" witness "bash: nosuchcmd_318: command not found"
+out="$( (cd "$MAIN" && "$SCRIPT" recheck) 2>&1 )"
 assert_has "$out" "unrunnable" "a check that cannot run is reported as unrunnable"
 assert_lacks "$out" "holds" "and never as holding"
-assert_has "$out" "rg" "naming the command"
+assert_has "$out" "nosuchcmd_318" "naming the command"
 end_sandbox
 
 new_sandbox "a bash too old to detect a missing command is refused"

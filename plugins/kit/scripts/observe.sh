@@ -75,12 +75,16 @@ init_checks() {
   major="$(bash -c 'printf %s "${BASH_VERSINFO[0]}"' 2>/dev/null)"
   [ "${major:-0}" -ge 4 ] 2>/dev/null \
     || die "the bash that runs checks is ${major:-unknown}.x, which cannot tell a missing command from a check that ran; put bash 4 or later ahead of it on PATH (macOS: brew install bash)"
-  MISSING="$(mktemp "${TMPDIR:-/tmp}/observe-missing.XXXXXX")"
+  MISSING="$(mktemp "${TMPDIR:-/tmp}/observe-missing.XXXXXX")" \
+    || die "could not create a temporary file to detect missing commands"
   trap 'rm -f "$MISSING"' EXIT
 }
 
 # Prints the check's output, and fails when the check named a command bash could
-# not find — `missing` then says which.
+# not find — `missing` then says which. The handler is exported so a nested
+# `bash -c` reports through it too. `exec` and `env` resolve a command without the
+# handler, and exit 127, the status reserved for a command not found, so that
+# status alone counts as missing when the handler named nothing.
 run_in() { # dir check
   : > "$MISSING"
   (cd "$1" && OBS_MISSING="$MISSING" bash -c '
@@ -89,7 +93,9 @@ command_not_found_handle() {
   printf "bash: %s: command not found\n" "$1" >&2
   return 127
 }
+export -f command_not_found_handle
 '"$2" 2>&1)
+  [ $? -ne 127 ] || [ -s "$MISSING" ] || echo "a command (exit 127)" > "$MISSING"
   [ ! -s "$MISSING" ]
 }
 
