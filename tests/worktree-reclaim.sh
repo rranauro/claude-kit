@@ -359,14 +359,22 @@ end_sandbox
 # a reboot looks like once the monotonic clock has restarted.
 #
 # Omit the awake age to get the reason an older kit wrote, with no clause at all.
+#
+# The awake reading is aged from KIT_AWAKE_NOW, the clock the script reads under
+# test, rather than from the runner's own uptime: a runner booted minutes ago
+# cannot hold a reading thirteen hours old, and the script reads one aged past
+# boot as unreadable rather than as old.
+KIT_AWAKE_NOW=500000
+export KIT_AWAKE_NOW
+
 ship_lock() { # branch wall-hours-ago [awake-hours-ago]
   local reason
   reason="$(python3 -c '
-import datetime, sys, time
+import datetime, os, sys
 t = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=float(sys.argv[1]))
 out = "kit:ship #119 since " + t.strftime("%Y-%m-%dT%H:%M:%SZ")
 if len(sys.argv) > 2:
-    out += " awake %.0f" % (time.monotonic() - float(sys.argv[2]) * 3600)
+    out += " awake %.0f" % (float(os.environ["KIT_AWAKE_NOW"]) - float(sys.argv[2]) * 3600)
 print(out)' "$2" ${3+"$3"})"
   git -C "$MAIN" worktree lock --reason "$reason" "$MAIN/.claude/worktrees/$1"
 }
@@ -476,6 +484,87 @@ out="$(run --act)"
 assert_present_path "$MAIN/.claude/worktrees/alpha" \
   "a clause nothing can read leaves the wall timestamp to answer"
 assert_has "$out" "awake soon" "and the malformed clause is visible in the report"
+end_sandbox
+
+# ========================================================================
+# A clock that counts from process start rather than boot reads about 0 for
+# every pass, so a lease stamped `awake 0` and a sweep whose own reading is
+# about 0 measure nothing against each other. The wall stamp has to answer.
+# ========================================================================
+
+wall_hours_ago() { # hours -> the lease's timestamp, that long ago
+  python3 -c '
+import datetime, sys
+t = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=float(sys.argv[1]))
+print(t.strftime("%Y-%m-%dT%H:%M:%SZ"))' "$1"
+}
+
+new_sandbox "a killed pass's awake-0 lease expires on its wall stamp"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 open null
+git -C "$MAIN" worktree lock --reason "kit:ship #119 since $(wall_hours_ago 13) awake 0" \
+  "$MAIN/.claude/worktrees/alpha"
+out="$(KIT_AWAKE_NOW=0.003 run --act)"
+assert_missing_path "$MAIN/.claude/worktrees/alpha" \
+  "thirteen wall hours expires a lease whose clock and the sweep's both read 0"
+assert_has "$out" "lease expired" "and the report says why it was taken"
+end_sandbox
+
+new_sandbox "an awake-0 lease is read on its wall stamp by a sweep whose clock works"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 open null
+git -C "$MAIN" worktree lock --reason "kit:ship #119 since $(wall_hours_ago 13) awake 0" \
+  "$MAIN/.claude/worktrees/alpha"
+run --act >/dev/null
+assert_missing_path "$MAIN/.claude/worktrees/alpha" \
+  "a reading no machine could have since boot does not hold the worktree"
+end_sandbox
+
+new_sandbox "a running pass's awake-0 lease is still held"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 open null
+git -C "$MAIN" worktree lock --reason "kit:ship #119 since $(wall_hours_ago 0) awake 0" \
+  "$MAIN/.claude/worktrees/alpha"
+out="$(KIT_AWAKE_NOW=0.003 run --act)"
+assert_present_path "$MAIN/.claude/worktrees/alpha" \
+  "a lease taken minutes ago on the wall is live whatever its clock read"
+assert_lacks "$out" "lease expired" "and nothing claims the lease ran out"
+end_sandbox
+
+new_sandbox "a sweep whose clock reads 0 falls back to the wall for a good reading"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 open null
+ship_lock alpha 13 13
+KIT_AWAKE_NOW=0.003 run --act >/dev/null
+assert_missing_path "$MAIN/.claude/worktrees/alpha" \
+  "a clock this sweep cannot read leaves the wall stamp to answer"
+end_sandbox
+
+# The lease's reason is written by the script that reads it, so the clock the
+# writer stamps and the clock the reader measures against are one choice.
+new_sandbox "the script writes the lease it reads"
+out="$("$SCRIPT" --lease 42 2>&1)"
+assert_has "$out" "kit:ship #42 since " "the reason is in the lease format"
+assert_has "$out" " awake 500000" "and stamps the awake clock the reader uses"
+reading="$(env -u KIT_AWAKE_NOW "$SCRIPT" --lease 42 2>&1 | sed -n 's/.* awake //p')"
+if [ -n "$reading" ] && [ "$reading" -ge 60 ] 2>/dev/null
+then ok "an unseamed reading counts from boot, not from the process"
+else bad "an unseamed reading counts from boot, not from the process"
+     printf '       read: %s\n' "$reading" >&2; fi
+end_sandbox
+
+new_sandbox "a lease the script wrote is held by the script"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 open null
+git -C "$MAIN" worktree lock --reason "$("$SCRIPT" --lease 119)" \
+  "$MAIN/.claude/worktrees/alpha"
+run --act >/dev/null
+assert_present_path "$MAIN/.claude/worktrees/alpha" "a fresh lease holds its worktree"
 end_sandbox
 
 # ========================================================================

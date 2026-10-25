@@ -42,7 +42,8 @@ script's own `KIT_LEASE_HOURS` is the window. Every other lock holds until
 somebody unlocks it.
 
 **The window is spent in hours the machine was awake**, which is what the
-`awake` reading measures; a lease carrying none falls back to wall-clock age.
+`awake` reading measures; a lease carrying none, or one no clock since boot
+could have read, falls back to wall-clock age.
 
 **A walkthrough in flight holds the directory as well.** `/kit:walkthrough`
 resolves the worktree path and does all its work there, and it is designed to be
