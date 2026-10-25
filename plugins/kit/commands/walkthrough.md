@@ -53,25 +53,22 @@ Constituent skills:
 
 ## The lease
 
-A walk is paused between sessions by design, and its detours commit, so at the
-moment a reclaim sweep would hurt most the worktree is clean. A sweep from
-another session holds a worktree only while something says a pass is in it —
-uncommitted work, an unexpired lease, or `kit-hold` on its open PR — and the
-label alone does not cover a walk: a PR may never have carried it, and a person
-can clear it while the walk is still going.
+A walk's worktree is clean between commits, and `kit-hold` alone does not keep a
+reclaim sweep off it — `docs/worktrees.md` says why. So a walk holds a lease
+while it runs.
 
 - **Invoked from `kit:ticket-loop` `open-pr`** → the loop holds the lease. Leave
   it alone.
-- **Invoked standalone** → take the lease when the session begins, at
+- **Invoked standalone** → take the lease once, at the session's first
   `derive-steps` or `resume`, in exactly the shape `kit:start-ticket`
-  `create-worktree` writes. Release it with `git worktree unlock <worktree>` at
-  `finish`, and when the user says `stop`. A session that dies mid-walk leaves a
-  lease that expires on the ordinary window, so an abandoned walk becomes
-  reclaimable without anyone acting.
-- **The worktree is already locked** when a standalone walk begins — another
-  pass's lease, or a lock someone wrote by hand → neither take it nor release
-  it. Release only a lease this walk took; `git worktree list --porcelain`
-  prints a `locked` line for the worktree when there is one.
+  `create-worktree` writes. A `resume` after a detour in the same session
+  already holds it. Release it with `git worktree unlock <worktree>` at
+  `finish`, and when the user says `stop`. A walk whose session dies leaves its
+  lease to expire.
+- **The worktree is already locked** when a standalone walk begins — the
+  porcelain output that resolved `<worktree>` shows a `locked` line under it →
+  it is another pass's lease or a hand-written lock. Leave it alone: take no
+  lease, and so release none.
 - **An out-of-scope detour keeps the lease.** The walk has not ended.
 
 ---
@@ -239,11 +236,10 @@ What this skill adds on top:
   was verified up to here should be on the issue before you hand control away.
 - **Push each inline fix before re-arming the step**, when the walk runs
   standalone: `git -C <worktree> push origin <branch>`, never with force. The
-  lease guards the directory only while the walk holds it; a commit on the
-  remote outlives a reclaimed worktree, a removed branch and a dead session
-  alike. A rejected push stops the detour — say so, and leave the commits local
-  and the lease held. Invoked from `kit:ticket-loop`, leave the push to its
-  `open-pr` gate, which has not yet been answered.
+  lease guards the directory only while it is held; a pushed fix survives a
+  reclaim. A rejected push stops the detour — say so, and leave the commits
+  local and the lease held. Invoked from `kit:ticket-loop`, don't push: its
+  `open-pr` gate is where the branch is pushed.
 - **Return by re-arming the step, not by advancing.** When a detour ends in an
   inline fix, flip `[!]` back to `[ ]`, restore `← CURRENT` to it, and go to
   `present-step` — the user re-walks the step to verify the fix. When it ends in
@@ -298,9 +294,8 @@ the PR — who otherwise has only the claim that a walk happened.
 ## Failure / interrupt handling
 
 - **Session ends mid-walk.** By design. Re-invoke `/kit:walkthrough <issue>`;
-  `resume` reconstructs the position from the file. The lease the dead session
-  took expires on its own, and until it does the resumed walk finds the worktree
-  locked and leaves that lock alone.
+  `resume` reconstructs the position from the file. Until the dead session's
+  lease expires, the resumed walk treats it as an existing lock.
 - **A step can't be performed** — missing data, a feature behind a flag, a theme
   without the relevant surface. That's a skip with a reason, not a failure. Mark
   `[~]` and move on.

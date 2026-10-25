@@ -77,9 +77,9 @@ walk can be resumed days later. Two things cover that stretch. `kit-hold` covers
 the pauses between sessions: reclaim holds the worktree of any open PR carrying
 it, and the hold ends when the label or the PR does. The walk's own lease covers
 the session itself, since a PR may never have carried the label and a person can
-clear it mid-walk — a standalone `/kit:walkthrough` takes the lease in the shape
-above when it begins and releases it when it ends, and pushes each detour's
-commit so a reclaim later costs the directory and nothing else.
+clear it mid-walk. The walk pushes each detour's commit as well, so a reclaim
+the lease did not prevent costs the directory and nothing else.
+`/kit:walkthrough` *The lease* says when it is taken and released.
 
 ## What this means for garbage collection
 
