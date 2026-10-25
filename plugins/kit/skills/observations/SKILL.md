@@ -104,8 +104,8 @@ can move.
 `docs/adr/0005-observations-are-stored-outside-the-repo.md`.
 
 The consequence a producer has to act on: **a pass whose checkout is discarded
-records nothing that survives**, so on a runner the durable half is `kit-pinned`
-on the PR. `docs/tending-on-a-runner.md` owns that case.
+records nothing that survives**, so a record that has to outlive a runner goes on
+the PR instead. `docs/tending-on-a-runner.md` owns that case.
 
 ## What is not an observation
 

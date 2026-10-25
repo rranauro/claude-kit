@@ -32,9 +32,9 @@ first would leave `/kit:review-copilot` with no non-blocking destination at all.
 ## Consequences
 
 A pass running where the checkout is discarded records nothing that survives.
-`/kit:review-copilot unattended` on a `workflow_run` job is that case, and the
-`kit-pinned` label carries the record there instead — which is why that step
-applies the label before it attempts the append.
+`/kit:review-copilot unattended` on a `workflow_run` job is that case, which is
+why its round puts what it leaves open on the PR — the summary comment and
+`kit-pinned` — and appends nothing to the store.
 
 The store is unreachable by `scripts/lint.sh`, so a malformed line is both
 unrecoverable and invisible. The record's shape is held by

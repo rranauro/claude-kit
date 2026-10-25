@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
-# Writes the review round's left-for-the-person findings into a held PR's body,
+# Writes the review round's left-for-the-person findings into the PR's body,
 # at the end of its Instructions section, inside a marked block a later round
 # replaces in place.
 #

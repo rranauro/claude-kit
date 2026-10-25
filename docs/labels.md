@@ -4,7 +4,7 @@ Every label this kit writes is a cheap stand-in for something expensive to
 read. `kit-review-closed` stands for the summary comment. `kit-hold` stands for
 the record the pass that set it posted — a round summary, a shape review, or the
 comment naming a derived plan's kind — or for a person's decision at triage. `kit-blocked` stands for the "Blocked by"
-section a park wrote. `kit-pinned` stands for a round summary with an observation beside it, or for a shape review alone.
+section a park wrote. `kit-pinned` stands for a round summary naming the question the PR merged carrying, or for a shape review.
 
 A label without its record is therefore not a partial success. It is the one
 state that suppresses every later look: the PR reads as handled, no gate re-runs
@@ -20,12 +20,6 @@ what failed rather than completing.
 Failing that way costs a later firing that finds the work already done. Failing
 the other way costs the decision itself. There is no ordering where both are
 cheap, so the kit always pays the recoverable one.
-
-The exception proves the rule rather than bending it: `/kit:review-copilot`
-applies `kit-pinned` *before* appending its observation, because on a runner the
-observation store lives in a checkout the job discards while the round summary —
-already posted, already conditional — carries the reasoning. The record exists;
-the append is a second copy.
 
 ## A mark that will not apply is reported, never skipped
 
