@@ -25,6 +25,8 @@ usage:
              [--issue N] [--pr N]
   observe.sh list
   observe.sh recheck [<slug> ...]
+  observe.sh fileable
+  observe.sh show <slug>
   observe.sh rewitness <slug> [<slug> ...]
   observe.sh drop <slug> [<slug> ...]
 USAGE
@@ -177,6 +179,21 @@ elif mode == "checks":
             continue
         for f in ("id", "claim", "check", "witness"):
             sys.stdout.write((r.get(f) or "") + "\0")
+
+elif mode == "fileable":
+    for r in records:
+        if r.get("waiting") != "ticket":
+            continue
+        for f in ("id", "claim", "check", "witness"):
+            sys.stdout.write((r.get(f) or "") + "\0")
+
+elif mode == "show":
+    hit = [r for r in records if r.get("id") in want]
+    if not hit:
+        print("missing:" + ",".join(sorted(want)), file=sys.stderr)
+        sys.exit(1)
+    for r in hit:
+        print(json.dumps(r, ensure_ascii=False, indent=2))
 
 elif mode == "rewitness":
     # Pairs of id, new witness, NUL-separated, in the file named by OBS_PAIRS.
@@ -368,31 +385,63 @@ PY
 # Re-running the check is what replaces a staleness timer. A witness the repo
 # has moved past means the observation was either acted on or was wrong, and
 # either way it can die without anyone adjudicating it.
+#
+# One verdict for recheck and fileable alike, so the record offered for filing
+# is exactly the one triage would have read as holding. Sets V and NOW, rather
+# than printing, because recheck shows NOW and run_check must not run twice.
+verdict() { # check was
+  if ! NOW="$(run_check "$1")"; then
+    # Checked before the diff: a record written before the refusal carries the
+    # error as its witness, and would otherwise read as holding forever.
+    V=unrunnable
+  elif [ "$(printf '%s' "$NOW" | unnumber "$1")" = "$(printf '%s' "$2" | unnumber "$1")" ]; then
+    V=holds
+  elif printf '%s' "$NOW" | grep -q 'No such file or directory' \
+       && ! printf '%s' "$2" | grep -q 'No such file or directory'; then
+    # The path the check reads is gone, so the check can no longer answer. That is
+    # not evidence about the claim either way: rewrite the check or drop the record.
+    V=gone
+  else
+    V=moved
+  fi
+}
+
 do_recheck() {
-  local any=0 id claim check was now
+  local any=0 id claim check was
   while IFS= read -r -d '' id    && IFS= read -r -d '' claim \
      && IFS= read -r -d '' check && IFS= read -r -d '' was; do
     any=1
-    if ! now="$(run_check "$check")"; then
-      # Checked before the diff: a record written before the refusal carries the
-      # error as its witness, and would otherwise read as holding forever.
-      printf 'unrunnable  %s  %s\n' "$id" "$claim"
-      printf '       missing: %s\n' "$(missing)"
-    elif [ "$(printf '%s' "$now" | unnumber "$check")" = "$(printf '%s' "$was" | unnumber "$check")" ]; then
-      printf 'holds  %s  %s\n' "$id" "$claim"
-    elif printf '%s' "$now" | grep -q 'No such file or directory' \
-         && ! printf '%s' "$was" | grep -q 'No such file or directory'; then
-      # The path the check reads is gone, so the check can no longer answer. That is
-      # not evidence about the claim either way: rewrite the check or drop the record.
-      printf 'gone   %s  %s\n' "$id" "$claim"
-      printf '       now: %s\n' "$now" | sed -n '1,3p'
-    else
-      printf 'moved  %s  %s\n' "$id" "$claim"
-      printf '       was: %s\n' "$was" | sed -n '1,10p'
-      printf '       now: %s\n' "$now" | sed -n '1,10p'
-    fi
+    verdict "$check" "$was"
+    case "$V" in
+      unrunnable)
+        printf 'unrunnable  %s  %s\n' "$id" "$claim"
+        printf '       missing: %s\n' "$(missing)" ;;
+      holds)
+        printf 'holds  %s  %s\n' "$id" "$claim" ;;
+      gone)
+        printf 'gone   %s  %s\n' "$id" "$claim"
+        printf '       now: %s\n' "$NOW" | sed -n '1,3p' ;;
+      moved)
+        printf 'moved  %s  %s\n' "$id" "$claim"
+        printf '       was: %s\n' "$was" | sed -n '1,10p'
+        printf '       now: %s\n' "$NOW" | sed -n '1,10p' ;;
+    esac
   done < <(readers checks "$@")
   [ "$any" = 1 ] || echo "no observations in $STORE"
+}
+
+# The records a runner may file unasked: waiting on a ticket, and still giving
+# the answer they were written against. A record waiting on the owner, one from
+# before `waiting` existed, and one whose check no longer holds are the owner's
+# triage, so they are never offered. Prints slugs only, oldest first.
+do_fileable() {
+  local id claim check was
+  while IFS= read -r -d '' id    && IFS= read -r -d '' claim \
+     && IFS= read -r -d '' check && IFS= read -r -d '' was; do
+    verdict "$check" "$was"
+    [ "$V" = holds ] && printf '%s\n' "$id"
+  done < <(readers fileable)
+  return 0
 }
 
 # Re-capture the witness of records whose check could not answer when they were
@@ -449,6 +498,9 @@ case "${1-}" in
   list)    readers list ;;
   recheck) shift; init_checks; do_recheck "$@" ;;
   rewitness) shift; init_checks; do_rewitness "$@" ;;
+  fileable) init_checks; do_fileable ;;
+  show)    shift; [ $# -eq 1 ] || misuse "show takes one slug"
+           readers show "$1" 2>/dev/null || die "no such observation: $1" ;;
   drop)    shift; do_drop "$@" ;;
   -h|--help) usage; exit 0 ;;
   *)       init_checks; append "$@" ;;
