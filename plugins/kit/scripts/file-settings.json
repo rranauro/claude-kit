@@ -1,0 +1,41 @@
+{
+  "_comment": "The permission grant an unattended `/kit:observe file <slug>` session runs under, started by ship-startable.sh --observations once per record. It may read the repository and the store, file one issue, and write its reply into the run's reply directory, and nothing else: it commits nothing, pushes nothing, edits no file in the repository, and drops no record — the runner drops a record only once the issue it became has a pull request or a park. ship-settings.json denies `gh issue create` for every other session in the run, which is why filing gets a grant of its own rather than a widened one.",
+  "permissions": {
+    "allow": [
+      "Read",
+      "Grep",
+      "Glob",
+      "Write",
+      "Skill",
+      "Bash(gh repo view:*)",
+      "Bash(gh issue create:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh label list:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(ls:*)",
+      "Bash(*/scripts/observe.sh show*)",
+      "Bash(*/scripts/observe.sh recheck*)"
+    ],
+    "deny": [
+      "Edit",
+      "Bash(gh issue edit:*)",
+      "Bash(gh issue close:*)",
+      "Bash(gh issue comment:*)",
+      "Bash(gh pr:*)",
+      "Bash(gh api:*)",
+      "Bash(gh label create:*)",
+      "Bash(gh label edit:*)",
+      "Bash(gh label delete:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git worktree:*)",
+      "Bash(*/scripts/observe.sh drop*)",
+      "WebFetch",
+      "WebSearch"
+    ]
+  }
+}

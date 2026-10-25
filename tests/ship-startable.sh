@@ -63,38 +63,85 @@ new_sandbox() {
 
   # Answers `/kit:list` from the fixture and anything else with a token line, so
   # a ship-ticket call is never mistaken for the under-floor return that means
-  # the plugin failed to resolve.
+  # the plugin failed to resolve. A `--bg` launch does its work at once — writing
+  # whichever reply file its prompt names — and `agents --json` then reports
+  # every session it launched as done. Each call is logged with its launcher and
+  # whether its grant may file issues, which are what the drain criteria are about.
   cat > "$SANDBOX/bin/claude" <<'CLAUDE'
 #!/usr/bin/env bash
-prompt=""
+if [ "${1-}" = agents ]; then
+  python3 -c '
+import json, sys
+names = [l.strip() for l in open(sys.argv[1])] if len(sys.argv) > 1 else []
+print(json.dumps([{"name": n, "state": "done"} for n in names]))
+' $( [ -f "$SESSIONS" ] && echo "$SESSIONS" )
+  exit 0
+fi
+[ "${1-}" = stop ] && exit 0
+
+mode="" prompt="" name="" settings=""
 while [ $# -gt 0 ]; do
   case "$1" in
-    -p) prompt="$2"; shift 2 ;;
-    *)  shift ;;
+    -p)                prompt="$2"; mode=p; shift 2 ;;
+    --bg)              mode=bg; shift ;;
+    --name)            name="$2"; shift 2 ;;
+    --settings)        settings="$2"; shift 2 ;;
+    --model|--plugin-dir|--permission-mode|--add-dir) shift 2 ;;
+    *)                 prompt="$1"; shift ;;
   esac
 done
+files=no
+[ -n "$settings" ] && python3 -c '
+import json, sys
+allow = json.load(open(sys.argv[1]))["permissions"]["allow"]
+sys.exit(0 if any("gh issue create" in a for a in allow) else 1)
+' "$settings" && files=yes
+echo "$mode files-issues=$files $prompt" >> "$CALLS"
+
+after() { printf '%s\n' "$prompt" | sed -n "s/.*$1 \([^ ]*\).*/\1/p"; }
 case "$prompt" in
-  */kit:list*) cat "$REPLY_FILE" ;;
-  # A ship-ticket call that returns instantly is under the script's own
-  # floor and is an anomaly before any PR is looked up, so a test that
-  # asserts on the lookup has to outlast the floor.
-  *)           sleep "${SHIP_STUB_DELAY:-0}"; echo "ship-ticket stub ran" ;;
+  */kit:list*)
+    out="$(after --offer-file)"
+    if [ -n "$out" ]; then cp "$REPLY_FILE" "$out"; else cat "$REPLY_FILE"; fi ;;
+  */kit:observe\ file*)
+    cp "$FILE_REPLY" "$(after --reply)" ;;
+  *)
+    sleep "${SHIP_STUB_DELAY:-0}"; echo "ship-ticket stub ran" ;;
 esac
+[ "$mode" = bg ] && echo "$name" >> "$SESSIONS"
+exit 0
 CLAUDE
   chmod +x "$SANDBOX/bin/claude"
 
-  # Answers the PR listing from a fixture and every other lookup with an empty,
-  # well-formed result — enough for the script's preflight, and enough that a
-  # test says nothing about GitHub state it did not set.
+  # Answers the PR listing from a fixture, an issue's labels from a per-issue
+  # file, and every other lookup with an empty, well-formed result — enough for
+  # the script's preflight, and enough that a test says nothing about GitHub
+  # state it did not set. Writes are logged, never performed.
   cat > "$SANDBOX/bin/gh" <<'GH'
 #!/usr/bin/env bash
+echo "$*" >> "$GH_CALLS"
 case "$*" in
   *"pr list --state all"*) cat "$PR_LIST_FIXTURE" ;;
+  "issue view "*" --json labels"*)
+    n="${3-}"; [ -f "$LABELS_DIR/$n" ] && cat "$LABELS_DIR/$n" ;;
+  "issue view "*" --json body"*) echo "the filed body" ;;
   *--json*)                echo '[]' ;;
   *)                       : ;;
 esac
 GH
   chmod +x "$SANDBOX/bin/gh"
+
+  CALLS="$SANDBOX/claude-calls.log"
+  GH_CALLS="$SANDBOX/gh-calls.log"
+  SESSIONS="$SANDBOX/sessions"
+  FILE_REPLY="$SANDBOX/file-reply.txt"
+  LABELS_DIR="$SANDBOX/labels"
+  mkdir -p "$LABELS_DIR"
+  : > "$CALLS"; : > "$GH_CALLS"
+  export CALLS GH_CALLS SESSIONS FILE_REPLY LABELS_DIR
+  # The background poll, shortened, but kept at the script's floor: a session
+  # that ends faster than that is the anomaly a test here is not about.
+  export SHIP_STARTABLE_BG_POLL=5
 
   PR_LIST_FIXTURE="$SANDBOX/pr-list.json"
   echo '[]' > "$PR_LIST_FIXTURE"
@@ -113,6 +160,8 @@ end_sandbox() {
 }
 
 reply() { cat > "$REPLY_FILE"; }
+file_reply() { cat > "$FILE_REPLY"; }
+labels_of() { cat > "$LABELS_DIR/$1"; }
 pr_list() { cat > "$PR_LIST_FIXTURE"; }
 
 run() { # args... -> runs the script against $MAIN with stdin closed
@@ -226,6 +275,207 @@ J
 out="$(run bug)"
 assert_lacks "$out" "shipped #52" "a branch prefix alone does not make it this issue's PR"
 assert_has "$out" "ANOMALY" "a ticket with no PR linked to it is an anomaly"
+end_sandbox
+
+# ========================================================================
+# AC · A drained label files one record waiting on a ticket, ships it by
+#      number, and drops the record once the issue has a PR or a park.
+# ========================================================================
+
+OBSERVE="$ROOT/plugins/kit/scripts/observe.sh"
+
+observe() { # extra-args...
+  (cd "$MAIN" && "$OBSERVE" \
+    --by "kit:grilling" \
+    --check "grep -c hello README.md" \
+    --surfaced "a pass saw it" \
+    --who agent \
+    --affected "an agent reads the wrong thing" \
+    "$@" >/dev/null 2>&1)
+}
+
+STORE_OF() { cat "$MAIN/.claude/observations.jsonl" 2>/dev/null; }
+
+seed_store() {
+  observe --claim "a call only the owner can make" --waiting owner \
+    --action "the owner decides whether this is worth doing"
+  observe --claim "README says hello where it should say goodbye" --waiting ticket \
+    --action "a ticket that changes the README greeting" \
+    --decision "change it to goodbye"
+}
+
+drain() { run bug --observations; }
+
+new_sandbox "a drained label files the oldest ticket record and ships it by number"
+seed_store
+owner_line="$(STORE_OF | grep 'only the owner')"
+reply <<'R'
+<!-- kit-startable: begin -->
+bug:
+<!-- kit-startable: end -->
+R
+file_reply <<'F'
+filed: 90
+F
+pr_list <<'J'
+[{"number":91,"state":"OPEN","closingIssuesReferences":[{"number":90}]}]
+J
+out="$(drain)"
+assert_has "$(cat "$CALLS")" "/kit:observe file readme-says-hello" "the ticket record is filed"
+assert_lacks "$(cat "$CALLS")" "/kit:observe file a-call-only" "the owner's record is not"
+assert_has "$(cat "$CALLS")" "/kit:ship-ticket 90 unattended" "the filed issue is shipped by its number"
+assert_has "$out" "#90 -> PR #91" "the summary names the issue and its PR"
+assert_has "$out" "from readme-says-hello" "and the record it came from"
+assert_lacks "$(STORE_OF)" "README says hello" "the filed record is gone from the store"
+assert_eq "$(STORE_OF | grep 'only the owner')" "$owner_line" "the owner's record is untouched"
+assert_has "$out" "records remaining: 1" "the summary counts what is left"
+assert_has "$out" "cap (1) reached" "a filed record counts toward the cap"
+end_sandbox
+
+new_sandbox "every call a draining run makes is a background session"
+seed_store
+reply <<'R'
+<!-- kit-startable: begin -->
+bug:
+<!-- kit-startable: end -->
+R
+file_reply <<'F'
+filed: 90
+F
+pr_list <<'J'
+[{"number":91,"state":"OPEN","closingIssuesReferences":[{"number":90}]}]
+J
+out="$(drain)"
+assert_lacks "$(cat "$CALLS")" "p files-issues" "nothing runs on -p"
+assert_has "$(grep '/kit:list' "$CALLS")" "bg " "the list call is a background session"
+assert_has "$out" "claude attach" "the operator is told how to attach"
+end_sandbox
+
+new_sandbox "only the filing session may file an issue"
+seed_store
+reply <<'R'
+<!-- kit-startable: begin -->
+bug:
+<!-- kit-startable: end -->
+R
+file_reply <<'F'
+filed: 90
+F
+pr_list <<'J'
+[{"number":91,"state":"OPEN","closingIssuesReferences":[{"number":90}]}]
+J
+out="$(drain)"
+assert_has "$(grep '/kit:observe file' "$CALLS")" "files-issues=yes" "filing runs under a grant that files"
+assert_has "$(grep '/kit:ship-ticket' "$CALLS")" "files-issues=no" "shipping does not"
+assert_has "$(grep '/kit:list' "$CALLS")" "files-issues=no" "and neither does listing"
+end_sandbox
+
+new_sandbox "a record the filing session declines stays in the store"
+seed_store
+before="$(STORE_OF)"
+reply <<'R'
+<!-- kit-startable: begin -->
+bug:
+<!-- kit-startable: end -->
+R
+file_reply <<'F'
+declined: no acceptance criteria can be stated for it
+F
+out="$(drain)"
+assert_eq "$(STORE_OF)" "$before" "the store is unchanged"
+assert_lacks "$(cat "$CALLS")" "/kit:ship-ticket" "nothing is shipped"
+assert_has "$out" "declined: 1" "the summary counts the decline"
+assert_has "$out" "no acceptance criteria can be stated" "with its reason"
+assert_has "$out" "done: nothing startable" "and the run ends rather than refiling it"
+end_sandbox
+
+new_sandbox "a record whose check has moved is not filed"
+seed_store
+echo goodbye > "$MAIN/README.md"
+before="$(STORE_OF)"
+reply <<'R'
+<!-- kit-startable: begin -->
+bug:
+<!-- kit-startable: end -->
+R
+out="$(drain)"
+assert_lacks "$(cat "$CALLS")" "/kit:observe file" "no filing session runs"
+assert_eq "$(STORE_OF)" "$before" "the store is unchanged"
+end_sandbox
+
+new_sandbox "a filed ticket that parks drops its record"
+seed_store
+reply <<'R'
+<!-- kit-startable: begin -->
+bug:
+<!-- kit-startable: end -->
+R
+file_reply <<'F'
+filed: 90
+F
+labels_of 90 <<'L'
+kit-blocked
+L
+out="$(drain)"
+assert_lacks "$(STORE_OF)" "README says hello" "the record is gone"
+assert_has "$out" "#90 (from readme-says-hello-where-it-should-say-goodbye)" "the park is reported against its record"
+assert_lacks "$(cat "$GH_CALLS")" "issue comment 90" "the runner adds no park of its own"
+end_sandbox
+
+new_sandbox "a filed ticket the run cannot trace is parked by the runner"
+seed_store
+reply <<'R'
+<!-- kit-startable: begin -->
+bug:
+<!-- kit-startable: end -->
+R
+file_reply <<'F'
+filed: 90
+F
+out="$(drain)"
+assert_has "$(cat "$GH_CALLS")" "issue comment 90" "the runner comments on the issue"
+assert_has "$(cat "$GH_CALLS")" "issue edit 90 --add-label kit-blocked" "and labels it kit-blocked"
+assert_lacks "$(STORE_OF)" "README says hello" "the record is dropped, since the issue carries it"
+assert_has "$out" "#90 (from readme-says-hello" "the park is reported"
+end_sandbox
+
+new_sandbox "a filing session that leaves no reply files nothing it is not told of"
+seed_store
+before="$(STORE_OF)"
+reply <<'R'
+<!-- kit-startable: begin -->
+bug:
+<!-- kit-startable: end -->
+R
+: > "$FILE_REPLY"
+out="$(drain)"
+assert_eq "$(STORE_OF)" "$before" "the store is unchanged"
+assert_lacks "$(cat "$CALLS")" "/kit:ship-ticket" "nothing is shipped"
+assert_has "$out" "readme-says-hello" "the record is reported as not filed"
+end_sandbox
+
+new_sandbox "without --observations the store is never read"
+seed_store
+before="$(STORE_OF)"
+reply <<'R'
+<!-- kit-startable: begin -->
+bug:
+<!-- kit-startable: end -->
+R
+out="$(run bug)"
+assert_lacks "$(cat "$CALLS")" "/kit:observe" "no filing session runs"
+assert_eq "$(STORE_OF)" "$before" "the store is unchanged"
+assert_lacks "$out" "records remaining" "and the summary says nothing about it"
+end_sandbox
+
+new_sandbox "under --bg the offer block is read from the file the session wrote"
+reply <<'R'
+<!-- kit-startable: begin -->
+bug: 52
+<!-- kit-startable: end -->
+R
+out="$(run bug --bg)"
+assert_has "$out" "taking #52" "the line in the reply file is what is taken"
 end_sandbox
 
 # ------------------------------------------------------------------------
