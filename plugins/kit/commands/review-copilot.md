@@ -101,12 +101,12 @@ For each item, in order:
      A finding gets it when the code cannot settle it: it needs an in-app look, a
      wording or product call, or an owner's decision. No fix is applied —
      applying one is making the call the PR is held for. Step 7.4 writes it into
-     the PR body.
+     the PR body. A contested shape finding stays ⚪ as above: the posted shape
+     review already carries it to the person, and `kit:reshape` decides it.
 
-   **A PR is held** when Step 1's labels carry `kit-hold`, or when this round
-   escalates under `## Unattended`'s conditions. Everywhere else the rules above
-   apply unchanged: an unheld PR's body has no reader before it merges, so a
-   finding written there reaches nobody.
+   **A PR is held** when Step 1's labels carry `kit-hold`. Everywhere else the
+   rules above apply unchanged: an unheld PR's body has no reader before it
+   merges, so a finding written there reaches nobody.
 
 **Step 4 — (removed — no per-item user gate):**
 All items are processed without stopping for approval. The summary in Step 5 is the user's review point.
@@ -129,9 +129,9 @@ All items are processed without stopping for approval. The summary in Step 5 is 
   - top-level (copilot-review) [Optional / non-minor] <one-line reasoning> — skipped
   ```
 
-  Use the four categories from Step 3.3, add the minor/non-minor scope label, and tag each line with the source(s). **Include skipped items too** — the durable record of "we considered this and decided not to act" is the point. If Step 6 delegates to `/kit:commit`, pass this body as the intended message rather than letting `/kit:commit` draft its own.
+  Use the categories and outcomes from Step 3, add the minor/non-minor scope label, and tag each line with the source(s). **Include skipped items too** — the durable record of "we considered this and decided not to act" is the point. If Step 6 delegates to `/kit:commit`, pass this body as the intended message rather than letting `/kit:commit` draft its own.
 - If no fixes were made (all comments skipped/ignored), do NOT create a commit — there is nothing to push. The summary still becomes the record at Step 7.5: a round that skipped everything is closed, and a PR cannot otherwise show the difference between that and a round nobody ran.
-- **Report the summary back to your caller in a form it can act on**, naming explicitly whether any **non-minor** item was skipped and how many were left for the person. The first is what decides whether the PR gets pinned — `kit-pinned` plus an observation carrying the discussion, per Step 7.5 — and the caller cannot recover it from prose counts. It does not decide the merge: a pinned PR still merges.
+- **Report the summary back to your caller in a form it can act on**, naming explicitly whether any **non-minor** item was skipped. That is what decides whether the PR gets pinned — `kit-pinned` plus an observation carrying the discussion, per Step 7.5 — and the caller cannot recover it from prose counts. It does not decide the merge: a pinned PR still merges.
 
 **Step 6 — Quality gates (if any fixes were made):**
 - Invoke `kit:commit` through the Skill tool
@@ -181,9 +181,8 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/pr-body-left.sh <N> <items-file>
 
 The person holding the PR reads its body, and the Instructions section is where
 they look for what to check; a summary comment or an observation sits where
-they do not. The script owns the splice — the block's marker, where it goes, a
-later round's replacing it in place — and leaves every byte outside it as it
-was. Do not edit the body any other way.
+they do not. Do not edit the body any other way — the script is what keeps the
+rest of it as the author wrote it.
 
 **The body is these findings' record, so they get no observation and no
 `kit-pinned`.** `kit-pinned` names a PR that merged carrying an open question;
@@ -293,8 +292,7 @@ sees `kit-hold`, closes the round again, reports it closed and held, and does no
 merge. This pass never removes the label — not even the one it set.
 
 **A skipped non-minor finding is not an escalation, and takes a different
-write.** A finding left for the person is not skipped: Step 7.4 recorded it, and
-nothing below applies to it. It is a discussion to have later, not a merge to stop: the pass had a
+write.** It is a discussion to have later, not a merge to stop: the pass had a
 reason for skipping, a subsequent pass over the same file often handles it
 transparently, and holding the PR over it strands finished work behind a
 question nobody has scheduled. Record it instead, and let the merge proceed:
