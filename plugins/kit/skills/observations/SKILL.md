@@ -8,15 +8,16 @@ license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/cla
 
 A pass that processes a ticket end-to-end finishes holding something the ticket
 did not ask for — a seam in the process, a rule that did not fire, a premise that
-arrived unverified. Today the only destination is the user's attention at the
-moment they are finishing something else, so a real finding is acknowledged and
-lost.
+arrived unverified, a defect outside its scope. Today the only destination is
+the user's attention at the moment they are finishing something else, so a real
+finding is acknowledged and lost.
 
 **An observation goes to a store instead.** One record, appended by the pass that
 saw it, reviewed later in its own pass. It stops nothing and demands nobody,
 which is what separates it from `kit:park`: a park stops work and requires a
 person before anything continues; an observation requires only that the drawer
-gets opened eventually.
+gets opened eventually — and every record says what it waits on, so it can be
+drained without re-deriving what it needs.
 
 ## The record
 
@@ -37,7 +38,9 @@ wrong, and it dies without anyone adjudicating it.
 | `check` | a cheap, local, read-only command that tests the claim |
 | `witness` | that command's output when the record was written |
 | `surfaced` | the thread that exposed it — the part that cannot be re-derived |
-| `action` | the destination, not a plan: this backlog, the kit, a doc, a prompt-file edit |
+| `action` | what the ticket is, or the question the owner decides — never just "this backlog" |
+| `waiting` | `ticket` — ready to file — or `owner` — a call only the owner can make |
+| `decision` | the call the recording pass made, where it made one |
 
 **`claim` is forced into checkable form, and there is no second free-text
 summary.** Two summaries of one observation drift, and the checkable one is the
@@ -71,6 +74,16 @@ agent counts: a pass misled by a doc that describes behaviour no code implements
 gets a wrong result as surely as a visitor does. Nobody is an answer too —
 *What is not an observation* says what it does.
 
+**`waiting` is `owner` only for a call the recording pass may not make — a
+product call, or one that contradicts an ADR — or one its code cannot settle.**
+Any other call is the recording pass's to make: make it, write it into
+`decision`, and record `ticket`. Deferring a call an agent could make leaves the
+record waiting on nobody, since the owner reads it as already decided and the
+next agent reads it as not theirs. An `owner` record's `action` states the
+question in `kit:asking-a-human`'s register, so the owner can answer it without
+the session. The script refuses a
+record with no `waiting`, and an `action` naming only the backlog.
+
 **`surfaced` is the expensive field.** Everything else can be re-derived from the
 code; what the pass was doing when this became visible cannot. Write the thread,
 not the topic.
@@ -86,7 +99,8 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/observe.sh \
   --action "<where this should end up>" \
   --who "<visitor | owner | operator | agent | nobody>" \
   --affected "<what they do, and what they get instead of what they expect>" \
-  [--issue <n>] [--pr <n>]
+  --waiting "<ticket | owner>" \
+  [--decision "<the call this pass made>"] [--issue <n>] [--pr <n>]
 ```
 
 The script runs the check itself and captures its own witness, so the two cannot
@@ -125,9 +139,16 @@ the PR instead. `docs/tending-on-a-runner.md` owns that case.
   each is re-checked at every triage, where it buries the findings someone pays
   for. Pass `--who nobody` with `--affected` saying why: the script writes
   nothing and prints the drop, which is the line to report.
-- **A ticket.** Where the problem and the desired outcome are both already clear,
-  `kit:writing-tickets` applies and the backlog is the right drawer. An
-  observation is for what is real but not yet stateable that way.
+- **A finding already stated where its reader looks** — the PR body, the
+  issue's stored plan, or a `kit-pinned` comment, the review round's own summary
+  included. A second copy is triaged twice and drifts from the first. **Unless
+  the place it is stated can close before its reader gets there** — a PR that
+  can merge unread — and the finding waits on the owner: then it is recorded
+  too. `/kit:review-copilot` Step 7.5 is that case.
+
+A ticket-shaped finding *is* an observation: record it `--waiting ticket`, with
+its decision. Filing it directly would make every pass's close a network write
+— `docs/adr/0008-the-observation-store-is-a-queue.md` says why that stays out.
 
 ## Triage
 
@@ -156,9 +177,12 @@ than a judgement:
   line below it. It never answered, so the claim is unjudged however long it has
   "held". Rewrite the check with commands a plain `bash -c` has and re-record, or
   drop the record.
-- **Holds, and the claim still reads as real** — it goes to its `action`. File it
-  with `kit:writing-tickets`, carrying `surfaced` across verbatim; or make the
-  edit now if it is small and located.
+- **Holds, and the claim still reads as real** — route it by `waiting`. A
+  `ticket` record is filed with `kit:writing-tickets`, carrying `surfaced` and
+  `decision` across verbatim, or made now if it is small and located. An `owner`
+  record is put to the user as its `action`'s question, and their answer is the
+  decision it is then filed with or dropped on. A record with no `waiting`
+  predates the field: read its `action` and decide which it is.
 - **Holds, and the user decides against it** — a drop, and the useful kind. The
   claim was checkable and still true, and it is still not worth doing.
 

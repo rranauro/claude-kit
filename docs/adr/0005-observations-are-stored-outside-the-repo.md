@@ -34,7 +34,12 @@ first would leave `/kit:review-copilot` with no non-blocking destination at all.
 A pass running where the checkout is discarded records nothing that survives.
 `/kit:review-copilot unattended` on a `workflow_run` job is that case, which is
 why its round puts what it leaves open on the PR — the summary comment and
-`kit-pinned` — and appends nothing to the store.
+`kit-pinned` — before anything it appends to the store.
+
+That an observation is only about the process is superseded by
+[ADR 0008](0008-the-observation-store-is-a-queue.md): the store also holds
+ticket-shaped findings, each waiting on a ticket or the owner. Where it lives,
+and why, still stands.
 
 The store is unreachable by `scripts/lint.sh`, so a malformed line is both
 unrecoverable and invisible. The record's shape is held by
