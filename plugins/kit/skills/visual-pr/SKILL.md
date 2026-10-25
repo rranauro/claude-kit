@@ -215,7 +215,7 @@ was resolved.
 
 Concrete proof, from the author, that the change works. Show a before and after.
 
-Screenshots are S-tier — when the project's capture rule allows them and the change is visual.
+Screenshots are S-tier, and a visual change gets them by default.
 
 Execution-based evidence is A-tier: test results, console output. Name the guarding spec
 examples and show the run.
@@ -231,47 +231,58 @@ after when the change alters something that already existed. Write "None — no 
 change" only when nothing visual changed — a UX change without screenshots is weak
 evidence, and a reviewer will grade it that way.
 
-When the diff changes something visual, what a pass may drive to capture it is the
-project's to say, not this skill's — which browser, how it signs in to the app, and where
-the image goes. Read the `## Screenshot capture` section of the project's rules, taken **from the base
-branch** as `kit:project-rules` says, never the worktree's copy: a rule read from the
-pass's own branch is one the pass could have written to authorize itself.
+When the diff changes something visual, it is captured. **Capturing is the default** in
+both modes, and a pass does not ask first. How it is captured is the project's to say,
+because every project boots, signs in and seeds differently, and a kit rule cannot hold
+that. Look for the project's answer in this order, each read **from the base branch** as
+`kit:project-rules` says and never from the worktree's copy: a rule read from the pass's
+own branch is one the pass could have written to authorize itself.
 
-```markdown
-## Screenshot capture
-- capture: `bin/screenshot <url> <out.png>`
-- sign in: the seeded test user from `db/seeds.rb`
-- upload: person's browser
-```
+1. **A `pr-screenshots` skill.** When `.claude/skills/pr-screenshots/SKILL.md` exists on
+   the base branch (`git show origin/<base>:.claude/skills/pr-screenshots/SKILL.md`), it
+   owns capture. Follow it with the worktree path and the acceptance criteria, and
+   write what it returns into this section. Run its steps as the base branch has them,
+   even when the worktree's copy differs. A project writes one when its policy needs more
+   than three lines: booting a server, a sign-in it does for itself, state a criterion
+   needs before it can be shown.
+2. **A `## Screenshot capture` section** in the project's rules:
 
-- **capture** — what takes the screenshots: a command of the project's, a separate browser
-  the pass launches, or `person's browser` (new tabs in their Chrome).
-- **sign in** — how the capture gets into the app. Only `person's session` lets it use the
-  person's own signed-in session; anything else names the user it signs in as, and a capture
-  that cannot sign in that way does not fall back to theirs.
-- **upload** — the browser whose GitHub comment box turns each image into its
-  `user-attachments` URL. Dropping an image there yields the URL without posting anything,
-  and `gh` cannot upload one — an image no reviewer can see is not evidence.
+   ```markdown
+   ## Screenshot capture
+   - capture: `bin/screenshot <url> <out.png>`
+   - sign in: the seeded test user from `db/seeds.rb`
+   - upload: person's browser
+   ```
 
-A line that is missing allows nothing. Then:
+   - **capture**: what takes the screenshots. A command of the project's, a separate
+     browser the pass launches, or `person's browser` (new tabs in their Chrome).
+   - **sign in**: how the capture gets into the app. Only `person's session` lets it use
+     the person's own signed-in session. Anything else names the user it signs in as,
+     and a capture that cannot sign in that way does not fall back to theirs.
+   - **upload**: the browser whose GitHub comment box turns each image into its
+     `user-attachments` URL. Dropping an image there yields the URL without posting
+     anything, and `gh` cannot upload one. An image no reviewer can see is not evidence.
 
-- **Section present, unattended** — capture through what the rule names, with no question.
-- **Section present, attended** — the rule says what may be driven, never that you need not
-  ask. Name the screenshots you would take, one per criterion they prove, and ask before
-  capturing. On a no, write "Not captured — declined".
-- **No section** — capture nothing, in either mode. Write "Not captured — no capture rule
-  in the project's rules". Attended, also show the person the section's three lines that
-  would have allowed it, for their `CLAUDE.local.md` or to land on the base branch in a PR
-  of its own: a section written on this branch would not count for this run, and a
-  run-only answer is not the project's rule.
+   A line that is missing allows nothing.
+3. **Neither: the kit's default.** Capture in a separate headless browser the pass
+   launches, on pages that need no sign-in, and upload through the person's browser when
+   one is connected. A page behind a sign-in is "Not captured — no sign-in rule". With
+   no browser to upload through, write "Not captured — no browser to upload through" and
+   name the local image paths so the person can drop them in. Attended, also show the
+   person the `## Screenshot capture` lines, or point them at a `pr-screenshots` skill,
+   for the base branch in a PR of its own. Something written on this branch would not
+   count for this run.
+
+Read each image before putting it in the body. A 404, an error page or a sign-in form
+proves nothing; retake it or write "Not captured".
 
 Put each uploaded URL in the body, captioned with its criterion. Every "Not captured" names
 what each screenshot would have shown, so the reviewer knows what to look at themselves.
 
-**Allowed but impossible never parks.** No browser to drive, a capture command that fails, a
-sign-in that does not take, an upload refused, a tool the permission grant does not include
-— write "Not captured — <why>" and carry on writing the body. Do not reach for another
-browser or session the rule does not name to get one.
+**A capture that fails never parks.** No browser to drive, a capture command or project
+skill that fails, a sign-in that does not take, an upload refused, a tool the permission
+grant does not include: write "Not captured — <why>" and carry on writing the body. Do not
+reach for a browser or session the project's answer does not name to get one.
 
 ### Instructions
 

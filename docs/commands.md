@@ -194,12 +194,16 @@ merge` (or `rebase`, `squash`) is the method every arm uses. A repository that
 does not allow auto-merge reads as `off` without a declaration. `kit:ticket-loop`
 `hand-off` owns the default and the report.
 
-**So is what a pass may drive to take screenshots.** `## Screenshot capture`
-names what captures, how it signs in to the app, and which browser uploads the
-image; `kit:visual-pr` owns its format and what an absent section means. It is
-read from the PR's base branch, never the branch being shipped, so no pass can
-grant itself capture — and none uses the person's own signed-in session for the
-app unless a merged section says it may.
+**So is how a pass takes screenshots.** A visual PR is captured by default. A
+project whose policy needs more than three lines (booting a server, signing in
+for itself, seeding what a criterion shows) writes it as a `pr-screenshots`
+skill in `.claude/skills/`, and the kit hands capture to it. A smaller policy
+fits `## Screenshot capture`, which names what captures, how it signs in to the
+app, and which browser uploads the image. `kit:visual-pr` owns the format, the
+order the two are looked for in, and the default when a project has neither.
+Both are read from the PR's base branch, never the branch being shipped, so no
+pass can write its own capture policy, and none uses the person's own signed-in
+session for the app unless a merged policy says it may.
 
 **Spec groups are declared there as well.** `## Spec groups` is what
 `/kit:prune-specs <group>` reads; the command owns its format.
