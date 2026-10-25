@@ -109,7 +109,8 @@ For each item, in order:
      **Unless the code cannot settle it** — it needs an in-app look, a wording
      or product call, or an owner's decision. Then no fix is applied, since
      applying one is making that call, and the outcome is `left for the person`:
-     Step 7.4 writes it into the PR body, held or not.
+     Step 7.4 writes it into the PR body, held or not, and on an unheld PR
+     Step 7.5 also records it for the owner.
    - **Outside the diff** → no fix: `outside the diff — named here`. The round
      summary names it in full, and Step 7.5 pins the PR. It is real, and it is
      not this ticket's — absorbing it widens the PR past what was asked, and
@@ -320,10 +321,23 @@ already names it, so mark the PR and let the merge proceed:
 gh pr edit <N> --add-label kit-pinned   # only if the comment posted
 ```
 
-The summary comment is the record, on the PR the person holding it reads —
-not the observation store, which nobody holding the PR reads. The label is the
-filter `gh pr list --label kit-pinned` reads (`CONTEXT.md` **kit-pinned**), and
-never a vocabulary.
+The summary comment is the record, on the PR the person holding it reads. The
+label is the filter `gh pr list --label kit-pinned` reads (`CONTEXT.md`
+**kit-pinned**), and never a vocabulary.
+
+**A finding left for the person on an unheld PR also goes to the store**, one
+record each through `kit:observations`, `--waiting owner` and `--pr <N>`, with
+its `action` stating the question the owner decides. That PR can merge before
+anyone reads its body, so the store is where the question is waited on. Report
+each line the script prints; a refused or failed write is reported and changes
+nothing else here. **Nothing else this round handled is recorded** — a finding
+outside the diff, a fix, a drop: the summary comment already states each, and
+a second copy in the store is triaged twice.
+
+**A finding never holds the PR, and never stops the round to ask.** `kit-hold`
+is written here only for an escalation — failed or unrunnable gates, a rejected
+push, a red required check — and what a finding leaves open is the body, the
+pin and the store's to carry.
 
 `## Unattended` below owns what the escalation *conditions* are, and the merge
 decision that branches on them. This step owns only the record.
