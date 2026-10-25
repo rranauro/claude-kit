@@ -343,7 +343,9 @@ assert_eq "$(field 1 waiting)" "owner" "and stored in its one spelling"
 end_sandbox
 
 new_sandbox "an action naming only this backlog is refused"
-for vague in "this backlog" "This Backlog." "  this backlog  " "the backlog"; do
+for vague in "this backlog" "This Backlog." "  this backlog  " "the backlog" \
+             "$(printf '\nThis backlog.\n')" "this
+backlog"; do
   out="$(record "$MAIN" --action "$vague")"
   assert_eq "$?" 2 "--action '$vague' is a usage error"
   assert_has "$out" "--action" "and the message names the flag"

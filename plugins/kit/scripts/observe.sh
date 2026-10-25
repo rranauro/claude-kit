@@ -32,9 +32,11 @@ USAGE
 
 die() { echo "observe.sh: $*" >&2; exit 1; }
 
-# One spelling for every word a producer types: lowercased, trimmed, trailing
-# full stop dropped, so "Owner", " nobody " and "This backlog." all match.
-norm() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:].]*$//'; }
+# One spelling for every word a producer types: lowercased, whitespace runs
+# (newlines included) squeezed to one space, trimmed, trailing full stop dropped,
+# so "Owner", " nobody " and a newline-padded "This backlog." all match. sed
+# alone trims each line rather than the value, hence the squeeze first.
+norm() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | tr -s '[:space:]' ' ' | sed -e 's/^ //' -e 's/[ .]*$//'; }
 misuse() { echo "observe.sh: $*" >&2; usage; exit 2; }
 
 # --- where the store lives ----------------------------------------------
