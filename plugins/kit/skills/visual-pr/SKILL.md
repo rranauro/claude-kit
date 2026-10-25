@@ -277,6 +277,8 @@ browser or session the rule does not name to get one.
 
 How the reviewer validates it for themselves, independent of the Evidence. Numbered steps and what they should see when it works. When setup takes more than a minute of data entry, point to a paste-able console block in a PR comment rather than listing UI steps.
 
+Rewriting a body that already has a `<!-- kit-review-left -->` block, carry it over unchanged at the end of this section. It is what the review round left for the person holding the PR, and `/kit:review-copilot` is the only writer of it.
+
 ### Reversibility
 
 Say what undoing the change takes once it is in production, as one of three values:
