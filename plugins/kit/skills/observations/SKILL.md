@@ -197,6 +197,12 @@ presented, never applied. Triage clears down local state a person has not seen,
 and a pass that drops its own records is the auto-memory problem this store was
 built to avoid.
 
+**A runner may drain the `ticket` bin without you.** `ship-startable.sh
+--observations` files, ships and drops one record at a time, taking only what
+`observe.sh fileable` offers: a record waiting on a ticket whose check still
+holds. That is a filing a person made in advance by opting in, not a triage, so
+everything else here stays the owner's.
+
 **A line that will not parse is skipped and reported.** Nothing validates the
 store on write except the script, so one corrupt record must not strand the
 drawer.

@@ -6,6 +6,7 @@
 #
 #   ship-startable.sh <label> [--repo DIR] [--max N] [--poll-seconds N]
 #                     [--project-settings FILE] [--model NAME] [--bg]
+#                     [--observations]
 #
 # --max caps tickets shipped in one run (default 20) — the safety valve if the
 # startable check is ever wrong; the run stops and says so rather than opening
@@ -15,9 +16,13 @@
 # notice a blocker closing well inside the ~15-minute round trip #101's own
 # text observed. Not meant to be tuned; the flag exists for the rare case a
 # consuming project's CI is unusually slow or fast.
-# --bg runs each ticket as a `claude --bg` session instead of `claude -p`, in
-# don't-ask mode so the grant stays the boundary. The /kit:list call stays on -p:
-# its offer block is read from stdout, and a background session has none.
+# --bg runs every call as a `claude --bg` session instead of `claude -p`, in
+# don't-ask mode so the grant stays the boundary. A background session has no
+# stdout, so /kit:list writes its offer block to a file this run names.
+# --observations (implies --bg) drains the observation store once the label has
+# nothing startable: one record waiting on a ticket is filed, shipped by number,
+# and dropped once its issue has a PR or a park, before the next is filed — so
+# the tracker never holds the queue. See docs/shipping-on-a-runner.md.
 # --project-settings merges a project's own test/lint permission grant over
 # ship-settings.json, the same split scripts/tending-settings.json uses.
 #
@@ -38,6 +43,7 @@ POLL_SECONDS=120
 PROJECT_SETTINGS=""
 MODEL="${SHIP_STARTABLE_MODEL:-$KIT_DEFAULT_MODEL}"
 BG=0
+OBS=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -47,6 +53,7 @@ while [ $# -gt 0 ]; do
     --project-settings)  PROJECT_SETTINGS="$2"; shift 2 ;;
     --model)             MODEL="$2"; shift 2 ;;
     --bg)                BG=1; shift ;;
+    --observations)      OBS=1; BG=1; shift ;;
     -*) echo "ship-startable: unknown option: $1" >&2; exit 2 ;;
     *)
       if [ -n "$LABEL" ]; then
@@ -58,7 +65,7 @@ while [ $# -gt 0 ]; do
 done
 
 [ -n "$LABEL" ] || {
-  echo "usage: ship-startable.sh <label> [--repo DIR] [--max N] [--poll-seconds N] [--project-settings FILE] [--model NAME] [--bg]" >&2
+  echo "usage: ship-startable.sh <label> [--repo DIR] [--max N] [--poll-seconds N] [--project-settings FILE] [--model NAME] [--bg] [--observations]" >&2
   exit 2
 }
 
@@ -106,6 +113,30 @@ if project_path:
 json.dump(merged, sys.stdout, indent=2)
 PY
 
+# Filing is the one call that creates an issue, and ship-settings.json denies
+# that on purpose: a ship pass that files is the backlog drawer ADR 0008
+# rejects. So filing gets a grant of its own — a project's test and lint
+# commands have nothing to do there.
+OBSERVE="$SCRIPT_DIR/observe.sh"
+
+# Where a background session leaves the answer this run has to read. Passed to
+# every session with --add-dir, since it sits outside the repository.
+REPLY_DIR="$(mktemp -d -t ship-startable-replies.XXXXXX)"
+
+# The filing grant may write its reply and nothing else. A bare Write would let
+# the session rewrite the repository or the store it is filing from, and the
+# reply directory exists only once this run has made it, so the scope is added
+# here rather than in the file. `//` is how a permission rule names an
+# absolute path.
+FILE_SETTINGS="$(mktemp -t ship-startable-file-settings.XXXXXX)"
+python3 - "$SCRIPT_DIR/file-settings.json" "$REPLY_DIR" >"$FILE_SETTINGS" <<'PY'
+import json, sys
+with open(sys.argv[1]) as f:
+    grant = json.load(f)
+grant["permissions"]["allow"].append(f"Write(/{sys.argv[2]}/**)")
+json.dump(grant, sys.stdout, indent=2)
+PY
+
 # --- logging -----------------------------------------------------------
 LOGDIR="$HOME/.claude/logs/ship-startable"
 mkdir -p "$LOGDIR"
@@ -118,7 +149,7 @@ log() { printf '%s %s\n' "$(date -u +%FT%TZ)" "$*" | tee -a "$LOG"; }
 log "log: $LOG"
 log "follow it with: tail -f $LOG"
 
-log "starting: label=${LABEL} repo=${REPO} max=${MAX} poll-seconds=${POLL_SECONDS} model=${MODEL} bg=${BG}"
+log "starting: label=${LABEL} repo=${REPO} max=${MAX} poll-seconds=${POLL_SECONDS} model=${MODEL} bg=${BG} observations=${OBS}"
 
 # A per-ticket or list call that returns in under this floor with nothing to
 # show is the failure docs/tending-on-a-runner.md calls the worst kind: the
@@ -126,10 +157,16 @@ log "starting: label=${LABEL} repo=${REPO} max=${MAX} poll-seconds=${POLL_SECOND
 # "nothing startable" unless something asserts on the duration.
 MIN_SECONDS=5
 
+# How often a background session is asked whether it is still working. Read
+# from the environment only so tests/ship-startable.sh need not wait 15s a call.
+BG_POLL="${SHIP_STARTABLE_BG_POLL:-15}"
+
 # --- state ---------------------------------------------------------------
 SHIPPED=()
 PARKED=()
 ANOMALIES=()
+DECLINED=()
+DECLINED_SLUGS=()
 TRACKED_OPEN_PRS=()
 STOP_REASON=""
 REPORTED=0
@@ -144,6 +181,11 @@ report_and_exit() {
     for e in "${SHIPPED[@]+"${SHIPPED[@]}"}"; do echo "  $e"; done
     echo "parked: ${#PARKED[@]}"
     for e in "${PARKED[@]+"${PARKED[@]}"}"; do echo "  #$e"; done
+    if [ "$OBS" -eq 1 ]; then
+      echo "declined: ${#DECLINED[@]}"
+      for e in "${DECLINED[@]+"${DECLINED[@]}"}"; do echo "  $e"; done
+      echo "records remaining: $(records_left)"
+    fi
     if [ "${#ANOMALIES[@]}" -gt 0 ]; then
       echo "anomalies: ${#ANOMALIES[@]}"
       for e in "${ANOMALIES[@]}"; do echo "  $e"; done
@@ -157,7 +199,8 @@ report_and_exit() {
 }
 
 on_exit() {
-  rm -f "$SETTINGS_FILE"
+  rm -f "$SETTINGS_FILE" "$FILE_SETTINGS"
+  rm -rf "$REPLY_DIR"
   [ -n "$STOP_REASON" ] || STOP_REASON="interrupted"
   report_and_exit
 }
@@ -183,18 +226,20 @@ run_claude_timed() { # prompt
 # blocks until it stops working, so the loop paces exactly as it does on -p.
 # A session ends its turn as "done" or, when its last message reads as asking
 # for something, "blocked" — either way it is finished, and outcomes are read
-# from GitHub as ever. Stopped afterwards so idle sessions do not pile up.
-run_claude_bg_timed() { # prompt name
+# from GitHub or the reply file it was told to write, never from what it said.
+# Stopped afterwards so idle sessions do not pile up.
+run_claude_bg_timed() { # prompt name [settings]
   local start end state
   start=$(date +%s)
   if ! "$CLAUDE_BIN" --bg --name "$2" --model "$MODEL" --plugin-dir "$PLUGIN_DIR" \
-      --settings "$SETTINGS_FILE" --permission-mode dontAsk "$1" >>"$LOG" 2>&1 </dev/null; then
+      --settings "${3:-$SETTINGS_FILE}" --add-dir "$REPLY_DIR" \
+      --permission-mode dontAsk "$1" >>"$LOG" 2>&1 </dev/null; then
     TIMED_ELAPSED=0
     return
   fi
   log "session $2 started — follow it with: claude attach $2"
   while :; do
-    sleep 15
+    sleep "$BG_POLL"
     state="$("$CLAUDE_BIN" agents --json --all 2>/dev/null | python3 -c "
 import json, sys
 name = sys.argv[1]
@@ -260,7 +305,14 @@ offer_line() { # reply label
 # the first is a drained label, the second is a reply this run cannot act on,
 # and collapsing them is what let a mistyped label report a drained backlog.
 list_lowest_startable() {
-  run_claude_timed "/kit:list ${LABEL}"
+  if [ "$BG" -eq 1 ]; then
+    local offer
+    offer="$REPLY_DIR/offer-$(date +%s)"
+    run_claude_bg_timed "/kit:list ${LABEL} --offer-file ${offer}" "list-${LABEL}-$(date +%s)"
+    TIMED_OUT="$(cat "$offer" 2>/dev/null)"
+  else
+    run_claude_timed "/kit:list ${LABEL}"
+  fi
   LIST_ANOMALY=0
   LIST_UNREADABLE=0
   LIST_RESULT=""
@@ -323,6 +375,133 @@ ship_one() {
   SHIP_OUTCOME="anomaly"
 }
 
+# The store's size, for the summary.
+records_left() { "$OBSERVE" count 2>/dev/null || echo 0; }
+
+# Files one record as an issue in its own session, which may decline. Sets
+# FILE_OUTCOME to "filed:<n>" or "declined:<reason>". A reply that says neither
+# is a decline too: the record stays, and nothing is shipped that this run
+# cannot name.
+file_one() { # slug
+  local reply="$REPLY_DIR/file-$1" first n
+  run_claude_bg_timed "/kit:observe file $1 --reply ${reply}" "file-$1-$(date +%s)" "$FILE_SETTINGS"
+  first="$(sed -n 1p "$reply" 2>/dev/null)"
+  case "$first" in
+    "filed: "*)
+      n="${first#filed: }"
+      case "$n" in
+        ""|*[!0-9]*) FILE_OUTCOME="declined:the filing session's reply named no issue number" ;;
+        *)           FILE_OUTCOME="filed:$n" ;;
+      esac ;;
+    "declined: "*) FILE_OUTCOME="declined:${first#declined: }" ;;
+    *)             FILE_OUTCOME="declined:the filing session left no reply" ;;
+  esac
+}
+
+# A filed issue whose ship result cannot be traced would otherwise sit in the
+# tracker with nobody carrying it, so the runner parks it in kit:park's shape:
+# the comment, then the reason in the body and the label. A comment that did
+# not post gets no label, for the reason kit:park gives. Returns 1 unless every
+# write landed, so the caller keeps the record for anything less.
+park_filed() { # issue slug
+  local reason body
+  reason="The runner that filed this from observation \`$2\` started \`/kit:ship-ticket $1 unattended\`, but could trace neither a pull request closing it nor a park. Look for a worktree or branch named for #$1, then remove \`kit-blocked\` to let it be shipped again."
+  gh issue comment "$1" --body "<!-- kit-park -->
+$reason" >>"$LOG" 2>&1 || { log "could not comment on #$1; it is not parked"; return 1; }
+  # The edit replaces the whole body, so a body that could not be read is not
+  # one to write back: that would erase the issue down to the park reason.
+  if ! body="$(gh issue view "$1" --json body -q .body 2>>"$LOG")"; then
+    log "could not read #$1's body; it is commented but not labelled"
+    return 1
+  fi
+  printf '%s\n\n## Blocked by\n\n%s\n' "$body" "$reason" > "$REPLY_DIR/body-$1"
+  if ! gh issue edit "$1" --add-label kit-blocked --body-file "$REPLY_DIR/body-$1" >>"$LOG" 2>&1; then
+    log "could not label #$1 kit-blocked; its comment is the only record"
+    return 1
+  fi
+}
+
+# Ships one issue and records what became of it, whichever source offered it —
+# the label, or a record this run filed (named as the second argument). Counts
+# it toward --max, and returns 1 once the cap is reached.
+take() { # issue [slug]
+  local n="$1" from="${2:+ (from $2)}"
+  log "taking #${n}${from}"
+  ship_one "$n"
+  case "$SHIP_OUTCOME" in
+    shipped:*)
+      IFS=: read -r _ pr_num pr_state hold_flag <<<"$SHIP_OUTCOME"
+      SHIPPED+=("#${n} -> PR #${pr_num} (${pr_state}${hold_flag:+, kit-hold — needs a person})${2:+, from $2}")
+      [ "$pr_state" = "OPEN" ] && TRACKED_OPEN_PRS+=("$pr_num")
+      log "shipped #${n} as PR #${pr_num}${hold_flag:+ [kit-hold]}"
+      ;;
+    parked)
+      PARKED+=("${n}${from}")
+      log "parked #${n}"
+      ;;
+    anomaly)
+      ANOMALIES+=("#${n}: ship-ticket call returned with no traceable result")
+      log "ANOMALY on #${n} — see ${LOG}"
+      ;;
+  esac
+
+  SHIP_COUNT=$((SHIP_COUNT + 1))
+  if [ "$SHIP_COUNT" -ge "$MAX" ]; then
+    STOP_REASON="stopped: shipped-per-run cap (${MAX}) reached"
+    return 1
+  fi
+}
+
+# Files the oldest record this run has not declined, and takes it. A decline
+# moves straight on to the next record: the label was just found drained, so
+# asking it again first would buy a list session and nothing else. Sets FED
+# when a ticket was worked, FILEABLE_FAILED when the store could not be read —
+# a store this run cannot read is not an empty one — and returns 1 when the run
+# must end: at the cap, or when a record could not be closed out. A record still
+# in the store after its issue was filed would be filed again on the next pass.
+feed_one() {
+  local slugs slug n capped
+  FED=0
+  FILEABLE_FAILED=""
+  if ! slugs="$("$OBSERVE" fileable 2>"$REPLY_DIR/fileable.err")"; then
+    FILEABLE_FAILED="$(cat "$REPLY_DIR/fileable.err")"
+    return 0
+  fi
+  while IFS= read -r slug; do
+    [ -n "$slug" ] || continue
+    printf '%s\n' "${DECLINED_SLUGS[@]+"${DECLINED_SLUGS[@]}"}" | grep -qxF -- "$slug" && continue
+    log "filing observation ${slug}"
+    file_one "$slug"
+    case "$FILE_OUTCOME" in
+      declined:*)
+        DECLINED+=("${slug}: ${FILE_OUTCOME#declined:}")
+        DECLINED_SLUGS+=("$slug")
+        log "declined ${slug}: ${FILE_OUTCOME#declined:}"
+        continue ;;
+    esac
+    n="${FILE_OUTCOME#filed:}"
+    FED=1
+    log "filed ${slug} as #${n}"
+    take "$n" "$slug"; capped=$?
+    if [ "${SHIP_OUTCOME}" = anomaly ]; then
+      if ! park_filed "$n" "$slug"; then
+        # Unparked, the record is the only full trace left: keep it, and stop.
+        ANOMALIES+=("#${n}: could not be parked; ${slug} kept in the store")
+        STOP_REASON="stopped: #${n}, filed from ${slug}, could not be parked — park it or close it by hand, then drop or keep the record"
+        return 1
+      fi
+      PARKED+=("${n} (from ${slug}; parked by the runner — no result could be traced)")
+    fi
+    if ! "$OBSERVE" drop "$slug" >>"$LOG" 2>&1; then
+      ANOMALIES+=("${slug}: could not be dropped after #${n}")
+      STOP_REASON="stopped: ${slug} could not be dropped after #${n} — drop it by hand before the next run, or it is filed again"
+      return 1
+    fi
+    return "$capped"
+  done <<<"$slugs"
+  return 0
+}
+
 # --- main loop ---------------------------------------------------------
 SHIP_COUNT=0
 while true; do
@@ -338,6 +517,18 @@ while true; do
     ANOMALIES+=("/kit:list answered with no offer block line for '${LABEL}'")
     STOP_REASON="stopped: /kit:list reply was unreadable — no offer block line for '${LABEL}'; check the label is spelled as it exists and that /kit:list emitted its block"
     break
+  fi
+
+  # The label drained: feed it one record, and only one, before asking again —
+  # a ticket filed now is shipped before the next record is filed.
+  if [ -z "$LIST_RESULT" ] && [ "$OBS" -eq 1 ]; then
+    feed_one || break
+    if [ -n "$FILEABLE_FAILED" ]; then
+      ANOMALIES+=("observe.sh fileable failed: ${FILEABLE_FAILED}")
+      STOP_REASON="stopped: the observation store could not be read — ${FILEABLE_FAILED}"
+      break
+    fi
+    [ "$FED" -eq 1 ] && continue
   fi
 
   if [ -z "$LIST_RESULT" ]; then
@@ -360,34 +551,7 @@ while true; do
     continue
   fi
 
-  log "taking #${LIST_RESULT}"
-  ship_one "$LIST_RESULT"
-  case "$SHIP_OUTCOME" in
-    shipped:*)
-      IFS=: read -r _ pr_num pr_state hold_flag <<<"$SHIP_OUTCOME"
-      if [ "$hold_flag" = "hold" ]; then
-        SHIPPED+=("#${LIST_RESULT} -> PR #${pr_num} (${pr_state}, kit-hold — needs a person)")
-      else
-        SHIPPED+=("#${LIST_RESULT} -> PR #${pr_num} (${pr_state})")
-      fi
-      [ "$pr_state" = "OPEN" ] && TRACKED_OPEN_PRS+=("$pr_num")
-      log "shipped #${LIST_RESULT} as PR #${pr_num}${hold_flag:+ [kit-hold]}"
-      ;;
-    parked)
-      PARKED+=("$LIST_RESULT")
-      log "parked #${LIST_RESULT}"
-      ;;
-    anomaly)
-      ANOMALIES+=("#${LIST_RESULT}: ship-ticket call returned too fast with no traceable result")
-      log "ANOMALY on #${LIST_RESULT} — see ${LOG}"
-      ;;
-  esac
-
-  SHIP_COUNT=$((SHIP_COUNT + 1))
-  if [ "$SHIP_COUNT" -ge "$MAX" ]; then
-    STOP_REASON="stopped: shipped-per-run cap (${MAX}) reached"
-    break
-  fi
+  take "$LIST_RESULT" || break
 done
 
 exit 0

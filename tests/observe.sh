@@ -697,6 +697,85 @@ assert_eq "$?" 1 "an unknown slug is an error"
 assert_eq "$(lines)" "1" "and the store is left as it was"
 end_sandbox
 
+# ========================================================================
+# AC · Only a record waiting on a ticket whose check still gives its recorded
+#      answer is offered for filing, and offering one changes nothing.
+# ========================================================================
+
+new_sandbox "fileable offers ticket records that still hold, oldest first"
+record "$MAIN" --claim "the first ticket-ready claim" >/dev/null
+record "$MAIN" --claim "the second ticket-ready claim" >/dev/null
+first="$(field 1 id)"; second="$(field 2 id)"
+before="$(cat "$STORE")"
+out="$( (cd "$MAIN" && "$SCRIPT" fileable) 2>&1 )"
+assert_eq "$?" 0 "fileable succeeds"
+assert_eq "$out" "$(printf '%s\n%s' "$first" "$second")" "one slug per line, in store order"
+assert_eq "$(cat "$STORE")" "$before" "and the store is unchanged"
+end_sandbox
+
+new_sandbox "fileable leaves out what waits on the owner or says nothing"
+v2_record
+record "$MAIN" --claim "a call only the owner can make" --waiting owner \
+  --action "the owner decides whether this belongs in the command table" >/dev/null
+record "$MAIN" --claim "the ticket-ready claim" >/dev/null
+out="$( (cd "$MAIN" && "$SCRIPT" fileable) 2>&1 )"
+assert_eq "$out" "$(field 3 id)" "only the record waiting on a ticket is offered"
+end_sandbox
+
+new_sandbox "fileable leaves out a record whose check no longer holds"
+record "$MAIN" --claim "a claim the repo moved past" --check "cat README.md" >/dev/null
+echo hi > "$MAIN/gone.md"
+record "$MAIN" --claim "a claim whose path goes away" --check "cat gone.md" >/dev/null
+echo goodbye > "$MAIN/README.md"
+rm "$MAIN/gone.md"
+record "$MAIN" --claim "a claim that still holds" --check "grep -c goodbye README.md" >/dev/null
+out="$( (cd "$MAIN" && "$SCRIPT" fileable) 2>&1 )"
+assert_eq "$out" "$(field 3 id)" "a moved or gone record is not offered beside a holding one"
+end_sandbox
+
+new_sandbox "fileable leaves out a record whose check cannot run"
+record "$MAIN" >/dev/null
+set_fields 1 check "no-such-command-anywhere README.md"
+out="$( (cd "$MAIN" && "$SCRIPT" fileable) 2>&1 )"
+assert_eq "$out" "" "an unrunnable record is not offered"
+end_sandbox
+
+new_sandbox "fileable fails on a store it cannot read"
+record "$MAIN" >/dev/null
+chmod 000 "$STORE"
+out="$( (cd "$MAIN" && "$SCRIPT" fileable) 2>/dev/null )"
+status=$?
+chmod 644 "$STORE"
+assert_eq "$status" "1" "an unreadable store is an error"
+assert_eq "$out" "" "and offers nothing"
+end_sandbox
+
+new_sandbox "fileable prints nothing over an empty store"
+out="$( (cd "$MAIN" && "$SCRIPT" fileable) 2>&1 )"
+assert_eq "$?" 0 "an empty store is not an error"
+assert_eq "$out" "" "and offers nothing"
+end_sandbox
+
+new_sandbox "show prints one record whole"
+record "$MAIN" --decision "file it against the grilling skill" >/dev/null
+slug="$(field 1 id)"
+out="$( (cd "$MAIN" && "$SCRIPT" show "$slug") 2>&1 )"
+assert_eq "$?" 0 "show succeeds"
+assert_has "$out" "three parked items" "the surfaced thread is there"
+assert_has "$out" "file it against the grilling skill" "and the decision"
+out="$( (cd "$MAIN" && "$SCRIPT" show no-such-slug) 2>&1 )"
+assert_eq "$?" 1 "an unknown slug is an error"
+end_sandbox
+
+new_sandbox "count is the number of records, and nothing else"
+out="$( (cd "$MAIN" && "$SCRIPT" count) 2>&1 )"
+assert_eq "$out" "0" "an empty store counts zero"
+record "$MAIN" >/dev/null
+record "$MAIN" --claim "a second claim" >/dev/null
+out="$( (cd "$MAIN" && "$SCRIPT" count) 2>&1 )"
+assert_eq "$out" "2" "each record counts once"
+end_sandbox
+
 # --- summary ------------------------------------------------------------
 
 echo
