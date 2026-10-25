@@ -67,13 +67,20 @@ done
 # macOS's boot-relative clock that stops in sleep; Linux's CLOCK_MONOTONIC is
 # the same thing there. KIT_AWAKE_NOW stands in for it under test, where a
 # runner's uptime cannot hold a reading aged thirteen hours.
-awake_now="${KIT_AWAKE_NOW:-$(python3 -c '
+#
+# Read afresh at every lease check, never once per sweep: a lease another pass
+# takes after a cached reading reads as the future, which is how a lease from
+# before a reboot looks, and is expired out from under its owner.
+awake_now() {
+  [ -n "${KIT_AWAKE_NOW:-}" ] && { printf '%s\n' "$KIT_AWAKE_NOW"; return; }
+  python3 -c '
 import time
-print(time.clock_gettime(getattr(time, "CLOCK_UPTIME_RAW", time.CLOCK_MONOTONIC)))')}"
+print(time.clock_gettime(getattr(time, "CLOCK_UPTIME_RAW", time.CLOCK_MONOTONIC)))'
+}
 
 if [ -n "$lease_issue" ]; then
   printf 'kit:ship #%s since %s awake %.0f\n' \
-    "$lease_issue" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$awake_now"
+    "$lease_issue" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(awake_now)"
   exit
 fi
 
@@ -94,7 +101,9 @@ emit() { local IFS=$'\t'; printf '%s\n' "$*"; }
 # own teardown, by a pass that removed the directory and stopped — would
 # otherwise never come up again. The remote's default branch is left out: its
 # tip is a merged PR's commit, so it reads as accounted, and nobody sweeping
-# worktrees meant to delete it.
+# worktrees meant to delete it. A clone need not record `origin/HEAD`, so the
+# remote is asked where it does not; where neither answers, no bare branch is
+# listed rather than one that may be the default.
 inventory() {
   local path="" branch="" worktrees default
   worktrees="$(while IFS= read -r line; do
@@ -107,8 +116,12 @@ inventory() {
   printf '%s\n' "$worktrees" | tail -n +2
   [ -z "$target" ] || return 0
   default="$(git symbolic-ref -q --short refs/remotes/origin/HEAD)"
+  default="${default#origin/}"
+  [ -n "$default" ] || default="$(git ls-remote --symref origin HEAD 2>/dev/null |
+    sed -n 's#^ref: refs/heads/\(.*\)	HEAD$#\1#p')"
+  [ -n "$default" ] || return 0
   while IFS= read -r branch; do
-    [ "$branch" != "${default#origin/}" ] || continue
+    [ "$branch" != "$default" ] || continue
     printf '%s\n' "$worktrees" | cut -f2 | grep -Fxq -e "$branch" && continue
     printf '\t%s\n' "$branch"
   done < <(git for-each-ref --format='%(refname:short)' refs/heads)
@@ -146,7 +159,7 @@ lease_expired() { # reason -> 0 when it is a kit lease past its window
   # python3 rather than `date`: the -d and -j -f spellings are GNU's and BSD's
   # respectively, and this runs on both. It is also the only portable reader of
   # a clock that stops while the machine is asleep, there being no /proc here.
-  python3 - "$1" "$KIT_LEASE_HOURS" "$awake_now" 2>/dev/null <<'LEASE'
+  python3 - "$1" "$KIT_LEASE_HOURS" "$(awake_now)" 2>/dev/null <<'LEASE'
 import datetime, sys
 
 hours = float(sys.argv[2])

@@ -611,6 +611,26 @@ assert_branch_kept main "a default branch whose tip a merged PR carries is kept"
 assert_lacks "$out" "	main	" "and is not even considered"
 end_sandbox
 
+new_sandbox "a clone with no origin/HEAD asks the remote for its default"
+git -C "$MAIN" remote set-head origin -d 2>/dev/null
+git -C "$MAIN" checkout -q -b other
+pr_fixture "$(tip main)" 1 closed '"2024-01-01T00:00:00Z"'
+out="$(run --act)"
+assert_branch_kept main "the default branch is found without a local origin/HEAD"
+assert_lacks "$out" "	main	" "and is not considered"
+end_sandbox
+
+new_sandbox "a default nothing can name sweeps no bare branch"
+git -C "$MAIN" remote set-url origin "$SANDBOX/nowhere.git"
+git -C "$MAIN" checkout -q -b other
+pr_fixture "$(tip main)" 1 closed '"2024-01-01T00:00:00Z"'
+add_branch alpha
+pr_fixture "$(tip alpha)" 11 closed '"2024-01-01T00:00:00Z"'
+out="$(run --act)"
+assert_branch_kept main "a branch that may be the default is never deleted"
+assert_branch_kept alpha "so the bare-branch sweep does not run at all"
+end_sandbox
+
 new_sandbox "the branch pass leaves worktree branches and named targets alone"
 add_branch alpha
 pr_fixture "$(tip alpha)" 11 closed '"2024-01-01T00:00:00Z"'
