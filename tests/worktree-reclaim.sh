@@ -367,16 +367,28 @@ end_sandbox
 KIT_AWAKE_NOW=500000
 export KIT_AWAKE_NOW
 
-ship_lock() { # branch wall-hours-ago [awake-hours-ago]
-  local reason
-  reason="$(python3 -c '
-import datetime, os, sys
+wall_hours_ago() { # hours -> the lease's timestamp, that long ago
+  python3 -c '
+import datetime, sys
 t = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=float(sys.argv[1]))
-out = "kit:ship #119 since " + t.strftime("%Y-%m-%dT%H:%M:%SZ")
-if len(sys.argv) > 2:
-    out += " awake %.0f" % (float(os.environ["KIT_AWAKE_NOW"]) - float(sys.argv[2]) * 3600)
-print(out)' "$2" ${3+"$3"})"
-  git -C "$MAIN" worktree lock --reason "$reason" "$MAIN/.claude/worktrees/$1"
+print(t.strftime("%Y-%m-%dT%H:%M:%SZ"))' "$1"
+}
+
+lock_reason() { # branch reason
+  git -C "$MAIN" worktree lock --reason "$2" "$MAIN/.claude/worktrees/$1"
+}
+
+ship_lock() { # branch wall-hours-ago [awake-hours-ago]
+  local reason="kit:ship #119 since $(wall_hours_ago "$2")"
+  [ $# -gt 2 ] && reason="$reason awake $(python3 -c '
+import sys
+print("%.0f" % (float(sys.argv[1]) - float(sys.argv[2]) * 3600))' "$KIT_AWAKE_NOW" "$3")"
+  lock_reason "$1" "$reason"
+}
+
+# The lease an older kit wrote, whose clock read process time: `awake 0`.
+stale_lock() { # branch wall-hours-ago
+  lock_reason "$1" "kit:ship #119 since $(wall_hours_ago "$2") awake 0"
 }
 
 new_sandbox "AC8 a pass in flight keeps its worktree"
@@ -492,19 +504,11 @@ end_sandbox
 # about 0 measure nothing against each other. The wall stamp has to answer.
 # ========================================================================
 
-wall_hours_ago() { # hours -> the lease's timestamp, that long ago
-  python3 -c '
-import datetime, sys
-t = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=float(sys.argv[1]))
-print(t.strftime("%Y-%m-%dT%H:%M:%SZ"))' "$1"
-}
-
 new_sandbox "a killed pass's awake-0 lease expires on its wall stamp"
 add_worktree alpha
 push_branch alpha
 pr_fixture "$(tip alpha)" 11 open null
-git -C "$MAIN" worktree lock --reason "kit:ship #119 since $(wall_hours_ago 13) awake 0" \
-  "$MAIN/.claude/worktrees/alpha"
+stale_lock alpha 13
 out="$(KIT_AWAKE_NOW=0.003 run --act)"
 assert_missing_path "$MAIN/.claude/worktrees/alpha" \
   "thirteen wall hours expires a lease whose clock and the sweep's both read 0"
@@ -515,8 +519,7 @@ new_sandbox "an awake-0 lease is read on its wall stamp by a sweep whose clock w
 add_worktree alpha
 push_branch alpha
 pr_fixture "$(tip alpha)" 11 open null
-git -C "$MAIN" worktree lock --reason "kit:ship #119 since $(wall_hours_ago 13) awake 0" \
-  "$MAIN/.claude/worktrees/alpha"
+stale_lock alpha 13
 run --act >/dev/null
 assert_missing_path "$MAIN/.claude/worktrees/alpha" \
   "a reading no machine could have since boot does not hold the worktree"
@@ -526,8 +529,7 @@ new_sandbox "a running pass's awake-0 lease is still held"
 add_worktree alpha
 push_branch alpha
 pr_fixture "$(tip alpha)" 11 open null
-git -C "$MAIN" worktree lock --reason "kit:ship #119 since $(wall_hours_ago 0) awake 0" \
-  "$MAIN/.claude/worktrees/alpha"
+stale_lock alpha 0
 out="$(KIT_AWAKE_NOW=0.003 run --act)"
 assert_present_path "$MAIN/.claude/worktrees/alpha" \
   "a lease taken minutes ago on the wall is live whatever its clock read"
@@ -561,8 +563,7 @@ new_sandbox "a lease the script wrote is held by the script"
 add_worktree alpha
 push_branch alpha
 pr_fixture "$(tip alpha)" 11 open null
-git -C "$MAIN" worktree lock --reason "$("$SCRIPT" --lease 119)" \
-  "$MAIN/.claude/worktrees/alpha"
+lock_reason alpha "$("$SCRIPT" --lease 119)"
 run --act >/dev/null
 assert_present_path "$MAIN/.claude/worktrees/alpha" "a fresh lease holds its worktree"
 end_sandbox
@@ -573,12 +574,8 @@ end_sandbox
 # ========================================================================
 
 add_branch() { # branch -> a local branch one commit past main, with no worktree
-  local tmp="$SANDBOX/tmp-$1"
-  git -C "$MAIN" worktree add -q "$tmp" -b "$1" main
-  echo "$1" > "$tmp/file.txt"
-  git -C "$tmp" add -A
-  git -C "$tmp" commit -qm "work on $1"
-  git -C "$MAIN" worktree remove --force "$tmp"
+  add_worktree "$1"
+  git -C "$MAIN" worktree remove --force "$MAIN/.claude/worktrees/$1"
 }
 
 new_sandbox "a worktree-less branch GitHub accounts for is deleted"
@@ -629,6 +626,16 @@ out="$(run --act)"
 assert_branch_kept beta "a held worktree keeps its branch"
 assert_lacks "$out" "branch-deleted	beta" "and the branch pass does not reach it"
 assert_branch_gone alpha "while the sweep takes the worktree-less one"
+end_sandbox
+
+new_sandbox "a worktree-less branch on a held PR reads as held"
+add_branch alpha
+pr_fixture "$(tip alpha)" 11 open null "" kit-hold
+out="$(run --act)"
+assert_branch_kept alpha "a branch whose PR carries kit-hold is kept"
+assert_has "$out" "verdict	alpha		hold	PR #11 is open and carries kit-hold" \
+  "and its verdict is the hold, as a worktree's would be"
+assert_lacks "$out" "held		" "with no directory reported held"
 end_sandbox
 
 new_sandbox "a branch its worktree's removal kept is reported once"

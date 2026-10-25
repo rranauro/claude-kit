@@ -65,14 +65,12 @@ That reading is boot-relative, so one taken before a reboot reads as the future
 rather than as the past. Such a lease is expired outright: a reboot kills every
 pass, so it cannot still be live.
 
-**A reading that cannot be time since boot is no reading at all.** Python's
-`time.monotonic()` counts from process start on the macOS builds these passes
-run under, so a lease stamped with it reads `awake 0`, and so does the sweep
-measuring it — every such lease is live forever. `worktree-reclaim.sh` reads a
-clock that counts from boot, writes the lease with `--lease` so writer and
-reader cannot disagree, and treats a reading under a minute, on either side, as
-unreadable: the wall timestamp answers instead. What that costs is the sleep
-protection above, and only for the lease it happens to.
+**A reading that cannot be time since boot is no reading at all.** A clock
+counting from process start stamps every lease `awake 0` and measures it
+against about 0, so every such lease would be live forever. A reading under a
+minute, on either side, is therefore unreadable and the wall timestamp answers
+instead. What that costs is the sleep protection above, and only for the lease
+it happens to.
 
 What this accepts is the pass whose session died while the machine stayed up. It
 holds its lease for twelve awake hours, and `kit:ticket-loop` `hand-off` is what
