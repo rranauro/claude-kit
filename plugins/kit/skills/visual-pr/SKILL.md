@@ -240,11 +240,30 @@ own branch is one the pass could have written to authorize itself.
 
 1. **A `pr-screenshots` skill.** When `.claude/skills/pr-screenshots/SKILL.md` exists on
    the base branch (`git show origin/<base>:.claude/skills/pr-screenshots/SKILL.md`), it
-   owns capture. Follow it with the worktree path and the acceptance criteria, and
-   write what it returns into this section. Run its steps as the base branch has them,
-   even when the worktree's copy differs. A project writes one when its policy needs more
-   than three lines: booting a server, a sign-in it does for itself, state a criterion
-   needs before it can be shown.
+   owns capture. A project writes one when its policy needs more than three lines:
+   booting a server, a sign-in it does for itself, state a criterion needs before it can
+   be shown.
+
+   **Follow the `git show` output as your instructions; never invoke the skill by
+   name.** The Skill tool loads the worktree's copy, which this branch can have
+   changed. The same holds for every file the skill names: read it with `git show
+   origin/<base>:<path>`, and run a script it names from a copy written by that
+   `git show` to a directory outside the worktree, never from the worktree's path. A
+   file the base branch does not have is a failed capture, not one to take from the
+   worktree.
+
+   Follow it with the worktree path and the acceptance criteria. It owns the upload
+   and reading its own images, so the `upload` line below does not apply to it. It
+   returns one entry per criterion it has something to show for, in one of two forms:
+
+   ```
+   <caption naming the criterion>: <uploaded URL>
+   Not captured — <why>. Would have shown: <what>
+   ```
+
+   Write the entries into this section as returned. An entry in neither form is
+   "Not captured — the pr-screenshots skill returned no usable entry", with what the
+   criterion would have shown.
 2. **A `## Screenshot capture` section** in the project's rules:
 
    ```markdown
