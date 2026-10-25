@@ -158,6 +158,15 @@ finding rather than recording it. Distinct from reach, the ways in, and from
 cost, what a scan candidate burdens.
 _Avoid_: impact, blast radius
 
+**Belongs**:
+A property of a review finding against the PR it was raised on: the defect would
+not be the same on the base branch without the diff. The diff introduced it, made
+it reachable, copied an existing bad pattern into new code, or widened an
+existing exposure. An older defect the diff only sits next to is **outside the
+diff** — real, but not that ticket's. Distinct from the size of its fix, which
+decides neither.
+_Avoid_: in scope, related, pre-existing
+
 ### Judging a spec
 
 **Load-bearing**:

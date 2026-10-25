@@ -6,12 +6,12 @@ license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/cla
 
 Review and address automated PR review feedback one finding at a time — **GitHub Copilot** (inline + top-level review), the **Claude review** posted by the `pr-review-on-create` hook or `/kit:start-review`, wherever one of those ran, and a **shape review** — `kit:shape-review`'s comment, posted by whoever ran it. Each finding is verified against the actual code before it is acted on, and overlapping findings on the same `(path, line)` are merged into one bucket — agreement across reviewers is called out as a stronger signal.
 
-> **There is no per-item user prompt.** Verification is empirical, not interactive: findings are checked against the code and applied or skipped automatically (Step 3), and the user's review point is the summary in Step 5 plus the commit body that records every decision.
+> **There is no per-item user prompt.** Verification is empirical, not interactive: findings are checked against the code and acted on or not automatically (Step 3), and the user's review point is the summary in Step 5 plus the commit body that records every decision.
 
 > Despite the file name, this skill is the single addresser for *all* PR review comments it collates. Kept the name for backward compatibility with existing references.
 
 **Step 1 — Find the PR:**
-- Run `gh pr view --json number,url,title,labels` to get the current branch's PR. The labels are read again at Step 8 to decide the merge — fetched once here rather than paid for twice.
+- Run `gh pr view --json number,url,title,labels,baseRefName` to get the current branch's PR. The labels are read again at Step 8 to decide the merge, and the base is what Step 3 asks *Belongs* against — both fetched once here rather than paid for again.
 - If no PR exists, tell the user and stop.
 
 **Step 2 — Fetch all automated review feedback:**
@@ -84,22 +84,16 @@ For each item, in order:
    - 🟢 **Optional** — style preference, nitpick, or suggestion that doesn't improve the code meaningfully
    - ⚪ **Ignore** — false positive, already handled, or not applicable to our codebase
 
-   **A shape finding is never 🟢 Optional.** It is 🔴 or 🟡 — and so applied, whatever its scope — unless verifying it against the code shows its premise false, which makes it ⚪: the call site it names is gone, or the fix already landed. It skips the two questions below: it has already been gated once by the pass that printed it, then chosen by the person who posted it. The fix is commits on this branch through Steps 6 and 7 — never a new ticket or PR. **A contested shape finding is the exception**: the axis could not choose between its Afters, so applying one would make the choice the PR was held for. Mark it ⚪ with that as the reason and leave it to the person at the hold — `kit:reshape` is where it is decided.
-4. **Ask who it affects** — the *Affected* test in `CONTEXT.md`: who gets a
-   wrong result, and what they get instead. **Nobody** drops the finding: no
-   fix, no record beyond its summary line.
-5. **Ask whether it belongs to this PR** — it does when the defect would not be
-   the same on the base branch without the diff: the diff introduced it, made it
-   reachable, copied an existing bad pattern into new code, or widened an
-   existing exposure. An older defect the diff only sits next to is **outside
-   the diff**. Decide by reading the base branch's version of the code the
-   finding names (`git show origin/<base>:<path>`, base resolved as
-   `kit:project-rules` says) — never by running anything.
-
-   **Size does not decide either question.** A finding rated 🟢 because its fix
-   crosses files, or because the defect predates the PR, is still a defect
-   someone hits — and a size test skips it into a store nobody holding the PR
-   reads.
+   **A shape finding is never 🟢 Optional.** It is 🔴 or 🟡, so it is applied, unless verifying it against the code shows its premise false, which makes it ⚪: the call site it names is gone, or the fix already landed. It skips the two questions below: it has already been gated once by the pass that printed it, then chosen by the person who posted it. The fix is commits on this branch through Steps 6 and 7 — never a new ticket or PR. **A contested shape finding is the exception**: the axis could not choose between its Afters, so applying one would make the choice the PR was held for. Mark it ⚪ with that as the reason and leave it to the person at the hold — `kit:reshape` is where it is decided.
+4. **Ask who it affects** — the *Affected* test in `CONTEXT.md`. **Nobody**
+   drops it.
+5. **Ask whether it belongs to this PR** — the *Belongs* test in `CONTEXT.md`.
+   Read the PR's diff once, before the first item (`git diff
+   origin/<baseRefName>...HEAD`); a finding inside a hunk usually settles from
+   it. Where it does not — the finding sits outside every hunk, or turns on
+   reachability or a widened exposure — read the base branch's version of the
+   code it names, `git show origin/<baseRefName>:<path>`. Never run anything to
+   decide it.
 6. **Explain your reasoning** — briefly: the problem, the category, who it
    affects, and whether it belongs. When reviewers agree on the same
    `(path, line)`, that's a stronger signal — lean toward acting on overlap
@@ -147,7 +141,7 @@ All items are processed without stopping for approval. The summary in Step 5 is 
   - top-level (copilot-review) [Should fix] <one-line reasoning> — outside the diff — named here
   ```
 
-  Use the categories and outcomes from Step 3, and tag each line with the source(s). **Include every finding, whatever its outcome** — the durable record of "we considered this and decided not to act" is the point, and for a finding outside the diff this line is its only record, so write it whole: where, who it affects, what they get. If Step 6 delegates to `/kit:commit`, pass this body as the intended message rather than letting `/kit:commit` draft its own.
+  Use the categories and outcomes from Step 3, and tag each line with the source(s). **Include every finding, whatever its outcome** — the durable record of "we considered this and decided not to act" is the point. Write a finding outside the diff whole: where, who it affects, what they get. If Step 6 delegates to `/kit:commit`, pass this body as the intended message rather than letting `/kit:commit` draft its own.
 - **The summary carries these per-item lines too, commit or not.** It is what Step 7.5 posts, and the round summary on the PR is where a finding outside the diff is named — a commit body alone leaves it in history nobody holding the PR reads.
 - If no fixes were made, do NOT create a commit — there is nothing to push. The summary still becomes the record at Step 7.5: a round that fixed nothing is closed, and a PR cannot otherwise show the difference between that and a round nobody ran.
 - **Report the summary back to your caller in a form it can act on**, naming explicitly whether any finding was outside the diff, and whether any was left for the person on an unheld PR. Either one pins the PR, per Step 7.5, and the caller cannot recover it from prose counts. It does not decide the merge: a pinned PR still merges.
@@ -199,12 +193,11 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/pr-body-left.sh <N> <items-file>
 ```
 
 The person holding the PR reads its body, and the Instructions section is where
-they look for what to check; a summary comment or an observation sits where
-they do not. Do not edit the body any other way — the script is what keeps the
+they look for what to check; a summary comment sits where they do not. Do not edit the body any other way — the script is what keeps the
 rest of it as the author wrote it.
 
-**The body is these findings' record, so they get no observation.** On a held
-PR they get no `kit-pinned` either: `kit-pinned` names a PR that merged
+**The body is these findings' record.** On a held PR they get no
+`kit-pinned`: it names a PR that merged
 carrying an open question, and a held PR's question is answered before it
 merges. An unheld PR can merge before anyone reads its body, so Step 7.5 pins
 it.
@@ -217,7 +210,7 @@ instead.
 **Step 7.5 · `close-the-round` — Record that the round is closed:**
 
 Run this **whatever the outcome, and in both modes** — especially when nothing
-was fixed. A round where every finding was verified and skipped is as closed as
+was fixed. A round where every finding was verified and none fixed is as closed as
 one that pushed a fix, and the PR has no way to show the difference between that
 and a round nobody ran.
 
@@ -322,11 +315,10 @@ already names it, so mark the PR and let the merge proceed:
 gh pr edit <N> --add-label kit-pinned   # only if the comment posted
 ```
 
-**Record no observation for it.** The summary comment is the record, on the PR
-the person holding it reads, where a store on one machine is read by nobody
-holding the PR. `kit-pinned` blocks nothing: it exists so `gh pr list --label
-kit-pinned` names the merged PRs carrying an open question, and the summary
-carries the reasoning, so the label stays a filter and never a vocabulary.
+The summary comment is the record, on the PR the person holding it reads —
+not the observation store, which nobody holding the PR reads. The label is the
+filter `gh pr list --label kit-pinned` reads (`CONTEXT.md` **kit-pinned**), and
+never a vocabulary.
 
 `## Unattended` below owns what the escalation *conditions* are, and the merge
 decision that branches on them. This step owns only the record.
