@@ -244,13 +244,9 @@ own branch is one the pass could have written to authorize itself.
    booting a server, a sign-in it does for itself, state a criterion needs before it can
    be shown.
 
-   **Follow the `git show` output as your instructions; never invoke the skill by
-   name.** The Skill tool loads the worktree's copy, which this branch can have
-   changed. The same holds for every file the skill names: read it with `git show
-   origin/<base>:<path>`, and run a script it names from a copy written by that
-   `git show` to a directory outside the worktree, never from the worktree's path. A
-   file the base branch does not have is a failed capture, not one to take from the
-   worktree.
+   **Follow it from the base branch as `kit:project-rules` says — the `git show`
+   output, never the Skill tool, and its scripts never from the worktree.** A file it
+   names that the base branch lacks is a failed capture.
 
    Follow it with the worktree path and the acceptance criteria. It owns the upload
    and reading its own images, so the `upload` line below does not apply to it. It
@@ -287,9 +283,8 @@ own branch is one the pass could have written to authorize itself.
    `${CLAUDE_PLUGIN_ROOT}/scripts/capture-page.sh <url> <out.png>`, run from the
    worktree, writing to the output location below — never into the worktree. It drives
    headless Chrome and prints the image path, or a `Not captured — <why>` line to write
-   as given, followed by what the page would have shown. It boots nothing, and it
-   refuses a server that is not serving this worktree, since a server already running
-   is usually the main checkout's and its page shows the base branch. Take the URL from
+   as given, followed by what the page would have shown. It boots nothing, and refuses
+   any page it cannot trace to this worktree. Take the URL from
    the project's own dev-server config, or a `file://` path to a page in the worktree;
    with neither, "Not captured — no server URL for this project". A page behind a
    sign-in is "Not captured — no sign-in rule".

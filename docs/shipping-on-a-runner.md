@@ -205,9 +205,7 @@ way: its command or browser tools in the project's file, never from the
 declaration. An ungranted one does not park, and `kit:visual-pr` says what the
 PR reports instead. The kit's default capture, for a project with neither, is
 the one capture this file grants: `capture-page.sh`, by the same wildcard as the
-other kit scripts. It is a script rather than a browser tool so that it has a
-name to grant, and it refuses any page it cannot trace to the worktree being
-shipped. A runner session boots no server, so on a project that needs one, a
+other kit scripts. A runner session boots no server, so on a project that needs one, a
 visual PR still reads "Not captured" until the project writes a skill that boots
 it — with the reason being that no server answered, not a missing grant. Upload
 stays unavailable on the runner: nothing here drives the operator's signed-in
