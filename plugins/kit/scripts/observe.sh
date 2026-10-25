@@ -20,8 +20,9 @@ usage() {
   cat >&2 <<'USAGE'
 usage:
   observe.sh --by <pass> --claim <text> --check <command> \
-             --surfaced <text> --action <text> \
-             --who <role> --affected <text> [--issue N] [--pr N]
+             --surfaced <text> --action <text> --waiting ticket|owner \
+             --who <role> --affected <text> [--decision <text>] \
+             [--issue N] [--pr N]
   observe.sh list
   observe.sh recheck [<slug> ...]
   observe.sh rewitness <slug> [<slug> ...]
@@ -153,7 +154,10 @@ if mode == "list":
     else:
         for r in records:
             claim = (r.get("claim") or "").strip().splitlines()
-            print(f"{r.get('id','?'):<48}  {r.get('at','?')}  {claim[0] if claim else ''}")
+            # A record from before `waiting` existed claims neither, rather
+            # than reading as ready to file.
+            print(f"{r.get('id','?'):<48}  {r.get('at','?')}  {r.get('waiting') or '-':<6}  "
+                  f"{claim[0] if claim else ''}")
         print(f"{plural(len(records))} in {path}")
         if broken:
             print(f"{len(broken)} unreadable line(s) skipped: "
@@ -194,6 +198,7 @@ PY
 
 append() {
   local by="" claim="" check="" surfaced="" action="" who="" affected="" issue="" pr=""
+  local waiting="" decision=""
   while [ $# -gt 0 ]; do
     # Every flag takes a value, and `shift 2` with one argument left shifts
     # nothing, so a trailing flag would spin here forever.
@@ -206,6 +211,8 @@ append() {
       --action)   action="${2-}";   shift 2 ;;
       --who)      who="${2-}";      shift 2 ;;
       --affected) affected="${2-}"; shift 2 ;;
+      --waiting)  waiting="${2-}";  shift 2 ;;
+      --decision) decision="${2-}"; shift 2 ;;
       --issue)    issue="${2-}";    shift 2 ;;
       --pr)       pr="${2-}";       shift 2 ;;
       *) misuse "unknown argument: $1" ;;
@@ -221,6 +228,23 @@ append() {
   [ -n "$action" ]   || misuse "--action is required: where this should end up"
   [ -n "$who" ]      || misuse "--who is required: who gets a wrong result (visitor, owner, operator, agent), or nobody"
   [ -n "$affected" ] || misuse "--affected is required: what they do, and what they get instead of what they expect"
+
+  # The store is a queue, and a record that does not say what it is waiting on
+  # is one nobody can drain: it is neither ready to file nor anyone's question.
+  waiting="$(printf '%s' "$waiting" | tr '[:upper:]' '[:lower:]' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+  case "$waiting" in
+    ticket|owner) ;;
+    *) misuse "--waiting is required: ticket (ready to file) or owner (a call only the owner can make)" ;;
+  esac
+
+  # "This backlog" was the action most records carried, and it names no
+  # destination: a reader cannot file it and cannot tell what to ask.
+  local action_norm
+  action_norm="$(printf '%s' "$action" | tr '[:upper:]' '[:lower:]' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:].]*$//')"
+  case "$action_norm" in
+    "this backlog"|"the backlog"|backlog)
+      misuse "--action names only the backlog; say what the ticket is, or for --waiting owner, the question the owner decides" ;;
+  esac
 
   # A finding that affects nobody is re-checked at every triage and buries the
   # ones that do. Exit 0 and print, never refuse: a usage error invites the
@@ -267,7 +291,7 @@ append() {
   # derives a free one, writes the record, and reports what the caller prints.
   OBS_STORE="$STORE" OBS_BY="$by" OBS_CLAIM="$claim" OBS_CHECK="$check" \
   OBS_WITNESS="$witness" OBS_SURFACED="$surfaced" \
-  OBS_ACTION="$action" OBS_WHO="$who" OBS_AFFECTED="$affected" OBS_REPO="$repo" OBS_BRANCH="$branch" \
+  OBS_ACTION="$action" OBS_WAITING="$waiting" OBS_DECISION="$decision" OBS_WHO="$who" OBS_AFFECTED="$affected" OBS_REPO="$repo" OBS_BRANCH="$branch" \
   OBS_ISSUE="$issue" OBS_PR="$pr" \
   python3 - <<'PY'
 import datetime, json, os, re
@@ -307,7 +331,7 @@ if len(witness) > LIMIT:
     witness = witness[:LIMIT] + "\n… truncated"
 
 record = {
-    "v": 2,
+    "v": 3,
     "id": obs_id,
     "at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d"),
     "by": os.environ["OBS_BY"],
@@ -324,6 +348,8 @@ record = {
     "witness": witness,
     "surfaced": os.environ["OBS_SURFACED"],
     "action": os.environ["OBS_ACTION"],
+    "waiting": os.environ["OBS_WAITING"],
+    "decision": os.environ.get("OBS_DECISION") or None,
 }
 with open(store, "a") as fh:
     fh.write(json.dumps(record, ensure_ascii=False) + "\n")

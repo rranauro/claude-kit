@@ -129,7 +129,8 @@ record() { # cwd extra-args...
     --claim "plugins/kit/skills/grilling/SKILL.md names no destination for the Parked list" \
     --check "grep -c hello README.md" \
     --surfaced "Grilling #150 ended with three parked items and nowhere to put them." \
-    --action "this backlog" \
+    --action "the kit: grilling's Parked list needs a named destination" \
+    --waiting "ticket" \
     --who "agent" \
     --affected "a pass that ends a grilling reads the skill for where Parked items go, and finds nothing, so it drops them" \
     "$@" 2>&1)
@@ -153,8 +154,9 @@ assert_eq "$(field 1 witness)" "seven" \
   "the witness is the check's own output, not a value the caller supplied"
 assert_eq "$(field 1 by)" "kit:grilling" "the producing pass is named"
 assert_has "$(field 1 surfaced)" "three parked items" "the thread that exposed it survives"
-assert_eq "$(field 1 action)" "this backlog" "the destination is recorded"
-assert_eq "$(field 1 v)" "2" "the record carries the schema version that has who and affected"
+assert_eq "$(field 1 action)" "the kit: grilling's Parked list needs a named destination" \
+  "the destination is recorded"
+assert_eq "$(field 1 v)" "3" "the record carries the schema version that has waiting"
 assert_eq "$(field 1 who)" "agent" "who is affected is recorded"
 assert_has "$(field 1 affected)" "finds nothing, so it drops them" \
   "and what they get instead of what they expect"
@@ -272,10 +274,13 @@ end_sandbox
 # ========================================================================
 
 new_sandbox "a record missing a required part is refused"
-for missing in claim check surfaced action by who affected; do
+for missing in claim check surfaced action by who affected waiting; do
   args=()
-  for opt in by claim check surfaced action who affected; do
-    [ "$opt" = "$missing" ] || args+=("--$opt" "x")
+  for opt in by claim check surfaced action who affected waiting; do
+    [ "$opt" = "$missing" ] || case "$opt" in
+      waiting) args+=("--$opt" "ticket") ;;
+      *)       args+=("--$opt" "x") ;;
+    esac
   done
   out="$( (cd "$MAIN" && "$SCRIPT" "${args[@]}") 2>&1 )"
   st=$?
@@ -296,11 +301,59 @@ bounded() {
 }
 
 new_sandbox "a flag given last with no value is refused, not looped on"
-for flag in by who affected issue; do
+for flag in by who affected issue waiting decision; do
   out="$( cd "$MAIN" && bounded "$SCRIPT" --claim c --"$flag" 2>&1 )"
   assert_eq "$?" 2 "--$flag with no value is a usage error"
   assert_has "$out" "--$flag" "and the message names the flag"
 done
+end_sandbox
+
+# ========================================================================
+# AC · Every record says what it is waiting on — filing as a ticket, or the
+#      owner's decision — and a record ready to file carries its decision.
+# ========================================================================
+
+new_sandbox "a record says whether it waits on a ticket or on the owner"
+record "$MAIN" >/dev/null
+record "$MAIN" --waiting owner \
+  --action "the owner decides whether the email address is editable after signup" >/dev/null
+assert_eq "$(field 1 waiting)" "ticket" "a ticket-ready record says so"
+assert_eq "$(field 2 waiting)" "owner" "and one waiting on the owner says that"
+end_sandbox
+
+new_sandbox "a record ready to file carries the decision its pass made"
+record "$MAIN" --decision "the rate limit is per account, not per IP" >/dev/null
+record "$MAIN" >/dev/null
+assert_eq "$(field 1 decision)" "the rate limit is per account, not per IP" \
+  "the decision is stored verbatim"
+assert_eq "$(field 2 decision)" "null" "and a record that made none says so, rather than omitting it"
+end_sandbox
+
+new_sandbox "waiting on anything but a ticket or the owner is refused"
+for bad_value in later Owner-ish ""; do
+  out="$(record "$MAIN" --waiting "$bad_value")"
+  assert_eq "$?" 2 "--waiting '$bad_value' is a usage error"
+  assert_has "$out" "--waiting" "and the message names the flag"
+  assert_has "$out" "ticket" "and the values it takes"
+done
+assert_eq "$(lines)" "0" "nothing is written"
+end_sandbox
+
+new_sandbox "waiting is matched however it is cased or padded"
+record "$MAIN" --waiting " Owner " >/dev/null
+assert_eq "$(field 1 waiting)" "owner" "and stored in its one spelling"
+end_sandbox
+
+new_sandbox "an action naming only this backlog is refused"
+for vague in "this backlog" "This Backlog." "  this backlog  " "the backlog"; do
+  out="$(record "$MAIN" --action "$vague")"
+  assert_eq "$?" 2 "--action '$vague' is a usage error"
+  assert_has "$out" "--action" "and the message names the flag"
+  assert_has "$out" "backlog" "and says what is missing from it"
+done
+assert_eq "$(lines)" "0" "nothing is written"
+out="$(record "$MAIN" --action "this backlog, as a ticket against observe.sh's refusal message")"
+assert_eq "$?" 0 "an action that says more than the backlog is accepted"
 end_sandbox
 
 # ========================================================================
@@ -346,6 +399,37 @@ v1_record() {
 {"v": 1, "id": "an-old-record", "at": "2026-10-01", "by": "kit:grilling", "ctx": {"repo": "acme/widgets", "issue": null, "branch": "main", "pr": null}, "claim": "README.md says hello", "check": "cat README.md", "witness": "hello", "surfaced": "an older pass", "action": "this backlog"}
 JSON
 }
+
+# A record written before waiting existed.
+v2_record() {
+  mkdir -p "$(dirname "$STORE")"
+  cat >> "$STORE" <<'JSON'
+{"v": 2, "id": "a-v2-record", "at": "2026-10-20", "by": "kit:grilling", "ctx": {"repo": "acme/widgets", "issue": null, "branch": "main", "pr": null}, "claim": "README.md still says hello", "who": "agent", "affected": "a reader", "check": "cat README.md", "witness": "hello", "surfaced": "an older pass", "action": "this backlog"}
+JSON
+}
+
+new_sandbox "a record from before waiting still lists and rechecks, untouched"
+v2_record
+record "$MAIN" >/dev/null
+assert_has "$(sed -n 1p "$STORE")" '"v": 2, "id": "a-v2-record"' \
+  "appending leaves the old record byte for byte"
+out="$( (cd "$MAIN" && "$SCRIPT" list) 2>&1 )"
+assert_has "$out" "README.md still says hello" "list reads it"
+out="$( (cd "$MAIN" && "$SCRIPT" recheck a-v2-record) 2>&1 )"
+assert_has "$out" "holds  a-v2-record" "recheck reads it"
+end_sandbox
+
+new_sandbox "list says what each record waits on"
+v2_record
+record "$MAIN" >/dev/null
+record "$MAIN" --claim "docs/commands.md lists no entry for /kit:observe" --waiting owner \
+  --action "the owner decides whether /kit:observe belongs in the command table" >/dev/null
+out="$( (cd "$MAIN" && "$SCRIPT" list) 2>&1 )"
+assert_has "$(printf '%s\n' "$out" | grep 'Parked list')" "ticket" "a ticket-ready record reads as one"
+assert_has "$(printf '%s\n' "$out" | grep '/kit:observe')" "owner" "and one waiting on the owner reads as that"
+assert_lacks "$(printf '%s\n' "$out" | grep 'still says hello')" "ticket" \
+  "and a record from before waiting claims neither"
+end_sandbox
 
 new_sandbox "a record from before who and affected still lists, rechecks and drops"
 v1_record
