@@ -100,12 +100,16 @@ needed to exist. Decline, naming which, when:
 
 - **You cannot state acceptance criteria and what is out of scope** from the
   record and the code. `/kit:design unattended` parks on exactly that.
-- **No plan could be designed without a person** — the record's `decision`
-  leaves the approach open, or the work reaches one of the constraints
-  `/kit:design` *Park on* names: scope, security, tenancy, anything destructive,
-  a migration needing production reconciled.
+- **The work reaches what `/kit:design` *Park on* names** — a scope change the
+  record does not settle, a constraint its criteria cannot bound (security,
+  tenancy, anything destructive, a migration needing production reconciled), or
+  criteria that would not be buildable or testable once the code is open.
 - **The premise is gone** — the code the claim is about has moved on in a way
   the check does not see. Read the files the claim names before filing.
+
+**An approach left open is not a reason to decline.** `/kit:design unattended`
+compares approaches and breaks ties itself, so a record whose `decision` names
+the destination but not the route is one it can design.
 
 A decline leaves the record in the store, unchanged, for the owner's triage.
 That is a fine outcome, not a failed one. Do not soften a reason to get it filed.

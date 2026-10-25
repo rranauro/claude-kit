@@ -42,6 +42,11 @@ assert_lacks() { # haystack needle label
   esac
 }
 
+assert_eq() { # actual expected label
+  if [ "$1" = "$2" ]; then ok "$3"
+  else bad "$3"; printf '       expected: %s\n       actual:   %s\n' "$2" "$1" >&2; fi
+}
+
 # --- sandbox ------------------------------------------------------------
 
 new_sandbox() {
@@ -90,13 +95,21 @@ while [ $# -gt 0 ]; do
     *)                 prompt="$1"; shift ;;
   esac
 done
-files=no
-[ -n "$settings" ] && python3 -c '
+files=no write=none
+if [ -n "$settings" ]; then
+  python3 -c '
 import json, sys
 allow = json.load(open(sys.argv[1]))["permissions"]["allow"]
 sys.exit(0 if any("gh issue create" in a for a in allow) else 1)
 ' "$settings" && files=yes
-echo "$mode files-issues=$files $prompt" >> "$CALLS"
+  write="$(python3 -c '
+import json, sys
+allow = json.load(open(sys.argv[1]))["permissions"]["allow"]
+w = [a for a in allow if a == "Write" or a.startswith("Write(")]
+print("bare" if "Write" in w else ",".join(w) or "none")
+' "$settings")"
+fi
+echo "$mode files-issues=$files write=$write $prompt" >> "$CALLS"
 
 after() { printf '%s\n' "$prompt" | sed -n "s/.*$1 \([^ ]*\).*/\1/p"; }
 case "$prompt" in
@@ -124,7 +137,9 @@ case "$*" in
   *"pr list --state all"*) cat "$PR_LIST_FIXTURE" ;;
   "issue view "*" --json labels"*)
     n="${3-}"; [ -f "$LABELS_DIR/$n" ] && cat "$LABELS_DIR/$n" ;;
-  "issue view "*" --json body"*) echo "the filed body" ;;
+  "issue view "*" --json body"*)
+    [ -n "${GH_BODY_FAILS:-}" ] && exit 1
+    echo "the filed body" ;;
   *--json*)                echo '[]' ;;
   *)                       : ;;
 esac
@@ -368,6 +383,44 @@ out="$(drain)"
 assert_has "$(grep '/kit:observe file' "$CALLS")" "files-issues=yes" "filing runs under a grant that files"
 assert_has "$(grep '/kit:ship-ticket' "$CALLS")" "files-issues=no" "shipping does not"
 assert_has "$(grep '/kit:list' "$CALLS")" "files-issues=no" "and neither does listing"
+assert_lacks "$(grep '/kit:observe file' "$CALLS")" "write=bare" "the filing grant cannot write anywhere it likes"
+assert_has "$(grep '/kit:observe file' "$CALLS")" "write=Write(//" "only under the run's reply directory"
+end_sandbox
+
+new_sandbox "a record that cannot be dropped stops the run before it is filed again"
+seed_store
+reply <<'R'
+<!-- kit-startable: begin -->
+bug:
+<!-- kit-startable: end -->
+R
+file_reply <<'F'
+filed: 90
+F
+pr_list <<'J'
+[{"number":91,"state":"OPEN","closingIssuesReferences":[{"number":90}]}]
+J
+chmod 555 "$MAIN/.claude"
+out="$(drain)"
+chmod 755 "$MAIN/.claude"
+assert_has "$out" "could not be dropped after #90" "the run stops naming the record"
+assert_eq "$(grep -c '/kit:observe file' "$CALLS")" "1" "and files it only once"
+end_sandbox
+
+new_sandbox "a filed issue whose body cannot be read is not overwritten"
+seed_store
+reply <<'R'
+<!-- kit-startable: begin -->
+bug:
+<!-- kit-startable: end -->
+R
+file_reply <<'F'
+filed: 90
+F
+GH_BODY_FAILS=1 out="$(GH_BODY_FAILS=1 drain)"
+assert_lacks "$(cat "$GH_CALLS")" "issue edit 90" "the body is never written back"
+assert_has "$(STORE_OF)" "README says hello" "the record is kept"
+assert_has "$out" "could not be parked" "and the run stops saying so"
 end_sandbox
 
 new_sandbox "a record the filing session declines stays in the store"

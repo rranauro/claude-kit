@@ -429,13 +429,17 @@ do_recheck() {
 # before `waiting` existed, and one whose check no longer holds are the owner's
 # triage, so they are never offered. Prints slugs only, oldest first.
 do_fileable() {
-  local id claim check was
+  local id claim check was rows
+  # Read in full first: a process substitution drops the reader's status, and a
+  # store that could not be read must fail rather than offer nothing.
+  rows="$(mktemp "${TMPDIR:-/tmp}/observe-fileable.XXXXXX")" || die "could not create a temporary file"
+  readers fileable > "$rows" || { rm -f "$rows"; die "could not read $STORE"; }
   while IFS= read -r -d '' id    && IFS= read -r -d '' claim \
      && IFS= read -r -d '' check && IFS= read -r -d '' was; do
     verdict "$check" "$was"
     [ "$V" = holds ] && printf '%s\n' "$id"
-  done < <(readers fileable)
-  return 0
+  done < "$rows"
+  rm -f "$rows"
 }
 
 # Re-capture the witness of records whose check could not answer when they were

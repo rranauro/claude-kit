@@ -740,6 +740,16 @@ out="$( (cd "$MAIN" && "$SCRIPT" fileable) 2>&1 )"
 assert_eq "$out" "" "an unrunnable record is not offered"
 end_sandbox
 
+new_sandbox "fileable fails on a store it cannot read"
+record "$MAIN" >/dev/null
+chmod 000 "$STORE"
+out="$( (cd "$MAIN" && "$SCRIPT" fileable) 2>/dev/null )"
+status=$?
+chmod 644 "$STORE"
+assert_eq "$status" "1" "an unreadable store is an error"
+assert_eq "$out" "" "and offers nothing"
+end_sandbox
+
 new_sandbox "fileable prints nothing over an empty store"
 out="$( (cd "$MAIN" && "$SCRIPT" fileable) 2>&1 )"
 assert_eq "$?" 0 "an empty store is not an error"

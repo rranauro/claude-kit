@@ -115,14 +115,27 @@ PY
 
 # Filing is the one call that creates an issue, and ship-settings.json denies
 # that on purpose: a ship pass that files is the backlog drawer ADR 0008
-# rejects. So filing gets a grant of its own, taken as written — a project's
-# test and lint commands have nothing to do there.
-FILE_SETTINGS="$SCRIPT_DIR/file-settings.json"
+# rejects. So filing gets a grant of its own — a project's test and lint
+# commands have nothing to do there.
 OBSERVE="$SCRIPT_DIR/observe.sh"
 
 # Where a background session leaves the answer this run has to read. Passed to
 # every session with --add-dir, since it sits outside the repository.
 REPLY_DIR="$(mktemp -d -t ship-startable-replies.XXXXXX)"
+
+# The filing grant may write its reply and nothing else. A bare Write would let
+# the session rewrite the repository or the store it is filing from, and the
+# reply directory exists only once this run has made it, so the scope is added
+# here rather than in the file. `//` is how a permission rule names an
+# absolute path.
+FILE_SETTINGS="$(mktemp -t ship-startable-file-settings.XXXXXX)"
+python3 - "$SCRIPT_DIR/file-settings.json" "$REPLY_DIR" >"$FILE_SETTINGS" <<'PY'
+import json, sys
+with open(sys.argv[1]) as f:
+    grant = json.load(f)
+grant["permissions"]["allow"].append(f"Write(/{sys.argv[2]}/**)")
+json.dump(grant, sys.stdout, indent=2)
+PY
 
 # --- logging -----------------------------------------------------------
 LOGDIR="$HOME/.claude/logs/ship-startable"
@@ -186,7 +199,7 @@ report_and_exit() {
 }
 
 on_exit() {
-  rm -f "$SETTINGS_FILE"
+  rm -f "$SETTINGS_FILE" "$FILE_SETTINGS"
   rm -rf "$REPLY_DIR"
   [ -n "$STOP_REASON" ] || STOP_REASON="interrupted"
   report_and_exit
@@ -388,16 +401,24 @@ file_one() { # slug
 # A filed issue whose ship result cannot be traced would otherwise sit in the
 # tracker with nobody carrying it, so the runner parks it in kit:park's shape:
 # the comment, then the reason in the body and the label. A comment that did
-# not post gets no label, for the reason kit:park gives.
+# not post gets no label, for the reason kit:park gives. Returns 1 unless every
+# write landed, so the caller keeps the record for anything less.
 park_filed() { # issue slug
   local reason body
   reason="The runner that filed this from observation \`$2\` started \`/kit:ship-ticket $1 unattended\`, but could trace neither a pull request closing it nor a park. Look for a worktree or branch named for #$1, then remove \`kit-blocked\` to let it be shipped again."
   gh issue comment "$1" --body "<!-- kit-park -->
 $reason" >>"$LOG" 2>&1 || { log "could not comment on #$1; it is not parked"; return 1; }
-  body="$(gh issue view "$1" --json body -q .body 2>/dev/null)"
+  # The edit replaces the whole body, so a body that could not be read is not
+  # one to write back: that would erase the issue down to the park reason.
+  if ! body="$(gh issue view "$1" --json body -q .body 2>>"$LOG")"; then
+    log "could not read #$1's body; it is commented but not labelled"
+    return 1
+  fi
   printf '%s\n\n## Blocked by\n\n%s\n' "$body" "$reason" > "$REPLY_DIR/body-$1"
-  gh issue edit "$1" --add-label kit-blocked --body-file "$REPLY_DIR/body-$1" >>"$LOG" 2>&1 \
-    || log "could not label #$1 kit-blocked; its comment is the only record"
+  if ! gh issue edit "$1" --add-label kit-blocked --body-file "$REPLY_DIR/body-$1" >>"$LOG" 2>&1; then
+    log "could not label #$1 kit-blocked; its comment is the only record"
+    return 1
+  fi
 }
 
 # Ships one issue and records what became of it, whichever source offered it —
@@ -435,13 +456,15 @@ take() { # issue [slug]
 # moves straight on to the next record: the label was just found drained, so
 # asking it again first would buy a list session and nothing else. Sets FED
 # when a ticket was worked, FILEABLE_FAILED when the store could not be read —
-# a store this run cannot read is not an empty one — and returns 1 at the cap.
+# a store this run cannot read is not an empty one — and returns 1 when the run
+# must end: at the cap, or when a record could not be closed out. A record still
+# in the store after its issue was filed would be filed again on the next pass.
 feed_one() {
   local slugs slug n capped
   FED=0
   FILEABLE_FAILED=""
-  if ! slugs="$("$OBSERVE" fileable 2>&1)"; then
-    FILEABLE_FAILED="$slugs"
+  if ! slugs="$("$OBSERVE" fileable 2>"$REPLY_DIR/fileable.err")"; then
+    FILEABLE_FAILED="$(cat "$REPLY_DIR/fileable.err")"
     return 0
   fi
   while IFS= read -r slug; do
@@ -462,13 +485,18 @@ feed_one() {
     take "$n" "$slug"; capped=$?
     if [ "${SHIP_OUTCOME}" = anomaly ]; then
       if ! park_filed "$n" "$slug"; then
-        # Unparked, the record is the only full trace left: keep it.
-        log "kept ${slug}: #${n} could not be parked"
-        return "$capped"
+        # Unparked, the record is the only full trace left: keep it, and stop.
+        ANOMALIES+=("#${n}: could not be parked; ${slug} kept in the store")
+        STOP_REASON="stopped: #${n}, filed from ${slug}, could not be parked — park it or close it by hand, then drop or keep the record"
+        return 1
       fi
       PARKED+=("${n} (from ${slug}; parked by the runner — no result could be traced)")
     fi
-    "$OBSERVE" drop "$slug" >>"$LOG" 2>&1 || log "could not drop ${slug} after #${n}"
+    if ! "$OBSERVE" drop "$slug" >>"$LOG" 2>&1; then
+      ANOMALIES+=("${slug}: could not be dropped after #${n}")
+      STOP_REASON="stopped: ${slug} could not be dropped after #${n} — drop it by hand before the next run, or it is filed again"
+      return 1
+    fi
     return "$capped"
   done <<<"$slugs"
   return 0
