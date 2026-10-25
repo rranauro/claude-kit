@@ -102,6 +102,15 @@ new_sandbox() {
   git -C "$MAIN" commit -qm initial
 }
 
+# PATH with every directory holding an `rg` left out, so a check calling it
+# fails the way it does in a shell where `rg` is only a session's function.
+no_rg_path() {
+  local d out=""
+  local IFS=:
+  for d in $PATH; do [ -x "$d/rg" ] || out="${out:+$out:}$d"; done
+  printf '%s' "$out"
+}
+
 end_sandbox() {
   [ -n "${SANDBOX:-}" ] && rm -rf "$SANDBOX"
 }
@@ -445,12 +454,69 @@ assert_has "$out" "observed" "code main lacks can still be recorded against"
 assert_has "$(field 1 witness)" "only on the branch" "and the witness is what the branch answered"
 end_sandbox
 
-new_sandbox "a check that prints nothing is refused"
-out="$(record "$MAIN" --check "grep -c nomatch README.md | grep -v '^0$'")"
+new_sandbox "a check that runs and prints nothing is recorded"
+out="$(record "$MAIN" --check "grep nomatch README.md")"
+assert_eq "$?" 0 "an absence is a valid witness"
+assert_eq "$(lines)" "1" "and the record is written"
+assert_eq "$(field 1 witness)" "" "with the empty answer as its witness"
+end_sandbox
+
+# ========================================================================
+# AC · A check whose shell cannot run one of its commands is refused, and
+#      recheck never counts one as holding.
+# ========================================================================
+
+new_sandbox "a check that names a command its shell cannot find is refused"
+out="$(record "$MAIN" --check "nosuchcmd_318 hello README.md")"
 st=$?
-assert_eq "$st" 2 "an empty witness is a usage error"
-assert_has "$out" "printed nothing" "and says why"
+assert_eq "$st" 2 "a missing command is a usage error"
+assert_has "$out" "nosuchcmd_318" "and the message names the command"
 assert_eq "$(lines)" "0" "nothing is written"
+end_sandbox
+
+new_sandbox "a missing command inside a pipeline is refused too"
+out="$(record "$MAIN" --check "cat README.md | nosuchcmd_318 -c hello")"
+assert_eq "$?" 2 "the pipeline's last stage being missing is still caught"
+assert_has "$out" "nosuchcmd_318" "and named"
+assert_eq "$(lines)" "0" "nothing is written"
+end_sandbox
+
+new_sandbox "a check whose answer mentions a missing command is not refused"
+echo 'bash: rg: command not found' > "$MAIN/README.md"
+out="$(record "$MAIN" --check "grep -c 'command not found' README.md")"
+assert_eq "$?" 0 "the phrase in the output is not a missing command"
+assert_eq "$(field 1 witness)" "1" "and the witness is the grep's answer"
+end_sandbox
+
+new_sandbox "recheck reports a check that cannot run as unrunnable, not holding"
+record "$MAIN" >/dev/null
+# A record written before the refusal: its witness is already the error, so a
+# plain diff would read it as holding forever.
+python3 - "$STORE" <<'PY2'
+import json, sys
+p = sys.argv[1]
+r = json.loads(open(p).readline())
+r["check"] = "rg -c hello README.md"
+r["witness"] = "bash: rg: command not found"
+open(p, "w").write(json.dumps(r) + "\n")
+PY2
+out="$( (cd "$MAIN" && PATH="$(no_rg_path)" "$SCRIPT" recheck) 2>&1 )"
+assert_has "$out" "unrunnable" "a check that cannot run is reported as unrunnable"
+assert_lacks "$out" "holds" "and never as holding"
+assert_has "$out" "rg" "naming the command"
+end_sandbox
+
+new_sandbox "a bash too old to detect a missing command is refused"
+FAKE="$SANDBOX/oldbash"; mkdir -p "$FAKE"
+printf '#!/bin/sh\necho 3\n' > "$FAKE/bash"; chmod +x "$FAKE/bash"
+REAL_BASH="$(command -v bash)"
+out="$( (cd "$MAIN" && PATH="$FAKE:$PATH" "$REAL_BASH" "$SCRIPT" \
+  --by x --claim y --check "cat README.md" --surfaced s --action a --who agent --affected z) 2>&1 )"
+assert_eq "$?" 1 "append refuses on bash older than 4"
+assert_has "$out" "bash 4" "and says what it needs"
+assert_eq "$(lines)" "0" "nothing is written"
+out="$( (cd "$MAIN" && PATH="$FAKE:$PATH" "$REAL_BASH" "$SCRIPT" recheck) 2>&1 )"
+assert_eq "$?" 1 "recheck refuses too"
 end_sandbox
 
 new_sandbox "a check whose witness is a missing-path error is refused"
@@ -493,12 +559,27 @@ out="$( (cd "$MAIN" && "$SCRIPT" recheck "$first") 2>&1 )"
 assert_has "$out" "holds" "the record now holds"
 end_sandbox
 
-new_sandbox "rewitness leaves a record alone when its check now prints nothing"
+new_sandbox "rewitness takes an empty answer as the new witness"
 record "$MAIN" --check "cat README.md" >/dev/null
-before="$(field 1 witness)"
 : > "$MAIN/README.md"
 out="$( (cd "$MAIN" && "$SCRIPT" rewitness "$(field 1 id)") 2>&1 )"
-assert_has "$out" "skipped" "an empty answer is reported as skipped"
+assert_has "$out" "rewitnessed 1" "an empty answer is rewitnessed"
+assert_eq "$(field 1 witness)" "" "and becomes the witness"
+end_sandbox
+
+new_sandbox "rewitness leaves a record alone when its check cannot run"
+record "$MAIN" --check "cat README.md" >/dev/null
+before="$(field 1 witness)"
+python3 - "$STORE" <<'PY2'
+import json, sys
+p = sys.argv[1]
+r = json.loads(open(p).readline())
+r["check"] = "nosuchcmd_318 README.md"
+open(p, "w").write(json.dumps(r) + "\n")
+PY2
+out="$( (cd "$MAIN" && "$SCRIPT" rewitness "$(field 1 id)") 2>&1 )"
+assert_has "$out" "skipped" "a check that cannot run is skipped"
+assert_has "$out" "nosuchcmd_318" "naming the command"
 assert_eq "$(field 1 witness)" "$before" "and the old witness stays"
 end_sandbox
 

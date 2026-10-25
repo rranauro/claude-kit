@@ -60,9 +60,40 @@ ensure_excluded() {
 
 count() { grep -c . "$STORE" 2>/dev/null || echo 0; }
 
+# A check runs under a plain `bash -c`, where a command that was only a function
+# in the producing session (Claude Code's `rg`) does not exist, and bash's own
+# "command not found" becomes a witness that never moves. bash calls
+# command_not_found_handle for each name it cannot resolve, pipelines and
+# subshells included, so it names exactly what was missing. Matching the phrase
+# in the output instead would refuse a check that legitimately greps for it.
+# The hook arrived in bash 4, and macOS's /bin/bash is 3.2, where it silently
+# never fires — so an older bash is refused rather than trusted.
+MISSING="$(mktemp "${TMPDIR:-/tmp}/observe-missing.XXXXXX")"
+trap 'rm -f "$MISSING"' EXIT
+
+require_hook() {
+  local major
+  major="$(bash -c 'printf %s "${BASH_VERSINFO[0]}"' 2>/dev/null)"
+  [ "${major:-0}" -ge 4 ] 2>/dev/null \
+    || die "the bash that runs checks is ${major:-unknown}.x, which cannot tell a missing command from a check that ran; put bash 4 or later ahead of it on PATH (macOS: brew install bash)"
+}
+
+run_in() { # dir check -> output; missing commands land in $MISSING
+  : > "$MISSING"
+  (cd "$1" && OBS_MISSING="$MISSING" bash -c '
+command_not_found_handle() {
+  printf "%s\n" "$1" >> "$OBS_MISSING"
+  printf "bash: %s: command not found\n" "$1" >&2
+  return 127
+}
+'"$2" 2>&1)
+}
+
+missing() { sort -u "$MISSING" | paste -sd, - | sed 's/,/, /g'; }
+
 # Run a check where it will be re-run: the main checkout the claim is about,
 # never the worktree the producing pass happens to be standing in.
-run_check() { (cd "$MAIN_ROOT" && bash -c "$1" 2>&1); }
+run_check() { run_in "$MAIN_ROOT" "$1"; }
 
 # A witness is compared across edits that do not touch the claim, and the commonest
 # one is a line shifting: `grep -n` prints `42:text` and the same text at 57 is the
@@ -206,15 +237,16 @@ append() {
     *.claude/worktrees/*) misuse "--check names a worktree path; it is re-run from the main checkout, so write it relative to the repo root" ;;
   esac
 
-  # Run it here, not inside the python call, so an empty answer can be refused: a
-  # check that prints nothing cannot tell a claim that holds from one that is false.
+  # Run it here, not inside the python call, so a check that could not run can be
+  # refused. An empty answer is kept: an absence is a valid witness.
   # Run where the pass is standing, not in the main checkout: the claim is usually
   # about code the pass's own branch added, which main does not have until it merges.
   # (Running it in main wrote an empty witness for every such claim.) Recheck runs it
   # in main later, so the record reads as moved until the PR lands, then holds.
+  require_hook
   local witness
-  witness="$(cd "$(git rev-parse --show-toplevel)" && bash -c "$check" 2>&1)"
-  [ -n "$witness" ] || misuse "--check printed nothing; a witness must differ between a true and a false claim (try grep -c, or ... && echo yes || echo no)"
+  witness="$(run_in "$(git rev-parse --show-toplevel)" "$check")"
+  [ ! -s "$MISSING" ] || misuse "--check runs $(missing), which a plain bash -c cannot find (a session's shell function is not a command there); write it with commands that are, such as grep -rn for rg"
 
   case "$witness" in
     *"No such file or directory"*) misuse "--check reads a path that does not exist here; a witness that is already an error can never read as gone later" ;;
@@ -300,12 +332,18 @@ PY
 # has moved past means the observation was either acted on or was wrong, and
 # either way it can die without anyone adjudicating it.
 do_recheck() {
+  require_hook
   local any=0 id claim check was now
   while IFS= read -r -d '' id    && IFS= read -r -d '' claim \
      && IFS= read -r -d '' check && IFS= read -r -d '' was; do
     any=1
     now="$(run_check "$check")"
-    if [ "$(printf '%s' "$now" | unnumber "$check")" = "$(printf '%s' "$was" | unnumber "$check")" ]; then
+    if [ -s "$MISSING" ]; then
+      # Checked before the diff: a record written before the refusal carries the
+      # error as its witness, and would otherwise read as holding forever.
+      printf 'unrunnable  %s  %s\n' "$id" "$claim"
+      printf '       missing: %s\n' "$(missing)"
+    elif [ "$(printf '%s' "$now" | unnumber "$check")" = "$(printf '%s' "$was" | unnumber "$check")" ]; then
       printf 'holds  %s  %s\n' "$id" "$claim"
     elif printf '%s' "$now" | grep -q 'No such file or directory' \
          && ! printf '%s' "$was" | grep -q 'No such file or directory'; then
@@ -327,17 +365,18 @@ do_recheck() {
 # and so witnessed as empty. Runs the check from the main checkout, where recheck
 # will, so the record holds from here until the repo moves. It does not judge the
 # claim: a record rewitnessed is a record whose recheck means something again.
-# An empty answer is skipped, for the reason an empty witness is refused at write.
+# A check that cannot run is skipped, for the reason it is refused at write.
 do_rewitness() {
   [ $# -gt 0 ] || misuse "rewitness needs at least one slug"
   [ -f "$STORE" ] || die "no observations in $STORE"
+  require_hook
   local id claim check was now pairs n=0 skipped=0
   pairs="$(mktemp "$STORE.pairs.XXXXXX")"
   while IFS= read -r -d '' id    && IFS= read -r -d '' claim \
      && IFS= read -r -d '' check && IFS= read -r -d '' was; do
     now="$(run_check "$check")"
-    if [ -z "$now" ]; then
-      skipped=$((skipped + 1)); printf 'skipped %s — check printed nothing\n' "$id" >&2
+    if [ -s "$MISSING" ]; then
+      skipped=$((skipped + 1)); printf 'skipped %s — check runs %s, which cannot be found\n' "$id" "$(missing)" >&2
     else
       printf '%s\0%s\0' "$id" "$now" >> "$pairs"; n=$((n + 1))
     fi

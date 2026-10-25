@@ -45,9 +45,16 @@ one that has to survive. The cost is nuance — *"the Parked list has no durable
 home"* becomes a statement about a named file — and it is worth paying.
 
 **`check` prints something that differs between a true and a false claim.** An
-empty answer is refused at write: it cannot tell "holds" from "false". Prefer
-`grep -c`, or `... && echo yes || echo no`, over `grep -n` of a line you expect
-to move. Line-number prefixes are ignored at recheck, but only text is compared.
+empty answer is accepted, since an absence is a valid witness, but prefer one
+that prints either way: `grep -c`, or `... && echo yes || echo no`, over
+`grep -n` of a line you expect to move.
+
+**`check` runs under a plain `bash -c`, with no profile and no session.** A
+command that resolves only in your shell — Claude Code's `rg` is a function from
+its snapshot — does not exist there, so the record is refused and the message
+names the command. Write it with `grep -rn` instead. The script needs bash 4 or
+later on `PATH` to tell a missing command from one that ran, and refuses to run a
+check without it. Line-number prefixes are ignored at recheck, but only text is compared.
 Write paths relative to the repo root; a path under `.claude/worktrees/` is
 refused, since that directory is gone once the ticket merges.
 
@@ -128,7 +135,7 @@ The store is reviewed in its own pass, never inside the pass that wrote to it.
 `/kit:observe triage` is the entry point; this is the protocol it runs.
 
 **1 · Re-run every check.** `${CLAUDE_PLUGIN_ROOT}/scripts/observe.sh recheck` does it in one pass and reports
-each record as holding, moved, or gone. *Gone* means the path the check reads no
+each record as holding, moved, gone, or unrunnable. *Gone* means the path the check reads no
 longer exists: the check can no longer answer, which is evidence about the check
 and not the claim. Rewrite it against the file's new home, or drop the record.
 
@@ -145,6 +152,10 @@ than a judgement:
   line, so a re-observation of the same thing later is not a surprise.
 - **Gone** — the check cannot answer. Rewrite it against the file's new home and
   re-record, or drop the record; either way the claim itself is unjudged.
+- **Unrunnable** — the check calls a command its shell cannot find, named on the
+  line below it. It never answered, so the claim is unjudged however long it has
+  "held". Rewrite the check with commands a plain `bash -c` has and re-record, or
+  drop the record.
 - **Holds, and the claim still reads as real** — it goes to its `action`. File it
   with `kit:writing-tickets`, carrying `surfaced` across verbatim; or make the
   edit now if it is small and located.
