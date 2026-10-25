@@ -8,6 +8,7 @@
 #                       [--remove-cmd CMD] [--worktree-root DIR]
 #                       [--hold-label NAME]
 #   worktree-reclaim.sh [--repo DIR] --account BRANCH
+#   worktree-reclaim.sh --lease ISSUE
 #
 # --worktree-root is the caller asserting that the directory holds nothing but
 # worktrees it placed, and it is the only thing that licenses sweeping husks git
@@ -20,6 +21,12 @@
 # --account answers the branch question alone, exiting 0 only when GitHub
 # accounts for the tip. It is the seam for any other caller that deletes a
 # branch. Why it asks rather than infers: docs/adr/0002.
+#
+# --lease prints the reason a ship pass locks its worktree with. The writer
+# lives here so the clock it stamps is the clock the sweep measures against.
+#
+# A sweep also visits every local branch no worktree has checked out, other
+# than the remote's default branch; its verdict carries an empty path.
 #
 # Records:
 #   verdict<TAB>branch<TAB>path<TAB>reclaim|reclaim-keep-branch|hold<TAB>directory-reason<TAB>branch-reason
@@ -37,6 +44,7 @@ act=0
 remove_cmd=""
 worktree_root=""
 account_only=""
+lease_issue=""
 hold_label="kit-hold"
 
 while [ $# -gt 0 ]; do
@@ -47,10 +55,34 @@ while [ $# -gt 0 ]; do
     --remove-cmd)    remove_cmd="$2"; shift 2 ;;
     --worktree-root) worktree_root="$2"; shift 2 ;;
     --account)       account_only="$2"; shift 2 ;;
+    --lease)         lease_issue="$2"; shift 2 ;;
     --hold-label)    hold_label="$2"; shift 2 ;;
     *) echo "worktree-reclaim: unknown argument: $1" >&2; exit 2 ;;
   esac
 done
+
+# The awake clock both halves of a lease read. Not `time.monotonic()`: on the
+# macOS Python these passes run under it counts from process start, so writer
+# and reader both read about 0 and no lease ever ages. CLOCK_UPTIME_RAW is
+# macOS's boot-relative clock that stops in sleep; Linux's CLOCK_MONOTONIC is
+# the same thing there. KIT_AWAKE_NOW stands in for it under test, where a
+# runner's uptime cannot hold a reading aged thirteen hours.
+#
+# Read afresh at every lease check, never once per sweep: a lease another pass
+# takes after a cached reading reads as the future, which is how a lease from
+# before a reboot looks, and is expired out from under its owner.
+awake_now() {
+  [ -n "${KIT_AWAKE_NOW:-}" ] && { printf '%s\n' "$KIT_AWAKE_NOW"; return; }
+  python3 -c '
+import time
+print(time.clock_gettime(getattr(time, "CLOCK_UPTIME_RAW", time.CLOCK_MONOTONIC)))'
+}
+
+if [ -n "$lease_issue" ]; then
+  printf 'kit:ship #%s since %s awake %.0f\n' \
+    "$lease_issue" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(awake_now)"
+  exit
+fi
 
 cd "$repo" || { echo "worktree-reclaim: no such directory: $repo" >&2; exit 2; }
 git rev-parse --git-dir >/dev/null 2>&1 || {
@@ -63,15 +95,36 @@ emit() { local IFS=$'\t'; printf '%s\n' "$*"; }
 # One `path<TAB>branch` line per linked worktree. Porcelain terminates every
 # block with a blank line, and the main worktree is always the first — never a
 # candidate, so it is dropped rather than filtered by path.
+#
+# A sweep then lists, with an empty path, every local branch no worktree has
+# checked out: one whose worktree went some other way — by hand, by a project's
+# own teardown, by a pass that removed the directory and stopped — would
+# otherwise never come up again. The remote's default branch is left out: its
+# tip is a merged PR's commit, so it reads as accounted, and nobody sweeping
+# worktrees meant to delete it. A clone need not record `origin/HEAD`, so the
+# remote is asked where it does not; where neither answers, no bare branch is
+# listed rather than one that may be the default.
 inventory() {
-  local path="" branch=""
-  while IFS= read -r line; do
+  local path="" branch="" worktrees default
+  worktrees="$(while IFS= read -r line; do
     case "$line" in
       worktree\ *)          path="${line#worktree }"; branch="" ;;
       branch\ refs/heads/*) branch="${line#branch refs/heads/}" ;;
       "")                   printf '%s\t%s\n' "$path" "$branch" ;;
     esac
-  done < <(git worktree list --porcelain) | tail -n +2
+  done < <(git worktree list --porcelain))"
+  printf '%s\n' "$worktrees" | tail -n +2
+  [ -z "$target" ] || return 0
+  default="$(git symbolic-ref -q --short refs/remotes/origin/HEAD)"
+  default="${default#origin/}"
+  [ -n "$default" ] || default="$(git ls-remote --symref origin HEAD 2>/dev/null |
+    sed -n 's#^ref: refs/heads/\(.*\)	HEAD$#\1#p')"
+  [ -n "$default" ] || return 0
+  while IFS= read -r branch; do
+    [ "$branch" != "$default" ] || continue
+    printf '%s\n' "$worktrees" | cut -f2 | grep -Fxq -e "$branch" && continue
+    printf '\t%s\n' "$branch"
+  done < <(git for-each-ref --format='%(refname:short)' refs/heads)
 }
 
 # --- freeness -----------------------------------------------------------
@@ -106,27 +159,30 @@ lease_expired() { # reason -> 0 when it is a kit lease past its window
   # python3 rather than `date`: the -d and -j -f spellings are GNU's and BSD's
   # respectively, and this runs on both. It is also the only portable reader of
   # a clock that stops while the machine is asleep, there being no /proc here.
-  python3 - "$1" "$KIT_LEASE_HOURS" 2>/dev/null <<'LEASE'
-import datetime, sys, time
+  python3 - "$1" "$KIT_LEASE_HOURS" "$(awake_now)" 2>/dev/null <<'LEASE'
+import datetime, sys
 
 hours = float(sys.argv[2])
+now = float(sys.argv[3])
 rest = sys.argv[1].rsplit(" since ", 1)[1].strip()
 stamp, _, awake = rest.partition(" awake ")
 
+# Below this, a reading cannot be time since boot — it is a clock counting from
+# process start, which every lease an older kit wrote carries as `awake 0`.
+FLOOR = 60
+
 # The window counts hours of the machine being awake rather than hours on the
 # wall, which is what the `awake` reading measures; docs/worktrees.md says why.
-if awake:
-    try:
-        taken = float(awake)
-    except ValueError:
-        pass  # unreadable: leave the wall timestamp to answer, as before
-    else:
-        # A monotonic reading is boot-relative, so one from before a reboot
-        # measures nothing against this clock — and it reads as the future,
-        # because the reboot restarted the count. A reboot kills every pass, so
-        # such a lease is dead rather than merely old.
-        now = time.monotonic()
-        raise SystemExit(0 if now < taken or now - taken > hours * 3600 else 1)
+try:
+    taken = float(awake)
+except ValueError:
+    taken = 0  # absent or unreadable: leave the wall timestamp to answer
+if taken >= FLOOR and now >= FLOOR:
+    # A boot-relative reading from before a reboot measures nothing against
+    # this clock — and it reads as the future, because the reboot restarted the
+    # count. A reboot kills every pass, so such a lease is dead rather than
+    # merely old.
+    raise SystemExit(0 if now < taken or now - taken > hours * 3600 else 1)
 
 # No awake reading, or none this can read: the wall timestamp is all there is.
 try:
@@ -367,14 +423,21 @@ reclaim_path() { # path branch -> 0 when the path is gone; REMOVE_REFUSAL on a r
 
 selected=""
 refused=""
-while IFS=$'\t' read -r path branch; do
-  [ -n "$path" ] || continue
+while IFS= read -r line; do
+  # Split by hand: tab is IFS whitespace, so `read` would strip the empty path a
+  # worktree-less branch carries and hand its branch over as the path.
+  path="${line%%$'\t'*}"; branch="${line#*$'\t'}"
+  [ -n "$path$branch" ] || continue
   if [ -n "$target" ] && [ "$branch" != "$target" ] && [ "$path" != "$target" ]; then
     continue
   fi
   selected="yes"
 
-  freeness "$path"
+  if [ -n "$path" ]; then
+    freeness "$path"
+  else
+    FREE="yes"; FREE_REASON="no worktree"
+  fi
   if [ "$FREE" != "yes" ]; then
     # Held worktrees keep their branch whatever GitHub would have said, so the
     # round trip to ask is work nothing acts on.
@@ -387,7 +450,7 @@ while IFS=$'\t' read -r path branch; do
   if [ -n "$HOLD_REASON" ]; then
     emit verdict "$branch" "$path" hold "$HOLD_REASON" "$ACC_REASON"
     if [ "$act" -eq 1 ]; then
-      emit held "$path" "$HOLD_REASON"
+      [ -n "$path" ] && emit held "$path" "$HOLD_REASON"
       emit branch-kept "$branch" "$ACC_REASON"
     fi
     continue
@@ -401,14 +464,16 @@ while IFS=$'\t' read -r path branch; do
 
   [ "$act" -eq 1 ] || continue
 
-  if ! reclaim_path "$path" "$branch"; then
-    emit held "$path" "${REMOVE_REFUSAL:-could not be removed}"
-    # A teardown that unregistered the worktree before refusing leaves exactly
-    # what the husk sweep below looks for.
-    [ -n "$REMOVE_REFUSAL" ] && refused="$refused$path"$'\n'
-    continue
+  if [ -n "$path" ]; then
+    if ! reclaim_path "$path" "$branch"; then
+      emit held "$path" "${REMOVE_REFUSAL:-could not be removed}"
+      # A teardown that unregistered the worktree before refusing leaves
+      # exactly what the husk sweep below looks for.
+      [ -n "$REMOVE_REFUSAL" ] && refused="$refused$path"$'\n'
+      continue
+    fi
+    emit removed "$path"
   fi
-  emit removed "$path"
 
   if [ "$ACCOUNTED" = "yes" ]; then
     # -D rather than -d: the ancestry test -d applies carries no information

@@ -359,16 +359,36 @@ end_sandbox
 # a reboot looks like once the monotonic clock has restarted.
 #
 # Omit the awake age to get the reason an older kit wrote, with no clause at all.
-ship_lock() { # branch wall-hours-ago [awake-hours-ago]
-  local reason
-  reason="$(python3 -c '
-import datetime, sys, time
+#
+# The awake reading is aged from KIT_AWAKE_NOW, the clock the script reads under
+# test, rather than from the runner's own uptime: a runner booted minutes ago
+# cannot hold a reading thirteen hours old, and the script reads one aged past
+# boot as unreadable rather than as old.
+KIT_AWAKE_NOW=500000
+export KIT_AWAKE_NOW
+
+wall_hours_ago() { # hours -> the lease's timestamp, that long ago
+  python3 -c '
+import datetime, sys
 t = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=float(sys.argv[1]))
-out = "kit:ship #119 since " + t.strftime("%Y-%m-%dT%H:%M:%SZ")
-if len(sys.argv) > 2:
-    out += " awake %.0f" % (time.monotonic() - float(sys.argv[2]) * 3600)
-print(out)' "$2" ${3+"$3"})"
-  git -C "$MAIN" worktree lock --reason "$reason" "$MAIN/.claude/worktrees/$1"
+print(t.strftime("%Y-%m-%dT%H:%M:%SZ"))' "$1"
+}
+
+lock_reason() { # branch reason
+  git -C "$MAIN" worktree lock --reason "$2" "$MAIN/.claude/worktrees/$1"
+}
+
+ship_lock() { # branch wall-hours-ago [awake-hours-ago]
+  local reason="kit:ship #119 since $(wall_hours_ago "$2")"
+  [ $# -gt 2 ] && reason="$reason awake $(python3 -c '
+import sys
+print("%.0f" % (float(sys.argv[1]) - float(sys.argv[2]) * 3600))' "$KIT_AWAKE_NOW" "$3")"
+  lock_reason "$1" "$reason"
+}
+
+# The lease an older kit wrote, whose clock read process time: `awake 0`.
+stale_lock() { # branch wall-hours-ago
+  lock_reason "$1" "kit:ship #119 since $(wall_hours_ago "$2") awake 0"
 }
 
 new_sandbox "AC8 a pass in flight keeps its worktree"
@@ -476,6 +496,179 @@ out="$(run --act)"
 assert_present_path "$MAIN/.claude/worktrees/alpha" \
   "a clause nothing can read leaves the wall timestamp to answer"
 assert_has "$out" "awake soon" "and the malformed clause is visible in the report"
+end_sandbox
+
+# ========================================================================
+# A clock that counts from process start rather than boot reads about 0 for
+# every pass, so a lease stamped `awake 0` and a sweep whose own reading is
+# about 0 measure nothing against each other. The wall stamp has to answer.
+# ========================================================================
+
+new_sandbox "a killed pass's awake-0 lease expires on its wall stamp"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 open null
+stale_lock alpha 13
+out="$(KIT_AWAKE_NOW=0.003 run --act)"
+assert_missing_path "$MAIN/.claude/worktrees/alpha" \
+  "thirteen wall hours expires a lease whose clock and the sweep's both read 0"
+assert_has "$out" "lease expired" "and the report says why it was taken"
+end_sandbox
+
+new_sandbox "an awake-0 lease is read on its wall stamp by a sweep whose clock works"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 open null
+stale_lock alpha 13
+run --act >/dev/null
+assert_missing_path "$MAIN/.claude/worktrees/alpha" \
+  "a reading no machine could have since boot does not hold the worktree"
+end_sandbox
+
+new_sandbox "a running pass's awake-0 lease is still held"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 open null
+stale_lock alpha 0
+out="$(KIT_AWAKE_NOW=0.003 run --act)"
+assert_present_path "$MAIN/.claude/worktrees/alpha" \
+  "a lease taken minutes ago on the wall is live whatever its clock read"
+assert_lacks "$out" "lease expired" "and nothing claims the lease ran out"
+end_sandbox
+
+new_sandbox "a sweep whose clock reads 0 falls back to the wall for a good reading"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 open null
+ship_lock alpha 13 13
+KIT_AWAKE_NOW=0.003 run --act >/dev/null
+assert_missing_path "$MAIN/.claude/worktrees/alpha" \
+  "a clock this sweep cannot read leaves the wall stamp to answer"
+end_sandbox
+
+# The lease's reason is written by the script that reads it, so the clock the
+# writer stamps and the clock the reader measures against are one choice.
+new_sandbox "the script writes the lease it reads"
+out="$("$SCRIPT" --lease 42 2>&1)"
+assert_has "$out" "kit:ship #42 since " "the reason is in the lease format"
+assert_has "$out" " awake 500000" "and stamps the awake clock the reader uses"
+# A process clock reads milliseconds and stamps 0. Not the 60s floor: a CI
+# runner can be under a minute past boot when this runs.
+reading="$(env -u KIT_AWAKE_NOW "$SCRIPT" --lease 42 2>&1 | sed -n 's/.* awake //p')"
+if [ -n "$reading" ] && [ "$reading" -ge 1 ] 2>/dev/null
+then ok "an unseamed reading counts from boot, not from the process"
+else bad "an unseamed reading counts from boot, not from the process"
+     printf '       read: %s\n' "$reading" >&2; fi
+end_sandbox
+
+new_sandbox "a lease the script wrote is held by the script"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 open null
+lock_reason alpha "$("$SCRIPT" --lease 119)"
+run --act >/dev/null
+assert_present_path "$MAIN/.claude/worktrees/alpha" "a fresh lease holds its worktree"
+end_sandbox
+
+# ========================================================================
+# A branch whose worktree went some other way is still a sweep candidate,
+# decided by the same accounting as a worktree's branch.
+# ========================================================================
+
+add_branch() { # branch -> a local branch one commit past main, with no worktree
+  add_worktree "$1"
+  git -C "$MAIN" worktree remove --force "$MAIN/.claude/worktrees/$1"
+}
+
+new_sandbox "a worktree-less branch GitHub accounts for is deleted"
+add_branch alpha
+pr_fixture "$(tip alpha)" 11 closed '"2024-01-01T00:00:00Z"'
+add_branch beta
+out="$(run --act)"
+assert_branch_gone alpha "a merged branch with no worktree is deleted"
+assert_has "$out" "branch-deleted	alpha" "and the deletion is reported"
+assert_branch_kept beta "a branch GitHub never received is kept"
+assert_has "$out" "branch-kept	beta	no PR and tip" "and reported with its reason"
+assert_branch_kept main "the checked-out branch is never a candidate"
+end_sandbox
+
+new_sandbox "worktree-less branches appear in the verdicts without --act"
+add_branch alpha
+pr_fixture "$(tip alpha)" 11 closed '"2024-01-01T00:00:00Z"'
+add_branch beta
+out="$(run)"
+assert_has "$out" "verdict	alpha		reclaim	no worktree	PR #11" \
+  "an accounted branch reads as reclaim with no path"
+assert_has "$out" "verdict	beta		reclaim-keep-branch	no worktree	no PR" \
+  "an unaccounted one reads as reclaim-keep-branch"
+assert_branch_kept alpha "and nothing is deleted without --act"
+end_sandbox
+
+new_sandbox "the remote's default branch is never a candidate"
+git -C "$MAIN" remote set-head origin main
+git -C "$MAIN" checkout -q -b other
+pr_fixture "$(tip main)" 1 closed '"2024-01-01T00:00:00Z"'
+out="$(run --act)"
+assert_branch_kept main "a default branch whose tip a merged PR carries is kept"
+assert_lacks "$out" "	main	" "and is not even considered"
+end_sandbox
+
+new_sandbox "a clone with no origin/HEAD asks the remote for its default"
+git -C "$MAIN" remote set-head origin -d 2>/dev/null
+git -C "$MAIN" checkout -q -b other
+pr_fixture "$(tip main)" 1 closed '"2024-01-01T00:00:00Z"'
+out="$(run --act)"
+assert_branch_kept main "the default branch is found without a local origin/HEAD"
+assert_lacks "$out" "	main	" "and is not considered"
+end_sandbox
+
+new_sandbox "a default nothing can name sweeps no bare branch"
+git -C "$MAIN" remote set-url origin "$SANDBOX/nowhere.git"
+git -C "$MAIN" checkout -q -b other
+pr_fixture "$(tip main)" 1 closed '"2024-01-01T00:00:00Z"'
+add_branch alpha
+pr_fixture "$(tip alpha)" 11 closed '"2024-01-01T00:00:00Z"'
+out="$(run --act)"
+assert_branch_kept main "a branch that may be the default is never deleted"
+assert_branch_kept alpha "so the bare-branch sweep does not run at all"
+end_sandbox
+
+new_sandbox "the branch pass leaves worktree branches and named targets alone"
+add_branch alpha
+pr_fixture "$(tip alpha)" 11 closed '"2024-01-01T00:00:00Z"'
+add_worktree beta
+echo dirty > "$MAIN/.claude/worktrees/beta/dirty.txt"
+pr_fixture "$(tip beta)" 12 closed '"2024-01-01T00:00:00Z"'
+add_worktree gamma
+push_branch gamma
+pr_fixture "$(tip gamma)" 13 closed '"2024-01-01T00:00:00Z"'
+run --target gamma --act >/dev/null
+assert_branch_kept alpha "a named target sweeps no other branch"
+out="$(run --act)"
+assert_branch_kept beta "a held worktree keeps its branch"
+assert_lacks "$out" "branch-deleted	beta" "and the branch pass does not reach it"
+assert_branch_gone alpha "while the sweep takes the worktree-less one"
+end_sandbox
+
+new_sandbox "a worktree-less branch on a held PR reads as held"
+add_branch alpha
+pr_fixture "$(tip alpha)" 11 open null "" kit-hold
+out="$(run --act)"
+assert_branch_kept alpha "a branch whose PR carries kit-hold is kept"
+assert_has "$out" "verdict	alpha		hold	PR #11 is open and carries kit-hold" \
+  "and its verdict is the hold, as a worktree's would be"
+assert_lacks "$out" "held		" "with no directory reported held"
+end_sandbox
+
+new_sandbox "a branch its worktree's removal kept is reported once"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 open null
+out="$(run --act)"
+if [ "$(printf '%s\n' "$out" | grep -c '^branch-kept	alpha	')" -eq 1 ]
+then ok "the branch pass does not ask again about a branch the loop decided"
+else bad "the branch pass does not ask again about a branch the loop decided"
+     printf '%s\n' "$out" | sed 's/^/         /' >&2; fi
 end_sandbox
 
 # ========================================================================

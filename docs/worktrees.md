@@ -65,6 +65,13 @@ That reading is boot-relative, so one taken before a reboot reads as the future
 rather than as the past. Such a lease is expired outright: a reboot kills every
 pass, so it cannot still be live.
 
+**A reading that cannot be time since boot is no reading at all.** A clock
+counting from process start stamps every lease `awake 0` and measures it
+against about 0, so every such lease would be live forever. A reading under a
+minute, on either side, is therefore unreadable and the wall timestamp answers
+instead. What that costs is the sleep protection above, and only for the lease
+it happens to.
+
 What this accepts is the pass whose session died while the machine stayed up. It
 holds its lease for twelve awake hours, and `kit:ticket-loop` `hand-off` is what
 makes that survivable, because a pass returning to a worktree that is gone says

@@ -42,7 +42,8 @@ script's own `KIT_LEASE_HOURS` is the window. Every other lock holds until
 somebody unlocks it.
 
 **The window is spent in hours the machine was awake**, which is what the
-`awake` reading measures; a lease carrying none falls back to wall-clock age.
+`awake` reading measures; a lease carrying none, or one no clock since boot
+could have read, falls back to wall-clock age.
 
 **A walkthrough in flight holds the directory as well.** `/kit:walkthrough`
 resolves the worktree path and does all its work there, and it is designed to be
@@ -106,6 +107,11 @@ verdict<TAB>branch<TAB>path<TAB><verdict><TAB>directory-reason<TAB>branch-reason
 The verdict is one of `reclaim`, `reclaim-keep-branch`, or `hold`, and the two
 reasons say how each half was decided. Read them; they are what the report is
 made of.
+
+A sweep also prints one for every local branch no worktree has checked out —
+other than the remote's default branch — with an empty path and the directory
+reason `no worktree`. Its worktree went some other way, so nothing else would
+ever ask about it again; the branch half is decided exactly as above.
 
 ### 4 · `act`
 
