@@ -277,10 +277,8 @@ new_sandbox "a record missing a required part is refused"
 for missing in claim check surfaced action by who affected waiting; do
   args=()
   for opt in by claim check surfaced action who affected waiting; do
-    [ "$opt" = "$missing" ] || case "$opt" in
-      waiting) args+=("--$opt" "ticket") ;;
-      *)       args+=("--$opt" "x") ;;
-    esac
+    # Every field takes any value but waiting, so one that suits waiting fills all.
+    [ "$opt" = "$missing" ] || args+=("--$opt" "ticket")
   done
   out="$( (cd "$MAIN" && "$SCRIPT" "${args[@]}") 2>&1 )"
   st=$?

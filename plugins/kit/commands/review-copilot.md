@@ -330,14 +330,7 @@ record each through `kit:observations`, `--waiting owner` and `--pr <N>`, with
 its `action` stating the question the owner decides. That PR can merge before
 anyone reads its body, so the store is where the question is waited on. Report
 each line the script prints; a refused or failed write is reported and changes
-nothing else here. **Nothing else this round handled is recorded** — a finding
-outside the diff, a fix, a drop: the summary comment already states each, and
-a second copy in the store is triaged twice.
-
-**A finding never holds the PR, and never stops the round to ask.** `kit-hold`
-is written here only for an escalation — failed or unrunnable gates, a rejected
-push, a red required check — and what a finding leaves open is the body, the
-pin and the store's to carry.
+nothing else here. **Nothing else this round handled goes to the store.**
 
 `## Unattended` below owns what the escalation *conditions* are, and the merge
 decision that branches on them. This step owns only the record.
@@ -479,6 +472,9 @@ sound, and merging on an unestablished claim is what the hold prevents.
 - `gh pr checks <N>` shows a failing required check. **Repairing it is not your
   job** — a red check is not a review finding, and repairing one belongs in a
   session with a person nearby. Escalate and say so.
+
+**A finding is never one of them, and never stops the round to ask** — what it
+leaves open is the body's, the pin's and the store's to carry.
 
 An escalation is carried by the `kit-hold` label Step 7.5 applies, with the reason
 in the same comment body as the marker. Hand it the reason before it writes; do

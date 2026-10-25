@@ -31,6 +31,10 @@ USAGE
 }
 
 die() { echo "observe.sh: $*" >&2; exit 1; }
+
+# One spelling for every word a producer types: lowercased, trimmed, trailing
+# full stop dropped, so "Owner", " nobody " and "This backlog." all match.
+norm() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:].]*$//'; }
 misuse() { echo "observe.sh: $*" >&2; usage; exit 2; }
 
 # --- where the store lives ----------------------------------------------
@@ -231,17 +235,16 @@ append() {
 
   # The store is a queue, and a record that does not say what it is waiting on
   # is one nobody can drain: it is neither ready to file nor anyone's question.
-  waiting="$(printf '%s' "$waiting" | tr '[:upper:]' '[:lower:]' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+  waiting="$(norm "$waiting")"
   case "$waiting" in
     ticket|owner) ;;
     *) misuse "--waiting is required: ticket (ready to file) or owner (a call only the owner can make)" ;;
   esac
 
   # "This backlog" was the action most records carried, and it names no
-  # destination: a reader cannot file it and cannot tell what to ask.
-  local action_norm
-  action_norm="$(printf '%s' "$action" | tr '[:upper:]' '[:lower:]' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:].]*$//')"
-  case "$action_norm" in
+  # destination: a reader cannot file it and cannot tell what to ask. A guard on
+  # the known phrase, not the rule — the skill says what an action must name.
+  case "$(norm "$action")" in
     "this backlog"|"the backlog"|backlog)
       misuse "--action names only the backlog; say what the ticket is, or for --waiting owner, the question the owner decides" ;;
   esac
@@ -250,9 +253,7 @@ append() {
   # ones that do. Exit 0 and print, never refuse: a usage error invites the
   # producer to retry until something is written, and the printed line rides the
   # "report the line it prints" rule every producer already follows.
-  local who_norm
-  who_norm="$(printf '%s' "$who" | tr '[:upper:]' '[:lower:]' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
-  if [ "$who_norm" = nobody ]; then
+  if [ "$(norm "$who")" = nobody ]; then
     printf 'dropped — %s: affects nobody (%s)\n' "$claim" "$affected"
     return 0
   fi

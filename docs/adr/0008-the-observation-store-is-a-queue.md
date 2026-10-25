@@ -10,7 +10,8 @@ an agent's call sat waiting on nobody.
 
 So the store is the project's queue. Every record says what it waits on:
 `ticket`, ready to file, carrying the decision the recording pass made; or
-`owner`, a product call or one that contradicts an ADR, carrying the question.
+`owner`, a product call, one that contradicts an ADR, or one the code cannot
+settle, carrying the question.
 Any call an agent could make is made when the record is written. `observe.sh`
 refuses a record that says neither, or whose action names only the backlog.
 
