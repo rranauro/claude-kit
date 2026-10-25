@@ -121,6 +121,16 @@ case "$body" in *site_collections*) bad "drops the old items" ;; *) ok "drops th
 assert_eq "${body%%<!-- kit-review-left -->*}" "${first%%<!-- kit-review-left -->*}" "text before the block is unchanged"
 assert_eq "${body#*<!-- /kit-review-left -->}" "${first#*<!-- /kit-review-left -->}" "text after the block is unchanged"
 
+new_sandbox "the same items again write nothing"
+held_body > "$BODY"
+"$SCRIPT" 7 "$SANDBOX/items.md" >/dev/null
+cp "$OUT" "$BODY"
+: > "$OUT"
+out="$("$SCRIPT" 7 "$SANDBOX/items.md")"; code=$?
+assert_eq "$code" 0 "exits 0"
+assert_eq "$(cat "$OUT")" "" "edits nothing"
+assert_has "$out" "already carry" "says so"
+
 new_sandbox "a body with no Instructions gets one at the end"
 printf '%s' '## Gist
 

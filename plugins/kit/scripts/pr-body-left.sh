@@ -13,22 +13,12 @@ set -uo pipefail
 # bytes that move are the block's own, and `tests/pr-body-left.sh` holds it to
 # that.
 
-usage() {
-  echo "usage: pr-body-left.sh <pr> <items-file> [--repo owner/name]" >&2
+if [ $# -ne 2 ]; then
+  echo "usage: pr-body-left.sh <pr> <items-file>" >&2
   echo "  <items-file> holds the numbered items, already written as Markdown." >&2
   exit 2
-}
-
-[ $# -ge 2 ] || usage
+fi
 pr="$1" items="$2"
-shift 2
-repo=()
-while [ $# -gt 0 ]; do
-  case "$1" in
-    --repo) [ $# -ge 2 ] || usage; repo=(--repo "$2"); shift 2 ;;
-    *) usage ;;
-  esac
-done
 
 # An empty block would replace a previous round's items with nothing, which
 # reads to the person as "nothing left to judge" when this round simply had no
@@ -41,12 +31,12 @@ fi
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
-gh pr view "$pr" ${repo[@]+"${repo[@]}"} --json body --jq .body > "$tmp/body" || {
+gh pr view "$pr" --json body --jq .body > "$tmp/body" || {
   echo "pr-body-left: could not read PR #$pr's body" >&2
   exit 1
 }
 
-python3 - "$tmp/body" "$items" "$tmp/new" <<'PY' || exit 1
+python3 - "$tmp/body" "$items" "$tmp/new" <<'PY'
 import re, sys
 
 body_path, items_path, out_path = sys.argv[1:4]
@@ -72,19 +62,25 @@ else:
     else:
         level = len(heading.group(1))
         nxt = re.compile(r"^#{1,%d} " % level, re.M).search(body, heading.end())
-        if nxt is None:
-            new = body + "\n\n" + block
-        else:
-            # The section's own trailing blank lines stay where they are, ahead
-            # of the next heading, so nothing the author wrote is re-spaced.
-            section = body[:nxt.start()].rstrip("\n")
-            gap = body[len(section):nxt.start()]
-            new = section + "\n\n" + block + gap + body[nxt.start():]
+        end = nxt.start() if nxt else len(body)
+        # The section's own trailing blank lines stay where they are, ahead of
+        # the next heading, so nothing the author wrote is re-spaced.
+        section = body[:end].rstrip("\n")
+        new = section + "\n\n" + block + body[len(section):]
 
 open(out_path, "w").write(new)
+# A round re-run over the same findings writes nothing, so the PR's history
+# does not gain an edit that changed no byte.
+sys.exit(3 if new == body else 0)
 PY
+status=$?
+if [ "$status" -eq 3 ]; then
+  echo "left: PR #$pr's Instructions already carry these items"
+  exit 0
+fi
+[ "$status" -eq 0 ] || exit 1
 
-gh pr edit "$pr" ${repo[@]+"${repo[@]}"} --body-file "$tmp/new" >/dev/null || {
+gh pr edit "$pr" --body-file "$tmp/new" >/dev/null || {
   echo "pr-body-left: could not write PR #$pr's body" >&2
   exit 1
 }
