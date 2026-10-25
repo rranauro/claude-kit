@@ -274,6 +274,24 @@ done
 assert_eq "$(lines)" "0" "nothing half-formed is written"
 end_sandbox
 
+# `timeout` is coreutils and macOS lacks it, so a hang is bounded by hand: a
+# looping parser is killed after five seconds and reads as exit 143, not 2.
+bounded() {
+  "$@" & local pid=$!
+  ( sleep 5; kill "$pid" 2>/dev/null ) & local dog=$!
+  wait "$pid"; local st=$?
+  kill "$dog" 2>/dev/null; wait "$dog" 2>/dev/null
+  return "$st"
+}
+
+new_sandbox "a flag given last with no value is refused, not looped on"
+for flag in by who affected issue; do
+  out="$( cd "$MAIN" && bounded "$SCRIPT" --claim c --"$flag" 2>&1 )"
+  assert_eq "$?" 2 "--$flag with no value is a usage error"
+  assert_has "$out" "--$flag" "and the message names the flag"
+done
+end_sandbox
+
 # ========================================================================
 # AC · A finding that affects nobody adds nothing to the store, and the
 #      pass's report says it was dropped and why.

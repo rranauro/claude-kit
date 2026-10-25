@@ -154,6 +154,9 @@ PY
 append() {
   local by="" claim="" check="" surfaced="" action="" who="" affected="" issue="" pr=""
   while [ $# -gt 0 ]; do
+    # Every flag takes a value, and `shift 2` with one argument left shifts
+    # nothing, so a trailing flag would spin here forever.
+    case "$1" in --*) [ $# -ge 2 ] || misuse "$1 needs a value" ;; esac
     case "$1" in
       --by)       by="${2-}";       shift 2 ;;
       --claim)    claim="${2-}";    shift 2 ;;
