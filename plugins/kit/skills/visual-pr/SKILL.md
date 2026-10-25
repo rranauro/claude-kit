@@ -283,11 +283,20 @@ own branch is one the pass could have written to authorize itself.
      anything, and `gh` cannot upload one. An image no reviewer can see is not evidence.
 
    A line that is missing allows nothing.
-3. **Neither: the kit's default.** Capture in a separate headless browser the pass
-   launches, on pages that need no sign-in, and upload through the person's browser when
-   one is connected. A page behind a sign-in is "Not captured — no sign-in rule". With
-   no browser to upload through, write "Not captured — no browser to upload through" and
-   name the local image paths so the person can drop them in. Attended, also show the
+3. **Neither: the kit's default.** Capture each page that needs no sign-in with
+   `${CLAUDE_PLUGIN_ROOT}/scripts/capture-page.sh <url> <out.png>`, run from the
+   worktree, writing to the output location below — never into the worktree. It drives
+   headless Chrome and prints the image path, or a `Not captured — <why>` line to write
+   as given, followed by what the page would have shown. It boots nothing, and it
+   refuses a server that is not serving this worktree, since a server already running
+   is usually the main checkout's and its page shows the base branch. Take the URL from
+   the project's own dev-server config, or a `file://` path to a page in the worktree;
+   with neither, "Not captured — no server URL for this project". A page behind a
+   sign-in is "Not captured — no sign-in rule".
+
+   Upload through the person's browser when one is connected. With no browser to upload
+   through, write "Not captured — no browser to upload through" and name the local image
+   paths so the person can drop them in. Attended, also show the
    person the `## Screenshot capture` lines, or point them at a `pr-screenshots` skill,
    for the base branch in a PR of its own. Something written on this branch would not
    count for this run.
