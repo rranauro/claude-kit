@@ -40,33 +40,62 @@ python3 - "$tmp/body" "$items" "$tmp/new" <<'PY'
 import re, sys
 
 body_path, items_path, out_path = sys.argv[1:4]
-body = open(body_path).read()
+# newline="" keeps a body written in GitHub's editor CRLF; text mode would
+# rewrite every line of it.
+body = open(body_path, newline="").read()
 # `--jq` adds one newline the body itself does not carry.
 if body.endswith("\n"):
     body = body[:-1]
-items = open(items_path).read().strip("\n")
+nl = "\r\n" if "\r\n" in body else "\n"
+items = nl.join(open(items_path).read().strip("\n").splitlines())
 
 OPEN, CLOSE = "<!-- kit-review-left -->", "<!-- /kit-review-left -->"
-block = f"{OPEN}\n**Left for you by the review round** — each says what to look at and what settles it:\n\n{items}\n{CLOSE}"
+block = nl.join([OPEN, "**Left for you by the review round** — each says what to look at and what settles it:", "", items, CLOSE])
 
-start = body.find(OPEN)
-if start != -1:
-    end = body.find(CLOSE, start)
-    if end == -1:
-        sys.exit("pr-body-left: the body opens a kit-review-left block it never closes; not editing it")
-    new = body[:start] + block + body[end + len(CLOSE):]
-else:
-    heading = re.search(r"^(#{1,6}) Instructions[ \t]*$", body, re.M)
-    if heading is None:
-        new = body + "\n\n## Instructions\n\n" + block
+# Only lines outside code fences count as headings or markers. A Gist showing
+# the block as an example, or a `# comment` in a fenced command, is the
+# author's text, not the section's edge.
+lines = body.splitlines(keepends=True)
+offsets = [0]
+for line in lines:
+    offsets.append(offsets[-1] + len(line))
+live, fence = [], None
+for i, line in enumerate(lines):
+    text = line.rstrip("\r\n")
+    m = re.match(r" {0,3}(`{3,}|~{3,})", text)
+    if fence:
+        if m and m.group(1)[0] == fence[0] and len(m.group(1)) >= len(fence) and not text.strip(m.group(1)[0] + " \t"):
+            fence = None
+    elif m:
+        fence = m.group(1)
     else:
-        level = len(heading.group(1))
-        nxt = re.compile(r"^#{1,%d} " % level, re.M).search(body, heading.end())
-        end = nxt.start() if nxt else len(body)
+        live.append((i, text))
+
+headings = ((n, re.fullmatch(r"(#{1,6}) Instructions[ \t]*", t)) for n, (i, t) in enumerate(live))
+h, m = next(((n, m) for n, m in headings if m), (None, None))
+if m is None:
+    new = body + nl + nl + "## Instructions" + nl + nl + block
+else:
+    edge = re.compile(r"#{1,%d} " % len(m.group(1)))
+    section = live[h + 1:]
+    nxt = next((n for n, (i, t) in enumerate(section) if edge.match(t)), None)
+    if nxt is not None:
+        end, section = offsets[section[nxt][0]], section[:nxt]
+    else:
+        end = len(body)
+    opened = next((n for n, (i, t) in enumerate(section) if t.strip() == OPEN), None)
+    if opened is not None:
+        closed = next((section[n] for n in range(opened + 1, len(section)) if section[n][1].strip() == CLOSE), None)
+        if closed is None:
+            sys.exit("pr-body-left: Instructions opens a kit-review-left block it never closes; not editing it")
+        start = offsets[section[opened][0]]
+        stop = offsets[closed[0]] + len(closed[1])
+        new = body[:start] + block + body[stop:]
+    else:
         # The section's own trailing blank lines stay where they are, ahead of
         # the next heading, so nothing the author wrote is re-spaced.
-        section = body[:end].rstrip("\n")
-        new = section + "\n\n" + block + body[len(section):]
+        kept = body[:end].rstrip("\r\n")
+        new = kept + nl + nl + block + body[len(kept):]
 
 open(out_path, "w").write(new)
 # A round re-run over the same findings writes nothing, so the PR's history

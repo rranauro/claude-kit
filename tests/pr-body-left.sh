@@ -167,6 +167,51 @@ x
 
 ' "the existing body is unchanged"
 
+new_sandbox "a CRLF body keeps its line endings"
+printf '## Gist\r\n\r\nx\r\n\r\n## Instructions\r\n\r\n1. Open it.\r\n\r\n<!-- kit-review-left -->\r\nold\r\n<!-- /kit-review-left -->\r\n\r\n## Reversibility\r\n\r\n**Undo:** easy' > "$BODY"
+"$SCRIPT" 7 "$SANDBOX/items.md" >/dev/null
+assert_eq "$(head -c 52 "$OUT" | od -c | head -3)" "$(head -c 52 "$BODY" | od -c | head -3)" "text before the block is byte-identical"
+assert_eq "$(tail -c 41 "$OUT" | od -c)" "$(tail -c 41 "$BODY" | od -c)" "text after the block is byte-identical"
+assert_eq "$(grep -c $'[^\r]$' "$OUT")" "1" "every line but the unterminated last ends CRLF"
+
+new_sandbox "markers and headings inside fences are not the section"
+printf '%s' '## Gist
+
+```text
+<!-- kit-review-left -->
+example
+<!-- /kit-review-left -->
+```
+
+## Instructions
+
+```sh
+# Create the record
+make it
+```
+
+## Reversibility
+
+easy' > "$BODY"
+"$SCRIPT" 7 "$SANDBOX/items.md" >/dev/null
+body="$(cat "$OUT")"
+assert_eq "${body%%## Instructions*}" '## Gist
+
+```text
+<!-- kit-review-left -->
+example
+<!-- /kit-review-left -->
+```
+
+' "the fenced example in the Gist is unchanged"
+assert_has "$body" '```
+
+<!-- kit-review-left -->
+**Left' "the block lands after the fenced command, not inside it"
+assert_has "$body" '<!-- /kit-review-left -->
+
+## Reversibility' "and before the next real heading"
+
 new_sandbox "no items is refused and writes nothing"
 held_body > "$BODY"
 : > "$SANDBOX/items.md"
