@@ -97,6 +97,16 @@ For each item, in order:
    - 🟢 **Optional** AND **minor** → apply the fix.
    - 🟢 **Optional** AND **non-minor** → skip (noted in summary).
    - ⚪ **Ignore** → skip (noted in summary).
+   - **Left for the person** → on a held PR only, and ahead of every rule above.
+     A finding gets it when the code cannot settle it: it needs an in-app look, a
+     wording or product call, or an owner's decision. No fix is applied —
+     applying one is making the call the PR is held for. Step 7.4 writes it into
+     the PR body.
+
+   **A PR is held** when Step 1's labels carry `kit-hold`, or when this round
+   escalates under `## Unattended`'s conditions. Everywhere else the rules above
+   apply unchanged: an unheld PR's body has no reader before it merges, so a
+   finding written there reaches nobody.
 
 **Step 4 — (removed — no per-item user gate):**
 All items are processed without stopping for approval. The summary in Step 5 is the user's review point.
@@ -115,12 +125,13 @@ All items are processed without stopping for approval. The summary in Step 5 is 
   - <path>:<line> [Optional / non-minor] (claude) <one-line reasoning> — skipped
   - <path>:<line> [Ignore] (claude) <one-line reasoning> — false positive, no change
   - <path>:<line> [Should fix] (shape) <one-line reasoning> — auto-fixed
+  - <path>:<line> [Should fix] (copilot) <one-line reasoning> — left for the person — in the PR's Instructions
   - top-level (copilot-review) [Optional / non-minor] <one-line reasoning> — skipped
   ```
 
   Use the four categories from Step 3.3, add the minor/non-minor scope label, and tag each line with the source(s). **Include skipped items too** — the durable record of "we considered this and decided not to act" is the point. If Step 6 delegates to `/kit:commit`, pass this body as the intended message rather than letting `/kit:commit` draft its own.
 - If no fixes were made (all comments skipped/ignored), do NOT create a commit — there is nothing to push. The summary still becomes the record at Step 7.5: a round that skipped everything is closed, and a PR cannot otherwise show the difference between that and a round nobody ran.
-- **Report the summary back to your caller in a form it can act on**, naming explicitly whether any **non-minor** item was skipped. That is what decides whether the PR gets pinned — `kit-pinned` plus an observation carrying the discussion, per Step 7.5 — and the caller cannot recover it from prose counts. It does not decide the merge: a pinned PR still merges.
+- **Report the summary back to your caller in a form it can act on**, naming explicitly whether any **non-minor** item was skipped and how many were left for the person. The first is what decides whether the PR gets pinned — `kit-pinned` plus an observation carrying the discussion, per Step 7.5 — and the caller cannot recover it from prose counts. It does not decide the merge: a pinned PR still merges.
 
 **Step 6 — Quality gates (if any fixes were made):**
 - Invoke `kit:commit` through the Skill tool
@@ -157,6 +168,31 @@ All items are processed without stopping for approval. The summary in Step 5 is 
   permission grant or a laptop's missing runtime denied this pass.
 - If the push itself is rejected, that is its own escalation reason below, and
   the diff belongs in the comment instead — it is the only copy left.
+
+**Step 7.4 · `leave-for-the-person` — Put what is left where the person looks:**
+
+Skip it when Step 3 left nothing for the person. Otherwise write each finding
+as one numbered item — what to look at, then what would settle it — into a
+file, and run:
+
+```
+${CLAUDE_PLUGIN_ROOT}/scripts/pr-body-left.sh <N> <items-file>
+```
+
+The person holding the PR reads its body, and the Instructions section is where
+they look for what to check; a summary comment or an observation sits where
+they do not. The script owns the splice — the block's marker, where it goes, a
+later round's replacing it in place — and leaves every byte outside it as it
+was. Do not edit the body any other way.
+
+**The body is these findings' record, so they get no observation and no
+`kit-pinned`.** `kit-pinned` names a PR that merged carrying an open question;
+a held PR's question is answered before it merges.
+
+**A write that fails loses them unless it is said.** Report what the script
+printed, and in Step 7.5's summary list each finding in full under `left for
+the person — not written to the PR body`, so the round summary carries them
+instead.
 
 **Step 7.5 · `close-the-round` — Record that the round is closed:**
 
@@ -257,7 +293,8 @@ sees `kit-hold`, closes the round again, reports it closed and held, and does no
 merge. This pass never removes the label — not even the one it set.
 
 **A skipped non-minor finding is not an escalation, and takes a different
-write.** It is a discussion to have later, not a merge to stop: the pass had a
+write.** A finding left for the person is not skipped: Step 7.4 recorded it, and
+nothing below applies to it. It is a discussion to have later, not a merge to stop: the pass had a
 reason for skipping, a subsequent pass over the same file often handles it
 transparently, and holding the PR over it strands finished work behind a
 question nobody has scheduled. Record it instead, and let the merge proceed:
