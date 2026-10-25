@@ -77,6 +77,17 @@ print(v if isinstance(v, str) else json.dumps(v))
 PY
 }
 
+set_fields() { # record-index(1-based) key value [key value ...]
+  python3 - "$STORE" "$@" <<'PY'
+import json, sys
+path, idx, kv = sys.argv[1], int(sys.argv[2]) - 1, sys.argv[3:]
+recs = [json.loads(l) for l in open(path) if l.strip()]
+for k, v in zip(kv[::2], kv[1::2]):
+    recs[idx][k] = v
+open(path, "w").write("".join(json.dumps(r) + "\n" for r in recs))
+PY
+}
+
 # --- sandbox ------------------------------------------------------------
 
 new_sandbox() {
@@ -492,14 +503,7 @@ new_sandbox "recheck reports a check that cannot run as unrunnable, not holding"
 record "$MAIN" >/dev/null
 # A record written before the refusal: its witness is already the error, so a
 # plain diff would read it as holding forever.
-python3 - "$STORE" <<'PY2'
-import json, sys
-p = sys.argv[1]
-r = json.loads(open(p).readline())
-r["check"] = "rg -c hello README.md"
-r["witness"] = "bash: rg: command not found"
-open(p, "w").write(json.dumps(r) + "\n")
-PY2
+set_fields 1 check "rg -c hello README.md" witness "bash: rg: command not found"
 out="$( (cd "$MAIN" && PATH="$(no_rg_path)" "$SCRIPT" recheck) 2>&1 )"
 assert_has "$out" "unrunnable" "a check that cannot run is reported as unrunnable"
 assert_lacks "$out" "holds" "and never as holding"
@@ -570,13 +574,7 @@ end_sandbox
 new_sandbox "rewitness leaves a record alone when its check cannot run"
 record "$MAIN" --check "cat README.md" >/dev/null
 before="$(field 1 witness)"
-python3 - "$STORE" <<'PY2'
-import json, sys
-p = sys.argv[1]
-r = json.loads(open(p).readline())
-r["check"] = "nosuchcmd_318 README.md"
-open(p, "w").write(json.dumps(r) + "\n")
-PY2
+set_fields 1 check "nosuchcmd_318 README.md"
 out="$( (cd "$MAIN" && "$SCRIPT" rewitness "$(field 1 id)") 2>&1 )"
 assert_has "$out" "skipped" "a check that cannot run is skipped"
 assert_has "$out" "nosuchcmd_318" "naming the command"

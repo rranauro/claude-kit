@@ -67,18 +67,21 @@ count() { grep -c . "$STORE" 2>/dev/null || echo 0; }
 # subshells included, so it names exactly what was missing. Matching the phrase
 # in the output instead would refuse a check that legitimately greps for it.
 # The hook arrived in bash 4, and macOS's /bin/bash is 3.2, where it silently
-# never fires — so an older bash is refused rather than trusted.
-MISSING="$(mktemp "${TMPDIR:-/tmp}/observe-missing.XXXXXX")"
-trap 'rm -f "$MISSING"' EXIT
-
-require_hook() {
+# never fires — so an older bash is refused rather than trusted. Dispatch calls
+# this once for every mode that runs a check, so no caller can forget it.
+MISSING=""
+init_checks() {
   local major
   major="$(bash -c 'printf %s "${BASH_VERSINFO[0]}"' 2>/dev/null)"
   [ "${major:-0}" -ge 4 ] 2>/dev/null \
     || die "the bash that runs checks is ${major:-unknown}.x, which cannot tell a missing command from a check that ran; put bash 4 or later ahead of it on PATH (macOS: brew install bash)"
+  MISSING="$(mktemp "${TMPDIR:-/tmp}/observe-missing.XXXXXX")"
+  trap 'rm -f "$MISSING"' EXIT
 }
 
-run_in() { # dir check -> output; missing commands land in $MISSING
+# Prints the check's output, and fails when the check named a command bash could
+# not find — `missing` then says which.
+run_in() { # dir check
   : > "$MISSING"
   (cd "$1" && OBS_MISSING="$MISSING" bash -c '
 command_not_found_handle() {
@@ -87,6 +90,7 @@ command_not_found_handle() {
   return 127
 }
 '"$2" 2>&1)
+  [ ! -s "$MISSING" ]
 }
 
 missing() { sort -u "$MISSING" | paste -sd, - | sed 's/,/, /g'; }
@@ -243,10 +247,8 @@ append() {
   # about code the pass's own branch added, which main does not have until it merges.
   # (Running it in main wrote an empty witness for every such claim.) Recheck runs it
   # in main later, so the record reads as moved until the PR lands, then holds.
-  require_hook
   local witness
-  witness="$(run_in "$(git rev-parse --show-toplevel)" "$check")"
-  [ ! -s "$MISSING" ] || misuse "--check runs $(missing), which a plain bash -c cannot find (a session's shell function is not a command there); write it with commands that are, such as grep -rn for rg"
+  witness="$(run_in "$(git rev-parse --show-toplevel)" "$check")" || misuse "--check runs $(missing), which a plain bash -c cannot find (a session's shell function is not a command there); write it with commands that are, such as grep -rn for rg"
 
   case "$witness" in
     *"No such file or directory"*) misuse "--check reads a path that does not exist here; a witness that is already an error can never read as gone later" ;;
@@ -332,13 +334,11 @@ PY
 # has moved past means the observation was either acted on or was wrong, and
 # either way it can die without anyone adjudicating it.
 do_recheck() {
-  require_hook
   local any=0 id claim check was now
   while IFS= read -r -d '' id    && IFS= read -r -d '' claim \
      && IFS= read -r -d '' check && IFS= read -r -d '' was; do
     any=1
-    now="$(run_check "$check")"
-    if [ -s "$MISSING" ]; then
+    if ! now="$(run_check "$check")"; then
       # Checked before the diff: a record written before the refusal carries the
       # error as its witness, and would otherwise read as holding forever.
       printf 'unrunnable  %s  %s\n' "$id" "$claim"
@@ -369,13 +369,11 @@ do_recheck() {
 do_rewitness() {
   [ $# -gt 0 ] || misuse "rewitness needs at least one slug"
   [ -f "$STORE" ] || die "no observations in $STORE"
-  require_hook
   local id claim check was now pairs n=0 skipped=0
   pairs="$(mktemp "$STORE.pairs.XXXXXX")"
   while IFS= read -r -d '' id    && IFS= read -r -d '' claim \
      && IFS= read -r -d '' check && IFS= read -r -d '' was; do
-    now="$(run_check "$check")"
-    if [ -s "$MISSING" ]; then
+    if ! now="$(run_check "$check")"; then
       skipped=$((skipped + 1)); printf 'skipped %s — check runs %s, which cannot be found\n' "$id" "$(missing)" >&2
     else
       printf '%s\0%s\0' "$id" "$now" >> "$pairs"; n=$((n + 1))
@@ -414,9 +412,9 @@ do_drop() {
 case "${1-}" in
   "")      misuse "nothing to do" ;;
   list)    readers list ;;
-  recheck) shift; do_recheck "$@" ;;
-  rewitness) shift; do_rewitness "$@" ;;
+  recheck) shift; init_checks; do_recheck "$@" ;;
+  rewitness) shift; init_checks; do_rewitness "$@" ;;
   drop)    shift; do_drop "$@" ;;
   -h|--help) usage; exit 0 ;;
-  *)       append "$@" ;;
+  *)       init_checks; append "$@" ;;
 esac

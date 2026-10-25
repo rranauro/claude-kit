@@ -47,15 +47,15 @@ home"* becomes a statement about a named file — and it is worth paying.
 **`check` prints something that differs between a true and a false claim.** An
 empty answer is accepted, since an absence is a valid witness, but prefer one
 that prints either way: `grep -c`, or `... && echo yes || echo no`, over
-`grep -n` of a line you expect to move.
+`grep -n` of a line you expect to move. Line-number prefixes are ignored at
+recheck, but only text is compared.
 
 **`check` runs under a plain `bash -c`, with no profile and no session.** A
 command that resolves only in your shell — Claude Code's `rg` is a function from
 its snapshot — does not exist there, so the record is refused and the message
 names the command. Write it with `grep -rn` instead. The script needs bash 4 or
 later on `PATH` to tell a missing command from one that ran, and refuses to run a
-check without it. Line-number prefixes are ignored at recheck, but only text is compared.
-Write paths relative to the repo root; a path under `.claude/worktrees/` is
+check without it. Write paths relative to the repo root; a path under `.claude/worktrees/` is
 refused, since that directory is gone once the ticket merges.
 
 **`check` is cheap, local and read-only.** No network, no test suite. Triage
