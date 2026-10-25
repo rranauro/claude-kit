@@ -61,10 +61,8 @@ a strong one that is skipped.
 **`who` and `affected` are the finding stated as someone's wrong result.** Name
 the role, then what they do and what they get instead of what they expect. An
 agent counts: a pass misled by a doc that describes behaviour no code implements
-gets a wrong result as surely as a visitor does. A finding with nobody to name
-is dropped rather than recorded — pass `--who nobody` with `--affected` saying
-why, and the script writes nothing and prints the reason. Records written before
-these fields existed lack them; triage reads them as it always has.
+gets a wrong result as surely as a visitor does. Nobody is an answer too —
+*What is not an observation* says what it does.
 
 **`surfaced` is the expensive field.** Everything else can be re-derived from the
 code; what the pass was doing when this became visible cannot. Write the thread,
@@ -118,7 +116,8 @@ on the PR. `docs/tending-on-a-runner.md` owns that case.
 - **A finding that affects nobody.** A missing index on a 44-row table, a fix for
   a layout no theme uses, a log line nobody reads differently: each is true and
   each is re-checked at every triage, where it buries the findings someone pays
-  for. `--who nobody` drops it and reports the drop.
+  for. Pass `--who nobody` with `--affected` saying why: the script writes
+  nothing and prints the drop, which is the line to report.
 - **A ticket.** Where the problem and the desired outcome are both already clear,
   `kit:writing-tickets` applies and the backlog is the right drawer. An
   observation is for what is real but not yet stateable that way.
