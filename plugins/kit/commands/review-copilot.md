@@ -88,12 +88,15 @@ For each item, in order:
 4. **Ask who it affects** — the *Affected* test in `CONTEXT.md`. **Nobody**
    drops it.
 5. **Ask whether it belongs to this PR** — the *Belongs* test in `CONTEXT.md`.
-   Read the PR's diff once, before the first item (`git diff
-   origin/<baseRefName>...HEAD`); a finding inside a hunk usually settles from
-   it. Where it does not — the finding sits outside every hunk, or turns on
+   Before the first item, `git fetch origin <baseRefName>` — the caller's
+   checkout may hold only the PR head, or a stale base — then read the PR's diff
+   once (`git diff origin/<baseRefName>...HEAD`); a finding inside a hunk
+   usually settles from it. Where it does not — the finding sits outside every hunk, or turns on
    reachability or a widened exposure — read the base branch's version of the
    code it names, `git show origin/<baseRefName>:<path>`. Never run anything to
-   decide it.
+   decide it. **A base that cannot be fetched or compared is a gate that could
+   not run** (Step 6): say so in the summary rather than guessing which findings
+   belong.
 6. **Explain your reasoning** — briefly: the problem, the category, who it
    affects, and whether it belongs. When reviewers agree on the same
    `(path, line)`, that's a stronger signal — lean toward acting on overlap
@@ -144,7 +147,7 @@ All items are processed without stopping for approval. The summary in Step 5 is 
   Use the categories and outcomes from Step 3, and tag each line with the source(s). **Include every finding, whatever its outcome** — the durable record of "we considered this and decided not to act" is the point. Write a finding outside the diff whole: where, who it affects, what they get. If Step 6 delegates to `/kit:commit`, pass this body as the intended message rather than letting `/kit:commit` draft its own.
 - **The summary carries these per-item lines too, commit or not.** It is what Step 7.5 posts, and the round summary on the PR is where a finding outside the diff is named — a commit body alone leaves it in history nobody holding the PR reads.
 - If no fixes were made, do NOT create a commit — there is nothing to push. The summary still becomes the record at Step 7.5: a round that fixed nothing is closed, and a PR cannot otherwise show the difference between that and a round nobody ran.
-- **Report the summary back to your caller in a form it can act on**, naming explicitly whether any finding was outside the diff, and whether any was left for the person on an unheld PR. Either one pins the PR, per Step 7.5, and the caller cannot recover it from prose counts. It does not decide the merge: a pinned PR still merges.
+- **Report the summary back to your caller in a form it can act on**, naming explicitly whether any finding ended `outside the diff — named here`, and whether any was left for the person on an unheld PR. Either outcome pins the PR — a finding outside the diff that the minor-fix exception resolved ends `fixed` and pins nothing, per Step 7.5, and the caller cannot recover it from prose counts. It does not decide the merge: a pinned PR still merges.
 
 **Step 6 — Quality gates (if any fixes were made):**
 - Invoke `kit:commit` through the Skill tool
@@ -305,8 +308,10 @@ working rather than the pass tripping over itself. `## Unattended`'s hold check
 sees `kit-hold`, closes the round again, reports it closed and held, and does not
 merge. This pass never removes the label — not even the one it set.
 
-**A finding outside the diff is not an escalation, and takes a different
-write** — and so does one left for the person on an unheld PR. Each is a
+**A finding that ended `outside the diff — named here` is not an escalation,
+and takes a different write** — and so does one left for the person on an
+unheld PR. One the minor-fix exception resolved ended `fixed`, leaves no
+question open, and takes neither. Each is a
 question to answer later, not a merge to stop: holding the PR over it strands
 finished work behind a question nobody has scheduled. The summary comment above
 already names it, so mark the PR and let the merge proceed:
