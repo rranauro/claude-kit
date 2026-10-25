@@ -102,14 +102,14 @@ an open PR it also holds the branch's worktree, since the walkthrough runs in it
 _Avoid_: hold, do-not-merge
 
 **kit-pinned**:
-The PR merged carrying a question nobody has answered — a review finding real
-enough to record that the pass had a reason to skip. Written by the review pass
-alongside an observation holding the discussion, or by the hand-off beside an
-uncontested shape review, which is its own record — and named for the PR so the
-diff and the round summary are one lookup away. Blocks nothing: it exists so the
+The PR merged carrying a question nobody has answered — a real review finding
+outside the diff, or one left for the person on an unheld PR. Written by the
+review pass beside the round summary that names it, or by the hand-off beside an
+uncontested shape review; either comment is its own record, and the label is
+named for the PR so the diff is one lookup away. Blocks nothing: it exists so the
 merged PRs with an open question can be listed, which a store on one machine
 cannot do. Distinct from **kit-hold**, which stops a merge because something
-could not be established; an observation stops nothing because everything was.
+could not be established; a pin stops nothing because everything was.
 _Avoid_: deferred, backlog, todo, follow-up
 
 ### Writing a criterion
