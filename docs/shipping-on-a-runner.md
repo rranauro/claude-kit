@@ -20,9 +20,10 @@ here sleeps between one ticket finishing and the next one starting.
 
 ## `--bg` keeps the process boundary and changes only the launcher
 
-With `--bg`, each ticket runs as a `claude --bg` session, not a `claude -p`
+With `--bg`, every call runs as a `claude --bg` session, not a `claude -p`
 call: an interactive session started in the background, billed the way any
-interactive session is. The runner still blocks on it, polling
+interactive session is rather than as API usage, and one the operator can
+`claude attach` to while it works. The runner still blocks on it, polling
 `claude agents --json` until the session stops working, so the pacing and the
 fresh-context-per-ticket guarantee above are unchanged.
 
@@ -50,8 +51,13 @@ Two things differ, and both are why the flag exists rather than a swap:
   read as asking for something. Nobody will answer, so the runner treats both as
   finished, reads the outcome from GitHub, and stops the session.
 
-The `/kit:list` call stays on `-p` in either mode: its offer block is read from
-stdout, and a background session's log is a terminal recording.
+**A background session's answer comes back through a file, never its output.**
+What it prints is a terminal recording, and its transcript's layout is Claude
+Code's own and can change under the runner with any update. So the runner names
+a file in a reply directory it creates, passes that directory with `--add-dir`,
+and reads the file once the session stops: `/kit:list --offer-file` writes its
+offer block there, and the same `offer_line` reads it. A file not written is the
+unreadable reply below, not an empty backlog.
 
 ## The startable-ticket list has to be machine-readable, not ship-ticket's prose
 
@@ -102,6 +108,38 @@ in the middle of a dependency chain the run was about to drain. The runner tells
 the two cases apart by what it's still waiting on: if any PR it opened this
 run is still open, it polls and tries again: if none are, the epic is
 actually done.
+
+## `--observations` feeds a drained label one record at a time
+
+With `--observations` (which implies `--bg`), a label with nothing startable is
+fed from the observation store before the run polls or ends. One record is
+filed, its issue is shipped, and only then is the next one filed. That order is
+the point: filing every ready record at once is the backlog flood ADR 0008
+rejects, and filing one ahead of the work leaves the tracker holding the queue.
+
+- **What may be filed is decided by `observe.sh fileable`**, not by a model: a
+  record waiting on a ticket whose check still gives its recorded answer, oldest
+  first. A record waiting on the owner, one written before `waiting` existed,
+  and one whose check has moved are the owner's triage and are never touched.
+- **Filing is its own session, under its own grant.** `ship-settings.json`
+  denies `gh issue create` to every ship pass, so `/kit:observe file` runs under
+  `file-settings.json`, which can file one issue and write its reply and nothing
+  else. It may decline a record an unattended run would foreseeably park. The
+  record then stays in the store unchanged, and the run skips it until it ends.
+- **The filed issue is shipped by number**, never offered to the sweep. It
+  carries no `ready-for-agent` and no marker —
+  `docs/adr/0009-a-filed-observation-is-shipped-by-number.md` says why.
+- **The runner drops the record, and only once the issue has a PR or a park.**
+  No session drops one. A ship result the run cannot trace would leave an issue
+  nobody is carrying, so the runner parks it itself, in `kit:park`'s shape,
+  before dropping the record. If that park cannot be written, the record stays.
+- **A filed record counts toward `--max`; a decline does not.** The summary
+  adds what was declined and why, and how many records are left.
+
+A run killed between filing and dropping leaves both the issue and the record,
+and the next run files the record again. That is accepted rather than guarded:
+both are visible to the operator, and a crash is the case this runner already
+leaves to the operator everywhere else.
 
 ## A silently-unresolved plugin command looks exactly like a clean run
 

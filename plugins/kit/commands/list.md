@@ -7,6 +7,7 @@ license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/cla
 Report the open tickets a sweep would actually start.
 
 **Arguments:** `$ARGUMENTS` — one or more labels. With none, the whole backlog.
+A dash-prefixed `--offer-file <path>` is not a label: Step 3 says what it does.
 
 The issue list in a browser shows every open ticket under a label. It cannot say
 which of them an agent may pick up, so working that out means opening tickets one
@@ -77,3 +78,9 @@ typo. With no labels given, the block is present and holds no lines.
 line and no other part of this reply, so a block you leave out is a reply it
 stops on rather than an empty backlog — `docs/shipping-on-a-runner.md` carries
 why it is built that way.
+
+**Given `--offer-file <path>`, also write the block to that path** with the
+Write tool — the two marker lines and every line between them, exactly as
+emitted, and nothing else. A background session has no output a caller can
+read, so the file is the whole reply; a file holding prose around the block, or
+not written at all, is a reply the caller stops on.

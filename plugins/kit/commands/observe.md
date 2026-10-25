@@ -8,7 +8,9 @@ Record what just surfaced as a checkable observation — and review what has
 accumulated when you are ready to.
 
 **Arguments:** `$ARGUMENTS` — bare, records the thing that just came up. `list`
-reports what is in the store. `triage` walks it and clears it down.
+reports what is in the store. `triage` walks it and clears it down. `file <slug>
+--reply <path>` files one record as an issue, unattended, for the runner that
+drains the store.
 
 Invoke `observations` via the Skill tool first. It owns the record shape, the
 store's location and the triage protocol; this command is the human entry point
@@ -62,3 +64,62 @@ before `${CLAUDE_PLUGIN_ROOT}/scripts/observe.sh drop` clears it.
 **This is its own pass, on its own invocation.** Triage against a session already
 carrying a ticket is the thing the store exists to prevent, arriving from the
 other direction.
+
+---
+
+## `file <slug> --reply <path>` — one record, filed for the runner
+
+`plugins/kit/scripts/ship-startable.sh --observations` starts this in a
+background session of its own, once per record, after `observe.sh fileable`
+offered the slug. Nobody is watching, and nothing here asks. The runner ships
+what you file and drops the record itself; this mode never drops one, and its
+grant refuses it.
+
+**The reply is the whole outcome.** Write exactly one line to `<path>` with the
+Write tool, and nothing else — the runner reads only its first line:
+
+```
+filed: <issue-number>
+```
+
+```
+declined: <the reason, in one sentence>
+```
+
+A reply not written reads as a decline. So does any other first line.
+
+**1 · Read the record:** `${CLAUDE_PLUGIN_ROOT}/scripts/observe.sh show <slug>`.
+Re-run `${CLAUDE_PLUGIN_ROOT}/scripts/observe.sh recheck <slug>` and decline
+unless it says `holds`: the store may have moved since the runner asked.
+Decline too if the record does not wait on a ticket.
+
+**2 · Decline what an unattended run would foreseeably park.** The ticket you
+file is shipped next by `/kit:ship-ticket <n> unattended`, with no one to answer
+it, and a park after filing leaves the backlog holding an issue that never
+needed to exist. Decline, naming which, when:
+
+- **You cannot state acceptance criteria and what is out of scope** from the
+  record and the code. `/kit:design unattended` parks on exactly that.
+- **No plan could be designed without a person** — the record's `decision`
+  leaves the approach open, or the work reaches one of the constraints
+  `/kit:design` *Park on* names: scope, security, tenancy, anything destructive,
+  a migration needing production reconciled.
+- **The premise is gone** — the code the claim is about has moved on in a way
+  the check does not see. Read the files the claim names before filing.
+
+A decline leaves the record in the store, unchanged, for the owner's triage.
+That is a fine outcome, not a failed one. Do not soften a reason to get it filed.
+
+**3 · File it.** Draft the issue with `kit:writing-tickets`, then
+`gh issue create`. A reader of the issue must need nothing from the store, so the
+body carries, verbatim and under their own headings, the record's `surfaced`
+thread and its `decision`, beside the claim and the check that tests it. Give it
+the kind label that fits, in the project's spelling (`kit:project-rules`
+*Labels*), since hand-off reads the kind.
+
+**Add no `ready-for-agent` and no `kit-blocked-by` marker.** The runner names
+the issue to `/kit:ship-ticket` itself, which needs neither, and a ticket
+marked startable is one every other sweep on the label could take —
+`docs/adr/0009-a-filed-observation-is-shipped-by-number.md` says why.
+
+**4 · Reply** `filed: <n>`, and stop.
