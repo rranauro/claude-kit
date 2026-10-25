@@ -153,6 +153,7 @@ SHIPPED=()
 PARKED=()
 ANOMALIES=()
 DECLINED=()
+DECLINED_SLUGS=()
 TRACKED_OPEN_PRS=()
 STOP_REASON=""
 REPORTED=0
@@ -361,34 +362,8 @@ ship_one() {
   SHIP_OUTCOME="anomaly"
 }
 
-# The store's size, for the summary. observe.sh's own list line is the count,
-# so nothing here parses a record.
-records_left() {
-  local n
-  n="$("$OBSERVE" list 2>/dev/null | tail -n 1 | sed -n 's/^\([0-9][0-9]*\) observation.*/\1/p')"
-  echo "${n:-0}"
-}
-
-# Sets NEXT_RECORD to the oldest record this run may file and has not already
-# declined, or empty. Sets FILEABLE_FAILED when observe.sh could not answer — a
-# store this run cannot read is not an empty one.
-next_record() {
-  local slugs slug d skip
-  NEXT_RECORD=""
-  FILEABLE_FAILED=""
-  if ! slugs="$("$OBSERVE" fileable 2>&1)"; then
-    FILEABLE_FAILED="$slugs"
-    return
-  fi
-  while IFS= read -r slug; do
-    [ -n "$slug" ] || continue
-    skip=0
-    for d in "${DECLINED[@]+"${DECLINED[@]}"}"; do
-      [ "${d%%:*}" = "$slug" ] && skip=1 && break
-    done
-    [ "$skip" -eq 0 ] && { NEXT_RECORD="$slug"; return; }
-  done <<<"$slugs"
-}
+# The store's size, for the summary.
+records_left() { "$OBSERVE" count 2>/dev/null || echo 0; }
 
 # Files one record as an issue in its own session, which may decline. Sets
 # FILE_OUTCOME to "filed:<n>" or "declined:<reason>". A reply that says neither
@@ -425,43 +400,78 @@ $reason" >>"$LOG" 2>&1 || { log "could not comment on #$1; it is not parked"; re
     || log "could not label #$1 kit-blocked; its comment is the only record"
 }
 
-# Takes one record through filing and shipping. Sets FED to 1 when a ticket was
-# worked, which the caller counts toward --max; a decline works nothing.
-feed_one() {
-  FED=0
-  next_record
-  [ -n "$NEXT_RECORD" ] || return 0
-  local slug="$NEXT_RECORD" n
-  log "filing observation ${slug}"
-  file_one "$slug"
-  case "$FILE_OUTCOME" in
-    declined:*)
-      DECLINED+=("${slug}: ${FILE_OUTCOME#declined:}")
-      log "declined ${slug}: ${FILE_OUTCOME#declined:}"
-      return 0 ;;
-  esac
-  n="${FILE_OUTCOME#filed:}"
-  FED=1
-  log "filed ${slug} as #${n}; taking #${n}"
+# Ships one issue and records what became of it, whichever source offered it —
+# the label, or a record this run filed (named as the second argument). Counts
+# it toward --max, and returns 1 once the cap is reached.
+take() { # issue [slug]
+  local n="$1" from="${2:+ (from $2)}"
+  log "taking #${n}${from}"
   ship_one "$n"
   case "$SHIP_OUTCOME" in
     shipped:*)
       IFS=: read -r _ pr_num pr_state hold_flag <<<"$SHIP_OUTCOME"
-      SHIPPED+=("#${n} -> PR #${pr_num} (${pr_state}${hold_flag:+, kit-hold — needs a person}), from ${slug}")
+      SHIPPED+=("#${n} -> PR #${pr_num} (${pr_state}${hold_flag:+, kit-hold — needs a person})${2:+, from $2}")
       [ "$pr_state" = "OPEN" ] && TRACKED_OPEN_PRS+=("$pr_num")
+      log "shipped #${n} as PR #${pr_num}${hold_flag:+ [kit-hold]}"
       ;;
     parked)
-      PARKED+=("${n} (from ${slug})") ;;
+      PARKED+=("${n}${from}")
+      log "parked #${n}"
+      ;;
     anomaly)
       ANOMALIES+=("#${n}: ship-ticket call returned with no traceable result")
+      log "ANOMALY on #${n} — see ${LOG}"
+      ;;
+  esac
+
+  SHIP_COUNT=$((SHIP_COUNT + 1))
+  if [ "$SHIP_COUNT" -ge "$MAX" ]; then
+    STOP_REASON="stopped: shipped-per-run cap (${MAX}) reached"
+    return 1
+  fi
+}
+
+# Files the oldest record this run has not declined, and takes it. A decline
+# moves straight on to the next record: the label was just found drained, so
+# asking it again first would buy a list session and nothing else. Sets FED
+# when a ticket was worked, FILEABLE_FAILED when the store could not be read —
+# a store this run cannot read is not an empty one — and returns 1 at the cap.
+feed_one() {
+  local slugs slug n capped
+  FED=0
+  FILEABLE_FAILED=""
+  if ! slugs="$("$OBSERVE" fileable 2>&1)"; then
+    FILEABLE_FAILED="$slugs"
+    return 0
+  fi
+  while IFS= read -r slug; do
+    [ -n "$slug" ] || continue
+    printf '%s\n' "${DECLINED_SLUGS[@]+"${DECLINED_SLUGS[@]}"}" | grep -qxF -- "$slug" && continue
+    log "filing observation ${slug}"
+    file_one "$slug"
+    case "$FILE_OUTCOME" in
+      declined:*)
+        DECLINED+=("${slug}: ${FILE_OUTCOME#declined:}")
+        DECLINED_SLUGS+=("$slug")
+        log "declined ${slug}: ${FILE_OUTCOME#declined:}"
+        continue ;;
+    esac
+    n="${FILE_OUTCOME#filed:}"
+    FED=1
+    log "filed ${slug} as #${n}"
+    take "$n" "$slug"; capped=$?
+    if [ "${SHIP_OUTCOME}" = anomaly ]; then
       if ! park_filed "$n" "$slug"; then
         # Unparked, the record is the only full trace left: keep it.
         log "kept ${slug}: #${n} could not be parked"
-        return 0
+        return "$capped"
       fi
-      PARKED+=("${n} (from ${slug}; parked by the runner — no result could be traced)") ;;
-  esac
-  "$OBSERVE" drop "$slug" >>"$LOG" 2>&1 || log "could not drop ${slug} after #${n}"
+      PARKED+=("${n} (from ${slug}; parked by the runner — no result could be traced)")
+    fi
+    "$OBSERVE" drop "$slug" >>"$LOG" 2>&1 || log "could not drop ${slug} after #${n}"
+    return "$capped"
+  done <<<"$slugs"
+  return 0
 }
 
 # --- main loop ---------------------------------------------------------
@@ -484,21 +494,13 @@ while true; do
   # The label drained: feed it one record, and only one, before asking again —
   # a ticket filed now is shipped before the next record is filed.
   if [ -z "$LIST_RESULT" ] && [ "$OBS" -eq 1 ]; then
-    feed_one
+    feed_one || break
     if [ -n "$FILEABLE_FAILED" ]; then
       ANOMALIES+=("observe.sh fileable failed: ${FILEABLE_FAILED}")
       STOP_REASON="stopped: the observation store could not be read — ${FILEABLE_FAILED}"
       break
     fi
-    if [ "$FED" -eq 1 ]; then
-      SHIP_COUNT=$((SHIP_COUNT + 1))
-      if [ "$SHIP_COUNT" -ge "$MAX" ]; then
-        STOP_REASON="stopped: shipped-per-run cap (${MAX}) reached"
-        break
-      fi
-      continue
-    fi
-    [ -n "$NEXT_RECORD" ] && continue
+    [ "$FED" -eq 1 ] && continue
   fi
 
   if [ -z "$LIST_RESULT" ]; then
@@ -521,34 +523,7 @@ while true; do
     continue
   fi
 
-  log "taking #${LIST_RESULT}"
-  ship_one "$LIST_RESULT"
-  case "$SHIP_OUTCOME" in
-    shipped:*)
-      IFS=: read -r _ pr_num pr_state hold_flag <<<"$SHIP_OUTCOME"
-      if [ "$hold_flag" = "hold" ]; then
-        SHIPPED+=("#${LIST_RESULT} -> PR #${pr_num} (${pr_state}, kit-hold — needs a person)")
-      else
-        SHIPPED+=("#${LIST_RESULT} -> PR #${pr_num} (${pr_state})")
-      fi
-      [ "$pr_state" = "OPEN" ] && TRACKED_OPEN_PRS+=("$pr_num")
-      log "shipped #${LIST_RESULT} as PR #${pr_num}${hold_flag:+ [kit-hold]}"
-      ;;
-    parked)
-      PARKED+=("$LIST_RESULT")
-      log "parked #${LIST_RESULT}"
-      ;;
-    anomaly)
-      ANOMALIES+=("#${LIST_RESULT}: ship-ticket call returned too fast with no traceable result")
-      log "ANOMALY on #${LIST_RESULT} — see ${LOG}"
-      ;;
-  esac
-
-  SHIP_COUNT=$((SHIP_COUNT + 1))
-  if [ "$SHIP_COUNT" -ge "$MAX" ]; then
-    STOP_REASON="stopped: shipped-per-run cap (${MAX}) reached"
-    break
-  fi
+  take "$LIST_RESULT" || break
 done
 
 exit 0

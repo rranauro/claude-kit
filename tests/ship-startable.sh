@@ -389,6 +389,24 @@ assert_has "$out" "no acceptance criteria can be stated" "with its reason"
 assert_has "$out" "done: nothing startable" "and the run ends rather than refiling it"
 end_sandbox
 
+new_sandbox "a decline moves on to the next record without asking the label again"
+seed_store
+observe --claim "README still greets the reader" --waiting ticket \
+  --action "a ticket that rewrites the README greeting"
+reply <<'R'
+<!-- kit-startable: begin -->
+bug:
+<!-- kit-startable: end -->
+R
+file_reply <<'F'
+declined: the premise is gone
+F
+out="$(drain)"
+assert_eq "$(grep -c '/kit:observe file' "$CALLS")" "2" "both ticket records are offered for filing"
+assert_eq "$(grep -c '/kit:list' "$CALLS")" "1" "on one reading of the label"
+assert_has "$out" "declined: 2" "and both declines are reported"
+end_sandbox
+
 new_sandbox "a record whose check has moved is not filed"
 seed_store
 echo goodbye > "$MAIN/README.md"

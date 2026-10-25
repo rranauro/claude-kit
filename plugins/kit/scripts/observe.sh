@@ -27,6 +27,7 @@ usage:
   observe.sh recheck [<slug> ...]
   observe.sh fileable
   observe.sh show <slug>
+  observe.sh count
   observe.sh rewitness <slug> [<slug> ...]
   observe.sh drop <slug> [<slug> ...]
 USAGE
@@ -171,29 +172,22 @@ if mode == "list":
             print(f"{len(broken)} unreadable line(s) skipped: "
                   + ", ".join(map(str, broken)), file=sys.stderr)
 
-elif mode == "checks":
+elif mode in ("checks", "fileable"):
     # NUL-separated so the shell can re-run each check without re-parsing JSON.
     # It is the one byte a claim, a command or captured output cannot contain.
     for r in records:
         if want and r.get("id") not in want:
             continue
-        for f in ("id", "claim", "check", "witness"):
-            sys.stdout.write((r.get(f) or "") + "\0")
-
-elif mode == "fileable":
-    for r in records:
-        if r.get("waiting") != "ticket":
+        if mode == "fileable" and r.get("waiting") != "ticket":
             continue
         for f in ("id", "claim", "check", "witness"):
             sys.stdout.write((r.get(f) or "") + "\0")
 
 elif mode == "show":
-    hit = [r for r in records if r.get("id") in want]
-    if not hit:
-        print("missing:" + ",".join(sorted(want)), file=sys.stderr)
+    hit = next((r for r in records if r.get("id") in want), None)
+    if hit is None:
         sys.exit(1)
-    for r in hit:
-        print(json.dumps(r, ensure_ascii=False, indent=2))
+    print(json.dumps(hit, ensure_ascii=False, indent=2))
 
 elif mode == "rewitness":
     # Pairs of id, new witness, NUL-separated, in the file named by OBS_PAIRS.
@@ -500,7 +494,8 @@ case "${1-}" in
   rewitness) shift; init_checks; do_rewitness "$@" ;;
   fileable) init_checks; do_fileable ;;
   show)    shift; [ $# -eq 1 ] || misuse "show takes one slug"
-           readers show "$1" 2>/dev/null || die "no such observation: $1" ;;
+           readers show "$1" || die "no such observation: $1" ;;
+  count)   count ;;
   drop)    shift; do_drop "$@" ;;
   -h|--help) usage; exit 0 ;;
   *)       init_checks; append "$@" ;;

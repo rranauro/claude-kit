@@ -757,6 +757,15 @@ out="$( (cd "$MAIN" && "$SCRIPT" show no-such-slug) 2>&1 )"
 assert_eq "$?" 1 "an unknown slug is an error"
 end_sandbox
 
+new_sandbox "count is the number of records, and nothing else"
+out="$( (cd "$MAIN" && "$SCRIPT" count) 2>&1 )"
+assert_eq "$out" "0" "an empty store counts zero"
+record "$MAIN" >/dev/null
+record "$MAIN" --claim "a second claim" >/dev/null
+out="$( (cd "$MAIN" && "$SCRIPT" count) 2>&1 )"
+assert_eq "$out" "2" "each record counts once"
+end_sandbox
+
 # --- summary ------------------------------------------------------------
 
 echo
