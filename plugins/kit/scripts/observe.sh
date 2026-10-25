@@ -20,7 +20,8 @@ usage() {
   cat >&2 <<'USAGE'
 usage:
   observe.sh --by <pass> --claim <text> --check <command> \
-             --surfaced <text> --action <text> [--issue N] [--pr N]
+             --surfaced <text> --action <text> \
+             --who <role> --affected <text> [--issue N] [--pr N]
   observe.sh list
   observe.sh recheck [<slug> ...]
   observe.sh rewitness <slug> [<slug> ...]
@@ -151,7 +152,7 @@ PY
 # --- the append ---------------------------------------------------------
 
 append() {
-  local by="" claim="" check="" surfaced="" action="" issue="" pr=""
+  local by="" claim="" check="" surfaced="" action="" who="" affected="" issue="" pr=""
   while [ $# -gt 0 ]; do
     case "$1" in
       --by)       by="${2-}";       shift 2 ;;
@@ -159,6 +160,8 @@ append() {
       --check)    check="${2-}";    shift 2 ;;
       --surfaced) surfaced="${2-}"; shift 2 ;;
       --action)   action="${2-}";   shift 2 ;;
+      --who)      who="${2-}";      shift 2 ;;
+      --affected) affected="${2-}"; shift 2 ;;
       --issue)    issue="${2-}";    shift 2 ;;
       --pr)       pr="${2-}";       shift 2 ;;
       *) misuse "unknown argument: $1" ;;
@@ -172,6 +175,19 @@ append() {
   [ -n "$check" ]    || misuse "--check is required: the command that tests the claim"
   [ -n "$surfaced" ] || misuse "--surfaced is required: the thread that exposed it"
   [ -n "$action" ]   || misuse "--action is required: where this should end up"
+  [ -n "$who" ]      || misuse "--who is required: who gets a wrong result (visitor, owner, operator, agent), or nobody"
+  [ -n "$affected" ] || misuse "--affected is required: what they do, and what they get instead of what they expect"
+
+  # A finding that affects nobody is re-checked at every triage and buries the
+  # ones that do. Exit 0 and print, never refuse: a usage error invites the
+  # producer to retry until something is written, and the printed line rides the
+  # "report the line it prints" rule every producer already follows.
+  local who_norm
+  who_norm="$(printf '%s' "$who" | tr '[:upper:]' '[:lower:]' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+  if [ "$who_norm" = nobody ]; then
+    printf 'dropped — %s: affects nobody (%s)\n' "$claim" "$affected"
+    return 0
+  fi
 
   local branch repo
   branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
@@ -208,7 +224,7 @@ append() {
   # derives a free one, writes the record, and reports what the caller prints.
   OBS_STORE="$STORE" OBS_BY="$by" OBS_CLAIM="$claim" OBS_CHECK="$check" \
   OBS_WITNESS="$witness" OBS_SURFACED="$surfaced" \
-  OBS_ACTION="$action" OBS_REPO="$repo" OBS_BRANCH="$branch" \
+  OBS_ACTION="$action" OBS_WHO="$who" OBS_AFFECTED="$affected" OBS_REPO="$repo" OBS_BRANCH="$branch" \
   OBS_ISSUE="$issue" OBS_PR="$pr" \
   python3 - <<'PY'
 import datetime, json, os, re
@@ -248,7 +264,7 @@ if len(witness) > LIMIT:
     witness = witness[:LIMIT] + "\n… truncated"
 
 record = {
-    "v": 1,
+    "v": 2,
     "id": obs_id,
     "at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d"),
     "by": os.environ["OBS_BY"],
@@ -259,6 +275,8 @@ record = {
         "pr": num("OBS_PR"),
     },
     "claim": claim,
+    "who": os.environ["OBS_WHO"],
+    "affected": os.environ["OBS_AFFECTED"],
     "check": os.environ["OBS_CHECK"],
     "witness": witness,
     "surfaced": os.environ["OBS_SURFACED"],

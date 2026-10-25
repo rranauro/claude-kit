@@ -32,6 +32,8 @@ wrong, and it dies without anyone adjudicating it.
 | `v`, `id`, `at`, `by` | schema version, slug, date, the pass that wrote it |
 | `ctx` | repo, issue, branch, PR — what the pass was processing |
 | `claim` | the observation stated so the repo can contradict it |
+| `who` | who gets a wrong result: a visitor, an owner, an operator, an agent |
+| `affected` | what they do, and what they get instead of what they expect |
 | `check` | a cheap, local, read-only command that tests the claim |
 | `witness` | that command's output when the record was written |
 | `surfaced` | the thread that exposed it — the part that cannot be re-derived |
@@ -56,6 +58,14 @@ instead of something you open. Where only the suite could falsify a claim, recor
 it against the file or symbol the suite would touch. A weak check that runs beats
 a strong one that is skipped.
 
+**`who` and `affected` are the finding stated as someone's wrong result.** Name
+the role, then what they do and what they get instead of what they expect. An
+agent counts: a pass misled by a doc that describes behaviour no code implements
+gets a wrong result as surely as a visitor does. A finding with nobody to name
+is dropped rather than recorded — pass `--who nobody` with `--affected` saying
+why, and the script writes nothing and prints the reason. Records written before
+these fields existed lack them; triage reads them as it always has.
+
 **`surfaced` is the expensive field.** Everything else can be re-derived from the
 code; what the pass was doing when this became visible cannot. Write the thread,
 not the topic.
@@ -69,6 +79,8 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/observe.sh \
   --check "<the command that tests it>" \
   --surfaced "<the thread that exposed it>" \
   --action "<where this should end up>" \
+  --who "<visitor | owner | operator | agent | nobody>" \
+  --affected "<what they do, and what they get instead of what they expect>" \
   [--issue <n>] [--pr <n>]
 ```
 
@@ -78,7 +90,8 @@ the JSON — a record is one line, and `witness` and `surfaced` routinely carry
 newlines and quotes.
 
 **Report the line it prints.** It names the claim, the slug, and how many records
-the store now holds. That single line is both *you can tell this was recorded*
+the store now holds — or, for `--who nobody`, that the finding was dropped and
+why. That single line is both *you can tell this was recorded*
 and *the drawer is this full*, and nothing counts the store on a schedule — so
 the count reaching a reader at all depends on a producing pass passing it on.
 
@@ -102,6 +115,10 @@ on the PR. `docs/tending-on-a-runner.md` owns that case.
   continue.
 - **A finding the pass can act on now.** Acting on it is cheaper than recording
   it, and a record of work already done is a record that will be triaged twice.
+- **A finding that affects nobody.** A missing index on a 44-row table, a fix for
+  a layout no theme uses, a log line nobody reads differently: each is true and
+  each is re-checked at every triage, where it buries the findings someone pays
+  for. `--who nobody` drops it and reports the drop.
 - **A ticket.** Where the problem and the desired outcome are both already clear,
   `kit:writing-tickets` applies and the backlog is the right drawer. An
   observation is for what is real but not yet stateable that way.

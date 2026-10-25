@@ -119,6 +119,8 @@ record() { # cwd extra-args...
     --check "grep -c hello README.md" \
     --surfaced "Grilling #150 ended with three parked items and nowhere to put them." \
     --action "this backlog" \
+    --who "agent" \
+    --affected "a pass that ends a grilling reads the skill for where Parked items go, and finds nothing, so it drops them" \
     "$@" 2>&1)
 }
 
@@ -141,7 +143,10 @@ assert_eq "$(field 1 witness)" "seven" \
 assert_eq "$(field 1 by)" "kit:grilling" "the producing pass is named"
 assert_has "$(field 1 surfaced)" "three parked items" "the thread that exposed it survives"
 assert_eq "$(field 1 action)" "this backlog" "the destination is recorded"
-assert_has "$(field 1 v)" "1" "the record carries a schema version"
+assert_eq "$(field 1 v)" "2" "the record carries the schema version that has who and affected"
+assert_eq "$(field 1 who)" "agent" "who is affected is recorded"
+assert_has "$(field 1 affected)" "finds nothing, so it drops them" \
+  "and what they get instead of what they expect"
 end_sandbox
 
 new_sandbox "the witness is captured even when the check fails"
@@ -256,9 +261,9 @@ end_sandbox
 # ========================================================================
 
 new_sandbox "a record missing a required part is refused"
-for missing in claim check surfaced action by; do
+for missing in claim check surfaced action by who affected; do
   args=()
-  for opt in by claim check surfaced action; do
+  for opt in by claim check surfaced action who affected; do
     [ "$opt" = "$missing" ] || args+=("--$opt" "x")
   done
   out="$( (cd "$MAIN" && "$SCRIPT" "${args[@]}") 2>&1 )"
@@ -267,6 +272,69 @@ for missing in claim check surfaced action by; do
   assert_has "$out" "$missing" "and the message names what was missing"
 done
 assert_eq "$(lines)" "0" "nothing half-formed is written"
+end_sandbox
+
+# ========================================================================
+# AC · A finding that affects nobody adds nothing to the store, and the
+#      pass's report says it was dropped and why.
+# ========================================================================
+
+new_sandbox "a finding that affects nobody is dropped, not recorded"
+out="$(record "$MAIN" --who "nobody" \
+  --affected "the table has 44 rows, so no query is slow enough for anyone to notice")"
+assert_eq "$?" 0 "dropping is not an error, so a producer has nothing to retry"
+assert_eq "$(lines)" "0" "nothing is written"
+if [ -e "$STORE" ]; then bad "no store is created for it"
+else ok "no store is created for it"; fi
+assert_has "$out" "dropped" "the printed line says it was dropped"
+assert_has "$out" "names no destination for the Parked list" "and names the claim"
+assert_has "$out" "affects nobody" "and says why"
+assert_has "$out" "44 rows" "in the producer's own words"
+end_sandbox
+
+new_sandbox "nobody is matched however it is cased or padded"
+out="$(record "$MAIN" --who " Nobody ")"
+assert_eq "$(lines)" "0" "nothing is written"
+assert_has "$out" "affects nobody" "and it is reported as dropped"
+end_sandbox
+
+new_sandbox "a dropped finding leaves the records already in the store alone"
+record "$MAIN" >/dev/null
+out="$(record "$MAIN" --claim "docs/commands.md lists no entry for /kit:observe" --who nobody)"
+assert_eq "$(lines)" "1" "the store keeps exactly what it had"
+assert_lacks "$(cat "$STORE")" "/kit:observe" "and the dropped claim is not in it"
+end_sandbox
+
+# ========================================================================
+# AC · Records already in a store are untouched, and triage still reads them.
+# ========================================================================
+
+# A record written before who and affected existed, exactly as that writer
+# shaped it.
+v1_record() {
+  mkdir -p "$(dirname "$STORE")"
+  cat >> "$STORE" <<'JSON'
+{"v": 1, "id": "an-old-record", "at": "2026-10-01", "by": "kit:grilling", "ctx": {"repo": "acme/widgets", "issue": null, "branch": "main", "pr": null}, "claim": "README.md says hello", "check": "cat README.md", "witness": "hello", "surfaced": "an older pass", "action": "this backlog"}
+JSON
+}
+
+new_sandbox "a record from before who and affected still lists, rechecks and drops"
+v1_record
+record "$MAIN" >/dev/null
+assert_has "$(sed -n 1p "$STORE")" '"v": 1, "id": "an-old-record"' \
+  "appending leaves the old record byte for byte"
+out="$( (cd "$MAIN" && "$SCRIPT" list) 2>&1 )"
+assert_has "$out" "README.md says hello" "list reads it"
+assert_has "$out" "2 observations" "alongside the new one"
+out="$( (cd "$MAIN" && "$SCRIPT" recheck an-old-record) 2>&1 )"
+assert_has "$out" "holds  an-old-record" "recheck reads it"
+echo goodbye > "$MAIN/README.md"
+out="$( (cd "$MAIN" && "$SCRIPT" rewitness an-old-record) 2>&1 )"
+assert_has "$(field 1 witness)" "goodbye" "rewitness reads it"
+assert_lacks "$(sed -n 1p "$STORE")" '"who"' "without inventing who it affects"
+out="$( (cd "$MAIN" && "$SCRIPT" drop an-old-record) 2>&1 )"
+assert_eq "$?" 0 "drop reads it"
+assert_eq "$(lines)" "1" "and removes only it"
 end_sandbox
 
 # ========================================================================
