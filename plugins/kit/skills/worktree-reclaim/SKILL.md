@@ -108,6 +108,11 @@ The verdict is one of `reclaim`, `reclaim-keep-branch`, or `hold`, and the two
 reasons say how each half was decided. Read them; they are what the report is
 made of.
 
+A sweep also prints one for every local branch no worktree has checked out —
+other than the remote's default branch — with an empty path and the directory
+reason `no worktree`. Its worktree went some other way, so nothing else would
+ever ask about it again; the branch half is decided exactly as above.
+
 ### 4 · `act`
 
 **Attended, stop here and ask.** Show the verdicts as a table and ask whether to

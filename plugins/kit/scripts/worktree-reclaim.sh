@@ -25,6 +25,9 @@
 # --lease prints the reason a ship pass locks its worktree with. The writer
 # lives here so the clock it stamps is the clock the sweep measures against.
 #
+# A sweep also visits every local branch no worktree has checked out, other
+# than the remote's default branch; its verdict carries an empty path.
+#
 # Records:
 #   verdict<TAB>branch<TAB>path<TAB>reclaim|reclaim-keep-branch|hold<TAB>directory-reason<TAB>branch-reason
 #   removed<TAB>path            held<TAB>path<TAB>reason
@@ -402,6 +405,7 @@ reclaim_path() { # path branch -> 0 when the path is gone; REMOVE_REFUSAL on a r
 # --- main ---------------------------------------------------------------
 
 selected=""
+decided=""
 refused=""
 while IFS=$'\t' read -r path branch; do
   [ -n "$path" ] || continue
@@ -409,6 +413,7 @@ while IFS=$'\t' read -r path branch; do
     continue
   fi
   selected="yes"
+  decided="$decided$branch"$'\n'
 
   freeness "$path"
   if [ "$FREE" != "yes" ]; then
@@ -458,6 +463,33 @@ done < <(inventory)
 if [ -n "$target" ] && [ -z "$selected" ]; then
   echo "worktree-reclaim: no worktree matches target: $target" >&2
   exit 1
+fi
+
+# --- worktree-less branches ---------------------------------------------
+
+# The loop above only ever reaches a branch through its worktree, so a branch
+# whose worktree went some other way — by hand, by a project's own teardown, by
+# a pass that removed the directory and stopped — would never come up again.
+# A branch the loop already decided on is not asked about twice. The remote's
+# default branch is left out: its tip is a merged PR's commit, so
+# it reads as accounted, and nobody sweeping worktrees meant to delete it.
+if [ -z "$target" ]; then
+  checked_out="$(git worktree list --porcelain | sed -n 's#^branch refs/heads/##p')"
+  default="$(git symbolic-ref -q --short refs/remotes/origin/HEAD)"
+  default="${default#origin/}"
+  while IFS= read -r branch; do
+    [ -n "$branch" ] && [ "$branch" != "$default" ] || continue
+    printf '%s\n' "$checked_out" "$decided" | grep -Fxq -e "$branch" && continue
+    account_branch "$branch"
+    if [ "$ACCOUNTED" = "yes" ]; then
+      emit verdict "$branch" "" reclaim "no worktree" "$ACC_REASON"
+      [ "$act" -eq 1 ] && git branch -D "$branch" >/dev/null 2>&1 &&
+        emit branch-deleted "$branch"
+    else
+      emit verdict "$branch" "" reclaim-keep-branch "no worktree" "$ACC_REASON"
+      [ "$act" -eq 1 ] && emit branch-kept "$branch" "$ACC_REASON"
+    fi
+  done < <(git for-each-ref --format='%(refname:short)' refs/heads)
 fi
 
 # --- orphans ------------------------------------------------------------

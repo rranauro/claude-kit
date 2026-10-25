@@ -568,6 +568,81 @@ assert_present_path "$MAIN/.claude/worktrees/alpha" "a fresh lease holds its wor
 end_sandbox
 
 # ========================================================================
+# A branch whose worktree went some other way is still a sweep candidate,
+# decided by the same accounting as a worktree's branch.
+# ========================================================================
+
+add_branch() { # branch -> a local branch one commit past main, with no worktree
+  local tmp="$SANDBOX/tmp-$1"
+  git -C "$MAIN" worktree add -q "$tmp" -b "$1" main
+  echo "$1" > "$tmp/file.txt"
+  git -C "$tmp" add -A
+  git -C "$tmp" commit -qm "work on $1"
+  git -C "$MAIN" worktree remove --force "$tmp"
+}
+
+new_sandbox "a worktree-less branch GitHub accounts for is deleted"
+add_branch alpha
+pr_fixture "$(tip alpha)" 11 closed '"2024-01-01T00:00:00Z"'
+add_branch beta
+out="$(run --act)"
+assert_branch_gone alpha "a merged branch with no worktree is deleted"
+assert_has "$out" "branch-deleted	alpha" "and the deletion is reported"
+assert_branch_kept beta "a branch GitHub never received is kept"
+assert_has "$out" "branch-kept	beta	no PR and tip" "and reported with its reason"
+assert_branch_kept main "the checked-out branch is never a candidate"
+end_sandbox
+
+new_sandbox "worktree-less branches appear in the verdicts without --act"
+add_branch alpha
+pr_fixture "$(tip alpha)" 11 closed '"2024-01-01T00:00:00Z"'
+add_branch beta
+out="$(run)"
+assert_has "$out" "verdict	alpha		reclaim	no worktree	PR #11" \
+  "an accounted branch reads as reclaim with no path"
+assert_has "$out" "verdict	beta		reclaim-keep-branch	no worktree	no PR" \
+  "an unaccounted one reads as reclaim-keep-branch"
+assert_branch_kept alpha "and nothing is deleted without --act"
+end_sandbox
+
+new_sandbox "the remote's default branch is never a candidate"
+git -C "$MAIN" remote set-head origin main
+git -C "$MAIN" checkout -q -b other
+pr_fixture "$(tip main)" 1 closed '"2024-01-01T00:00:00Z"'
+out="$(run --act)"
+assert_branch_kept main "a default branch whose tip a merged PR carries is kept"
+assert_lacks "$out" "	main	" "and is not even considered"
+end_sandbox
+
+new_sandbox "the branch pass leaves worktree branches and named targets alone"
+add_branch alpha
+pr_fixture "$(tip alpha)" 11 closed '"2024-01-01T00:00:00Z"'
+add_worktree beta
+echo dirty > "$MAIN/.claude/worktrees/beta/dirty.txt"
+pr_fixture "$(tip beta)" 12 closed '"2024-01-01T00:00:00Z"'
+add_worktree gamma
+push_branch gamma
+pr_fixture "$(tip gamma)" 13 closed '"2024-01-01T00:00:00Z"'
+run --target gamma --act >/dev/null
+assert_branch_kept alpha "a named target sweeps no other branch"
+out="$(run --act)"
+assert_branch_kept beta "a held worktree keeps its branch"
+assert_lacks "$out" "branch-deleted	beta" "and the branch pass does not reach it"
+assert_branch_gone alpha "while the sweep takes the worktree-less one"
+end_sandbox
+
+new_sandbox "a branch its worktree's removal kept is reported once"
+add_worktree alpha
+push_branch alpha
+pr_fixture "$(tip alpha)" 11 open null
+out="$(run --act)"
+if [ "$(printf '%s\n' "$out" | grep -c '^branch-kept	alpha	')" -eq 1 ]
+then ok "the branch pass does not ask again about a branch the loop decided"
+else bad "the branch pass does not ask again about a branch the loop decided"
+     printf '%s\n' "$out" | sed 's/^/         /' >&2; fi
+end_sandbox
+
+# ========================================================================
 # AC9 · A walkthrough in flight holds the worktree it runs in. The signal is
 #       `kit-hold` on the branch's open PR, and it lapses on its own.
 # ========================================================================
