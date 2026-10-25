@@ -151,6 +151,13 @@ change it makes harder. Distinct from its reach, the entry points that get to
 it; a card carries both.
 _Avoid_: impact, blast radius
 
+**Affected**:
+Who gets a wrong result from a finding (a visitor, owner, operator or agent) and
+what they get instead of what they expect. *Nobody* is an answer, and drops the
+finding rather than recording it. Distinct from reach, the ways in, and from
+cost, what a scan candidate burdens.
+_Avoid_: impact, blast radius
+
 ### Judging a spec
 
 **Load-bearing**:
