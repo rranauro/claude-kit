@@ -264,8 +264,9 @@ _Avoid_: block, fail, skip
 Something a pass learned while running that the ticket did not ask for, written
 to the store instead of asked. One record carries a claim the repo can
 contradict, the command that tests it, and that command's answer at the time — so
-a later pass re-runs it rather than re-deriving it. Stops nothing and demands
-nobody, which is what separates it from a park.
+a later pass re-runs it rather than re-deriving it. Says what it waits on —
+filing as a ticket, or the owner's decision. Stops nothing and demands nobody,
+which is what separates it from a park.
 _Avoid_: learning, note, finding, pin
 
 **Withhold**:
