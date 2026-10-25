@@ -73,9 +73,13 @@ so rather than carrying on.
 The lease ends when `hand-off` unlocks, at the close of the review round. For a
 PR that has to be walked the worktree is needed after that too —
 `/kit:walkthrough` runs in it, and keeps its position on disk precisely so a
-walk can be resumed days later. `kit-hold` is what covers
-that stretch: reclaim holds the worktree of any open PR carrying it. Nothing is
-left to take a second lock, and the hold ends when the label or the PR does.
+walk can be resumed days later. Two things cover that stretch. `kit-hold` covers
+the pauses between sessions: reclaim holds the worktree of any open PR carrying
+it, and the hold ends when the label or the PR does. The walk's own lease covers
+the session itself, since a PR may never have carried the label and a person can
+clear it mid-walk — a standalone `/kit:walkthrough` takes the lease in the shape
+above when it begins and releases it when it ends, and pushes each detour's
+commit so a reclaim later costs the directory and nothing else.
 
 ## What this means for garbage collection
 

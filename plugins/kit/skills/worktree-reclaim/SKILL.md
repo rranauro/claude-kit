@@ -46,9 +46,10 @@ somebody unlocks it.
 
 **A walkthrough in flight holds the directory as well.** `/kit:walkthrough`
 resolves the worktree path and does all its work there, and it is designed to be
-paused between sessions — so at the moment reclaiming would hurt most, nothing is
-locked and nothing is uncommitted. `kit-hold` on the branch's open PR is the
-signal that one is in flight: a person is in charge of that PR, and the CI gate
+paused between sessions — so between them nothing is locked and nothing is
+uncommitted. A walk in session holds its own lease, which reads like any other;
+between sessions, `kit-hold` on the branch's open PR is the signal that one is
+in flight: a person is in charge of that PR, and the CI gate
 already waits for them. The hold lapses on its own when the label comes off or
 the PR reaches a terminal state; where GitHub cannot be reached the label cannot
 be ruled out, so the worktree is held there too.
