@@ -77,6 +77,17 @@ print(v if isinstance(v, str) else json.dumps(v))
 PY
 }
 
+set_fields() { # record-index(1-based) key value [key value ...]
+  python3 - "$STORE" "$@" <<'PY'
+import json, sys
+path, idx, kv = sys.argv[1], int(sys.argv[2]) - 1, sys.argv[3:]
+recs = [json.loads(l) for l in open(path) if l.strip()]
+for k, v in zip(kv[::2], kv[1::2]):
+    recs[idx][k] = v
+open(path, "w").write("".join(json.dumps(r) + "\n" for r in recs))
+PY
+}
+
 # --- sandbox ------------------------------------------------------------
 
 new_sandbox() {
@@ -445,12 +456,75 @@ assert_has "$out" "observed" "code main lacks can still be recorded against"
 assert_has "$(field 1 witness)" "only on the branch" "and the witness is what the branch answered"
 end_sandbox
 
-new_sandbox "a check that prints nothing is refused"
-out="$(record "$MAIN" --check "grep -c nomatch README.md | grep -v '^0$'")"
+new_sandbox "a check that runs and prints nothing is recorded"
+out="$(record "$MAIN" --check "grep nomatch README.md")"
+assert_eq "$?" 0 "an absence is a valid witness"
+assert_eq "$(lines)" "1" "and the record is written"
+assert_eq "$(field 1 witness)" "" "with the empty answer as its witness"
+end_sandbox
+
+# ========================================================================
+# AC · A check whose shell cannot run one of its commands is refused, and
+#      recheck never counts one as holding.
+# ========================================================================
+
+new_sandbox "a check that names a command its shell cannot find is refused"
+out="$(record "$MAIN" --check "nosuchcmd_318 hello README.md")"
 st=$?
-assert_eq "$st" 2 "an empty witness is a usage error"
-assert_has "$out" "printed nothing" "and says why"
+assert_eq "$st" 2 "a missing command is a usage error"
+assert_has "$out" "nosuchcmd_318" "and the message names the command"
 assert_eq "$(lines)" "0" "nothing is written"
+end_sandbox
+
+new_sandbox "a missing command inside a pipeline is refused too"
+out="$(record "$MAIN" --check "cat README.md | nosuchcmd_318 -c hello")"
+assert_eq "$?" 2 "the pipeline's last stage being missing is still caught"
+assert_has "$out" "nosuchcmd_318" "and named"
+assert_eq "$(lines)" "0" "nothing is written"
+end_sandbox
+
+new_sandbox "a missing command inside a nested bash is refused"
+out="$(record "$MAIN" --check "bash -c 'nosuchcmd_318 README.md'")"
+assert_eq "$?" 2 "the nested shell reports through the same handler"
+assert_has "$out" "nosuchcmd_318" "and the command is named"
+assert_eq "$(lines)" "0" "nothing is written"
+end_sandbox
+
+new_sandbox "a command exec cannot find is refused"
+out="$(record "$MAIN" --check "exec nosuchcmd_318 README.md")"
+assert_eq "$?" 2 "exit 127 counts as a missing command"
+assert_eq "$(lines)" "0" "nothing is written"
+end_sandbox
+
+new_sandbox "a check whose answer mentions a missing command is not refused"
+echo 'bash: rg: command not found' > "$MAIN/README.md"
+out="$(record "$MAIN" --check "grep -c 'command not found' README.md")"
+assert_eq "$?" 0 "the phrase in the output is not a missing command"
+assert_eq "$(field 1 witness)" "1" "and the witness is the grep's answer"
+end_sandbox
+
+new_sandbox "recheck reports a check that cannot run as unrunnable, not holding"
+record "$MAIN" >/dev/null
+# A record written before the refusal: its witness is already the error, so a
+# plain diff would read it as holding forever.
+set_fields 1 check "nosuchcmd_318 -c hello README.md" witness "bash: nosuchcmd_318: command not found"
+out="$( (cd "$MAIN" && "$SCRIPT" recheck) 2>&1 )"
+assert_has "$out" "unrunnable" "a check that cannot run is reported as unrunnable"
+assert_lacks "$out" "holds" "and never as holding"
+assert_has "$out" "nosuchcmd_318" "naming the command"
+end_sandbox
+
+new_sandbox "a bash too old to detect a missing command is refused"
+FAKE="$SANDBOX/oldbash"; mkdir -p "$FAKE"
+printf '#!/bin/sh\necho 3\n' > "$FAKE/bash"; chmod +x "$FAKE/bash"
+REAL_BASH="$(command -v bash)"
+out="$( (cd "$MAIN" && PATH="$FAKE:$PATH" "$REAL_BASH" "$SCRIPT" \
+  --by x --claim y --check "cat README.md" --surfaced s --action a --who agent --affected z) 2>&1 )"
+assert_eq "$?" 1 "append refuses on bash older than 4"
+assert_has "$out" "bash 4" "and says what it needs"
+assert_eq "$(lines)" "0" "nothing is written"
+out="$( (cd "$MAIN" && PATH="$FAKE:$PATH" "$REAL_BASH" "$SCRIPT" recheck) 2>&1 )"
+assert_eq "$?" 1 "recheck refuses too"
 end_sandbox
 
 new_sandbox "a check whose witness is a missing-path error is refused"
@@ -493,12 +567,21 @@ out="$( (cd "$MAIN" && "$SCRIPT" recheck "$first") 2>&1 )"
 assert_has "$out" "holds" "the record now holds"
 end_sandbox
 
-new_sandbox "rewitness leaves a record alone when its check now prints nothing"
+new_sandbox "rewitness takes an empty answer as the new witness"
 record "$MAIN" --check "cat README.md" >/dev/null
-before="$(field 1 witness)"
 : > "$MAIN/README.md"
 out="$( (cd "$MAIN" && "$SCRIPT" rewitness "$(field 1 id)") 2>&1 )"
-assert_has "$out" "skipped" "an empty answer is reported as skipped"
+assert_has "$out" "rewitnessed 1" "an empty answer is rewitnessed"
+assert_eq "$(field 1 witness)" "" "and becomes the witness"
+end_sandbox
+
+new_sandbox "rewitness leaves a record alone when its check cannot run"
+record "$MAIN" --check "cat README.md" >/dev/null
+before="$(field 1 witness)"
+set_fields 1 check "nosuchcmd_318 README.md"
+out="$( (cd "$MAIN" && "$SCRIPT" rewitness "$(field 1 id)") 2>&1 )"
+assert_has "$out" "skipped" "a check that cannot run is skipped"
+assert_has "$out" "nosuchcmd_318" "naming the command"
 assert_eq "$(field 1 witness)" "$before" "and the old witness stays"
 end_sandbox
 
