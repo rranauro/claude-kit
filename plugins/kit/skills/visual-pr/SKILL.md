@@ -281,7 +281,8 @@ own branch is one the pass could have written to authorize itself.
    A line that is missing allows nothing.
 3. **Neither: the kit's default.** Capture each page that needs no sign-in with
    `${CLAUDE_PLUGIN_ROOT}/scripts/capture-page.sh <url> <out.png>`, run from the
-   worktree, writing to the output location below — never into the worktree. It drives
+   worktree, writing to a fresh temporary directory outside it — not the output
+   location below, which can sit inside the worktree. It drives
    headless Chrome and prints the image path, or a `Not captured — <why>` line to write
    as given, followed by what the page would have shown. It boots nothing, and refuses
    any page it cannot trace to this worktree. Take the URL from

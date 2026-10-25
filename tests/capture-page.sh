@@ -34,7 +34,7 @@ new_sandbox() {
   mkdir -p "$SANDBOX/bin" "$WT/public" "$OUTDIR"
   git init -q "$WT"
   echo '<h1>hi</h1>' > "$WT/public/index.html"
-  export SERVER_UP=1 SERVER_CWD="$WT" CHROME_WRITES=1
+  export SERVER_UP=1 SERVER_CWD="$WT" CHROME_WRITES=1 OTHER_CWD="" REDIRECT=""
 
   cat > "$SANDBOX/bin/chrome" <<'SH'
 #!/usr/bin/env bash
@@ -43,18 +43,24 @@ for a in "$@"; do
 done
 exit 0
 SH
+  # curl prints $REDIRECT as the redirect_url for the URL asked first, and
+  # nothing for any later hop, so a chain is one redirect long.
   cat > "$SANDBOX/bin/curl" <<'SH'
 #!/usr/bin/env bash
-[ "$SERVER_UP" = 1 ] && { echo 200; exit 0; }
-exit 7
+[ "$SERVER_UP" = 1 ] || exit 7
+[ -e "$SANDBOX/.curled" ] || { : > "$SANDBOX/.curled"; printf '%s' "$REDIRECT"; }
+exit 0
 SH
+  # A second listener, pid 4343, appears when $OTHER_CWD is set.
   cat > "$SANDBOX/bin/lsof" <<'SH'
 #!/usr/bin/env bash
 case " $* " in
-  *" -t "*) echo 4242 ;;
+  *" -t "*) echo 4242; [ -n "$OTHER_CWD" ] && echo 4343 ;;
+  *" -p 4343 "*) printf 'p4343\nfcwd\nn%s\n' "$OTHER_CWD" ;;
   *" -d cwd "*) printf 'p4242\nfcwd\nn%s\n' "$SERVER_CWD" ;;
 esac
 SH
+  export SANDBOX
   chmod +x "$SANDBOX/bin/"*
   export KIT_CHROME="$SANDBOX/bin/chrome"
   export PATH="$SANDBOX/bin:$ORIG_PATH"
@@ -94,6 +100,27 @@ export SERVER_CWD="${WT}-old"
 capture "http://localhost:3000/" "$OUTDIR/home.png"
 assert_eq "$CODE" 5 "exits 5"
 
+new_sandbox "a second listener on the port from another checkout is refused"
+export OTHER_CWD="$SANDBOX/main-checkout"
+capture "http://127.0.0.1:3000/" "$OUTDIR/home.png"
+assert_eq "$CODE" 5 "exits 5"
+assert_eq "$OUT_LINE" "Not captured — the server at http://127.0.0.1:3000/ is not serving this worktree" "says it is not this worktree's"
+
+new_sandbox "a redirect to another origin is refused"
+export REDIRECT="http://localhost:4000/"
+capture "http://localhost:3000/" "$OUTDIR/home.png"
+assert_eq "$CODE" 5 "exits 5"
+assert_eq "$OUT_LINE" "Not captured — http://localhost:3000/ redirects to http://localhost:4000/, off the worktree's server" "says where it redirects"
+
+new_sandbox "a redirect on the same origin is followed"
+export REDIRECT="http://localhost:3000/sign_in"
+capture "http://localhost:3000/" "$OUTDIR/home.png"
+assert_eq "$CODE" 0 "exits 0"
+
+new_sandbox "a bracketed IPv6 loopback with no port takes the scheme's port"
+capture "http://[::1]/" "$OUTDIR/home.png"
+assert_eq "$CODE" 0 "exits 0"
+
 new_sandbox "a remote host cannot be traced to a checkout"
 capture "https://staging.example.com/" "$OUTDIR/home.png"
 assert_eq "$CODE" 5 "exits 5"
@@ -110,6 +137,12 @@ echo x > "$SANDBOX/elsewhere.html"
 capture "file://$SANDBOX/elsewhere.html" "$OUTDIR/e.png"
 assert_eq "$CODE" 5 "exits 5"
 assert_eq "$OUT_LINE" "Not captured — file://$SANDBOX/elsewhere.html is not in this worktree" "says it is not in this worktree"
+
+new_sandbox "a symlink in the worktree to a file outside it is refused"
+echo x > "$SANDBOX/elsewhere.html"
+ln -s "$SANDBOX/elsewhere.html" "$WT/public/linked.html"
+capture "file://$WT/public/linked.html" "$OUTDIR/l.png"
+assert_eq "$CODE" 5 "exits 5"
 
 new_sandbox "no Chrome on the machine is its own reason"
 export KIT_CHROME="$SANDBOX/no-such-chrome"

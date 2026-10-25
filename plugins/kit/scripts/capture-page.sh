@@ -66,33 +66,62 @@ find_chrome() {
 chrome="$(find_chrome)"
 [ -n "$chrome" ] || not_captured 3 "no headless Chrome on this machine"
 
+# Sets host and port from an http(s) URL; a bracketed IPv6 host has colons of
+# its own, so it is split at the bracket rather than the last colon.
+origin_of() {
+  local hp="${1#*://}"; hp="${hp%%/*}"; hp="${hp##*@}"
+  case "$hp" in
+    \[*\]:*) host="${hp%:*}" port="${hp##*:}" ;;
+    \[*\])   host="$hp" port="" ;;
+    *:*)     host="${hp%:*}" port="${hp##*:}" ;;
+    *)       host="$hp" port="" ;;
+  esac
+  [ -n "$port" ] || case "$1" in https://*) port=443 ;; *) port=80 ;; esac
+}
+
 case "$url" in
   file://*)
+    # Every link is followed before the check, the last one included: a link
+    # in the worktree may point at another checkout's page.
     path="${url#file://}"
+    while [ -L "$path" ]; do
+      target="$(readlink "$path")"
+      case "$target" in /*) path="$target" ;; *) path="$(dirname "$path")/$target" ;; esac
+    done
     dir="$(cd "$(dirname "$path")" 2>/dev/null && pwd -P)"
     { [ -n "$dir" ] && [ -f "$path" ] && inside "$dir"; } \
       || not_captured 5 "$url is not in this worktree"
     ;;
   http://*|https://*)
-    hostport="${url#*://}"; hostport="${hostport%%/*}"; hostport="${hostport##*@}"
-    host="${hostport%:*}" port="${hostport##*:}"
-    [ "$host" = "$hostport" ] && { case "$url" in https://*) port=443 ;; *) port=80 ;; esac; }
+    origin_of "$url"
     case "$host" in
       localhost|*.localhost|127.0.0.1|0.0.0.0|\[::1\]) ;;
       *) not_captured 5 "cannot tell which checkout the server at $url serves" ;;
     esac
 
-    curl -s -o /dev/null --max-time 10 "$url" >/dev/null 2>&1 \
-      || not_captured 4 "no server answered at $url"
-
-    # Any listener on the port whose cwd is in the worktree will do: dev
-    # servers often run a supervisor and a worker from different directories.
-    served=0
-    for pid in $(lsof -nP -iTCP:"$port" -sTCP:LISTEN -t 2>/dev/null); do
-      cwd="$(lsof -a -p "$pid" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p' | head -n1)"
-      [ -n "$cwd" ] && inside "$cwd" && { served=1; break; }
+    # Chrome follows redirects, so every hop has to stay on the origin traced
+    # below; a hop off it shows another server's page under this one's caption.
+    hop="$url"
+    for _ in 1 2 3 4 5; do
+      next="$(curl -s -o /dev/null --max-time 10 -w '%{redirect_url}' "$hop" 2>/dev/null)" \
+        || not_captured 4 "no server answered at $url"
+      [ -n "$next" ] || break
+      want="$host:$port"; origin_of "$next"
+      [ "$host:$port" = "$want" ] \
+        || not_captured 5 "$url redirects to $next, off the worktree's server"
+      hop="$next"
     done
-    [ "$served" -eq 1 ] || not_captured 5 "the server at $url is not serving this worktree"
+
+    # Every listener on the port must be the worktree's: two servers can bind
+    # one port on different addresses, and which one answers is not ours to
+    # know.
+    pids="$(lsof -nP -iTCP:"$port" -sTCP:LISTEN -t 2>/dev/null)"
+    [ -n "$pids" ] || not_captured 5 "the server at $url is not serving this worktree"
+    for pid in $pids; do
+      cwd="$(lsof -a -p "$pid" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p' | head -n1)"
+      { [ -n "$cwd" ] && inside "$cwd"; } \
+        || not_captured 5 "the server at $url is not serving this worktree"
+    done
     ;;
   *)
     echo "capture-page: $url is neither an http(s) nor a file:// URL" >&2
