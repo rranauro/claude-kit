@@ -51,6 +51,28 @@ Constituent skills:
 
 ---
 
+## The lease
+
+A walk's worktree is clean between commits, and `kit-hold` alone does not keep a
+reclaim sweep off it — `docs/worktrees.md` says why. So a walk holds a lease
+while it runs.
+
+- **Invoked from `kit:ticket-loop` `open-pr`** → the loop holds the lease. Leave
+  it alone.
+- **Invoked standalone** → at `derive-steps` or `resume`, unless this walk
+  already holds the lease, take it in exactly the shape `kit:start-ticket`
+  `create-worktree` writes, and note that this walk holds it only once the lock
+  succeeds. Release it with `git worktree unlock <worktree>` at `finish`, and
+  when the user says `stop`, and note that it no longer does — a later `resume`
+  takes it again. A walk whose session dies leaves its lease to expire.
+- **The lock is refused because the worktree is already locked** — another
+  pass's lease, or a lock someone wrote by hand → leave it alone. This walk
+  holds no lease, so it releases none. Let `git worktree lock` itself answer
+  rather than reading the porcelain listing, which omits locks before git 2.36.
+- **An out-of-scope detour keeps the lease.** The walk has not ended.
+
+---
+
 ## The artifact
 
 The `walkthrough` artifact, stored by `kit:ticket-artifacts` — the live copy in
@@ -185,6 +207,9 @@ went unverified.
 
 **They report something wrong** → mark `[!]` and go to `detour`.
 
+**They say `stop`** → leave the marker alone, sync the comment, release the
+lease if this walk holds it, and end. `resume` picks it up from the file.
+
 If what they report doesn't map cleanly onto the current step — a different
 screen, an unrelated idea — that is not this step's result. Leave the marker
 alone and handle it as an out-of-scope detour.
@@ -201,7 +226,7 @@ Delegate to `/kit:polish-ticket` `intake` → `triage` → (`fix-inline` | `file
 Its rules apply unchanged: locate the cause before triaging, converge in two or
 three focused checks, get explicit approval for each fix, one commit per fix.
 
-Two things this skill adds on top:
+What this skill adds on top:
 
 - **Carry the step id into the record.** The commit subject or filed issue should
   name the observation (`w4: row order lost after reload`), so the artifact's
@@ -209,6 +234,12 @@ Two things this skill adds on top:
 - **Sync the comment before delegating.** A detour is where a walk most often
   ends for good — the fix takes over the session and nobody comes back. Whatever
   was verified up to here should be on the issue before you hand control away.
+- **Push each inline fix before re-arming the step**, when the walk runs
+  standalone: `git -C <worktree> push origin <branch>`, never with force. The
+  lease guards the directory only while it is held; a pushed fix survives a
+  reclaim. A rejected push stops the detour — say so, and leave the commits
+  local and the lease held. Invoked from `kit:ticket-loop`, don't push: its
+  `open-pr` gate is where the branch is pushed.
 - **Return by re-arming the step, not by advancing.** When a detour ends in an
   inline fix, flip `[!]` back to `[ ]`, restore `← CURRENT` to it, and go to
   `present-step` — the user re-walks the step to verify the fix. When it ends in
@@ -252,7 +283,8 @@ Then hand back:
   decide whether the open items block the PR.
 - Invoked standalone → ask whether to land, keep fixing, or stop.
 
-Sync the comment one last time and leave both copies in place. It is the record
+Release the lease if this walk holds it. Sync the comment one last time and leave
+both copies in place. It is the record
 of what was actually exercised, it's what `resume` reads if the user comes back
 with one more thing to check, and on the issue it is readable by whoever reviews
 the PR — who otherwise has only the claim that a walk happened.
@@ -262,7 +294,8 @@ the PR — who otherwise has only the claim that a walk happened.
 ## Failure / interrupt handling
 
 - **Session ends mid-walk.** By design. Re-invoke `/kit:walkthrough <issue>`;
-  `resume` reconstructs the position from the file.
+  `resume` reconstructs the position from the file. Until the dead session's
+  lease expires, the resumed walk treats it as an existing lock.
 - **A step can't be performed** — missing data, a feature behind a flag, a theme
   without the relevant surface. That's a skip with a reason, not a failure. Mark
   `[~]` and move on.

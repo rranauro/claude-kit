@@ -46,9 +46,10 @@ somebody unlocks it.
 
 **A walkthrough in flight holds the directory as well.** `/kit:walkthrough`
 resolves the worktree path and does all its work there, and it is designed to be
-paused between sessions — so at the moment reclaiming would hurt most, nothing is
-locked and nothing is uncommitted. `kit-hold` on the branch's open PR is the
-signal that one is in flight: a person is in charge of that PR, and the CI gate
+paused between sessions — so between them nothing need be locked and nothing is
+uncommitted. A walk in session holds a lease, which holds like any other;
+between sessions, `kit-hold` on the branch's open PR is the signal that one is
+in flight: a person is in charge of that PR, and the CI gate
 already waits for them. The hold lapses on its own when the label comes off or
 the PR reaches a terminal state; where GitHub cannot be reached the label cannot
 be ruled out, so the worktree is held there too.
@@ -123,7 +124,8 @@ Say what happened, from the records rather than from what you expected:
 - `branch-kept` — **name every one, with its reason.** A branch holding commits
   GitHub never received is the outcome this whole design exists to produce, and
   it is worthless if nobody is told. These accumulate silently otherwise.
-- `held` — with the reason. A `kit:ship` lease is a pass still working and a
+- `held` — with the reason. A `kit:ship` lease is a pass still working — a ship
+  pass, or a walkthrough in session — and a
   `kit-hold` PR is a walkthrough waiting on a person; either way, say which
   ticket or PR owns it. A `remove command exited` reason is the project's
   teardown refusing — quote the output it carries, since that is the reason.
