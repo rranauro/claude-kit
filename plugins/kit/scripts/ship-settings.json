@@ -41,7 +41,8 @@
       "Bash(*/scripts/await-reviews.sh*)",
       "Bash(*/scripts/worktree-reclaim.sh*)",
       "Bash(*/scripts/pr-review.sh*)",
-      "Bash(*/scripts/observe.sh*)"
+      "Bash(*/scripts/observe.sh*)",
+      "Bash(*/scripts/pr-body-left.sh*)"
     ],
     "deny": [
       "Bash(gh issue create:*)",
