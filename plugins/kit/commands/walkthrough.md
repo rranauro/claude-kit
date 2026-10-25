@@ -59,16 +59,16 @@ while it runs.
 
 - **Invoked from `kit:ticket-loop` `open-pr`** → the loop holds the lease. Leave
   it alone.
-- **Invoked standalone** → take the lease once, at the session's first
-  `derive-steps` or `resume`, in exactly the shape `kit:start-ticket`
-  `create-worktree` writes. A `resume` after a detour in the same session
-  already holds it. Release it with `git worktree unlock <worktree>` at
-  `finish`, and when the user says `stop`. A walk whose session dies leaves its
-  lease to expire.
-- **The worktree is already locked** when a standalone walk begins — the
-  porcelain output that resolved `<worktree>` shows a `locked` line under it →
-  it is another pass's lease or a hand-written lock. Leave it alone: take no
-  lease, and so release none.
+- **Invoked standalone** → at `derive-steps` or `resume`, unless this walk
+  already holds the lease, take it in exactly the shape `kit:start-ticket`
+  `create-worktree` writes, and note that this walk holds it only once the lock
+  succeeds. Release it with `git worktree unlock <worktree>` at `finish`, and
+  when the user says `stop`, and note that it no longer does — a later `resume`
+  takes it again. A walk whose session dies leaves its lease to expire.
+- **The lock is refused because the worktree is already locked** — another
+  pass's lease, or a lock someone wrote by hand → leave it alone. This walk
+  holds no lease, so it releases none. Let `git worktree lock` itself answer
+  rather than reading the porcelain listing, which omits locks before git 2.36.
 - **An out-of-scope detour keeps the lease.** The walk has not ended.
 
 ---
@@ -208,7 +208,7 @@ went unverified.
 **They report something wrong** → mark `[!]` and go to `detour`.
 
 **They say `stop`** → leave the marker alone, sync the comment, release the
-lease if this walk took it, and end. `resume` picks it up from the file.
+lease if this walk holds it, and end. `resume` picks it up from the file.
 
 If what they report doesn't map cleanly onto the current step — a different
 screen, an unrelated idea — that is not this step's result. Leave the marker
@@ -283,7 +283,7 @@ Then hand back:
   decide whether the open items block the PR.
 - Invoked standalone → ask whether to land, keep fixing, or stop.
 
-Release the lease if this walk took it. Sync the comment one last time and leave
+Release the lease if this walk holds it. Sync the comment one last time and leave
 both copies in place. It is the record
 of what was actually exercised, it's what `resume` reads if the user comes back
 with one more thing to check, and on the issue it is readable by whoever reviews
