@@ -33,6 +33,7 @@
       "Bash(git push:*)",
       "Bash(git worktree:*)",
       "Bash(*/scripts/observe.sh drop*)",
+      "Bash(*/scripts/observe.sh set-waiting*)",
       "WebFetch",
       "WebSearch"
     ]

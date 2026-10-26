@@ -474,6 +474,23 @@ assert_lacks "$(cat "$CALLS")" "/kit:observe file" "no filing session runs"
 assert_eq "$(STORE_OF)" "$before" "the store is unchanged"
 end_sandbox
 
+new_sandbox "a drain that files nothing says what the store holds instead"
+observe --claim "a call only the owner can make" --waiting owner \
+  --action "the owner decides whether this is worth doing"
+printf '%s\n' '{"v": 2, "id": "a-v2-record", "at": "2026-10-20", "by": "kit:grilling", "ctx": {}, "claim": "README still says hello", "who": "agent", "affected": "a reader", "check": "grep -c hello README.md", "witness": "1", "surfaced": "an older pass", "action": "this backlog"}' \
+  >> "$MAIN/.claude/observations.jsonl"
+reply <<'R'
+<!-- kit-startable: begin -->
+bug:
+<!-- kit-startable: end -->
+R
+out="$(drain)"
+assert_lacks "$(cat "$CALLS")" "/kit:observe file" "no filing session runs"
+assert_has "$out" "records remaining: 2 (ticket 0 · owner 1 · no waiting 1)" \
+  "the summary splits what is left by what it waits on"
+assert_has "$out" "fileable: 0" "and says none of it could be filed"
+end_sandbox
+
 new_sandbox "a filed ticket that parks drops its record"
 seed_store
 reply <<'R'

@@ -756,6 +756,94 @@ assert_eq "$?" 0 "an empty store is not an error"
 assert_eq "$out" "" "and offers nothing"
 end_sandbox
 
+# ========================================================================
+# AC · A record already in the store can be told what it waits on, in place,
+#      so one written before `waiting` existed, or answered by the owner,
+#      reaches a runner without losing its place in the queue.
+# ========================================================================
+
+new_sandbox "set-waiting marks a record from before waiting as a ticket, in place"
+v2_record
+record "$MAIN" --claim "a newer ticket-ready claim" >/dev/null
+out="$( (cd "$MAIN" && "$SCRIPT" set-waiting a-v2-record --waiting ticket \
+  --action "a ticket: README.md says goodbye" --decision "say goodbye in README.md") 2>&1 )"
+assert_eq "$?" 0 "set-waiting succeeds"
+assert_eq "$(field 1 id)" "a-v2-record" "the record keeps its slug and its line"
+assert_eq "$(field 1 at)" "2026-10-20" "and its date, so the oldest is still offered first"
+assert_eq "$(field 1 waiting)" "ticket" "it now waits on a ticket"
+assert_eq "$(field 1 decision)" "say goodbye in README.md" "carrying the decision"
+assert_eq "$(field 1 witness)" "hello" "and nothing it was written against changes"
+assert_jsonl_valid "the store is still one record per line"
+out="$( (cd "$MAIN" && "$SCRIPT" fileable) 2>&1 )"
+assert_eq "$(printf '%s\n' "$out" | sed -n 1p)" "a-v2-record" "fileable offers it first"
+end_sandbox
+
+new_sandbox "set-waiting asks for who and affected only where the record lacks them"
+v1_record
+before="$(cat "$STORE")"
+out="$( (cd "$MAIN" && "$SCRIPT" set-waiting an-old-record --waiting ticket \
+  --action "a ticket: README.md says goodbye") 2>&1 )"
+assert_eq "$?" 2 "a record with no who is refused"
+assert_has "$out" "--who is required" "and the refusal says what is missing"
+assert_eq "$(cat "$STORE")" "$before" "and the store is unchanged"
+out="$( (cd "$MAIN" && "$SCRIPT" set-waiting an-old-record --waiting ticket \
+  --action "a ticket: README.md says goodbye" --who visitor \
+  --affected "a visitor reads hello where the page means goodbye") 2>&1 )"
+assert_eq "$?" 0 "given both, it is written"
+assert_eq "$(field 1 who)" "visitor" "who is recorded"
+assert_eq "$(field 1 v)" "3" "and the record reads as the current shape"
+end_sandbox
+
+new_sandbox "set-waiting refuses an action that names only the backlog"
+v2_record
+before="$(cat "$STORE")"
+out="$( (cd "$MAIN" && "$SCRIPT" set-waiting a-v2-record --waiting ticket) 2>&1 )"
+assert_eq "$?" 2 "the record's own 'this backlog' action is refused"
+assert_has "$out" "names only the backlog" "for the reason an append refuses it"
+assert_eq "$(cat "$STORE")" "$before" "and the store is unchanged"
+end_sandbox
+
+new_sandbox "set-waiting turns an answered owner record into a ticket"
+record "$MAIN" --claim "a call only the owner can make" --waiting owner \
+  --action "the owner decides whether this belongs in the command table" >/dev/null
+slug="$(field 1 id)"
+out="$( (cd "$MAIN" && "$SCRIPT" set-waiting "$slug" --waiting ticket \
+  --action "a ticket: add it to the command table" \
+  --decision "owner, 2026-10-26: it belongs in the table") 2>&1 )"
+assert_eq "$?" 0 "set-waiting succeeds"
+assert_eq "$(field 1 waiting)" "ticket" "it waits on a ticket"
+assert_eq "$(field 1 action)" "a ticket: add it to the command table" "under the new action"
+out="$( (cd "$MAIN" && "$SCRIPT" fileable) 2>&1 )"
+assert_eq "$out" "$slug" "and a runner may now file it"
+end_sandbox
+
+new_sandbox "set-waiting refuses what it cannot write"
+v2_record
+before="$(cat "$STORE")"
+out="$( (cd "$MAIN" && "$SCRIPT" set-waiting no-such-slug --waiting ticket) 2>&1 )"
+assert_eq "$?" 1 "an unknown slug is an error"
+out="$( (cd "$MAIN" && "$SCRIPT" set-waiting a-v2-record --waiting later \
+  --action "a ticket: say goodbye") 2>&1 )"
+assert_eq "$?" 2 "a waiting that is neither ticket nor owner is refused"
+out="$( (cd "$MAIN" && "$SCRIPT" set-waiting a-v2-record --waiting ticket \
+  --action "a ticket: say goodbye" --who nobody --affected "no one") 2>&1 )"
+assert_eq "$?" 2 "a record affecting nobody is refused, since drop is the move"
+assert_has "$out" "drop" "and the refusal names it"
+assert_eq "$(cat "$STORE")" "$before" "and the store is unchanged"
+end_sandbox
+
+new_sandbox "tally counts the store by what each record waits on"
+out="$( (cd "$MAIN" && "$SCRIPT" tally) 2>&1 )"
+assert_eq "$out" "ticket 0 · owner 0 · no waiting 0" "an empty store tallies zero"
+v2_record
+record "$MAIN" >/dev/null
+record "$MAIN" --claim "a second ticket claim" >/dev/null
+record "$MAIN" --claim "a call only the owner can make" --waiting owner \
+  --action "the owner decides whether this belongs in the command table" >/dev/null
+out="$( (cd "$MAIN" && "$SCRIPT" tally) 2>&1 )"
+assert_eq "$out" "ticket 2 · owner 1 · no waiting 1" "each record counts under its waiting"
+end_sandbox
+
 new_sandbox "show prints one record whole"
 record "$MAIN" --decision "file it against the grilling skill" >/dev/null
 slug="$(field 1 id)"

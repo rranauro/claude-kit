@@ -35,4 +35,6 @@ anyone reads its body. On a runner whose checkout is discarded that record is
 lost, and the PR body and `kit-pinned` still carry the question.
 
 Records written before `waiting` existed are untouched, and triage reads their
-action to decide which they are.
+action to decide which they are. `observe.sh set-waiting` records that call in
+place, so a record triage marks `ticket` keeps its place in the queue and is
+drained by a runner rather than filed by hand.

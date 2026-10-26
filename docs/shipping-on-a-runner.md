@@ -134,7 +134,11 @@ rejects, and filing one ahead of the work leaves the tracker holding the queue.
   nobody is carrying, so the runner parks it itself, in `kit:park`'s shape,
   before dropping the record. If that park cannot be written, the record stays.
 - **A filed record counts toward `--max`; a decline does not.** The summary
-  adds what was declined and why, and how many records are left.
+  adds what was declined and why, and how many records are left — split by
+  what each waits on, beside how many `fileable` last offered. A drain that
+  files nothing looks like a flag that did nothing; the split says it was a
+  store of `owner` records and records from before `waiting`, which a person
+  marks with `observe.sh set-waiting` before a runner can take them.
 
 A run killed between filing and dropping leaves both the issue and the record,
 and the next run files the record again. That is accepted rather than guarded:
