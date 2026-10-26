@@ -119,7 +119,9 @@ That is a fine outcome, not a failed one. Do not soften a reason to get it filed
 body carries, verbatim and under their own headings, the record's `surfaced`
 thread and its `decision`, beside the claim and the check that tests it. Give it
 the kind label that fits, in the project's spelling (`kit:project-rules`
-*Labels*), since hand-off reads the kind.
+*Labels*), since hand-off reads the kind. Write the body with the Write tool to
+`<path>.body.md` and pass it as `--body-file`: the reply's directory is the only
+place this grant writes, and a shell redirect or heredoc is refused.
 
 **Add no `ready-for-agent` and no `kit-blocked-by` marker.** The runner names
 the issue to `/kit:ship-ticket` itself, which needs neither, and a ticket
