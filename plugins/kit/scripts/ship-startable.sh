@@ -119,6 +119,14 @@ PY
 # commands have nothing to do there.
 OBSERVE="$SCRIPT_DIR/observe.sh"
 
+# Every session runs in don't-ask mode, where a Bash call that redirects to a
+# file is refused even when its command is allowed and its directory was added:
+# the redirect is a write no Bash rule names. A session that saves output to
+# scratch files, as background sessions are told to, is refused, and one that
+# reads the refusal as a wall ends with no reply. Told once, at launch, so it
+# holds for every command a session runs rather than the ones a prompt foresaw.
+UNATTENDED_PROMPT="This session runs unattended in don't-ask mode. A Bash call that writes a file by redirect (>, >>, tee) is refused even when its command is allowed: pipe output into the next command instead of saving it. When a call is refused, retry it split into separate calls, each one allowed command, before concluding you are blocked."
+
 # Where a background session leaves the answer this run has to read. Passed to
 # every session with --add-dir, since it sits outside the repository.
 REPLY_DIR="$(mktemp -d -t ship-startable-replies.XXXXXX)"
@@ -222,7 +230,8 @@ run_claude_timed() { # prompt
   local start end
   start=$(date +%s)
   TIMED_OUT="$("$CLAUDE_BIN" -p "$1" --model "$MODEL" \
-    --plugin-dir "$PLUGIN_DIR" --settings "$SETTINGS_FILE" 2>>"$LOG" </dev/null)"
+    --plugin-dir "$PLUGIN_DIR" --settings "$SETTINGS_FILE" \
+    --append-system-prompt "$UNATTENDED_PROMPT" 2>>"$LOG" </dev/null)"
   end=$(date +%s)
   TIMED_ELAPSED=$((end - start))
   printf '%s\n' "$TIMED_OUT" >>"$LOG"
@@ -239,6 +248,7 @@ run_claude_bg_timed() { # prompt name [settings]
   start=$(date +%s)
   if ! "$CLAUDE_BIN" --bg --name "$2" --model "$MODEL" --plugin-dir "$PLUGIN_DIR" \
       --settings "${3:-$SETTINGS_FILE}" --add-dir "$REPLY_DIR" \
+      --append-system-prompt "$UNATTENDED_PROMPT" \
       --permission-mode dontAsk "$1" >>"$LOG" 2>&1 </dev/null; then
     TIMED_ELAPSED=0
     return

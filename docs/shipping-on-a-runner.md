@@ -215,6 +215,22 @@ it — with the reason being that no server answered, not a missing grant. Uploa
 stays unavailable on the runner: nothing here drives the operator's signed-in
 browser, so the PR names the images' local paths.
 
+## Don't-ask mode refuses more than the grant says
+
+Two refusals look like a missing grant and are not:
+
+- **A Write rule is never consulted.** Claude Code checks the Write tool against
+  Edit rules, so the filing grant scopes its reply directory as
+  `Edit(//<dir>/**)`. A `Write(//<dir>/**)` rule left every filing session
+  unable to write its reply, and the runner read each as a decline.
+- **A Bash call that redirects to a file is refused** even when its command is
+  allowed and its directory was added with `--add-dir`: the redirect is a write
+  no Bash rule names. Background sessions are told to keep scratch files under
+  `$CLAUDE_JOB_DIR/tmp`, so a session batching its lookups into files is refused,
+  and one that stops there ends with no reply. Every session the runner starts
+  is told so at launch with `--append-system-prompt`: pipe instead of saving,
+  and split a refused call before concluding it is blocked.
+
 ## A crashed ticket needs no cleanup of its own
 
 If a per-ticket call dies partway — the process is killed, the machine sleeps
