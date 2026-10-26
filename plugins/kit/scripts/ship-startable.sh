@@ -130,20 +130,37 @@ UNATTENDED_PROMPT="This session runs unattended in don't-ask mode. A Bash call t
 # Where a background session leaves the answer this run has to read. Passed to
 # every session with --add-dir, since it sits outside the repository.
 REPLY_DIR="$(mktemp -d -t ship-startable-replies.XXXXXX)"
+# The filing grant denies the repository, and a deny beats an allow, so a
+# $TMPDIR inside the repository would put the reply under that deny and every
+# filing would read as a decline. Such a reply directory is remade under /tmp.
+case "$(cd "$REPLY_DIR" && pwd -P)/" in
+  "$(cd "$REPO" && pwd -P)"/*)
+    rmdir "$REPLY_DIR"
+    REPLY_DIR="$(mktemp -d /tmp/ship-startable-replies.XXXXXX)" ;;
+esac
 
 # The filing grant may write its reply and nothing else. A bare Write would let
 # the session rewrite the repository or the store it is filing from, and the
 # reply directory exists only once this run has made it, so the scope is added
 # here rather than in the file. `//` is how a permission rule names an
-# absolute path. The rule is Edit's, not Write's: Claude Code checks the Write
-# tool against Edit rules, so a `Write(path)` rule is never consulted and the
-# session could write nothing, its reply included.
+# absolute path.
+#
+# Every file-writing tool is checked against Edit rules, Write included, and a
+# deny beats any allow — so a bare Edit deny would cancel the reply rule, and
+# the repository is denied by name instead. A write is checked against the
+# resolved path, and on macOS $TMPDIR sits under the /var -> /private/var
+# symlink, so the reply directory is allowed under both spellings.
 FILE_SETTINGS="$(mktemp -t ship-startable-file-settings.XXXXXX)"
-python3 - "$SCRIPT_DIR/file-settings.json" "$REPLY_DIR" >"$FILE_SETTINGS" <<'PY'
-import json, sys
+python3 - "$SCRIPT_DIR/file-settings.json" "$REPLY_DIR" "$REPO" >"$FILE_SETTINGS" <<'PY'
+import json, os, sys
 with open(sys.argv[1]) as f:
     grant = json.load(f)
-grant["permissions"]["allow"].append(f"Edit(/{sys.argv[2]}/**)")
+reply, repo = sys.argv[2], sys.argv[3]
+perms = grant["permissions"]
+for path in dict.fromkeys([reply, os.path.realpath(reply)]):
+    perms["allow"].append(f"Edit(/{path}/**)")
+for path in dict.fromkeys([repo, os.path.realpath(repo)]):
+    perms["deny"].append(f"Edit(/{path}/**)")
 json.dump(grant, sys.stdout, indent=2)
 PY
 

@@ -106,11 +106,18 @@ sys.exit(0 if any("gh issue create" in a for a in allow) else 1)
   write="$(python3 -c '
 import json, sys
 allow = json.load(open(sys.argv[1]))["permissions"]["allow"]
-w = [a for a in allow if a == "Write" or a.startswith(("Write(", "Edit("))]
-print("bare" if "Write" in w else ",".join(w) or "none")
+w = [a for a in allow if a in ("Write", "Edit") or a.startswith(("Write(", "Edit("))]
+print("bare" if "Write" in w or "Edit" in w else ",".join(w) or "none")
+' "$settings")"
+  # A bare Edit deny covers Write as well, and deny beats allow, so it
+  # cancels every scoped write rule the grant carries.
+  denies_writes="$(python3 -c '
+import json, sys
+deny = json.load(open(sys.argv[1]))["permissions"].get("deny", [])
+print("yes" if "Edit" in deny or "Write" in deny else "no")
 ' "$settings")"
 fi
-echo "$mode files-issues=$files write=$write told=$told $prompt" >> "$CALLS"
+echo "$mode files-issues=$files write=$write denies-all-writes=${denies_writes:-no} told=$told $prompt" >> "$CALLS"
 
 after() { printf '%s\n' "$prompt" | sed -n "s/.*$1 \([^ ]*\).*/\1/p"; }
 case "$prompt" in
@@ -385,8 +392,32 @@ assert_has "$(grep '/kit:observe file' "$CALLS")" "files-issues=yes" "filing run
 assert_has "$(grep '/kit:ship-ticket' "$CALLS")" "files-issues=no" "shipping does not"
 assert_has "$(grep '/kit:list' "$CALLS")" "files-issues=no" "and neither does listing"
 assert_lacks "$(grep '/kit:observe file' "$CALLS")" "write=bare" "the filing grant cannot write anywhere it likes"
-assert_has "$(grep '/kit:observe file' "$CALLS")" "write=Edit(//" "only under the run's reply directory, by the rule Write obeys"
+assert_has "$(grep '/kit:observe file' "$CALLS")" "write=Edit(//" "only under the run's reply directory"
+assert_has "$(grep '/kit:observe file' "$CALLS")" "denies-all-writes=no" "and no deny cancels that rule"
+filing="$(grep '/kit:observe file' "$CALLS")"
+reply_dir="$(dirname "$(printf '%s\n' "$filing" | sed -n 's/.*--reply \([^ ]*\).*/\1/p')")"
+assert_has "$filing" "Edit(/$(cd "$(dirname "$reply_dir")" && pwd -P)/$(basename "$reply_dir")/**)" "naming the reply directory by the resolved path a write is checked against"
 assert_lacks "$(cat "$CALLS")" "told=no" "every session is told what don't-ask mode refuses"
+end_sandbox
+
+new_sandbox "a TMPDIR inside the repository does not put the reply under its deny"
+seed_store
+reply <<'R'
+<!-- kit-startable: begin -->
+bug:
+<!-- kit-startable: end -->
+R
+file_reply <<'F'
+filed: 90
+F
+pr_list <<'J'
+[{"number":91,"state":"OPEN","closingIssuesReferences":[{"number":90}]}]
+J
+mkdir -p "$MAIN/tmp"
+out="$(TMPDIR="$MAIN/tmp" drain)"
+filing="$(grep '/kit:observe file' "$CALLS")"
+assert_has "$filing" "--reply " "the record is still filed"
+assert_lacks "$(printf '%s\n' "$filing" | sed -n 's/.*--reply \([^ ]*\).*/\1/p')" "$MAIN/" "with its reply outside the repository"
 end_sandbox
 
 new_sandbox "a record that cannot be dropped stops the run before it is filed again"
