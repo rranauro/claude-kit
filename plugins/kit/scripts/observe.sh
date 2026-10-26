@@ -28,6 +28,9 @@ usage:
   observe.sh fileable
   observe.sh show <slug>
   observe.sh count
+  observe.sh tally
+  observe.sh set-waiting <slug> --waiting ticket|owner [--decision <text>] \
+             [--action <text>] [--who <role>] [--affected <text>]
   observe.sh rewitness <slug> [<slug> ...]
   observe.sh drop <slug> [<slug> ...]
 USAGE
@@ -199,6 +202,52 @@ elif mode == "rewitness":
             w = new[r["id"]]
             r["witness"] = w if len(w) <= 4000 else w[:4000] + "\n… truncated"
         print(json.dumps(r, ensure_ascii=False))
+
+elif mode == "tally":
+    n = {"ticket": 0, "owner": 0}
+    unset = 0
+    for r in records:
+        if r.get("waiting") in n:
+            n[r["waiting"]] += 1
+        else:
+            unset += 1
+    print(f"ticket {n['ticket']} · owner {n['owner']} · no waiting {unset}")
+
+elif mode == "set-waiting":
+    # One record told what it waits on, in place: its slug, line and date are its
+    # place in the queue, and re-recording it would move it to the back. The
+    # rules an append enforces are enforced on the record as it will read.
+    import os, re
+    def norm(v):
+        return re.sub(r"[ .]*$", "", re.sub(r"\s+", " ", (v or "").lower()).strip())
+    def refuse(msg):
+        print(msg, file=sys.stderr)
+        sys.exit(2)
+    slug = sys.argv[3]
+    hit = next((r for r in records if r.get("id") == slug), None)
+    if hit is None:
+        print(f"no such observation: {slug}", file=sys.stderr)
+        sys.exit(1)
+    rec = dict(hit)
+    for key in ("action", "who", "affected", "decision"):
+        v = os.environ.get("OBS_" + key.upper(), "")
+        if v:
+            rec[key] = v
+    rec["waiting"] = norm(os.environ.get("OBS_WAITING"))
+    if rec["waiting"] not in ("ticket", "owner"):
+        refuse("--waiting is required: ticket (ready to file) or owner (a call only the owner can make)")
+    if not rec.get("who"):
+        refuse("--who is required: this record predates it; who gets a wrong result (visitor, owner, operator, agent)")
+    if not rec.get("affected"):
+        refuse("--affected is required: this record predates it; what they do, and what they get instead of what they expect")
+    if norm(rec["who"]) == "nobody":
+        refuse("--who is nobody: a record that affects nobody is dropped, not kept; run drop instead")
+    if norm(rec.get("action")) in ("this backlog", "the backlog", "backlog"):
+        refuse("--action names only the backlog; say what the ticket is, or for --waiting owner, the question the owner decides")
+    rec["v"] = 3
+    rec.setdefault("decision", None)
+    for r in records:
+        print(json.dumps(rec if r is hit else r, ensure_ascii=False))
 
 elif mode == "drop":
     missing = want - {r.get("id") for r in records}
@@ -489,6 +538,38 @@ do_drop() {
   printf 'dropped %s — %s left\n' "$*" "$(count)"
 }
 
+# Rewrites the store as drop does, so a refusal leaves it byte for byte.
+do_set_waiting() {
+  [ $# -gt 0 ] || misuse "set-waiting needs a slug"
+  local slug="$1"; shift
+  local waiting="" decision="" action="" who="" affected=""
+  while [ $# -gt 0 ]; do
+    case "$1" in --*) [ $# -ge 2 ] || misuse "$1 needs a value" ;; esac
+    case "$1" in
+      --waiting)  waiting="${2-}";  shift 2 ;;
+      --decision) decision="${2-}"; shift 2 ;;
+      --action)   action="${2-}";   shift 2 ;;
+      --who)      who="${2-}";      shift 2 ;;
+      --affected) affected="${2-}"; shift 2 ;;
+      *) misuse "unknown argument: $1" ;;
+    esac
+  done
+  [ -f "$STORE" ] || die "no observations in $STORE"
+  local tmp err status; tmp="$(mktemp "$STORE.XXXXXX")"; err="$tmp.err"
+  OBS_WAITING="$waiting" OBS_DECISION="$decision" OBS_ACTION="$action" \
+  OBS_WHO="$who" OBS_AFFECTED="$affected" readers set-waiting "$slug" > "$tmp" 2>"$err"
+  status=$?
+  if [ "$status" -ne 0 ]; then
+    local msg; msg="$(cat "$err")"
+    rm -f "$tmp" "$err"
+    [ "$status" -eq 2 ] && misuse "$msg"
+    die "$msg"
+  fi
+  rm -f "$err"
+  mv "$tmp" "$STORE"
+  printf 'set %s waiting on %s\n' "$slug" "$(norm "$waiting")"
+}
+
 # --- dispatch -----------------------------------------------------------
 
 case "${1-}" in
@@ -500,6 +581,8 @@ case "${1-}" in
   show)    shift; [ $# -eq 1 ] || misuse "show takes one slug"
            readers show "$1" || die "no such observation: $1" ;;
   count)   count ;;
+  tally)   readers tally ;;
+  set-waiting) shift; do_set_waiting "$@" ;;
   drop)    shift; do_drop "$@" ;;
   -h|--help) usage; exit 0 ;;
   *)       init_checks; append "$@" ;;

@@ -166,6 +166,7 @@ SHIPPED=()
 PARKED=()
 ANOMALIES=()
 DECLINED=()
+LAST_FILEABLE=""
 DECLINED_SLUGS=()
 TRACKED_OPEN_PRS=()
 STOP_REASON=""
@@ -184,7 +185,10 @@ report_and_exit() {
     if [ "$OBS" -eq 1 ]; then
       echo "declined: ${#DECLINED[@]}"
       for e in "${DECLINED[@]+"${DECLINED[@]}"}"; do echo "  $e"; done
-      echo "records remaining: $(records_left)"
+      echo "records remaining: $(records_left) ($("$OBSERVE" tally 2>/dev/null))"
+      # A store that holds records and offers none is the run that looks like a
+      # broken flag: say so, rather than leave a bare "done".
+      [ -n "$LAST_FILEABLE" ] && echo "fileable: ${LAST_FILEABLE}"
     fi
     if [ "${#ANOMALIES[@]}" -gt 0 ]; then
       echo "anomalies: ${#ANOMALIES[@]}"
@@ -467,6 +471,7 @@ feed_one() {
     FILEABLE_FAILED="$(cat "$REPLY_DIR/fileable.err")"
     return 0
   fi
+  LAST_FILEABLE="$(printf '%s' "$slugs" | grep -c .)"
   while IFS= read -r slug; do
     [ -n "$slug" ] || continue
     printf '%s\n' "${DECLINED_SLUGS[@]+"${DECLINED_SLUGS[@]}"}" | grep -qxF -- "$slug" && continue

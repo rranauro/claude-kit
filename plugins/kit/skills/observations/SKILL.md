@@ -183,11 +183,18 @@ than a judgement:
   record is put to the user as its `action`'s question, and their answer is the
   decision it is then filed with or dropped on. A record with no `waiting`
   predates the field: read its `action` and decide which it is.
+  **Deciding one need not file it now.** `observe.sh set-waiting <slug> --waiting
+  ticket --action <the ticket> --decision <the call>` marks it in place, keeping
+  its date and so its place in the queue, and `ship-startable.sh --observations`
+  files it unattended. A record from before `who` and `affected` takes both
+  here too. Every rule an append enforces is enforced on the record as it will
+  read.
 - **Holds, and the user decides against it** — a drop, and the useful kind. The
   claim was checkable and still true, and it is still not worth doing.
 
 **3 · Clear down what was binned**: `${CLAUDE_PLUGIN_ROOT}/scripts/observe.sh drop <slug> ...`. It rewrites the
-store atomically; every other write is a single-line append.
+store atomically, as `set-waiting` and `rewitness` do; every other write is a
+single-line append.
 
 **Nothing survives triage untouched.** A record left in place with a fresher read
 on it is a stale record, and the drawer exists because the last one filled up.
