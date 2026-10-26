@@ -230,6 +230,10 @@ Two refusals look like a missing grant and are not:
   and one that stops there ends with no reply. Every session the runner starts
   is told so at launch with `--append-system-prompt`: pipe instead of saving,
   and split a refused call before concluding it is blocked.
+- **A quoted argument holding a line that starts with `#` is refused** —
+  every issue or pull request body with a Markdown heading, passed inline with
+  `--body`. The launch prompt says to use `--body-file`, and `/kit:observe
+  file` writes its body beside its reply, the one path its grant may write.
 
 ## A crashed ticket needs no cleanup of its own
 

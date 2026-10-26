@@ -125,7 +125,7 @@ OBSERVE="$SCRIPT_DIR/observe.sh"
 # scratch files, as background sessions are told to, is refused, and one that
 # reads the refusal as a wall ends with no reply. Told once, at launch, so it
 # holds for every command a session runs rather than the ones a prompt foresaw.
-UNATTENDED_PROMPT="This session runs unattended in don't-ask mode. A Bash call that writes a file by redirect (>, >>, tee) is refused even when its command is allowed: pipe output into the next command instead of saving it. When a call is refused, retry it split into separate calls, each one allowed command, before concluding you are blocked."
+UNATTENDED_PROMPT="This session runs unattended in don't-ask mode. A Bash call that writes a file by redirect (>, >>, tee) is refused even when its command is allowed: pipe output into the next command instead of saving it. Pass multi-line text (an issue, pull request or comment body) with --body-file, never inline: a quoted argument holding a line that starts with # is refused. When a call is refused, retry it split into separate calls, each one allowed command, before concluding you are blocked."
 
 # Where a background session leaves the answer this run has to read. Passed to
 # every session with --add-dir, since it sits outside the repository.
