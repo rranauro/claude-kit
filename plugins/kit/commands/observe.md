@@ -114,14 +114,16 @@ the destination but not the route is one it can design.
 A decline leaves the record in the store, unchanged, for the owner's triage.
 That is a fine outcome, not a failed one. Do not soften a reason to get it filed.
 
-**3 · File it.** Draft the issue with `kit:writing-tickets`, then
-`gh issue create`. A reader of the issue must need nothing from the store, so the
+**3 · File it.** Draft the issue with `kit:writing-tickets`, write its body
+with the Write tool to `<reply path>.body.md` — beside the reply, the one place
+this session may write, since a shell redirect or heredoc is refused — and
+`gh issue create --body-file <reply path>.body.md`. Never pass the body inline:
+don't-ask mode refuses a quoted argument holding a line that starts with `#`,
+so every body with a heading is refused. A reader of the issue must need nothing from the store, so the
 body carries, verbatim and under their own headings, the record's `surfaced`
 thread and its `decision`, beside the claim and the check that tests it. Give it
 the kind label that fits, in the project's spelling (`kit:project-rules`
-*Labels*), since hand-off reads the kind. Write the body with the Write tool to
-`<path>.body.md` and pass it as `--body-file`: the reply's directory is the only
-place this grant writes, and a shell redirect or heredoc is refused.
+*Labels*), since hand-off reads the kind.
 
 **Add no `ready-for-agent` and no `kit-blocked-by` marker.** The runner names
 the issue to `/kit:ship-ticket` itself, which needs neither, and a ticket

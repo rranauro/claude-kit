@@ -84,13 +84,14 @@ print(json.dumps([{"name": n, "state": "done"} for n in names]))
 fi
 [ "${1-}" = stop ] && exit 0
 
-mode="" prompt="" name="" settings=""
+mode="" prompt="" name="" settings="" told=no
 while [ $# -gt 0 ]; do
   case "$1" in
     -p)                prompt="$2"; mode=p; shift 2 ;;
     --bg)              mode=bg; shift ;;
     --name)            name="$2"; shift 2 ;;
     --settings)        settings="$2"; shift 2 ;;
+    --append-system-prompt) case "$2" in *redirect*) told=yes ;; esac; shift 2 ;;
     --model|--plugin-dir|--permission-mode|--add-dir) shift 2 ;;
     *)                 prompt="$1"; shift ;;
   esac
@@ -116,7 +117,7 @@ deny = json.load(open(sys.argv[1]))["permissions"].get("deny", [])
 print("yes" if "Edit" in deny or "Write" in deny else "no")
 ' "$settings")"
 fi
-echo "$mode files-issues=$files write=$write denies-all-writes=${denies_writes:-no} $prompt" >> "$CALLS"
+echo "$mode files-issues=$files write=$write denies-all-writes=${denies_writes:-no} told=$told $prompt" >> "$CALLS"
 
 after() { printf '%s\n' "$prompt" | sed -n "s/.*$1 \([^ ]*\).*/\1/p"; }
 case "$prompt" in
@@ -396,6 +397,7 @@ assert_has "$(grep '/kit:observe file' "$CALLS")" "denies-all-writes=no" "and no
 filing="$(grep '/kit:observe file' "$CALLS")"
 reply_dir="$(dirname "$(printf '%s\n' "$filing" | sed -n 's/.*--reply \([^ ]*\).*/\1/p')")"
 assert_has "$filing" "Edit(/$(cd "$(dirname "$reply_dir")" && pwd -P)/$(basename "$reply_dir")/**)" "naming the reply directory by the resolved path a write is checked against"
+assert_lacks "$(cat "$CALLS")" "told=no" "every session is told what don't-ask mode refuses"
 end_sandbox
 
 new_sandbox "a record that cannot be dropped stops the run before it is filed again"
