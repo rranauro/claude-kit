@@ -130,6 +130,14 @@ UNATTENDED_PROMPT="This session runs unattended in don't-ask mode. A Bash call t
 # Where a background session leaves the answer this run has to read. Passed to
 # every session with --add-dir, since it sits outside the repository.
 REPLY_DIR="$(mktemp -d -t ship-startable-replies.XXXXXX)"
+# The filing grant denies the repository, and a deny beats an allow, so a
+# $TMPDIR inside the repository would put the reply under that deny and every
+# filing would read as a decline. Such a reply directory is remade under /tmp.
+case "$(cd "$REPLY_DIR" && pwd -P)/" in
+  "$(cd "$REPO" && pwd -P)"/*)
+    rmdir "$REPLY_DIR"
+    REPLY_DIR="$(mktemp -d /tmp/ship-startable-replies.XXXXXX)" ;;
+esac
 
 # The filing grant may write its reply and nothing else. A bare Write would let
 # the session rewrite the repository or the store it is filing from, and the

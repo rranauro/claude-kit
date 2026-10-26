@@ -400,6 +400,26 @@ assert_has "$filing" "Edit(/$(cd "$(dirname "$reply_dir")" && pwd -P)/$(basename
 assert_lacks "$(cat "$CALLS")" "told=no" "every session is told what don't-ask mode refuses"
 end_sandbox
 
+new_sandbox "a TMPDIR inside the repository does not put the reply under its deny"
+seed_store
+reply <<'R'
+<!-- kit-startable: begin -->
+bug:
+<!-- kit-startable: end -->
+R
+file_reply <<'F'
+filed: 90
+F
+pr_list <<'J'
+[{"number":91,"state":"OPEN","closingIssuesReferences":[{"number":90}]}]
+J
+mkdir -p "$MAIN/tmp"
+out="$(TMPDIR="$MAIN/tmp" drain)"
+filing="$(grep '/kit:observe file' "$CALLS")"
+assert_has "$filing" "--reply " "the record is still filed"
+assert_lacks "$(printf '%s\n' "$filing" | sed -n 's/.*--reply \([^ ]*\).*/\1/p')" "$MAIN/" "with its reply outside the repository"
+end_sandbox
+
 new_sandbox "a record that cannot be dropped stops the run before it is filed again"
 seed_store
 reply <<'R'
