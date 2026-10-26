@@ -105,7 +105,7 @@ sys.exit(0 if any("gh issue create" in a for a in allow) else 1)
   write="$(python3 -c '
 import json, sys
 allow = json.load(open(sys.argv[1]))["permissions"]["allow"]
-w = [a for a in allow if a == "Write" or a.startswith("Write(")]
+w = [a for a in allow if a == "Write" or a.startswith(("Write(", "Edit("))]
 print("bare" if "Write" in w else ",".join(w) or "none")
 ' "$settings")"
 fi
@@ -384,7 +384,7 @@ assert_has "$(grep '/kit:observe file' "$CALLS")" "files-issues=yes" "filing run
 assert_has "$(grep '/kit:ship-ticket' "$CALLS")" "files-issues=no" "shipping does not"
 assert_has "$(grep '/kit:list' "$CALLS")" "files-issues=no" "and neither does listing"
 assert_lacks "$(grep '/kit:observe file' "$CALLS")" "write=bare" "the filing grant cannot write anywhere it likes"
-assert_has "$(grep '/kit:observe file' "$CALLS")" "write=Write(//" "only under the run's reply directory"
+assert_has "$(grep '/kit:observe file' "$CALLS")" "write=Edit(//" "only under the run's reply directory, by the rule Write obeys"
 end_sandbox
 
 new_sandbox "a record that cannot be dropped stops the run before it is filed again"

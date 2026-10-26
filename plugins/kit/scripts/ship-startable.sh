@@ -127,13 +127,15 @@ REPLY_DIR="$(mktemp -d -t ship-startable-replies.XXXXXX)"
 # the session rewrite the repository or the store it is filing from, and the
 # reply directory exists only once this run has made it, so the scope is added
 # here rather than in the file. `//` is how a permission rule names an
-# absolute path.
+# absolute path. The rule is Edit's, not Write's: Claude Code checks the Write
+# tool against Edit rules, so a `Write(path)` rule is never consulted and the
+# session could write nothing, its reply included.
 FILE_SETTINGS="$(mktemp -t ship-startable-file-settings.XXXXXX)"
 python3 - "$SCRIPT_DIR/file-settings.json" "$REPLY_DIR" >"$FILE_SETTINGS" <<'PY'
 import json, sys
 with open(sys.argv[1]) as f:
     grant = json.load(f)
-grant["permissions"]["allow"].append(f"Write(/{sys.argv[2]}/**)")
+grant["permissions"]["allow"].append(f"Edit(/{sys.argv[2]}/**)")
 json.dump(grant, sys.stdout, indent=2)
 PY
 
