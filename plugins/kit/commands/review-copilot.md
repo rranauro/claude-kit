@@ -110,7 +110,11 @@ For each item, in order:
      or product call, or an owner's decision. Then no fix is applied, since
      applying one is making that call, and the outcome is `left for the person`:
      Step 7.4 writes it into the PR body, held or not, and on an unheld PR
-     Step 7.5 also records it for the owner.
+     Step 7.5 pins it. **It needs a question the owner decides, whose answer
+     changes something.** A finding you cannot put that way — whichever answer
+     the owner gave, nothing would be done differently — is `dropped — affects
+     nobody`, not left: there is nothing to look at, so it goes on neither the
+     PR nor the store.
    - **Outside the diff** → no fix: `outside the diff — named here`. The round
      summary names it in full, and Step 7.5 pins the PR. It is real, and it is
      not this ticket's — absorbing it widens the PR past what was asked, and
@@ -325,12 +329,16 @@ The summary comment is the record, on the PR the person holding it reads. The
 label is the filter `gh pr list --label kit-pinned` reads (`CONTEXT.md`
 **kit-pinned**), and never a vocabulary.
 
-**A finding left for the person on an unheld PR also goes to the store**, one
-record each through `kit:observations`, `--waiting owner` and `--pr <N>`, with
-its `action` stating the question the owner decides. That PR can merge before
-anyone reads its body, so the store is where the question is waited on. Report
-each line the script prints; a refused or failed write is reported and changes
-nothing else here. **Nothing else this round handled goes to the store.**
+**A finding left for the person on an unheld PR goes to the store only when the
+summary comment above did not post.** Then the PR carries no summary and no
+pin, so the store is the one place the question is waited on. Record one each
+through `kit:observations`, `--waiting owner` and `--pr <N>`, with its `action`
+stating the question the owner decides, and name it as recorded in the report to
+your caller. Where the comment posted, it, the body and `kit-pinned` are the
+record, and a copy in the store could only be deleted at triage. A body write
+that failed does not count: the summary lists those findings in full. A refused
+store write is reported and changes nothing else here. **Nothing else this round
+handled goes to the store.**
 
 `## Unattended` below owns what the escalation *conditions* are, and the merge
 decision that branches on them. This step owns only the record.
