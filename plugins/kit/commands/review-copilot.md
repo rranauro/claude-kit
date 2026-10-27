@@ -329,9 +329,11 @@ The summary comment is the record, on the PR the person holding it reads. The
 label is the filter `gh pr list --label kit-pinned` reads (`CONTEXT.md`
 **kit-pinned**), and never a vocabulary.
 
-**A finding left for the person on an unheld PR goes to the store only when the
-summary comment above did not post.** Then the PR carries no summary and no
-pin, so the store is the one place the question is waited on. Record one each
+**A finding left for the person on an unheld PR goes to the store only when no
+summary on the PR names it.** That is the comment above failing to post, with no
+earlier round's summary naming the finding either: a re-run whose edit failed
+still has the old summary and its pin. Then the store is the one place the
+question is waited on. Record one each
 through `kit:observations`, `--waiting owner` and `--pr <N>`, with its `action`
 stating the question the owner decides, and name it as recorded in the report to
 your caller. Where the comment posted, it, the body and `kit-pinned` are the

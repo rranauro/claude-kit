@@ -149,8 +149,8 @@ the PR instead. `docs/tending-on-a-runner.md` owns that case.
 - **A finding already stated where its reader looks** — the PR body, the
   issue's stored plan, or a `kit-pinned` comment, the review round's own summary
   included. A second copy is triaged twice and drifts from the first. **Unless
-  the place it is stated never got written** — the round's summary comment
-  failed to post, so the PR carries no pin and can merge unread — and the
+  the place it is stated never got written** — no summary on the PR names it,
+  so the PR carries no pin and can merge unread — and the
   finding waits on the owner: then it is recorded.
   `/kit:review-copilot` Step 7.5 is that case.
 

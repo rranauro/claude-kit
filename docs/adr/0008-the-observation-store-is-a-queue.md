@@ -30,7 +30,7 @@ records unlabelled rather than the store empty.
 ## Consequences
 
 A review round on an unheld PR records each finding it could not decide as an
-`owner` record only when its summary comment did not post. Where it posted, the
+`owner` record only when no summary on the PR names it. Where one does, the
 summary, the PR body and `kit-pinned` carry the question, and a second copy in the
 store could only be deleted at triage. On a runner whose checkout is discarded the
 record that does get written is lost, and the PR body still carries the question.
