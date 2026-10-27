@@ -30,9 +30,10 @@ records unlabelled rather than the store empty.
 ## Consequences
 
 A review round on an unheld PR records each finding it could not decide as an
-`owner` record, even though the PR body names it too: the PR can merge before
-anyone reads its body. On a runner whose checkout is discarded that record is
-lost, and the PR body and `kit-pinned` still carry the question.
+`owner` record only when no summary on the PR names it. Where one does, the
+summary, the PR body and `kit-pinned` carry the question, and a second copy in the
+store could only be deleted at triage. On a runner whose checkout is discarded the
+record that does get written is lost, and the PR body still carries the question.
 
 Records written before `waiting` existed are untouched, and triage reads their
 action to decide which they are. `observe.sh set-waiting` records that call in

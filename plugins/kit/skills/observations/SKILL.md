@@ -53,6 +53,13 @@ that prints either way: `grep -c`, or `... && echo yes || echo no`, over
 `grep -n` of a line you expect to move. Line-number prefixes are ignored at
 recheck, but only text is compared.
 
+**A check that prints the same either way witnesses nothing.** `grep -c` of an
+identifier that exists whether or not the claim holds is that check: triage
+re-runs it and learns nothing, and the record can only be deleted. A claim no
+cheap, local, read-only command could print differently for, even against the
+file the claim is about, is not recorded. If the owner can act on it, it stays on
+the PR; if not, it is nothing.
+
 **`check` runs under a plain `bash -c`, with no profile and no session.** A
 command that resolves only in your shell — Claude Code's `rg` is a function from
 its snapshot — does not exist there, so the record is refused and the message
@@ -142,9 +149,10 @@ the PR instead. `docs/tending-on-a-runner.md` owns that case.
 - **A finding already stated where its reader looks** — the PR body, the
   issue's stored plan, or a `kit-pinned` comment, the review round's own summary
   included. A second copy is triaged twice and drifts from the first. **Unless
-  the place it is stated can close before its reader gets there** — a PR that
-  can merge unread — and the finding waits on the owner: then it is recorded
-  too. `/kit:review-copilot` Step 7.5 is that case.
+  the place it is stated never got written** — no summary on the PR names it,
+  so the PR carries no pin and can merge unread — and the
+  finding waits on the owner: then it is recorded.
+  `/kit:review-copilot` Step 7.5 is that case.
 
 A ticket-shaped finding *is* an observation: record it `--waiting ticket`, with
 its decision. Filing it directly would make every pass's close a network write
