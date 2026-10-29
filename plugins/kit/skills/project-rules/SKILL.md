@@ -61,16 +61,30 @@ the rule.
 sees exactly what it saw before any of them were read.
 
 A section the reading skill says to take **from the base branch** is read from the base branch's
-tracked files (`git show origin/<base>:<path>`), never the worktree's, and from
-the main checkout's `CLAUDE.local.md`. The branch is the pass's own work; the
-local file is the developer's.
+tracked files, never the worktree's, and from the main checkout's
+`CLAUDE.local.md`. The branch is the pass's own work; the local file is the
+developer's.
+
+**Every read from the base branch goes through one script:**
+
+```
+${CLAUDE_PLUGIN_ROOT}/scripts/base-show.sh origin/<base> <path> [<out>]
+```
+
+It writes the file to stdout, or to `<out>` when one is given, and exits 0 only
+for a file. Anything else exits 1 with `missing: <why> <path>` on stderr. Never
+`git show origin/<base>:<path>`: a lookup inside a commit does not cross a
+symlink, so a project that tracks `.claude/skills` as a link to a directory
+elsewhere would read as having no skill. The script has git follow links inside
+the base branch's own tree, and a link that leaves the repository comes back
+missing rather than followed.
 
 The same holds for a project skill taken from the base branch, and for every
-file it names. Follow the `git show` output as instructions rather than
+file it names. Follow the script's output as instructions rather than
 invoking the skill by name — the Skill tool loads the worktree's copy. Read a
-file it names with `git show` too, and run a script it names from a copy that
-`git show` writes outside the worktree, never from the worktree's path. A file
-the base branch lacks is missing, not one to take from the worktree.
+file it names with the script too, and run a script it names from a copy the
+script writes outside the worktree (`<out>`), never from the worktree's path. A
+file the base branch lacks is missing, not one to take from the worktree.
 
 ## Rules in the project's own words
 

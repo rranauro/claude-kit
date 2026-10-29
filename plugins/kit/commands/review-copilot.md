@@ -93,7 +93,8 @@ For each item, in order:
    once (`git diff origin/<baseRefName>...HEAD`); a finding inside a hunk
    usually settles from it. Where it does not — the finding sits outside every hunk, or turns on
    reachability or a widened exposure — read the base branch's version of the
-   code it names, `git show origin/<baseRefName>:<path>`. Never run anything to
+   code it names, `${CLAUDE_PLUGIN_ROOT}/scripts/base-show.sh origin/<baseRefName> <path>`
+   (`kit:project-rules` says why not `git show`). Never run anything to
    decide it. **A base that cannot be fetched or compared is a gate that could
    not run** (Step 6): say so in the summary rather than guessing which findings
    belong.
