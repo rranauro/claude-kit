@@ -239,7 +239,7 @@ that. Look for the project's answer in this order, each read **from the base bra
 own branch is one the pass could have written to authorize itself.
 
 1. **A `pr-screenshots` skill.** When `.claude/skills/pr-screenshots/SKILL.md` exists on
-   the base branch (`base-show.sh origin/<base> .claude/skills/pr-screenshots/SKILL.md`,
+   the base branch (`${CLAUDE_PLUGIN_ROOT}/scripts/base-show.sh origin/<base> .claude/skills/pr-screenshots/SKILL.md`,
    which follows a tracked symlink), it owns capture. A project writes one when its policy needs more than three lines:
    booting a server, a sign-in it does for itself, state a criterion needs before it can
    be shown.

@@ -15,7 +15,6 @@
       "Bash(git show:*)",
       "Bash(git rev-parse:*)",
       "Bash(ls:*)",
-      "Bash(*/scripts/base-show.sh*)",
       "Bash(*/scripts/observe.sh show*)",
       "Bash(*/scripts/observe.sh recheck*)"
     ],
