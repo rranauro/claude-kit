@@ -176,6 +176,15 @@ read_base origin/main skills/s
 assert_eq "$code" "1" "exits 1"
 assert_has "$(cat "$SANDBOX/stderr")" "missing: tree skills/s" "names the type"
 
+new_sandbox "a path with spaces and a glob character reads and misses cleanly"
+printf 'spaced\n' > "$SANDBOX/repo/my file.md"
+land_on_base "spaces"
+read_base origin/main "my file.md"
+assert_eq "$(cat "$SANDBOX/stdout")" "spaced" "a spaced path is read"
+read_base origin/main "no such *.md"
+assert_eq "$code" "1" "a missing spaced glob path exits 1"
+assert_has "$(cat "$SANDBOX/stderr")" "missing: missing no such *.md" "names the path unexpanded"
+
 new_sandbox "a rev that does not exist is missing"
 printf 'x\n' > "$SANDBOX/repo/a"
 land_on_base "one file"

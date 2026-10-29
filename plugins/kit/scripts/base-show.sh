@@ -37,16 +37,19 @@ missing() {
 header="$(printf '%s:%s\n' "$rev" "$path" | git cat-file --batch-check --follow-symlinks 2>/dev/null | head -n 1)"
 [ -n "$header" ] || missing "unreadable"
 
-set -- $header
-case "$1" in
-  symlink|dangling|loop|notdir) missing "$1" ;;
+# A missing object echoes the requested name, which may hold spaces, so it is
+# recognised by its last word rather than split into fields.
+case "$header" in
+  symlink\ *|dangling\ *|loop\ *|notdir\ *) missing "${header%% *}" ;;
+  *\ missing) missing missing ;;
 esac
-[ "$2" = "blob" ] || missing "$2"
+read -r oid type _ <<< "$header"
+[ "$type" = "blob" ] || missing "$type"
 
 # A blob is written to <out> only once git has said it is one, so a refusal
 # leaves no file for a caller to run by mistake.
 if [ -n "$out" ]; then
-  git cat-file blob "$1" > "$out" || missing "unwritable"
+  git cat-file blob "$oid" > "$out" || missing "unwritable"
 else
-  git cat-file blob "$1" || missing "unreadable"
+  git cat-file blob "$oid" || missing "unreadable"
 fi
