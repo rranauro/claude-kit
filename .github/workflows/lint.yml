@@ -25,3 +25,4 @@ jobs:
       - run: ./tests/pr-body-left.sh
       - run: ./tests/capture-page.sh
       - run: ./tests/rails-quality-gates.sh
+      - run: ./tests/base-show.sh
