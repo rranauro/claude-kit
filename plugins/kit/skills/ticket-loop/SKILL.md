@@ -221,21 +221,28 @@ and taking it then pushes past a head the ship gate already attested.
 - **Findings, attended** — show them, saying which are contested, and ask which
   to apply, as `/simplify`'s are shown. A contested one is the person's to pick
   an After for, or to leave.
-- **Findings, unattended** — apply each uncontested finding's After. Re-run the
-  test files covering what it touched, as `tdd` step 4 does, and commit through
-  `kit:commit`. Leave every contested finding unapplied; applying one makes the
-  choice a hold exists for. **An After that will not go green, or that
-  contradicts the plan, is restored and not applied, and never parks** — the
-  same treatment `/simplify` gets. It stays a finding, and the re-judge below
-  carries it.
+- **Findings, unattended** — apply each uncontested finding that carries an
+  After. Leave every contested finding unapplied, since applying one makes the
+  choice a hold exists for. Leave every accreted interface finding unapplied
+  too: it writes no After, and its reshape is a person's to design.
+
+Apply each chosen After, in either mode, by re-running the test files covering
+what it touched, as `tdd` step 4 does, then committing through `kit:commit`.
+**An After that will not go green, or that contradicts the plan, is restored and
+not applied, and never parks** — the same treatment `/simplify` gets. It stays a
+finding, and the re-judge below carries it.
 
 **If anything was applied, re-judge once** over the same two refs at the new
 head, and carry that comment; otherwise carry the first one. Apply nothing from
-the re-judge; its findings are carried as written. It is what makes the carried
-comment name the head `open-pr` pushes, and catch any shape a fix introduced.
+the re-judge; its findings are carried as written. It catches any shape a fix
+introduced.
 
-**Post nothing yet.** Hold the carried comment in this session for `hand-off`
-step 3, which posts it and decides the hold from it.
+**Record the head SHA the carried comment judged.** `hand-off` step 3 judges
+everything after it — a walkthrough's commits at the `open-pr` gate as well as
+the round's — so nothing lands between the two passes unjudged.
+
+**Post nothing yet.** Hold the carried comment and that SHA in this session for
+`hand-off` step 3, which posts the comment and decides the hold from it.
 
 ---
 
@@ -274,10 +281,6 @@ strands every ticket whose `kit-blocked-by` marker names this one, because a
 blocker reads as cleared only when its issue closes. `gh pr edit <n> --body` to
 add `Closes` if it carries neither. Leave a `Part of` in place — a `Closes`
 written over it closes an unfinished issue.
-
-**Record the PR's head SHA once the push lands.** `hand-off` step 3 compares the
-round's last push against it to decide whether there is anything left to judge.
-
 ---
 
 ## Phase 5 · `hand-off` — Close the review round, then leave the PR to CI
@@ -336,22 +339,25 @@ what it fixes; that push is its own and this phase is built around it, not
 against it.
 
 **3 · Judge what the round added, then post the shape.** `simplify` judged
-everything up to the head `open-pr` pushed. Compare the branch's head now with
-the SHA `open-pr` recorded:
+everything up to the SHA it recorded. Compare the branch's head now with that
+SHA:
 
-- **Unchanged** — the round pushed nothing, so there is no second pass.
+- **Unchanged** — nothing landed since, so there is no second pass.
 - **Moved** — launch the `kit:shape-reviewer` subagent through the **Agent
   tool** with two refs, the recorded SHA and the new head SHA, and **wait for it
   to return** — the Agent tool returns when the work is launched, so reading its
   answer early takes the failed branch below and arms a PR the review would have
   held. The never-integrate rule keeps the recorded SHA an ancestor of the head,
-  so its three-dot diff is exactly the round's commits — the only ones no shape
-  pass has seen.
+  so its three-dot diff is exactly the commits no shape pass has seen.
+- **No carried comment or SHA** — a pass resumed after `simplify` ran in an
+  earlier session. Launch the subagent with the PR number instead and use its
+  comment alone, since nothing records where the earlier pass stopped.
 
-**Post the two as one comment**: the comment `simplify` carried, then this
-pass's without its marker line, each keeping its own heading and count line. A
-section with no findings and no `**Not judged:**` line is dropped. One comment,
-because `/kit:review-copilot` Step 2,
+**Post them as one comment**: the `<!-- kit-shape-review -->` marker line, then
+each section kept without its own marker — the carried comment's, then this
+pass's — each keeping its heading and count line. A section with no findings and
+no `**Not judged:**` line is dropped; the marker stays whichever section is
+left. One comment, because `/kit:review-copilot` Step 2,
 `kit:reshape` and `kit:improve-codebase-architecture` each read only the latest
 marked comment as the review, and a second post would hide the first one's
 contested findings from all three. The branches below read the comment posted —
