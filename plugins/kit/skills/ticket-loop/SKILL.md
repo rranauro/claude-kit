@@ -222,8 +222,8 @@ and taking it then pushes past a head the ship gate already attested.
   to apply, as `/simplify`'s are shown. A contested one is the person's to pick
   an After for, or to leave.
 - **Findings, unattended** — apply each uncontested finding that carries an
-  After. Leave every contested finding unapplied, since applying one makes the
-  choice a hold exists for. Leave every accreted interface finding unapplied
+  After. Leave every contested finding unapplied, since applying one makes a
+  choice the axis could not. Leave every accreted interface finding unapplied
   too: it writes no After, and its reshape is a person's to design.
 
 Apply each chosen After, in either mode, by re-running the test files covering
@@ -376,16 +376,17 @@ cannot lose a race with a green CI.
   leaving the shape unjudged.
 - **Findings, attended** — show them, saying which are contested, and ask
   whether to post the review and hold the PR, or post it and let it merge
-  unheld, or post it, hold it, and reshape now. Never hold without saying so.
-  With nothing contested the axis has already picked every fix, so say arming is
-  what an unattended run would do. The second answer pins as the uncontested
-  case below does. The third is the first followed by invoking
+  unheld, or post it, hold it, and reshape now. Never hold without saying so,
+  and hold as *Holding the PR* below says, with the review as its comment.
+  Say that arming is what an unattended run would do. The second answer pins as
+  the unattended case below does. The third is the first followed by invoking
   `kit:reshape <pr-number>` through the Skill tool, here, before step 4 — it
   pushes, and step 4 has to attest the head it leaves.
-- **Findings, unattended, none contested** — the count line reads
-  `<c> contested` with `<c>` at 0. A finding with one clear fix is not a
-  decision anyone has to make before the merge, so it does not hold the PR. Post
-  it, pin it, and let it merge:
+- **Findings, unattended** — contested or not, they do not hold the PR. A
+  finding with one clear fix is not a decision anyone has to make before the
+  merge, and a contested one is a choice the axis could not make, so a hold
+  would only make a person pick it at a reshape that costs another gate run.
+  Post the review, pin it, and let it merge:
 
   ```
   gh pr comment <pr-number> --body-file <the comment>
@@ -398,22 +399,6 @@ cannot lose a race with a green CI.
   have no reader but triage, which could only delete it.
   A failed write follows `docs/labels.md`: report it and carry on to step 4,
   since nothing here was a hold.
-- **Findings, unattended, one or more contested** — hold it, record first:
-
-  ```
-  gh pr comment <pr-number> --body-file <the comment>
-  gh pr edit <pr-number> --add-label kit-hold     # only if the comment posted
-  ```
-
-  `docs/labels.md` is the rule. A held PR still runs steps 4 and 5, and step 5's
-  `## Hold check` decides whether it is armed. **A project with no `kit-hold`
-  label** gets the comment alone, and the hold is still this pass's decision:
-  carry it to step 5, which leaves the PR unarmed.
-
-  If either write fails, the PR **stays in draft** — skip to step 6, report
-  which write failed, and say this pass's hold is not in place — a `kit-hold`
-  transcribed from triage is still there if it was. A draft cannot merge, and it
-  is the one hold left when the label is not there to carry it.
 
 **Then hold it for its kind, if its plan was derived.** Two facts `prepare`
 already has, so look neither up again: the plan it resolved opens with
@@ -424,15 +409,32 @@ nobody has looked at a result whose acceptance is someone looking. It is the
 plan's line that decides, not whether this run designed it: a firing that
 resumes a stored derived plan owes the same hold.
 
-Hold it exactly as a shape finding is held — asked attended, record first
-unattended, the same failure path — with this as the comment:
+Attended, ask, as the shape hold is asked. Unattended, hold it. Either way the
+comment is:
 
 ```
 Held: the plan was designed unattended and this ticket's kind (<kind, or none>) needs someone to look at the result before it merges.
 ```
 
-Where the shape hold already applied `kit-hold`, post the comment and skip the
+Where a shape hold already applied `kit-hold`, post the comment and skip the
 label write.
+
+**Holding the PR** — record first:
+
+```
+gh pr comment <pr-number> --body-file <the comment>
+gh pr edit <pr-number> --add-label kit-hold     # only if the comment posted
+```
+
+`docs/labels.md` is the rule. A held PR still runs steps 4
+and 5, and step 5's `## Hold check` decides whether it is armed. **A project
+with no `kit-hold` label** gets the comment alone, and the hold is still this
+pass's decision: carry it to step 5, which leaves the PR unarmed.
+
+If either write fails, the PR **stays in draft** — skip to step 6, report which
+write failed, and say this pass's hold is not in place — a `kit-hold`
+transcribed from triage is still there if it was. A draft cannot merge, and it
+is the one hold left when the label is not there to carry it.
 
 **4 · Run the project's ship gate, if it declares one.** Look for a `## Ship
 gate` section in the project's rules:

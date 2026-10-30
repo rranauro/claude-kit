@@ -251,7 +251,7 @@ shape here.
 
 §1's survey is one source of leads. Shape reviews on PRs that merged pinned with
 their findings unapplied (`kit:ticket-loop` `hand-off` step 3) are another, and
-each finding already names its count, its call site and its After. Gather them
+each finding already names its count, its call site and its Afters. Gather them
 before §2.
 
 **Read them from the PRs.** The posted comment and `kit-pinned` are the only
@@ -302,9 +302,12 @@ comment, that comment is the review. Where it carries several, which one is the
 review is `/kit:review-copilot` Step 2's rule, so run its shape-review lookup for
 that PR. This call returns no `updated_at` to pick by.
 
-**A lead is one uncontested finding**: a heading in the review, as
-`kit:shape-review` §5 writes it, that does not end `— contested`. Accreted
-interface findings count. Contested findings belong to `kit:reshape`. With a
+**A lead is one finding**: a heading in the review, as `kit:shape-review` §5
+writes it. Accreted interface findings count, and so do contested ones — a
+heading ending `— contested`. **A contested lead's card names every After the
+review wrote, each with its score line, in its Solution**, and marks none
+preferred: the tie is the axis's, and what can separate the Afters now is the
+reach §2 walks fresh, which the review's diff did not see. With a
 direction named, keep a finding when its subject (the `Class#method` in its
 heading) or its **Call site now** file lies inside the direction. An accreted
 interface finding's call site is the added member's caller, which can sit

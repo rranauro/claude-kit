@@ -110,8 +110,8 @@ each one moves, and that is the person's to weigh. Otherwise the finding carries
 the one After that beats the rest, and the others are dropped unwritten — an
 alternative the axis beats is a choice already made, and showing it asks a
 person to make it again. Most findings have one After. Contested is the
-exception, and a caller holds the PR on it, so never call a finding contested to
-be thorough.
+exception, and no pass picks its After without a person, so never call a
+finding contested to be thorough.
 
 > contested = two or more Afters survive and none beats another (comparable
 > scores); uncontested = one After beats the rest; an obvious better choice is
@@ -152,8 +152,8 @@ and the commit that introduced it — `` `#removed_fields` (`jobs/purge.rb:14`, 
 It goes in **Costs** because `kit:review-copilot` carries that line and would
 drop a new one.
 
-Order findings strongest first: contested findings above the rest, since a
-caller holds the PR on them; then a placement finding above a naming one, a
+Order findings strongest first: contested findings above the rest, since they
+are the choices the axis could not make; then a placement finding above a naming one, a
 count with several callers above one with one.
 
 ## 5 — The comment
@@ -223,7 +223,7 @@ count with several callers above one with one.
 **Given two refs, the heading is ``## Shape review — `<short head sha>` ``** —
 there is no PR to number, so the head names what was judged.
 
-**The count line is what a caller reads to decide the hold**, so `<c>` is the
+**The count line says whether any choice was left open**, so `<c>` is the
 number of headings that end `— contested`, and it is written even when it is 0.
 
 The inventory ships whatever the findings, so a reader can tell a clean diff from
