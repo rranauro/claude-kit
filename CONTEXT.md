@@ -225,7 +225,7 @@ _Avoid_: undertow, sprawl, bloat, god class, public surface
 **Contested finding**:
 A shape finding with two or more fixes that survive the axis, none clearing a
 count another still fires, so only their reach separates them. Never applied
-by a pass; picking an After is a person's. `kit:shape-review` is the one
+by a pass on its own; picking an After is a person's. `kit:shape-review` is the one
 statement of it.
 _Avoid_: close call, toss-up, ambiguous finding
 

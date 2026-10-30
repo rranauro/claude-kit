@@ -110,8 +110,8 @@ each one moves, and that is the person's to weigh. Otherwise the finding carries
 the one After that beats the rest, and the others are dropped unwritten — an
 alternative the axis beats is a choice already made, and showing it asks a
 person to make it again. Most findings have one After. Contested is the
-exception, and no pass applies one, so never call a finding contested to be
-thorough.
+exception, and no pass picks its After without a person, so never call a
+finding contested to be thorough.
 
 > contested = two or more Afters survive and none beats another (comparable
 > scores); uncontested = one After beats the rest; an obvious better choice is
