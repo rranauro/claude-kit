@@ -30,6 +30,21 @@ The `remove` line is the call: the example above receives the branch alone, and
 `kit:worktree-conventions` Step 1 says how to ask for the path. Its non-zero exit
 leaves the worktree where it is — Step 3 says why.
 
+## A server per worktree
+
+A project can declare how its app boots in a worktree and where it answers:
+
+```markdown
+## Worktrees
+- remove: `just del-worktree <branch>`
+- server: `bin/dev`
+- url: `http://<branch>.localhost`
+```
+
+Declare `remove` too, and make it stop the server: it is the only teardown the
+kit runs, so a project without one gets no server at all. Only attended passes
+boot. `kit:worktree-conventions` *The worktree's server* says when and how.
+
 ## Ownership while a pass is working
 
 Passes run concurrently by design — `plugins/kit/scripts/ship-startable.sh` exists

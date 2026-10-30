@@ -1,6 +1,6 @@
 ---
 name: worktree-conventions
-description: Resolve where a project's git worktrees live and how they are created, provisioned, and removed — by delegating to the project's own command when it has one, and falling back to a built-in layout when it doesn't. Use whenever a command needs to make, find, or remove a worktree.
+description: Resolve where a project's git worktrees live and how they are created, provisioned, served, and removed — by delegating to the project's own command when it has one, and falling back to a built-in layout when it doesn't. Use whenever a command needs to make, find, or remove a worktree.
 license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
@@ -24,6 +24,8 @@ Look for a `## Worktrees` section in the project's rules, found as
 - create: `just worktree <branch>`
 - remove: `just del-worktree <branch>`
 - provisions: yes
+- server: `bin/dev`
+- url: `http://<branch>.localhost`
 ```
 
 - **create** — makes the worktree for a branch. May do far more than
@@ -41,6 +43,13 @@ Look for a `## Worktrees` section in the project's rules, found as
   entirely**, not merged with — re-symlinking on top of a real install is how
   you get a `node_modules` symlink pointing at a directory the project just
   populated for real.
+- **server** — boots the app for one worktree. Called exactly as `remove` is —
+  the same placeholders, the same quoting, never a shell — except that a line
+  naming neither placeholder gets nothing appended, since it runs from inside
+  the worktree. *The worktree's server* below says when it runs.
+- **url** — where that server answers, with `<branch>` and `<path>` substituted
+  and nothing else. The kit never derives a port or a hostname, so a port per
+  worktree and a subdomain proxy are both just a URL the project writes down.
 
 If there's no such section, check whether the project obviously has one anyway —
 a `worktree` recipe in a `justfile`, a `make worktree` target, a script named for
@@ -95,6 +104,8 @@ that output is the only record of why it refused.
 
 If it names no remove command, `kit:worktree-reclaim` removes it.
 
+**A project with a worktree server stops it here**, in its `remove`.
+
 ## Step 4 — Fallback layout
 
 With no project convention, this suite owns the layout:
@@ -107,6 +118,50 @@ Inside the repo, never as a sibling of the main checkout. Create with
 `git worktree add .claude/worktrees/<branch> -b <branch> origin/<base>`, then run
 `kit:start-ticket`'s `wire-worktree` to link the gitignored files the app needs to
 boot.
+
+## The worktree's server
+
+A project declaring `server` and `url` has a server that lives as long as its
+worktree: an attended pass that creates the worktree boots it, and any later pass
+that needs it makes sure it answers. It stops when the project's `remove` runs.
+
+**Only an attended pass boots.** A pass handed `unattended`, and every runner
+session, boots nothing, so a process nobody watches is never left running on a
+machine nobody is at. Whether a server boots turns on the declaration and the
+mode alone. No label enters into it — `kit-hold` included.
+
+**No `remove`, no boot.** The kit never stops a server itself: the project's
+`remove` owns teardown, and reclaim runs that and nothing else. The script
+refuses a server with no `remove`, so pass the declared line, or `''` when
+there is none, and let it say so.
+
+A project declaring `server` without `url` gets nothing booted either, and is
+told it needs one: with no URL there is nothing to ask whether it already
+answers. Declaring neither line changes nothing anywhere.
+
+**Make it answer, after wiring.** Run this once the worktree's gitignored files
+are linked, since an app missing its credentials boots into an error:
+
+```
+${CLAUDE_PLUGIN_ROOT}/scripts/worktree-server.sh --server '<server line>' --url '<url line>' --remove '<remove line>' --branch <branch> --path <worktree>
+```
+
+It asks the URL first and boots only when nothing answers, so calling it on a
+worktree whose server is up is free and never starts a second one — which is why
+a pass that needs the server calls it every time rather than remembering what
+was running. It prints one record:
+
+- `answering` / `booted` — the server is up at the URL it names. Say which.
+- `not-answering` — it booted, but nothing answered in time. Say so with the
+  log path it names; the worktree is still usable, and the server may only be
+  slow.
+- `not-started` — the line did not parse or the command did not run. Quote the
+  reason.
+- `no-remove` — nothing was booted. Tell the person to add a `remove` line to
+  `## Worktrees` that stops the server and removes the worktree.
+
+None of these stops the pass. A server that does not come up is the person's to
+look at, and the work in the worktree does not depend on it.
 
 ## The sweep rule
 

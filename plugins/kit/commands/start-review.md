@@ -79,6 +79,10 @@ boot — secrets and their keys, `.claude/settings.local.json`, `node_modules` �
 from the main checkout. Don't re-derive that list here; a review worktree that
 can't boot verifies nothing.
 
+Once it is wired, if the project declares a worktree server, make it answer as
+`kit:worktree-conventions` *The worktree's server* says, and give the URL it
+reports.
+
 ---
 
 ## Step 3 · `fire-review` — Start the headless review before provisioning
