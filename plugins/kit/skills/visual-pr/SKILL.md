@@ -267,8 +267,9 @@ capture runs as if this step were not here.
    names that the base branch lacks is a failed capture.
 
    Follow it with the worktree path, the acceptance criteria, and the worktree's server URL
-   when there is one, saying the server is already running there so the skill boots
-   none of its own. It owns the upload
+   when there is one, telling the skill to boot none of its own. Say the server is running
+   there only after `answering` or `booted`; an unattended URL is unchecked, so say so, and
+   that nothing answering there is a "Not captured". It owns the upload
    and reading its own images, so the `upload` line below does not apply to it. It
    returns one entry per criterion it has something to show for, in one of two forms:
 
