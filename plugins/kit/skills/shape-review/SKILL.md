@@ -137,8 +137,9 @@ its panels: the §2 counts it still fires, by name exactly as
 are what show the tie — without them a reader cannot tell a tie from a pick
 nobody made, and has to score the Afters again to trust it. An uncontested
 finding's one After carries none: the Afters it beat were never written, so a
-score would answer a comparison the comment does not show. Its **Costs** gives
-each After its own line: the call sites outside the diff that move, counted,
+score would answer a comparison the comment does not show. Since an After that
+clears a count the other fires beats it, tied scores name the same counts. A
+contested finding's **Costs** gives each After its own line: the call sites outside the diff that move, counted,
 since reach is all that is left to separate them.
 
 **An accreted interface finding leaves out the panels.** Its subject is the
@@ -176,13 +177,13 @@ count with several callers above one with one.
 ```ruby
 <the panels, as below>
 ```
-**Score:** fires <count name>, <count name>
+**Score:** fires <count name>, <count name> — or `fires none`
 
 **After — <another move>**
 ```ruby
 <the panels, as below>
 ```
-**Score:** fires none
+**Score:** fires <the same count names> — or `fires none`
 
 **Costs:**
 - <first move>: <the call sites outside the diff it moves, counted>
