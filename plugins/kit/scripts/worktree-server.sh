@@ -5,28 +5,33 @@
 # boot at all. The trap is a second server: booting without asking first leaves
 # two processes contending for one URL.
 #
-#   worktree-server.sh --server LINE --url URL --branch BRANCH --path PATH
-#                      [--wait SECONDS]
+#   worktree-server.sh --server LINE --url URL --remove LINE
+#                      --branch BRANCH --path PATH [--wait SECONDS]
+#
+# --remove is the project's `remove` line, passed so an empty one refuses here:
+# remove is the only teardown the kit runs, so a server booted without one is a
+# process nothing will ever stop. It is never called.
 #
 # Records, and exit codes:
 #   answering<TAB>url              0  something already answers; nothing booted
 #   booted<TAB>url                 0  booted, and it answered within --wait
 #   not-answering<TAB>url<TAB>log  4  booted, but nothing answered within --wait
 #   not-started<TAB>reason         5  the server line did not parse or run
+#   no-remove<TAB>reason           6  no remove declared; nothing asked or booted
 #   (usage on stderr)              2
 #
 # Any HTTP response is an answer, a 500 included: the server is up, and what it
-# serves is the caller's to judge. The URL is never derived — `<branch>` and
-# `<path>` are substituted into it as into the server line, and nothing else.
+# serves is the caller's to judge.
 set -uo pipefail
 
 . "$(dirname "${BASH_SOURCE[0]}")/declared-call.sh"
 
-server="" url="" branch="" path="" wait=120
+server="" url="" remove="" remove_given="" branch="" path="" wait=120
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --server) server="$2"; shift 2 ;;
+    --remove) remove="$2"; remove_given=1; shift 2 ;;
     --url)    url="$2"; shift 2 ;;
     --branch) branch="$2"; shift 2 ;;
     --path)   path="$2"; shift 2 ;;
@@ -38,8 +43,14 @@ done
 for required in server url branch path; do
   [ -n "${!required}" ] || { echo "worktree-server: --$required is required" >&2; exit 2; }
 done
+[ -n "$remove_given" ] || { echo "worktree-server: --remove is required, empty when none is declared" >&2; exit 2; }
 
-url="$(substitute "$(substitute "$url" "<branch>" "$branch")" "<path>" "$path")"
+if [ -z "$remove" ]; then
+  printf 'no-remove\tthis project declares a worktree server but no remove, so nothing would stop it\n'
+  exit 6
+fi
+
+url="$(declared_text "$url" "$branch" "$path")"
 
 answers() { curl -s -o /dev/null --max-time 2 "$url"; }
 
@@ -80,7 +91,7 @@ while [ "$SECONDS" -lt "$deadline" ]; do
     printf 'booted\t%s\n' "$url"
     exit 0
   fi
-  sleep 1
+  sleep 0.2
 done
 
 printf 'not-answering\t%s\t%s\n' "$url" "$log"

@@ -44,7 +44,8 @@ exact `headRefName` — not by an issue prefix, since a PR shape-reviewed by han
 may close no issue, or several. A `kit-hold` PR keeps reclaim off its worktree,
 so it is usually there. Where it is not, create one on the PR's existing branch through
 `kit:worktree-conventions` — never a new branch — and wire it as
-`kit:start-ticket` `wire-worktree` does, then `boot-server`. Take the lease as
+`kit:start-ticket` `wire-worktree` does, then make its server answer as
+`kit:worktree-conventions` *The worktree's server* says. Take the lease as
 `create-worktree` writes it, and release it however this pass ends.
 
 Either way, the worktree's head must be the PR's. Behind →

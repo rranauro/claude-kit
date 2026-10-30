@@ -81,8 +81,7 @@ can't boot verifies nothing.
 
 Once it is wired, if the project declares a worktree server, make it answer as
 `kit:worktree-conventions` *The worktree's server* says, and give the URL it
-reports. This command is always attended, so that section's rule against
-booting unattended never applies here.
+reports.
 
 ---
 

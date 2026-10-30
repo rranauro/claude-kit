@@ -17,12 +17,15 @@ substitute() { # text placeholder value
   printf '%s' "$out$text"
 }
 
+declared_text() { # text branch path
+  substitute "$(substitute "$1" "<branch>" "$2")" "<path>" "$3"
+}
+
 declared_argv() { # line branch path -> DECLARED_ARGV; 1 when the line does not parse
   local line="$1" branch="$2" path="$3" word
   DECLARED_ARGV=()
   while IFS= read -r -d '' word; do
-    word="$(substitute "$word" "<branch>" "$branch")"
-    DECLARED_ARGV+=("$(substitute "$word" "<path>" "$path")")
+    DECLARED_ARGV+=("$(declared_text "$word" "$branch" "$path")")
   done < <(python3 -c '
 import shlex, sys
 try:

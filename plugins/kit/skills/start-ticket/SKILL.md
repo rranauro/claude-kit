@@ -177,8 +177,7 @@ If `worktree-layout` reported a `server` line, run `kit:worktree-conventions`
 This is the step a resumed worktree reaches too, since a worktree picked back up
 after a sleep or a reboot is exactly the one whose server has stopped.
 
-**Unattended, skip it.** That section says why no unattended pass boots, and
-what it does instead is nothing at all.
+**Unattended, skip it** — that section says why.
 
 **Step 10 · `worktree-paths` — Use worktree-prefixed paths from now on:**
 - Every subsequent Read/Edit/Write must target `<worktree>/<file>` — the path `create-worktree` resolved, absolute. The tool cwd is still the main checkout.

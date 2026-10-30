@@ -104,9 +104,7 @@ that output is the only record of why it refused.
 
 If it names no remove command, `kit:worktree-reclaim` removes it.
 
-**A project with a worktree server stops it here.** Its `remove` is the only
-teardown the kit runs, so a `remove` that leaves the server running leaks one
-process per reclaimed worktree, each still bound to its URL.
+**A project with a worktree server stops it here**, in its `remove`.
 
 ## Step 4 — Fallback layout
 
@@ -133,29 +131,25 @@ machine nobody is at. Whether a server boots turns on the declaration and the
 mode alone. No label enters into it — `kit-hold` included.
 
 **No `remove`, no boot.** The kit never stops a server itself: the project's
-`remove` owns teardown, and reclaim runs that and nothing else. A project that
-declares `server` but no `remove` has declared a process nothing could ever
-stop, so boot nothing and say:
+`remove` owns teardown, and reclaim runs that and nothing else. The script
+refuses a server with no `remove`, so pass the declared line, or `''` when
+there is none, and let it say so.
 
-> "This project declares a worktree server but no `remove`, so nothing would
-> stop it. Add a `remove` line to `## Worktrees` that stops the server and
-> removes the worktree."
-
-A project declaring `server` without `url` gets the same treatment: with no URL
-there is nothing to ask whether it already answers. Declaring neither line
-changes nothing anywhere.
+A project declaring `server` without `url` gets nothing booted either, and is
+told it needs one: with no URL there is nothing to ask whether it already
+answers. Declaring neither line changes nothing anywhere.
 
 **Make it answer, after wiring.** Run this once the worktree's gitignored files
 are linked, since an app missing its credentials boots into an error:
 
 ```
-${CLAUDE_PLUGIN_ROOT}/scripts/worktree-server.sh --server '<server line>' --url '<url line>' --branch <branch> --path <worktree>
+${CLAUDE_PLUGIN_ROOT}/scripts/worktree-server.sh --server '<server line>' --url '<url line>' --remove '<remove line>' --branch <branch> --path <worktree>
 ```
 
 It asks the URL first and boots only when nothing answers, so calling it on a
-worktree whose server is up is free and never starts a second one. That is
-what makes "answers again after a sleep, a reboot or a crash" safe to ask for
-every time a pass needs the server. It prints one record:
+worktree whose server is up is free and never starts a second one — which is why
+a pass that needs the server calls it every time rather than remembering what
+was running. It prints one record:
 
 - `answering` / `booted` — the server is up at the URL it names. Say which.
 - `not-answering` — it booted, but nothing answered in time. Say so with the
@@ -163,6 +157,8 @@ every time a pass needs the server. It prints one record:
   slow.
 - `not-started` — the line did not parse or the command did not run. Quote the
   reason.
+- `no-remove` — nothing was booted. Tell the person to add a `remove` line to
+  `## Worktrees` that stops the server and removes the worktree.
 
 None of these stops the pass. A server that does not come up is the person's to
 look at, and the work in the worktree does not depend on it.

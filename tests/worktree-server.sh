@@ -55,7 +55,8 @@ SH
 
 serve() { # server-line url [extra args] → sets OUT_LINE and CODE
   local line="$1" url="$2"; shift 2
-  OUT_LINE="$("$SCRIPT" --server "$line" --url "$url" --branch 42-feature --path "$WT" "$@")"
+  OUT_LINE="$("$SCRIPT" --server "$line" --url "$url" --remove "just del <branch>" \
+    --branch 42-feature --path "$WT" "$@")"
   CODE=$?
 }
 
@@ -69,6 +70,7 @@ assert_eq "$CODE" 0 "exits 0"
 assert_eq "$OUT_LINE" "$(printf 'booted\thttp://localhost:3000/')" "says it booted"
 assert_eq "$(boots)" 1 "boots once"
 assert_eq "$(cut -d'|' -f1 "$SANDBOX/boots")" "$WT" "runs from the worktree"
+assert_eq "$(cut -d'|' -f2 "$SANDBOX/boots")" "" "a line naming no placeholder gets no argument appended"
 reap
 
 new_sandbox "a server already answering is not booted again"
@@ -102,11 +104,6 @@ assert_eq "$(tail -1 "$SANDBOX/asked")" "http://42-feature.localhost/" "the URL 
 assert_eq "$OUT_LINE" "$(printf 'booted\thttp://42-feature.localhost/')" "reports the resolved URL"
 reap
 
-new_sandbox "a server line naming no placeholder gets no argument appended"
-serve "fake-server" "http://localhost:3000/"
-assert_eq "$(cut -d'|' -f2 "$SANDBOX/boots")" "" "runs with no arguments"
-reap
-
 new_sandbox "the line is never run through a shell"
 serve "fake-server a && touch $SANDBOX/pwned" "http://localhost:3000/"
 assert_eq "$(cut -d'|' -f2 "$SANDBOX/boots")" "a && touch $SANDBOX/pwned" "&& is a literal argument"
@@ -129,6 +126,14 @@ reap
 new_sandbox "an unparseable server line is its own failure"
 serve "fake-server 'unclosed" "http://localhost:3000/"
 assert_eq "$CODE" 5 "exits 5"
+assert_eq "$(boots)" 0 "boots nothing"
+reap
+
+new_sandbox "a server with no remove declared is never booted"
+OUT_LINE="$("$SCRIPT" --server fake-server --url "http://localhost:3000/" --remove "" \
+  --branch b --path "$WT")"; CODE=$?
+assert_eq "$CODE" 6 "exits 6"
+assert_eq "$(printf '%s' "$OUT_LINE" | cut -f1)" "no-remove" "says nothing could stop it"
 assert_eq "$(boots)" 0 "boots nothing"
 reap
 
