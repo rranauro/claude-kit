@@ -1,12 +1,13 @@
 ---
 name: shape-review
-description: Judge the object shape a pull request introduces — its new classes, signatures and call sites, scored on kit:rails-codebase-design with placement included — as one Markdown comment a person can post as written. Use when a PR's author was an unattended agent, when asked to review a diff's shape or placement, or when another skill needs a shape review of a PR.
+description: Judge the object shape a pull request, or a local diff between a base and a head, introduces — its new classes, signatures and call sites, scored on kit:rails-codebase-design with placement included — as one Markdown comment a person can post as written. Use when a PR's author was an unattended agent, when asked to review a diff's shape or placement, or when another skill needs a shape review of a PR.
 license: MIT — Copyright (c) 2026 Ron Ranauro, https://github.com/rranauro/claude-kit
 ---
 
 # Shape Review
 
-Judge what one pull request's diff introduces, on `kit:rails-codebase-design`.
+Judge what one diff introduces, on `kit:rails-codebase-design` — a pull
+request's, or one between two refs before any PR exists.
 **Placement is in scope** — `kit:visual-review` leaves it to the author; this
 skill judges it, because the author it reviews is usually an unattended agent
 whose design nobody argued with.
@@ -15,15 +16,30 @@ whose design nobody argued with.
 working tree. The comment is the whole output, and posting it is the reader's
 decision.
 
-**Argument:** a pull request number.
+**Arguments:** a pull request number, or a base and a head — two git refs, for
+a diff no PR has been opened on. One token is a PR; two are the refs.
 
 ## 1 — Gather
 
-Fetch the PR head once and do every read, diff and grep locally against it:
+Resolve the base and head to SHAs once, and do every read, diff and grep
+locally against them. A PR's SHAs come from GitHub, with its head fetched:
 
 ```bash
 gh pr view <n> --json headRefOid,baseRefOid
 git fetch origin pull/<n>/head        # lands in FETCH_HEAD; creates no branch
+```
+
+Two refs are already local, so nothing is asked of GitHub and nothing fetched:
+
+```bash
+git rev-parse <base>^{commit} <head>^{commit}
+```
+
+Name the base the PR would merge into, at its tip, and the three-dot diff below
+takes the same merge base a PR's does — which is what makes the comment the one
+that PR would get. From here on nothing differs but §5's heading.
+
+```bash
 git diff <base>...<head> -- '*.rb' '*_controller.js'
 git show <head>:<path>                # a whole file, when a hunk cannot say what a method reads of self
 git diff --name-only <base>...<head>
@@ -190,6 +206,9 @@ count with several callers above one with one.
 
 </details>
 ````
+
+**Given two refs, the heading is ``## Shape review — `<short head sha>` ``** —
+there is no PR to number, so the head names what was judged.
 
 **The count line is what a caller reads to decide the hold**, so `<c>` is the
 number of headings that end `— contested`, and it is written even when it is 0.
