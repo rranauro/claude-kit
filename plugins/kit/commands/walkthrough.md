@@ -46,8 +46,10 @@ Constituent skills:
   may be the project's, not this suite's. The tool cwd stays at the main checkout.
 - **The artifact is the state.** If the walk's position isn't in the file, it
   doesn't exist. Update the file at `record-result`, before doing anything else.
-- **Don't boot the app.** The user runs the dev server. Give them the commands
-  and what to look for.
+- **Don't boot the app any way of your own.** Where the project declares a
+  worktree server, `present-step` makes it answer through
+  `kit:worktree-conventions` *The worktree's server* and nothing else. Otherwise
+  the user runs the dev server: give them the commands and what to look for.
 
 ---
 
@@ -188,8 +190,20 @@ Then say what the user can report: what they saw, `skip`, or `stop`.
 Then **end the turn.** Do not narrate, do not speculate about whether it will
 pass, do not begin the next step.
 
-On the first `present-step` of a session only, prefix it with the run command
-for the worktree and the URL to open. After that, they're already there.
+On the first `present-step` of a session only, prefix it with how to reach the
+app. After that, they're already there.
+
+- **The project declares a worktree server** in `## Worktrees` → before
+  rendering the step, run `kit:worktree-conventions` *The worktree's server*
+  against the worktree, and give the URL its record names in place of a run
+  command. It asks the URL first, so a server that is already up costs nothing.
+  A server that stopped since the worktree was made (a sleep, a reboot, a crash)
+  is booted again. A resume reaches this step first too, so every session starts
+  with the server answering.
+- **It does not come up**, whatever the reason that section reports → tell the
+  user what it said, then fall back to the line below. A server that won't boot
+  is theirs to look at, and the walk does not wait on it.
+- **No server declared** → the run command for the worktree and the URL to open.
 
 ---
 
