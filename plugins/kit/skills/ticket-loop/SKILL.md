@@ -217,8 +217,7 @@ It runs before the PR for the reason `/simplify` does: a fix applied now lands
 in the original commits, while one found after the round can only be posted,
 and taking it then pushes past a head the ship gate already attested.
 
-- **`**No shape findings.**`**, or no marked comment — apply nothing. A
-  failed pass is said wherever `hand-off` reports, as its step 3 says.
+- **`**No shape findings.**`**, or no marked comment — apply nothing.
 - **Findings, attended** — show them, saying which are contested, and ask which
   to apply, as `/simplify`'s are shown. A contested one is the person's to pick
   an After for, or to leave.
@@ -232,9 +231,8 @@ and taking it then pushes past a head the ship gate already attested.
 
 **If anything was applied, re-judge once** over the same two refs at the new
 head, and carry that comment; otherwise carry the first one. Apply nothing from
-the re-judge — its findings are carried as written, which is what bounds this to
-two passes. The carried comment names the head `open-pr` pushes, and catches any
-shape a fix introduced.
+the re-judge; its findings are carried as written. It is what makes the carried
+comment name the head `open-pr` pushes, and catch any shape a fix introduced.
 
 **Post nothing yet.** Hold the carried comment in this session for `hand-off`
 step 3, which posts it and decides the hold from it.
@@ -352,8 +350,8 @@ the SHA `open-pr` recorded:
 
 **Post the two as one comment**: the comment `simplify` carried, then this
 pass's without its marker line, each keeping its own heading and count line. A
-section with no findings and no `**Not judged:**` line is dropped, and nothing is
-posted when both drop. One comment, because `/kit:review-copilot` Step 2,
+section with no findings and no `**Not judged:**` line is dropped. One comment,
+because `/kit:review-copilot` Step 2,
 `kit:reshape` and `kit:improve-codebase-architecture` each read only the latest
 marked comment as the review, and a second post would hide the first one's
 contested findings from all three. The branches below read the comment posted —
@@ -366,10 +364,10 @@ cannot lose a race with a green CI.
 - **`**No shape findings.**`** — post nothing and carry on to step 4. Where it
   carries a `**Not judged:**` line, post it with `gh pr comment`, no label — it
   is the only record that changed code went unreviewed.
-- **No marked comment comes back** from either pass — the pass failed. Say so
-  wherever this phase reports and carry on with what the other pass returned, as
-  if clean where neither did: a hold with no review to give its reason is worse
-  than leaving the shape unjudged.
+- **A pass returned no marked comment** — it failed. Say so wherever this phase
+  reports, and read the other pass's comment alone, or carry on as if clean
+  where there is none: a hold with no review to give its reason is worse than
+  leaving the shape unjudged.
 - **Findings, attended** — show them, saying which are contested, and ask
   whether to post the review and hold the PR, or post it and let it merge
   unheld, or post it, hold it, and reshape now. Never hold without saying so.
