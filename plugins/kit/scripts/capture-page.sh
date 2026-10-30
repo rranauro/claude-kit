@@ -12,8 +12,7 @@ set -uo pipefail
 # page shows the base branch's code under the branch's caption. So a page is
 # taken only when it can be traced to the worktree being shipped — a file in
 # it, or a local server whose working directory is in it — and nothing here
-# boots a server, because how a project boots is its own pr-screenshots skill's
-# to say.
+# boots a server: that is worktree-server.sh's.
 #
 # Exit codes: 2 usage, 3 no Chrome, 4 no server answered, 5 not this
 # worktree's (or cannot tell), 6 Chrome wrote nothing.
