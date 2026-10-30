@@ -113,6 +113,10 @@ person to make it again. Most findings have one After. Contested is the
 exception, and a caller holds the PR on it, so never call a finding contested to
 be thorough.
 
+> contested = two or more Afters survive and none beats another (comparable
+> scores); uncontested = one After beats the rest; an obvious better choice is
+> never contested.
+
 An accreted interface finding is never contested: it writes no After, so there
 is nothing to rank.
 
@@ -127,9 +131,16 @@ it.
 **A contested finding writes one After per surviving fix**, each headed by the
 move it makes — a §2.5 move by name, or `in place` for the fix inside the
 object — and marks none preferred — the rank is the person's, and an
-order here would make it for them. Its **Costs** gives each After its own line:
-the call sites outside the diff that move, counted, since reach is all that is
-left to separate them.
+order here would make it for them. **Each After carries a score line** under
+its panels: the §2 counts it still fires, by name exactly as
+`kit:rails-codebase-design` §2 writes them, or that it fires none. The scores
+are what show the tie — without them a reader cannot tell a tie from a pick
+nobody made, and has to score the Afters again to trust it. An uncontested
+finding's one After carries none: the Afters it beat were never written, so a
+score would answer a comparison the comment does not show. Since an After that
+clears a count the other fires beats it, tied scores name the same counts. A
+contested finding's **Costs** gives each After its own line: the call sites outside the diff that move, counted,
+since reach is all that is left to separate them.
 
 **An accreted interface finding leaves out the panels.** Its subject is the
 object, and the reshape is decided by whoever takes it up, so an **After**
@@ -166,11 +177,13 @@ count with several callers above one with one.
 ```ruby
 <the panels, as below>
 ```
+**Score:** fires <count name>, <count name> — or `fires none`
 
 **After — <another move>**
 ```ruby
 <the panels, as below>
 ```
+**Score:** fires <the same count names> — or `fires none`
 
 **Costs:**
 - <first move>: <the call sites outside the diff it moves, counted>
