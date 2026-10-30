@@ -304,13 +304,10 @@ that PR. This call returns no `updated_at` to pick by.
 
 **A lead is one finding**: a heading in the review, as `kit:shape-review` §5
 writes it. Accreted interface findings count, and so do contested ones — a
-heading ending `— contested` — which an unattended run pinned rather than held.
-**A contested lead carries every After the review wrote, each with its score
-line**, and marks none preferred: the tie is the axis's, and what can
-separate the Afters now is the reach §2 walks fresh, which the review's diff did
-not see. The card's **Solution** names each surviving After with its score. A
-contested finding on a PR still carrying `kit-hold` is the person at the hold's,
-through `kit:reshape`, and the query above already leaves it out. With a
+heading ending `— contested`. **A contested lead's card names every After the
+review wrote, each with its score line, in its Solution**, and marks none
+preferred: the tie is the axis's, and what can separate the Afters now is the
+reach §2 walks fresh, which the review's diff did not see. With a
 direction named, keep a finding when its subject (the `Class#method` in its
 heading) or its **Call site now** file lies inside the direction. An accreted
 interface finding's call site is the added member's caller, which can sit

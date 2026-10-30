@@ -84,7 +84,7 @@ For each item, in order:
    - 🟢 **Optional** — style preference, nitpick, or suggestion that doesn't improve the code meaningfully
    - ⚪ **Ignore** — false positive, already handled, or not applicable to our codebase
 
-   **A shape finding is never 🟢 Optional.** It is 🔴 or 🟡, so it is applied, unless verifying it against the code shows its premise false, which makes it ⚪: the call site it names is gone, or the fix already landed. It skips the two questions below: it has already been gated once by the pass that printed it, then chosen by the person who posted it. The fix is commits on this branch through Steps 6 and 7 — never a new ticket or PR. **A contested shape finding is the exception**: the axis could not choose between its Afters, so applying one would make a choice nobody made. Mark it ⚪ with that as the reason. Where it goes is the PR's: on a held PR the person at the hold decides it through `kit:reshape`; on an unheld PR the posted review and `kit-pinned` carry it to `kit:improve-codebase-architecture` as a lead, so it is never `left for the person` there.
+   **A shape finding is never 🟢 Optional.** It is 🔴 or 🟡, so it is applied, unless verifying it against the code shows its premise false, which makes it ⚪: the call site it names is gone, or the fix already landed. It skips the two questions below: it has already been gated once by the pass that printed it, then chosen by the person who posted it. The fix is commits on this branch through Steps 6 and 7 — never a new ticket or PR. **A contested shape finding is the exception**: the axis could not choose between its Afters, so applying one would make a choice nobody made. Mark it ⚪ with that as the reason, held or not, and never `left for the person`: the posted shape review is already its record.
 4. **Ask who it affects** — the *Affected* test in `CONTEXT.md`. **Nobody**
    drops it.
 5. **Ask whether it belongs to this PR** — the *Belongs* test in `CONTEXT.md`.
@@ -124,8 +124,7 @@ For each item, in order:
      minor when it touches ≤ 3 lines in 1 file, changes nothing a caller can
      see, and adds no dependency, public API or schema change.
 
-   A contested shape finding stays ⚪ as above: the posted shape review already
-   carries it — to `kit:reshape` on a held PR, to the next scan on an unheld one.
+   A contested shape finding stays ⚪ as above.
 
    **A PR is held** when Step 1's labels carry `kit-hold`. Step 7.4 reads it.
 

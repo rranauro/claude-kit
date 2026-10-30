@@ -225,10 +225,8 @@ _Avoid_: undertow, sprawl, bloat, god class, public surface
 **Contested finding**:
 A shape finding with two or more fixes that survive the axis, none clearing a
 count another still fires, so only their reach separates them. Never applied
-by a pass: attended, the person picks an After or leaves it; unattended, it is
-posted, pinned and merged, and the next scan takes it as a lead. A finding with
-one clear fix is applied before the PR opens, or, found after, posted, pinned
-and merged. `kit:shape-review` is the one statement of it.
+by a pass; picking an After is a person's. `kit:shape-review` is the one
+statement of it.
 _Avoid_: close call, toss-up, ambiguous finding
 
 **In-flight reshape**:

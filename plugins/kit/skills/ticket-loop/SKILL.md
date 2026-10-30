@@ -376,7 +376,8 @@ cannot lose a race with a green CI.
   leaving the shape unjudged.
 - **Findings, attended** — show them, saying which are contested, and ask
   whether to post the review and hold the PR, or post it and let it merge
-  unheld, or post it, hold it, and reshape now. Never hold without saying so.
+  unheld, or post it, hold it, and reshape now. Never hold without saying so,
+  and hold as *Holding the PR* below says, with the review as its comment.
   Say that arming is what an unattended run would do. The second answer pins as
   the unattended case below does. The third is the first followed by invoking
   `kit:reshape <pr-number>` through the Skill tool, here, before step 4 — it
@@ -394,9 +395,8 @@ cannot lose a race with a green CI.
 
   **Record no observation.** The posted review and `kit-pinned` are the whole
   record: `kit:improve-codebase-architecture` takes each finding from the pinned
-  PR as a lead — a contested one with all its Afters — and re-checks it against
-  the code, and a copy in the store would have no reader but triage, which could
-  only delete it.
+  PR as a lead and re-checks it against the code, and a copy in the store would
+  have no reader but triage, which could only delete it.
   A failed write follows `docs/labels.md`: report it and carry on to step 4,
   since nothing here was a hold.
 
@@ -409,20 +409,24 @@ nobody has looked at a result whose acceptance is someone looking. It is the
 plan's line that decides, not whether this run designed it: a firing that
 resumes a stored derived plan owes the same hold.
 
-Attended, ask, as the shape hold is asked. Unattended, hold it, record first,
-with this as the comment:
+Attended, ask, as the shape hold is asked. Unattended, hold it. Either way the
+comment is:
 
 ```
 Held: the plan was designed unattended and this ticket's kind (<kind, or none>) needs someone to look at the result before it merges.
 ```
 
+Where a shape hold already applied `kit-hold`, post the comment and skip the
+label write.
+
+**Holding the PR** — record first:
+
 ```
-gh pr comment <pr-number> --body-file <that comment>
+gh pr comment <pr-number> --body-file <the comment>
 gh pr edit <pr-number> --add-label kit-hold     # only if the comment posted
 ```
 
-Where an attended shape hold already applied `kit-hold`, post the comment and
-skip the label write. `docs/labels.md` is the rule. A held PR still runs steps 4
+`docs/labels.md` is the rule. A held PR still runs steps 4
 and 5, and step 5's `## Hold check` decides whether it is armed. **A project
 with no `kit-hold` label** gets the comment alone, and the hold is still this
 pass's decision: carry it to step 5, which leaves the PR unarmed.

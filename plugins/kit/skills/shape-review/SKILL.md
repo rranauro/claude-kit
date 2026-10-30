@@ -110,8 +110,8 @@ each one moves, and that is the person's to weigh. Otherwise the finding carries
 the one After that beats the rest, and the others are dropped unwritten — an
 alternative the axis beats is a choice already made, and showing it asks a
 person to make it again. Most findings have one After. Contested is the
-exception, and a caller leaves it for a person to pick, so never call a finding
-contested to be thorough.
+exception, and no pass applies one, so never call a finding contested to be
+thorough.
 
 > contested = two or more Afters survive and none beats another (comparable
 > scores); uncontested = one After beats the rest; an obvious better choice is
@@ -153,7 +153,7 @@ It goes in **Costs** because `kit:review-copilot` carries that line and would
 drop a new one.
 
 Order findings strongest first: contested findings above the rest, since they
-are the choices left to a person; then a placement finding above a naming one, a
+are the choices the axis could not make; then a placement finding above a naming one, a
 count with several callers above one with one.
 
 ## 5 — The comment
