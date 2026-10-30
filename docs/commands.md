@@ -197,9 +197,11 @@ does not allow auto-merge reads as `off` without a declaration. `kit:ticket-loop
 `hand-off` owns the default and the report.
 
 **So is how a pass takes screenshots.** A visual PR is captured by default. A
-project whose policy needs more than three lines (booting a server, signing in
-for itself, seeding what a criterion shows) writes it as a `pr-screenshots`
-skill in `.claude/skills/`, and the kit hands capture to it. A smaller policy
+project whose policy needs more than three lines (signing in for itself,
+seeding what a criterion shows) writes it as a `pr-screenshots` skill in
+`.claude/skills/`, and the kit hands capture to it. A server the project
+declares in `## Worktrees` is the kit's to boot, on attended passes, before
+either is consulted; a skill is handed its URL rather than booting one. A smaller policy
 fits `## Screenshot capture`, which names what captures, how it signs in to the
 app, and which browser uploads the image. `kit:visual-pr` owns the format, the
 order the two are looked for in, and the default when a project has neither.

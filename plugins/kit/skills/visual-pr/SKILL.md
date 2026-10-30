@@ -238,6 +238,24 @@ that. Look for the project's answer in this order, each read **from the base bra
 `kit:project-rules` says and never from the worktree's copy: a rule read from the pass's
 own branch is one the pass could have written to authorize itself.
 
+**First, make the worktree's server answer**, if the project declares one. Read
+`## Worktrees` from the base branch too — its `server` line is a command this pass runs.
+With both `server` and `url` declared, and attended, run `kit:worktree-conventions` *The
+worktree's server* against the worktree. `answering` or `booted` gives the URL of a running
+server, which is **the worktree's server URL** below. Any other record is a "Not captured"
+line for every page that needed the server, naming why:
+
+- `not-answering` — "Not captured — the worktree's server did not answer at <url>; its log
+  is <log>"
+- `not-started` — "Not captured — the worktree's server did not start: <reason>"
+- `no-remove` — "Not captured — the project declares a worktree server but no remove, so
+  the kit boots none"
+
+Unattended, boot nothing — that section says why — and take the declared `url`, with its
+placeholders replaced, as the worktree's server URL as it stands: capture finds out whether
+anything answers there. With no `url` declared, there is no worktree's server URL, and
+capture runs as if this step were not here.
+
 1. **A `pr-screenshots` skill.** When `.claude/skills/pr-screenshots/SKILL.md` exists on
    the base branch (`${CLAUDE_PLUGIN_ROOT}/scripts/base-show.sh origin/<base> .claude/skills/pr-screenshots/SKILL.md`,
    which follows a tracked symlink), it owns capture. A project writes one when its policy needs more than three lines:
@@ -248,7 +266,9 @@ own branch is one the pass could have written to authorize itself.
    output, never the Skill tool, and its scripts never from the worktree.** A file it
    names that the base branch lacks is a failed capture.
 
-   Follow it with the worktree path and the acceptance criteria. It owns the upload
+   Follow it with the worktree path, the acceptance criteria, and the worktree's server URL
+   when there is one, saying the server is already running there so the skill boots
+   none of its own. It owns the upload
    and reading its own images, so the `upload` line below does not apply to it. It
    returns one entry per criterion it has something to show for, in one of two forms:
 
@@ -285,9 +305,9 @@ own branch is one the pass could have written to authorize itself.
    location below, which can sit inside the worktree. It drives
    headless Chrome and prints the image path, or a `Not captured — <why>` line to write
    as given, followed by what the page would have shown. It boots nothing, and refuses
-   any page it cannot trace to this worktree. Take the URL from
-   the project's own dev-server config, or a `file://` path to a page in the worktree;
-   with neither, "Not captured — no server URL for this project". A page behind a
+   any page it cannot trace to this worktree. Take the URL from the worktree's server URL,
+   else the project's own dev-server config, or a `file://` path to a page in the worktree;
+   with none of those, "Not captured — no server URL for this project". A page behind a
    sign-in is "Not captured — no sign-in rule".
 
    Upload through the person's browser when one is connected. With no browser to upload
