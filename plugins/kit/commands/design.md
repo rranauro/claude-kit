@@ -96,9 +96,9 @@ line to do it, so write that line exactly.
   approach that follows a precedent already in this codebase, else the one with
   the smaller blast radius, else either — and say neither separated them. List
   the other under `## Decided without confirmation`, naming which tiebreak
-  decided. A wrong pick is the shape review's to catch at `kit:ticket-loop`
-  `hand-off`, where a reviewer can see the code. A tie that is really a scope change, an unbounded constraint, or an
-  unbuildable ticket is one of the parks below.
+  decided. A wrong pick is the shape review's to catch in `kit:ticket-loop`
+  `simplify`, where a reviewer can see the code. A tie that is really a scope
+  change, an unbounded constraint, or an unbuildable ticket is one of the parks below.
 - **Step 4's grilling becomes the park detector.** Run it exactly as written —
   state what the direction commits to — but answer each assertion against the
   acceptance criteria, the project's rules, and the code you read in step 1. Most
