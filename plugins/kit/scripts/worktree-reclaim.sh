@@ -38,6 +38,8 @@
 # whose answer is "no", and a non-zero exit is that answer rather than a fault.
 set -uo pipefail
 
+. "$(dirname "${BASH_SOURCE[0]}")/declared-call.sh"
+
 repo="$PWD"
 target=""
 act=0
@@ -350,38 +352,13 @@ sweep_dir() { # path
   [ -e "$1" ] || emit swept "$1"
 }
 
-# The declared line is the call, so the documented example and what runs are the
-# same text: a recipe written to `remove: just del-worktree <branch>` would
-# reject a second argument it never declared.
-# Not `${word//<path>/$path}`: bash 5.2 expands `&` in that replacement, and
-# 3.2 keeps the quotes that would stop it.
-substitute() { # text placeholder value
-  local text="$1" out=""
-  while [[ "$text" == *"$2"* ]]; do
-    out="$out${text%%"$2"*}$3"
-    text="${text#*"$2"}"
-  done
-  printf '%s' "$out$text"
-}
-
-# Tokenized with shell quoting but never evaluated, so `--reason "finished
-# work"` stays one argument without the declaration becoming code. Empty when
-# the line does not parse.
+# A recipe written to `remove: just del-worktree <branch>` would reject a second
+# argument it never declared, so the branch is appended only to a line naming
+# neither placeholder. Empty when the line does not parse.
 remove_argv() { # branch path -> REMOVE_ARGV
-  local branch="$1" path="$2" word
-  REMOVE_ARGV=()
-  while IFS= read -r -d '' word; do
-    word="$(substitute "$word" "<branch>" "$branch")"
-    REMOVE_ARGV+=("$(substitute "$word" "<path>" "$path")")
-  done < <(python3 -c '
-import shlex, sys
-try:
-    words = shlex.split(sys.argv[1])
-except ValueError:
-    sys.exit(1)
-sys.stdout.write("".join(w + "\0" for w in words))
-' "$remove_cmd")
-  [ "${#REMOVE_ARGV[@]}" -gt 0 ] || return 1
+  local branch="$1" path="$2"
+  declared_argv "$remove_cmd" "$branch" "$path" || { REMOVE_ARGV=(); return 1; }
+  REMOVE_ARGV=("${DECLARED_ARGV[@]}")
   [[ "$remove_cmd" == *"<branch>"* || "$remove_cmd" == *"<path>"* ]] ||
     REMOVE_ARGV+=("$branch")
 }
