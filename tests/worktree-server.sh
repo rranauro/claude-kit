@@ -46,6 +46,7 @@ SH
 #!/usr/bin/env bash
 printf '%s|%s\n' "$PWD" "$*" >> "$SANDBOX/boots"
 echo "listening"
+sleep "${FAKE_DELAY:-0}"
 [ "${1:-}" = "--never-answers" ] || : > "$SANDBOX/up"
 sleep 30
 SH
@@ -86,6 +87,24 @@ serve "fake-server" "http://localhost:3000/"
 serve "fake-server" "http://localhost:3000/"
 assert_eq "$OUT_LINE" "$(printf 'answering\thttp://localhost:3000/')" "says it already answers"
 assert_eq "$(boots)" 1 "still one boot"
+reap
+
+new_sandbox "two overlapping calls boot one server"
+export FAKE_DELAY=1
+serve "fake-server" "http://localhost:3000/" & first=$!
+serve "fake-server" "http://localhost:3000/" & second=$!
+wait "$first" "$second"
+unset FAKE_DELAY
+assert_eq "$(boots)" 1 "boots once"
+assert_eq "$([ -e "$(git -C "$WT" rev-parse --absolute-git-dir)/kit-server.lock" ] && echo held || echo released)" \
+  "released" "releases the lock"
+reap
+
+new_sandbox "a lock nobody released expires"
+mkdir "$(git -C "$WT" rev-parse --absolute-git-dir)/kit-server.lock"
+serve "fake-server" "http://localhost:3000/" --wait 2
+assert_eq "$CODE" 0 "exits 0"
+assert_eq "$(boots)" 1 "boots once"
 reap
 
 new_sandbox "the boot outlives the call"

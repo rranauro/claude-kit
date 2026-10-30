@@ -52,6 +52,26 @@ fi
 
 url="$(declared_text "$url" "$branch" "$path")"
 
+# The worktree's own git directory, not its tree: the log and the lock there are
+# never tracked, never show in `git status`, and go when the worktree does.
+if ! gitdir="$(git -C "$path" rev-parse --absolute-git-dir 2>/dev/null)"; then
+  printf 'not-started\t%s is not a git worktree\n' "$path"
+  exit 5
+fi
+log="$gitdir/kit-server.log"
+lock="$gitdir/kit-server.lock"
+
+# Held from the first probe to the last poll, so a second caller asks the URL
+# only once the first has booted or given up — and finds its server. Probing
+# outside it lets two callers both see nothing and boot one each. No holder
+# outlives its own --wait, so a lock older than that was left by one that died.
+lock_deadline=$((SECONDS + wait + 5))
+until mkdir "$lock" 2>/dev/null; do
+  [ "$SECONDS" -lt "$lock_deadline" ] || { rm -rf "$lock"; continue; }
+  sleep 0.2
+done
+trap 'rmdir "$lock" 2>/dev/null' EXIT
+
 answers() { curl -s -o /dev/null --max-time 2 "$url"; }
 
 if answers; then
@@ -63,10 +83,6 @@ if ! declared_argv "$server" "$branch" "$path"; then
   printf 'not-started\tserver line could not be parsed: %s\n' "$server"
   exit 5
 fi
-
-# The worktree's own git directory, not its tree: a log there is never tracked,
-# never shows in `git status`, and goes when the worktree does.
-log="$(git -C "$path" rev-parse --absolute-git-dir 2>/dev/null)/kit-server.log"
 
 # A new session, so the server is not in the calling shell's process group and
 # outlives the pass that booted it — which is the whole point of booting it.

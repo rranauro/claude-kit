@@ -172,10 +172,12 @@ changes.
 
 **Step 9 · `boot-server` — Make the worktree's server answer:**
 
-If `worktree-layout` reported a `server` line, run `kit:worktree-conventions`
+If the project declares a `server` line, run `kit:worktree-conventions`
 *The worktree's server* against `<worktree>` and report the record it gives.
 This is the step a resumed worktree reaches too, since a worktree picked back up
-after a sleep or a reboot is exactly the one whose server has stopped.
+after a sleep or a reboot is exactly the one whose server has stopped. A resume
+skipped `worktree-layout`, so read `## Worktrees` here as that skill's Step 1
+does — the declaration only, creating and wiring nothing.
 
 **Unattended, skip it** — that section says why.
 
