@@ -12,8 +12,8 @@ Take a GitHub issue to the point where implementation can begin: read it, create
 
 **Arguments:** $ARGUMENTS
 The argument should be a GitHub issue number (e.g., `kit:start-ticket 42`) or a GitHub issue URL.
-A trailing `unattended` is passed only by `kit:ticket-loop` in that mode; Step 8
-and Step 10 say what it changes.
+A trailing `unattended` is passed only by `kit:ticket-loop` in that mode;
+`wire-worktree`, `boot-server` and `plan-implementation` say what it changes.
 
 Each step below carries a stable id in backticks (`safety-check`, `wire-worktree`,
 …). Those ids are the handle other commands reference — `/kit:ship-ticket` and
@@ -35,7 +35,7 @@ If there are uncommitted changes, STOP and warn the user. Suggest they commit or
 > "A worktree for this ticket already exists: `42-add-user-avatar`. Resume it, or replace it with a fresh one?"
 
 **Invariant: one worktree per issue.** Never create a second, suffix-differentiated sibling for the same issue number (e.g. `935-...-scope` alongside `935-...-fields`). Two live worktrees for one issue is a trap — the dev server can be booted in the stale one, hiding the real changes and reading as "my changes aren't showing." Enforce exactly one of:
-- **Resume (default):** Skip `fetch-issue` through `wire-worktree`. Set `<branch-name>` to the existing branch and `<worktree>` to the path git reported, then jump to `worktree-paths` — use that path for all subsequent reads/edits. Do NOT re-run `wire-worktree` (the worktree is already provisioned). Take the lease on it as `create-worktree` describes: resuming is picking the worktree back up, and a stale lease from the pass that left it does not cover this one.
+- **Resume (default):** Skip `fetch-issue` through `wire-worktree`. Set `<branch-name>` to the existing branch and `<worktree>` to the path git reported, then jump to `boot-server` — use that path for all subsequent reads/edits. Do NOT re-run `wire-worktree` (the worktree is already provisioned). Take the lease on it as `create-worktree` describes: resuming is picking the worktree back up, and a stale lease from the pass that left it does not cover this one.
 - **Replace:** Only if the existing worktree is being abandoned/re-scoped. First confirm it's not checked out elsewhere and has no unmerged work worth keeping (an open PR on its branch means keep it — Resume instead). Then `git worktree unlock <path>` — a reclaim holds a leased worktree however stale the ticket is, so re-scoping wedges against the previous pass's lease — and remove the old worktree by invoking `kit:worktree-gc` through the Skill tool with the branch name, **before** creating the new one. The new branch reuses the `<issue-number>-` prefix and may keep the same name — there is no sibling to collide with once the old one is gone.
 
 **Step 3 · `fetch-issue` — Fetch the issue:**
@@ -54,10 +54,10 @@ If there are uncommitted changes, STOP and warn the user. Suggest they commit or
 
 **Step 6 · `worktree-layout` — Find out who owns worktrees here:**
 
-Run the `kit:worktree-conventions` skill. It answers three things, and the rest of
+Run the `kit:worktree-conventions` skill. It answers four things, and the rest of
 this command branches on them: whether the project has its own create command,
-whether that command also provisions, and whether it has a matching remove
-command.
+whether that command also provisions, whether it has a matching remove
+command, and whether it declares a worktree server.
 
 Many projects do own this — a `just` recipe or `make` target that creates the
 worktree *and* installs dependencies, links a dev proxy, writes local config.
@@ -170,10 +170,20 @@ changes.
   yours does that, say so and let it — don't create the link yourself and risk
   conflicting with it.
 
-**Step 9 · `worktree-paths` — Use worktree-prefixed paths from now on:**
+**Step 9 · `boot-server` — Make the worktree's server answer:**
+
+If `worktree-layout` reported a `server` line, run `kit:worktree-conventions`
+*The worktree's server* against `<worktree>` and report the record it gives.
+This is the step a resumed worktree reaches too, since a worktree picked back up
+after a sleep or a reboot is exactly the one whose server has stopped.
+
+**Unattended, skip it.** That section says why no unattended pass boots, and
+what it does instead is nothing at all.
+
+**Step 10 · `worktree-paths` — Use worktree-prefixed paths from now on:**
 - Every subsequent Read/Edit/Write must target `<worktree>/<file>` — the path `create-worktree` resolved, absolute. The tool cwd is still the main checkout.
 
-**Step 10 · `plan-implementation` — Confirm the approach is already settled:**
+**Step 11 · `plan-implementation` — Confirm the approach is already settled:**
 
 What this step needs is a **plan** — the why, the chosen shape, and the
 alternatives it beat. It does not care where that is stored, only that it exists
@@ -256,7 +266,7 @@ is a different question, and `kit:ticket-artifacts` settles it the same way.)
 - Once it's written, re-enter this step at the **"If the plan is present"** branch above: present the summary, run the anchor-verification pass, and ask the user whether to proceed or adjust before any implementation.
 - **An unspecified issue is not a failure of the issue.** Falling through to here is the normal path for a ticket filed as a lean problem statement, which is how `/kit:architect` writes them. Don't report it as something missing or push the user to go back and rewrite the ticket.
 
-**Step 11 · `placement-check` — Placement check (only if the work adds or moves a class):**
+**Step 12 · `placement-check` — Placement check (only if the work adds or moves a class):**
 
 **If `kit:ticket-loop` invoked this command, skip this step
 entirely.** Their implementation phase owns the placement check and runs it there,
@@ -278,7 +288,7 @@ decision. This check is where it gets verified.
 If the skill is installed per-project rather than globally, read it from the
 worktree path (`$WT/.claude/skills/behavior-placement/`), not the main checkout.
 
-**Step 12 · `handoff` — Hand off to implementation:**
+**Step 13 · `handoff` — Hand off to implementation:**
 
 This command stops here, with a wired worktree and an accepted plan. It writes no
 code.
@@ -287,7 +297,7 @@ code.
 at its implementation step — say nothing about handoff and return. Do not suggest
 re-invoking either; that restarts the caller from its first step.
 
-**`kit:ticket-loop` unattended also overrides Step 10's questions**, since nobody is there to
+**`kit:ticket-loop` unattended also overrides `plan-implementation`'s questions**, since nobody is there to
 answer them. It says which, and what each becomes. Follow its table over the
 prose above when it is the caller.
 
