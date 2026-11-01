@@ -367,7 +367,7 @@ It decides here because the round's fixes are pushed, so it judges the head that
 will merge (it pushes nothing itself), and auto-merge is not yet armed, so a hold
 cannot lose a race with a green CI.
 
-- **`**No shape findings.**`** — post nothing and carry on to step 4. Where it
+- **`**No shape findings.**`** — post nothing and carry on to the derived-plan hold below. Where it
   carries a `**Not judged:**` line, post it with `gh pr comment`, no label — it
   is the only record that changed code went unreviewed.
 - **A pass returned no marked comment** — it failed. Say so wherever this phase
@@ -397,7 +397,7 @@ cannot lose a race with a green CI.
   record: `kit:improve-codebase-architecture` takes each finding from the pinned
   PR as a lead and re-checks it against the code, and a copy in the store would
   have no reader but triage, which could only delete it.
-  A failed write follows `docs/labels.md`: report it and carry on to step 4,
+  A failed write follows `docs/labels.md`: report it and carry on to the derived-plan hold below,
   since nothing here was a hold.
 
 **Then hold it if its plan was derived and its kind or its migration needs a
