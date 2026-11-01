@@ -425,7 +425,7 @@ something you already knew would need it.
 ticket is the obvious candidate for a hold and still often does not need one —
 it may be a dependency inside a suite, with nothing rendered to walk yet. A
 `technical-debt` ticket can need one, when the refactor lands under a view whose
-behavior no test pins. Kind decides a derived plan's hold; this question is the
+behavior no test pins. Kind and migration decide a derived plan's hold; this question is the
 user's, about any PR. They are different judgements and the second is
 the user's.
 

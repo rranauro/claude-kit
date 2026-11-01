@@ -93,7 +93,8 @@ because it must be walked in the running app first; also because someone decline
 auto-merge and means to merge it themselves; also because the review pass
 escalated a finding it may not settle alone, or a person at an attended hand-off
 held it on the shape review, or
-the plan was designed unattended for a kind whose acceptance is a look. Set at
+the plan was designed unattended for a kind whose acceptance is a look, or
+designed unattended and its change adds a migration. Set at
 triage on the issue and transcribed onto the PR, or written straight onto the PR
 when the decision is made after it exists — by a person, the review pass, or `kit:ticket-loop`.
 Cleared only by a person, never by the pass that set it. Once applied, it holds

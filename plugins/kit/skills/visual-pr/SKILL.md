@@ -87,6 +87,13 @@ When the issue's `plan` comment opens with `Designed unattended`, say so here in
 and point at that comment for the alternatives it beat. The reviewer
 who reads only the Gist is the one who has to know they are reviewing a derived design.
 
+When that line is there and the diff adds the migration this section names, the same
+line says an unattended design added a migration, and says the PR is held for a look
+because of it only where the hold is certain: this skill was passed `unattended`, so
+`kit:ticket-loop` `hand-off` step 3 applies the hold after the body is written, or
+the PR already carries `kit-hold`. Anywhere else the hold is a person's to grant or
+decline, so the Gist names the migration and claims no hold.
+
 Add a visual only when it makes the point faster than prose. Pick the smallest view that
 makes the key point clear.
 

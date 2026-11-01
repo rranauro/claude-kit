@@ -83,7 +83,8 @@ reads as either sends the operator to fix the wrong thing.
    for having been unattended — it is only unreviewed.
 
 **The kind is not a precondition.** Every kind is designed here, including none.
-Where the kind's acceptance is a look, the look moves to the PR —
+Where the kind's acceptance is a look, or the change adds a migration, the look
+moves to the PR —
 `kit:ticket-loop` `hand-off` decides that hold, and reads this mode's opening
 line to do it, so write that line exactly.
 
