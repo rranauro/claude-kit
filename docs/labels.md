@@ -3,7 +3,7 @@
 Every label this kit writes is a cheap stand-in for something expensive to
 read. `kit-review-closed` stands for the summary comment. `kit-hold` stands for
 the record the pass that set it posted — a round summary, a shape review, or the
-comment naming a derived plan's kind — or for a person's decision at triage. `kit-blocked` stands for the "Blocked by"
+comment naming a derived plan's kind or its migration — or for a person's decision at triage. `kit-blocked` stands for the "Blocked by"
 section a park wrote. `kit-pinned` stands for a round summary naming the question the PR merged carrying, or for a shape review.
 
 A label without its record is therefore not a partial success. It is the one

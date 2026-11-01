@@ -87,6 +87,11 @@ When the issue's `plan` comment opens with `Designed unattended`, say so here in
 and point at that comment for the alternatives it beat. The reviewer
 who reads only the Gist is the one who has to know they are reviewing a derived design.
 
+When that line is there and the diff adds the migration this section names, the same
+line says the PR is held for a look because an unattended design added a migration.
+`kit:ticket-loop` `hand-off` step 3 applies that hold after the body is written, so the
+Gist says what is about to happen, and both read the same two facts.
+
 Add a visual only when it makes the point faster than prose. Pick the smallest view that
 makes the key point clear.
 

@@ -118,9 +118,9 @@ answer whatever the kind:** invoke `kit:design` through the Skill tool with
 changes when nobody is watching and the preconditions it parks on; do not
 reproduce either here.
 
-**The kind decides whether the PR is held, never whether the ticket runs** —
-`hand-off` step 3. A plan a human settled is not held for its kind, because the
-eye the kind exists to protect was present when it mattered.
+**The kind and the migration decide whether the PR is held, never whether the
+ticket runs** — `hand-off` step 3. A plan a human settled is held for neither,
+because the eye both exist to protect was present when it mattered.
 
 **Skip the anchor pass for a plan produced by this run.** The table says run it
 always, and that is right for a plan that has aged in a queue. A plan written
@@ -400,20 +400,28 @@ cannot lose a race with a green CI.
   A failed write follows `docs/labels.md`: report it and carry on to step 4,
   since nothing here was a hold.
 
-**Then hold it for its kind, if its plan was derived.** Two facts `prepare`
-already has, so look neither up again: the plan it resolved opens with
-`/kit:design`'s `Designed unattended` line, and the issue carries no label the
-project spells for `bug`, `enhancement`, `improve-codebase` or
-`technical-debt`. Both true means
-nobody has looked at a result whose acceptance is someone looking. It is the
-plan's line that decides, not whether this run designed it: a firing that
-resumes a stored derived plan owes the same hold.
+**Then hold it if its plan was derived and its kind or its migration needs a
+look.** The plan `prepare` resolved opens with `/kit:design`'s `Designed
+unattended` line — or nothing below applies. It is the plan's line that decides,
+not whether this run designed it: a firing that resumes a stored derived plan
+owes the same hold. Two reasons then hold it, each on its own:
+
+- **Its kind.** The issue carries no label the project spells for `bug`,
+  `enhancement`, `improve-codebase` or `technical-debt`, so nobody has looked
+  at a result whose acceptance is someone looking. `prepare` already has the
+  labels; do not look them up again.
+- **A migration.** The PR's diff against the base adds a schema migration —
+  the one its Gist names. Whatever the kind: a migration is the change that
+  costs most to take back, and whether a column is needed at all turns on
+  reading what the existing rows already answer, which is where a derived
+  design is weakest. An edit to an existing migration is not this reason.
 
 Attended, ask, as the shape hold is asked. Unattended, hold it. Either way the
-comment is:
+comment is the line for each reason that applies, in one comment:
 
 ```
 Held: the plan was designed unattended and this ticket's kind (<kind, or none>) needs someone to look at the result before it merges.
+Held: the plan was designed unattended and its change adds a migration, which needs someone to look at it before it merges.
 ```
 
 Where a shape hold already applied `kit-hold`, post the comment and skip the
@@ -612,7 +620,7 @@ or, when it carries `kit-hold`:
 
 > "PR #<N> is open, reviewed, ready and held (`kit-hold`) — <the shape review
 > posted on it is the reason, and `/kit:reshape <N>` offers an in-flight reshape
-> on this branch, or a ticket blocked on it | the kind comment posted on it is
+> on this branch, or a ticket blocked on it | the kind or migration comment posted on it is
 > the reason | triage set it>. <Auto-merge reads on, and the project's hold
 > check keeps it from merging until the label comes off | auto-merge is not
 > armed, since the project declares no hold check, so it merges only by hand
