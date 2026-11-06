@@ -65,12 +65,16 @@ lock="$gitdir/kit-server.lock"
 # only once the first has booted or given up — and finds its server. Probing
 # outside it lets two callers both see nothing and boot one each. No holder
 # outlives its own --wait, so a lock older than that was left by one that died.
+# Taken by bash's own exclusive create, not `mkdir`: an external mkdir is
+# whichever coreutils the host ships, and on ubuntu-26.04 two overlapping
+# callers both got past it. `rm -rf` still clears a directory lock an older
+# copy of this script left.
 lock_deadline=$((SECONDS + wait + 5))
-until mkdir "$lock" 2>/dev/null; do
+until ( set -o noclobber; : > "$lock" ) 2>/dev/null; do
   [ "$SECONDS" -lt "$lock_deadline" ] || { rm -rf "$lock"; continue; }
   sleep 0.2
 done
-trap 'rmdir "$lock" 2>/dev/null' EXIT
+trap 'rm -f "$lock"' EXIT
 
 answers() { curl -s -o /dev/null --max-time 2 "$url"; }
 

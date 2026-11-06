@@ -101,7 +101,7 @@ assert_eq "$([ -e "$(git -C "$WT" rev-parse --absolute-git-dir)/kit-server.lock"
 reap
 
 new_sandbox "a lock nobody released expires"
-mkdir "$(git -C "$WT" rev-parse --absolute-git-dir)/kit-server.lock"
+: > "$(git -C "$WT" rev-parse --absolute-git-dir)/kit-server.lock"
 serve "fake-server" "http://localhost:3000/" --wait 2
 assert_eq "$CODE" 0 "exits 0"
 assert_eq "$(boots)" 1 "boots once"
