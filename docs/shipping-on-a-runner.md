@@ -20,7 +20,8 @@ here sleeps between one ticket finishing and the next one starting.
 
 ## `--bg` keeps the process boundary and changes only the launcher
 
-With `--bg`, every call runs as a `claude --bg` session, not a `claude -p`
+With `--bg`, every call that does work — each `/kit:ship-ticket` and each
+`/kit:observe file` — runs as a `claude --bg` session, not a `claude -p`
 call: an interactive session started in the background, billed the way any
 interactive session is rather than as API usage, and one the operator can
 `claude attach` to while it works. The runner still blocks on it, polling
@@ -51,13 +52,18 @@ Two things differ, and both are why the flag exists rather than a swap:
   read as asking for something. Nobody will answer, so the runner treats both as
   finished, reads the outcome from GitHub, and stops the session.
 
+**`/kit:list` stays on `-p` under `--bg`.** It only reads, nobody attaches to
+it, and the runner calls it on every poll — as background sessions those calls
+pile up in `claude agents` beside the ship sessions an operator does want to
+find. On `-p` its offer block comes back on stdout, where `offer_line` reads it.
+
 **A background session's answer comes back through a file, never its output.**
 What it prints is a terminal recording, and its transcript's layout is Claude
 Code's own and can change under the runner with any update. So the runner names
 a file in a reply directory it creates, passes that directory with `--add-dir`,
-and reads the file once the session stops: `/kit:list --offer-file` writes its
-offer block there, and the same `offer_line` reads it. A file not written is the
-unreadable reply below, not an empty backlog.
+and reads the file once the session stops: `/kit:observe file --reply` writes
+its reply there. A file not written is a reply the runner cannot read, never a
+decline.
 
 ## The startable-ticket list has to be machine-readable, not ship-ticket's prose
 

@@ -16,9 +16,10 @@
 # notice a blocker closing well inside the ~15-minute round trip #101's own
 # text observed. Not meant to be tuned; the flag exists for the rare case a
 # consuming project's CI is unusually slow or fast.
-# --bg runs every call as a `claude --bg` session instead of `claude -p`, in
-# don't-ask mode so the grant stays the boundary. A background session has no
-# stdout, so /kit:list writes its offer block to a file this run names.
+# --bg runs every call that does work as a `claude --bg` session instead of
+# `claude -p`, in don't-ask mode so the grant stays the boundary. /kit:list
+# stays on -p either way: it only reads, and a session per poll would leave a
+# trail of finished list sessions behind the ones worth attaching to.
 # --observations (implies --bg) drains the observation store once the label has
 # nothing startable: one record waiting on a ticket is filed, shipped by number,
 # and dropped once its issue has a PR or a park, before the next is filed — so
@@ -338,14 +339,7 @@ offer_line() { # reply label
 # the first is a drained label, the second is a reply this run cannot act on,
 # and collapsing them is what let a mistyped label report a drained backlog.
 list_lowest_startable() {
-  if [ "$BG" -eq 1 ]; then
-    local offer
-    offer="$REPLY_DIR/offer-$(date +%s)"
-    run_claude_bg_timed "/kit:list ${LABEL} --offer-file ${offer}" "list-${LABEL}-$(date +%s)"
-    TIMED_OUT="$(cat "$offer" 2>/dev/null)"
-  else
-    run_claude_timed "/kit:list ${LABEL}"
-  fi
+  run_claude_timed "/kit:list ${LABEL}"
   LIST_ANOMALY=0
   LIST_UNREADABLE=0
   LIST_RESULT=""

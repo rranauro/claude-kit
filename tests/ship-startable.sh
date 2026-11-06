@@ -122,8 +122,7 @@ echo "$mode files-issues=$files write=$write denies-all-writes=${denies_writes:-
 after() { printf '%s\n' "$prompt" | sed -n "s/.*$1 \([^ ]*\).*/\1/p"; }
 case "$prompt" in
   */kit:list*)
-    out="$(after --offer-file)"
-    if [ -n "$out" ]; then cp "$REPLY_FILE" "$out"; else cat "$REPLY_FILE"; fi ;;
+    cat "$REPLY_FILE" ;;
   */kit:observe\ file*)
     cp "$FILE_REPLY" "$(after --reply)" ;;
   *)
@@ -355,7 +354,7 @@ assert_has "$out" "records remaining: 1" "the summary counts what is left"
 assert_has "$out" "cap (1) reached" "a filed record counts toward the cap"
 end_sandbox
 
-new_sandbox "every call a draining run makes is a background session"
+new_sandbox "every call that does work in a draining run is a background session"
 seed_store
 reply <<'R'
 <!-- kit-startable: begin -->
@@ -369,8 +368,9 @@ pr_list <<'J'
 [{"number":91,"state":"OPEN","closingIssuesReferences":[{"number":90}]}]
 J
 out="$(drain)"
-assert_lacks "$(cat "$CALLS")" "p files-issues" "nothing runs on -p"
-assert_has "$(grep '/kit:list' "$CALLS")" "bg " "the list call is a background session"
+assert_lacks "$(grep -v '/kit:list' "$CALLS")" "p files-issues" "nothing but the list runs on -p"
+assert_lacks "$(grep '/kit:list' "$CALLS")" "bg " "the list call is not a background session"
+assert_has "$(grep '/kit:observe file' "$CALLS")" "bg " "the filing call is a background session"
 assert_has "$out" "claude attach" "the operator is told how to attach"
 end_sandbox
 
@@ -589,14 +589,18 @@ assert_eq "$(STORE_OF)" "$before" "the store is unchanged"
 assert_lacks "$out" "records remaining" "and the summary says nothing about it"
 end_sandbox
 
-new_sandbox "under --bg the offer block is read from the file the session wrote"
+new_sandbox "under --bg the list runs in print mode and only the ship is a session"
 reply <<'R'
 <!-- kit-startable: begin -->
 bug: 52
 <!-- kit-startable: end -->
 R
 out="$(run bug --bg)"
-assert_has "$out" "taking #52" "the line in the reply file is what is taken"
+assert_has "$out" "taking #52" "the offer line on stdout is what is taken"
+assert_has "$(cat "$CALLS")" "p files-issues" "the list call is a -p call"
+assert_lacks "$(grep '/kit:list' "$CALLS")" "bg " "no list call is a background session"
+assert_has "$(grep 'ship-ticket 52' "$CALLS")" "bg " "the ship call is a background session"
+assert_lacks "$(cat "$SESSIONS" 2>/dev/null)" "list-" "no list session is left to stop"
 end_sandbox
 
 # ------------------------------------------------------------------------
