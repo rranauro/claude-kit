@@ -79,10 +79,15 @@ if opened is not None:
         sys.exit("pr-body-left: the body opens a kit-review-left block it never closes; not editing it")
     start = offsets[live[opened][0]]
     stop = offsets[closed[0]] + len(closed[1])
-    # A block found below the top was written at the end of Instructions,
-    # after a blank line of its own; taking that line too leaves the section as
-    # the author wrote it.
-    rest = (body[:start].rstrip("\r\n") + body[stop:]).lstrip("\r\n")
+    # Take only the separator this script wrote beside the block — after it at
+    # the top, before it at the end of Instructions, where it used to go. Any
+    # other blank line is the author's.
+    sep = nl + nl
+    head, tail = body[:start], body[stop:]
+    if start == 0:
+        rest = tail[len(sep):] if tail.startswith(sep) else tail
+    else:
+        rest = (head[:-len(sep)] if head.endswith(sep) else head) + tail
 
 new = block + (nl + nl + rest if rest else "")
 

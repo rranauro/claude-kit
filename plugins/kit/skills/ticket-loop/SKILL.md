@@ -338,6 +338,11 @@ with the PR number, against the local branch. It triages both sources and pushes
 what it fixes; that push is its own and this phase is built around it, not
 against it.
 
+**Where it reports a hold it meant to write and could not, the PR stays in
+draft.** Skip to step 6 and say the hold is not in place. Step 5 reads the
+label, and a missing label would release and arm a PR the round decided a person
+must answer first.
+
 **3 · Judge what the round added, then post the shape.** `simplify` judged
 everything up to the SHA it recorded. Compare the branch's head now with that
 SHA:

@@ -198,6 +198,19 @@ assert_has "$body" "<!-- /kit-review-left -->
 <!-- kit-review-left -->
 example" "the block lands at the top and the example is unchanged"
 
+new_sandbox "a body opening on blank lines keeps them"
+printf '\n\n%s' "$(held_body)" > "$BODY"
+"$SCRIPT" 7 "$SANDBOX/items.md" >/dev/null
+cp "$OUT" "$BODY"
+first="$(cat "$OUT")"
+: > "$OUT"
+"$SCRIPT" 7 "$SANDBOX/items.md" >/dev/null
+assert_eq "$(cat "$OUT")" "" "the same items again write nothing"
+printf '1. Another question. Settled by the owner.\n' > "$SANDBOX/items.md"
+"$SCRIPT" 7 "$SANDBOX/items.md" >/dev/null
+body="$(cat "$OUT")"
+assert_eq "${body#*<!-- /kit-review-left -->}" "${first#*<!-- /kit-review-left -->}" "new items leave the author's blank lines in place"
+
 new_sandbox "no items is refused and writes nothing"
 held_body > "$BODY"
 : > "$SANDBOX/items.md"

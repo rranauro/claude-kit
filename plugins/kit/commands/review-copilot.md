@@ -152,7 +152,7 @@ All items are processed without stopping for approval. The summary in Step 5 is 
   Use the categories and outcomes from Step 3, and tag each line with the source(s). **Include every finding, whatever its outcome** — the durable record of "we considered this and decided not to act" is the point. Write a finding outside the diff whole: where, who it affects, what they get. If Step 6 delegates to `/kit:commit`, pass this body as the intended message rather than letting `/kit:commit` draft its own.
 - **The summary carries these per-item lines too, commit or not.** It is what Step 7.5 posts, and the round summary on the PR is where a finding outside the diff is named — a commit body alone leaves it in history nobody holding the PR reads.
 - If no fixes were made, do NOT create a commit — there is nothing to push. The summary still becomes the record at Step 7.5: a round that fixed nothing is closed, and a PR cannot otherwise show the difference between that and a round nobody ran.
-- **Report the summary back to your caller in a form it can act on**, naming explicitly whether any finding ended `outside the diff — named here`, and whether any was left for the person. The first pins the PR — a finding outside the diff that the minor-fix exception resolved ends `fixed` and pins nothing, per Step 7.5 — and a pinned PR still merges. The second holds it, per Step 7.4, and a held PR does not. The caller cannot recover either from prose counts.
+- **Report the summary back to your caller in a form it can act on**, naming explicitly whether any finding ended `outside the diff — named here`, and whether any was left for the person. The first pins the PR — a finding outside the diff that the minor-fix exception resolved ends `fixed` and pins nothing, per Step 7.5 — and a pinned PR still merges. The second holds it, per Step 7.5, and a held PR does not merge. Name, too, a hold Step 7.5 meant to write that was refused. The caller cannot recover any of these from prose counts.
 
 **Step 6 — Quality gates (if any fixes were made):**
 - Invoke `kit:commit` through the Skill tool
@@ -297,6 +297,13 @@ hold and its reason, say `kit-review-closed` was deliberately withheld, and name
 pass that re-derives this one. That is the price of the only ordering where
 neither failure merges the PR.
 
+**A hold does not disarm a PR somebody already armed.** GitHub merges on green
+whatever the labels say, so where the PR already has auto-merge on — a re-review
+— run `gh pr merge <N> --disable-auto` once the hold lands. Leave it armed only
+where the project's `## Hold check` is `required`: there the check is what holds
+the PR, and removing the label is the whole release. A disarm that fails is
+reported: the PR is labelled, and it still merges on green.
+
 **`kit-hold` is what survives this pass.** Withholding auto-merge is the absence
 of an action, not a record: a CI gate arms auto-merge on any closed-round, green
 PR it has not been told to leave alone, so an escalation kept only as a comment
@@ -380,6 +387,10 @@ this step reads the same rule.
 owns that decision. Do not also ask. The record is already written: Step 7.5 does
 that in both modes.
 
+**A held PR is not offered for arming.** Where Step 1's labels carry
+`kit-hold`, or Step 7.5 held the PR or meant to, report it held with its reason
+and stop. Arming it is the person's to do once they have answered the hold.
+
 Otherwise, ask the user before enabling:
 
 > "Review findings addressed and pushed. Enable auto-merge (<method>) for PR #<N>? GitHub will merge once checks pass."
@@ -447,6 +458,10 @@ report the round as closed and held, and stop. A hold names a PR a person is
 already in charge of merging; this pass does not call `gh pr merge` over that
 decision, and it does not remove the label either — clearing `kit-hold` is the
 human's statement, the same as everywhere else in this file.
+
+**A hold that did not land still withholds the merge.** Where Step 7.5 meant to
+hold the PR and the write was refused, leave auto-merge off and report the PR as
+unheld and unarmed. The decision stands; only its mark is missing.
 
 **Otherwise, decide the merge.** On a triage that escalated nothing — including
 one that pinned the PR — `gh pr merge <N> --auto --<method>`, with
