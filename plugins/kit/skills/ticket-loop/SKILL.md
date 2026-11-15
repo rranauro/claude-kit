@@ -50,7 +50,8 @@ this one does not restate it.
   the base *into* the branch is a different act and equally not a pass's: `git
   merge`, `git rebase` and `gh pr update-branch` are one operation under three
   names, and a PR that has fallen behind its base is the operator's to carry
-  forward. A pass that integrates has moved the head its review round was
+  forward — one stalled on a conflict through `/kit:resolve-conflict`. A pass
+  that integrates has moved the head its review round was
   decided against.
 - **A denied operation stays denied however it is spelled.** The grant denies
   operations rather than commands, so a command the deny list never named that
