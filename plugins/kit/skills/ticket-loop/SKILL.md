@@ -378,25 +378,27 @@ cannot lose a race with a green CI.
   whether to post the review and hold the PR, or post it and let it merge
   unheld, or post it, hold it, and reshape now. Never hold without saying so,
   and hold as *Holding the PR* below says, with the review as its comment.
-  Say that arming is what an unattended run would do. The second answer pins as
-  the unattended case below does. The third is the first followed by invoking
+  Say that arming is what an unattended run would do. The second answer marks
+  the PR as the unattended case below does. The third is the first followed by invoking
   `kit:reshape <pr-number>` through the Skill tool, here, before step 4 — it
   pushes, and step 4 has to attest the head it leaves.
 - **Findings, unattended** — contested or not, they do not hold the PR. A
   finding with one clear fix is not a decision anyone has to make before the
   merge, and a contested one is a choice the axis could not make, so a hold
   would only make a person pick it at a reshape that costs another gate run.
-  Post the review, pin it, and let it merge:
+  Post the review, mark it a lead, and let it merge:
 
   ```
   gh pr comment <pr-number> --body-file <the comment>
-  gh pr edit <pr-number> --add-label kit-pinned   # only if the comment posted
+  gh pr edit <pr-number> --add-label kit-shape-lead   # only if the comment posted
   ```
 
-  **Record no observation.** The posted review and `kit-pinned` are the whole
-  record: `kit:improve-codebase-architecture` takes each finding from the pinned
-  PR as a lead and re-checks it against the code, and a copy in the store would
-  have no reader but triage, which could only delete it.
+  **Not `kit-pinned`, and record no observation.** The posted review and
+  `kit-shape-lead` are the whole record: `kit:improve-codebase-architecture`
+  takes each finding from the marked PR as a lead and re-checks it against the
+  code, and a copy in the store would have no reader but triage, which could only
+  delete it. `kit-pinned` is the review round's mark for a question it left
+  open, and a shape lead is not one.
   A failed write follows `docs/labels.md`: report it and carry on to the derived-plan hold below,
   since nothing here was a hold.
 
