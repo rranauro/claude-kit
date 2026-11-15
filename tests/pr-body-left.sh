@@ -89,22 +89,16 @@ Adds the thing.
 
 # --- cases --------------------------------------------------------------
 
-new_sandbox "inserts the block at the end of Instructions"
+new_sandbox "puts the block at the top of the body, above the Gist"
 held_body > "$BODY"
 out="$("$SCRIPT" 7 "$SANDBOX/items.md")"; code=$?
 assert_eq "$code" 0 "exits 0"
 assert_has "$out" "2 item(s)" "reports what it left"
 body="$(cat "$OUT")"
-before="${body%%<!-- kit-review-left -->*}"
-after="${body#*<!-- /kit-review-left -->}"
-assert_eq "$before" "$(held_body | sed -n '1,/^1\. Open the page\.$/p')
+assert_eq "${body%%<!-- kit-review-left -->*}" "" "nothing comes before the block"
+assert_eq "${body#*<!-- /kit-review-left -->}" "
 
-" "everything up to the block is unchanged"
-assert_eq "$after" "
-
-## Reversibility
-
-**Undo:** easy" "everything after the block is unchanged"
+$(held_body)" "the whole body follows the block unchanged"
 assert_has "$body" "2. Decide whether /site_collections redirects." "carries the items"
 
 new_sandbox "a later round replaces its block in place"
@@ -118,7 +112,7 @@ body="$(cat "$OUT")"
 assert_count "$body" "<!-- kit-review-left -->" 1 "one block, not two"
 assert_has "$body" "upload summary" "carries the new items"
 case "$body" in *site_collections*) bad "drops the old items" ;; *) ok "drops the old items" ;; esac
-assert_eq "${body%%<!-- kit-review-left -->*}" "${first%%<!-- kit-review-left -->*}" "text before the block is unchanged"
+assert_eq "${body%%<!-- kit-review-left -->*}" "" "the block stays at the top"
 assert_eq "${body#*<!-- /kit-review-left -->}" "${first#*<!-- /kit-review-left -->}" "text after the block is unchanged"
 
 new_sandbox "the same items again write nothing"
@@ -131,50 +125,57 @@ assert_eq "$code" 0 "exits 0"
 assert_eq "$(cat "$OUT")" "" "edits nothing"
 assert_has "$out" "already carry" "says so"
 
-new_sandbox "a body with no Instructions gets one at the end"
-printf '%s' '## Gist
-
-Adds the thing.' > "$BODY"
-"$SCRIPT" 7 "$SANDBOX/items.md" >/dev/null
-body="$(cat "$OUT")"
-assert_eq "${body%%## Instructions*}" "## Gist
+# A body an earlier version of this script wrote carries the block at the end
+# of Instructions. Leaving it there splits the questions across two places.
+old_body() {
+  printf '%s' '## Gist
 
 Adds the thing.
 
-" "the existing body is unchanged"
-assert_has "$body" "## Instructions
+## Instructions
 
-<!-- kit-review-left -->" "appends an Instructions section holding the block"
+1. Open the page.
 
-new_sandbox "Instructions as the last section"
-printf '%s' '## Gist
+<!-- kit-review-left -->
+**Left for you by the review round** — each says what to look at and what settles it:
 
-x
+1. Old question.
+<!-- /kit-review-left -->
 
-### Instructions
+## Reversibility
 
-1. Open it.' > "$BODY"
+**Undo:** easy'
+}
+
+new_sandbox "a block at the end of Instructions moves to the top"
+old_body > "$BODY"
 "$SCRIPT" 7 "$SANDBOX/items.md" >/dev/null
 body="$(cat "$OUT")"
-assert_count "$body" "Instructions" 1 "uses the section that is there"
-assert_eq "${body%%<!-- kit-review-left -->*}" '## Gist
+assert_count "$body" "<!-- kit-review-left -->" 1 "one block, not two"
+assert_eq "${body%%<!-- kit-review-left -->*}" "" "the block is at the top"
+assert_eq "${body#*<!-- /kit-review-left -->}" '
 
-x
+## Gist
 
-### Instructions
+Adds the thing.
 
-1. Open it.
+## Instructions
 
-' "the existing body is unchanged"
+1. Open the page.
+
+## Reversibility
+
+**Undo:** easy' "the old block is gone and the rest is as the author wrote it"
 
 new_sandbox "a CRLF body keeps its line endings"
 printf '## Gist\r\n\r\nx\r\n\r\n## Instructions\r\n\r\n1. Open it.\r\n\r\n<!-- kit-review-left -->\r\nold\r\n<!-- /kit-review-left -->\r\n\r\n## Reversibility\r\n\r\n**Undo:** easy' > "$BODY"
 "$SCRIPT" 7 "$SANDBOX/items.md" >/dev/null
-assert_eq "$(head -c 52 "$OUT" | od -c | head -3)" "$(head -c 52 "$BODY" | od -c | head -3)" "text before the block is byte-identical"
-assert_eq "$(tail -c 41 "$OUT" | od -c)" "$(tail -c 41 "$BODY" | od -c)" "text after the block is byte-identical"
+printf '## Gist\r\n\r\nx\r\n\r\n## Instructions\r\n\r\n1. Open it.\r\n\r\n## Reversibility\r\n\r\n**Undo:** easy' > "$SANDBOX/rest"
+size=$(wc -c < "$SANDBOX/rest")
+assert_eq "$(tail -c "$size" "$OUT" | od -c)" "$(od -c < "$SANDBOX/rest")" "the body after the block is byte-identical"
 assert_eq "$(grep -c $'[^\r]$' "$OUT")" "1" "every line but the unterminated last ends CRLF"
 
-new_sandbox "markers and headings inside fences are not the section"
+new_sandbox "markers inside fences are not the block"
 printf '%s' '## Gist
 
 ```text
@@ -185,32 +186,17 @@ example
 
 ## Instructions
 
-```sh
-# Create the record
-make it
-```
-
-## Reversibility
-
-easy' > "$BODY"
+1. Open it.' > "$BODY"
 "$SCRIPT" 7 "$SANDBOX/items.md" >/dev/null
 body="$(cat "$OUT")"
-assert_eq "${body%%## Instructions*}" '## Gist
+assert_count "$body" "<!-- kit-review-left -->" 2 "the fenced example stays beside the new block"
+assert_has "$body" "<!-- /kit-review-left -->
 
-```text
+## Gist
+
+\`\`\`text
 <!-- kit-review-left -->
-example
-<!-- /kit-review-left -->
-```
-
-' "the fenced example in the Gist is unchanged"
-assert_has "$body" '```
-
-<!-- kit-review-left -->
-**Left' "the block lands after the fenced command, not inside it"
-assert_has "$body" '<!-- /kit-review-left -->
-
-## Reversibility' "and before the next real heading"
+example" "the block lands at the top and the example is unchanged"
 
 new_sandbox "no items is refused and writes nothing"
 held_body > "$BODY"
