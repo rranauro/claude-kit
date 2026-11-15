@@ -296,8 +296,8 @@ gh pr list --state merged --label <label> \
   --jq '{fetched: length, prs: [.[] | {number, url, reviews: [.comments[] | select(.body | startswith("<!-- kit-shape-review -->")) | .body]} | select(.reviews != [])]}'
 ```
 
-A `kit-pinned` PR the call leaves out was pinned by its review round rather
-than a shape review.
+A `kit-pinned` PR the call leaves out was pinned for an observation-store
+record rather than a shape review.
 
 Drop the `merged:` term when there is no epic. **`fetched` equal to the limit
 means the window was cut off**, for either call. Split it by merge date and run

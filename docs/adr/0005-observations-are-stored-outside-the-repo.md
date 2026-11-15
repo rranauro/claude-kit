@@ -33,8 +33,10 @@ first would leave `/kit:review-copilot` with no non-blocking destination at all.
 
 A pass running where the checkout is discarded records nothing that survives.
 `/kit:review-copilot unattended` on a `workflow_run` job is that case, which is
-why its round puts what it leaves open on the PR — the summary comment and
-`kit-pinned` — before anything it appends to the store.
+why its round puts what it leaves open on the PR rather than in the store. A
+record written while a PR is being worked is copied into that PR's description
+and pinned with `kit-pinned`, so the claim, check and witness survive wherever
+the store does not.
 
 That an observation is only about the process is superseded by
 [ADR 0008](0008-the-observation-store-is-a-queue.md): the store also holds

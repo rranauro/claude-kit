@@ -68,13 +68,12 @@ escalated, the summary says why and the pass adds `kit-hold` as well — the sam
 label a person's own veto uses. So does a round that left a finding for the
 person, since its question is about the diff that would merge.
 
-A round that named a finding outside the diff did not escalate. It adds
-`kit-pinned` and the PR merges: the gates ran and the round closed, so nothing
-about the change is unestablished — what is left is a question, and a question
-that blocks a finished PR is a question that also blocks everything queued
-behind it. The summary comment names the finding and the label is a filter for
-`gh pr list`; both live on the PR, so both survive a runner that discards its
-checkout.
+A round that dropped a finding outside the diff as a design signal did not
+escalate, and it adds no other label: the gates ran and the round closed, so
+nothing about the change is unestablished, and the summary comment, which lives
+on the PR and so survives a runner that discards its checkout, is where the
+signal is kept. Only a finding the same round's Claude review also raised is
+addressed like one in the diff, and that is fixed or held.
 `workflow_run` fires again on every subsequent push, so a gate that does not look
 for the record first re-runs a round already answered — paying for a model to
 reach the same conclusion, and stacking a second summary comment on the PR saying
