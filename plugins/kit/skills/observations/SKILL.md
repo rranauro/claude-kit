@@ -126,11 +126,12 @@ the count reaching a reader at all depends on a producing pass passing it on.
 **A record written while a pass is working a pull request pins that PR:**
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/pr-body-pinned.sh [--label <name>] <pr> <slug> [<slug> ...]
+${CLAUDE_PLUGIN_ROOT}/scripts/pr-body-pinned.sh [--label <name> | --no-label] <pr> <slug> [<slug> ...]
 ```
 
 Each `<slug>` is the one the append printed after `observed`; `--label` is the
-project's spelling of `kit-pinned` (`kit:project-rules` *Labels*). The script
+project's spelling of `kit-pinned` (`kit:project-rules` *Labels*), and
+`--no-label` is for a project that says it has none — the copy is still made. The script
 copies each record's claim, check and witness into the PR's description, then
 applies the label — so the store being on one machine never leaves a pin with
 nothing behind it (`CONTEXT.md` **kit-pinned**). Never add `kit-pinned` any

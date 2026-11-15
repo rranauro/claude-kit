@@ -14,12 +14,18 @@ set -uo pipefail
 # written, so a re-run adds only what is new. `tests/pr-body-pinned.sh` holds it
 # to that.
 
+# A project that says it has no pin label still gets the copy: the record is
+# the decision, and the label only its mark (docs/labels.md).
 label="kit-pinned"
-if [ "${1-}" = "--label" ]; then label="${2-}"; shift 2 || shift $#; fi
-if [ $# -lt 2 ] || [ -z "$label" ]; then
-  echo "usage: pr-body-pinned.sh [--label <name>] <pr> <slug> [<slug> ...]" >&2
+case "${1-}" in
+  --label)    label="${2-}"; if [ -n "$label" ]; then shift 2; else set --; fi ;;
+  --no-label) label=""; shift ;;
+esac
+if [ $# -lt 2 ]; then
+  echo "usage: pr-body-pinned.sh [--label <name> | --no-label] <pr> <slug> [<slug> ...]" >&2
   echo "  each <slug> is a record in the observation store (observe.sh show);" >&2
-  echo "  --label is the project's spelling of kit-pinned." >&2
+  echo "  --label is the project's spelling of kit-pinned; --no-label copies only," >&2
+  echo "  for a project that has no pin label." >&2
   exit 2
 fi
 pr="$1"; shift
@@ -93,7 +99,9 @@ for i, line in enumerate(lines):
     elif m:
         fence = m.group(1)
     else:
-        live.append((i, text.strip()))
+        # Not stripped: this script writes its markers at column zero, and an
+        # indented one is an author's example inside a list.
+        live.append((i, text.rstrip()))
 
 opened = next((n for n, (i, t) in enumerate(live) if t == OPEN), None)
 closed = None
@@ -108,6 +116,10 @@ if not fresh:
 added = [l for r in fresh for l in entry(r)]
 
 if closed is None:
+    # Appended inside a fence the author never closed, the block would be
+    # invisible to the next run, which would append the same records again.
+    if fence:
+        sys.exit("pr-body-pinned: the body ends inside an unclosed code fence; not editing it")
     head = [OPEN, "**Pinned to the observation store** — each record a pass working this PR added, as the store holds it:", ""]
     new = (body + nl + nl if body else "") + nl.join(head + added + [CLOSE])
 else:
@@ -126,9 +138,11 @@ elif [ "$status" -ne 0 ]; then
 elif gh pr edit "$pr" --body-file "$tmp/new" >/dev/null; then
   echo "pinned: $added record(s) added to PR #$pr's body"
 else
-  echo "pr-body-pinned: could not write PR #$pr's body; $label not applied" >&2
+  echo "pr-body-pinned: could not write PR #$pr's body; ${label:-no label} not applied" >&2
   exit 1
 fi
+
+[ -n "$label" ] || exit 0
 
 # Applied on a re-run too: the last one may have written the body and lost the
 # label, and adding a label the PR already carries changes nothing.

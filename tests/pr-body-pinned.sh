@@ -164,6 +164,45 @@ body="$(cat "$OUT")"
 assert_count "$body" "<!-- kit-pinned -->" 2 "the fenced example stays beside the new block"
 assert_eq "${body##*<!-- /kit-pinned -->}" "" "the new block ends the body"
 
+new_sandbox "indented markers in a list's fenced example are not the block"
+printf '%s' '## Gist
+
+- an example:
+
+    ```text
+    <!-- kit-pinned -->
+    <!-- /kit-pinned -->
+    ```' > "$BODY"
+cp "$BODY" "$SANDBOX/before"
+record first-claim "the first claim" "echo one" "one"
+"$SCRIPT" 7 first-claim >/dev/null
+body="$(cat "$OUT")"
+assert_eq "${body%%$'\n\n'<!-- kit-pinned -->*}" "$(cat "$SANDBOX/before")" "the example is left as the author wrote it"
+assert_eq "${body##*<!-- /kit-pinned -->}" "" "a new block ends the body"
+
+new_sandbox "a body ending inside an unclosed fence is refused"
+printf '%s' '## Gist
+
+```text
+never closed' > "$BODY"
+record first-claim "the first claim" "echo one" "one"
+"$SCRIPT" 7 first-claim >/dev/null 2>&1; code=$?
+assert_eq "$code" 1 "exits 1"
+assert_eq "$(cat "$OUT")" "" "edits nothing"
+assert_eq "$(cat "$LABELS")" "" "applies no label"
+
+new_sandbox "--no-label copies the records and applies no label"
+pr_body > "$BODY"
+record first-claim "the first claim" "echo one" "one"
+"$SCRIPT" --no-label 7 first-claim >/dev/null; code=$?
+assert_eq "$code" 0 "exits 0"
+assert_has "$(cat "$OUT")" "the first claim" "the body carries the record"
+assert_eq "$(cat "$LABELS")" "" "applies no label"
+
+new_sandbox "an empty --label is a usage error"
+"$SCRIPT" --label "" 7 first-claim >/dev/null 2>&1; code=$?
+assert_eq "$code" 2 "exits 2"
+
 new_sandbox "a slug the store does not hold is refused and writes nothing"
 pr_body > "$BODY"
 "$SCRIPT" 7 no-such-record >/dev/null 2>&1; code=$?
