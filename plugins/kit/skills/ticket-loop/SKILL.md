@@ -621,7 +621,8 @@ or, when it carries `kit-hold`:
 > "PR #<N> is open, reviewed, ready and held (`kit-hold`) — <the shape review
 > posted on it is the reason, and `/kit:reshape <N>` offers an in-flight reshape
 > on this branch, or a ticket blocked on it | the kind or migration comment posted on it is
-> the reason | triage set it>. <Auto-merge reads on, and the project's hold
+> the reason | the review round left a question for you, at the top of the
+> body | triage set it>. <Auto-merge reads on, and the project's hold
 > check keeps it from merging until the label comes off | auto-merge is not
 > armed, since the project declares no hold check, so it merges only by hand
 > once the label comes off>. <Any failing check the rollup named.>"
