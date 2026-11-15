@@ -107,8 +107,7 @@ The PR merged carrying a question nobody has answered — a real review finding
 outside the diff, or one left for the person on an unheld PR. Written by the
 review pass beside the round summary that names it; that comment is its record,
 and the label is named for the PR so the diff is one lookup away. A shape review
-an unattended run posted is a **kit-shape-lead**, not a pin, though PRs that
-merged before that label existed carry their shape reviews under this one. Blocks nothing: it exists so the
+an unattended run posted is a **kit-shape-lead**, not a pin. Blocks nothing: it exists so the
 merged PRs with an open question can be listed, which a store on one machine
 cannot do. Distinct from **kit-hold**, which stops a merge because something
 could not be established; a pin stops nothing because everything was.

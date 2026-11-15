@@ -279,13 +279,15 @@ scanned. Then take the newest one that has the `ranking` marker among its commen
 - **`unscoped`, when they did not.** A run whose area §1 inferred from hot spots
   is unscoped as well.
 
-Leads come from PRs merged since that epic was opened, or from every marked PR
+Leads come from PRs merged since that epic was opened, or from every labelled PR
 when no such epic exists.
 
-**Two calls fetch the reviews**, one per label, each keeping only the marked
-comments and leaving out PRs that still carry `kit-hold`, which belong to the
-person at the hold even once merged. Run this one with `<label>` as
-`kit-shape-lead`, then again as `kit-pinned`:
+**Two calls fetch the reviews**, each keeping only the marked comments and
+leaving out PRs that still carry `kit-hold`, which belong to the person at the
+hold even once merged. Run this one with `<label>` as `kit-shape-lead` and again
+as `kit-pinned`, every time, and take the union by PR number: a PR that merged
+before the project took up `kit-shape-lead` carries its review under
+`kit-pinned`, and no version dates the switch (ADR 0006).
 
 ```
 gh pr list --state merged --label <label> \
@@ -294,11 +296,8 @@ gh pr list --state merged --label <label> \
   --jq '{fetched: length, prs: [.[] | {number, url, reviews: [.comments[] | select(.body | startswith("<!-- kit-shape-review -->")) | .body]} | select(.reviews != [])]}'
 ```
 
-**The `kit-pinned` call is not optional.** A PR that merged before a project
-took up `kit-shape-lead` carries its shape review under `kit-pinned`, and the kit
-has no version to say when that was. Run it every time and take the union by PR
-number, so a PR carrying both labels is read once. A `kit-pinned` PR the call
-leaves out was pinned by its review round rather than a shape review.
+A `kit-pinned` PR the call leaves out was pinned by its review round rather
+than a shape review.
 
 Drop the `merged:` term when there is no epic. **`fetched` equal to the limit
 means the window was cut off**, for either call. Split it by merge date and run
@@ -440,4 +439,4 @@ label a child to cover the gap — the label is triage's claim, not the scan's.
 - Score a class down for anything on the not-a-finding list.
 - Propose relocating a file as the finding. Ownership first, layout after.
 - Write the report anywhere but the repo's `plans/` directory.
-- Take leads from the observation store. The marked PRs are the record.
+- Take leads from the observation store. The labelled PRs are the record.
