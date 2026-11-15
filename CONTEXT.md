@@ -105,13 +105,20 @@ _Avoid_: hold, do-not-merge
 **kit-pinned**:
 The PR merged carrying a question nobody has answered — a real review finding
 outside the diff, or one left for the person on an unheld PR. Written by the
-review pass beside the round summary that names it, or by the hand-off beside a
-shape review an unattended run posted; either comment is its own record, and the label is
-named for the PR so the diff is one lookup away. Blocks nothing: it exists so the
+review pass beside the round summary that names it; that comment is its record,
+and the label is named for the PR so the diff is one lookup away. A shape review
+an unattended run posted is a **kit-shape-lead**, not a pin. Blocks nothing: it exists so the
 merged PRs with an open question can be listed, which a store on one machine
 cannot do. Distinct from **kit-hold**, which stops a merge because something
 could not be established; a pin stops nothing because everything was.
 _Avoid_: deferred, backlog, todo, follow-up
+
+**kit-shape-lead**:
+The PR merged with unattended shape findings (contested or uncontested, per #349)
+left unapplied. The marked shape-review comment is the record.
+`kit:improve-codebase-architecture` filters its leads on this label instead of
+`kit-pinned`.
+_Avoid_: shape pin, shape debt
 
 ### Writing a criterion
 
