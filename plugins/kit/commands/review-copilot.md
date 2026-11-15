@@ -116,13 +116,16 @@ For each item, in order:
      the owner gave, nothing would be done differently — is `dropped — affects
      nobody`, not left: there is nothing to look at, so it goes on neither the
      PR nor the store.
-   - **Outside the diff** → no fix: `outside the diff — named here`. The round
-     summary names it in full, and Step 7.5 pins the PR. It is real, and it is
-     not this ticket's — absorbing it widens the PR past what was asked, and
-     recording it where the person doesn't look loses it. **One exception:** a
-     minor fix may still be applied, and the outcome is then `fixed`. A fix is
-     minor when it touches ≤ 3 lines in 1 file, changes nothing a caller can
-     see, and adds no dependency, public API or schema change.
+   - **Outside the diff, raised by one reviewer alone** → no fix, `dropped —
+     outside the diff, a design signal`. A reviewer saw something the design
+     missed, and that is the design process's to learn from, not anything this
+     PR can act on. The round adds no label and no record for it, and the
+     summary lists it so the signal is not lost.
+   - **Outside the diff, in an overlap bucket the same round's Claude review
+     shares** → treat it as **Belongs**: `fixed`, or `left for the person`.
+     Two reviewers agreeing on the same `(path, line)` is the signal Step 2
+     flags, and it outweighs the boundary. A top-level item is never in a
+     bucket, so outside the diff it is always the case above.
 
    A contested shape finding stays ⚪ as above.
 
@@ -145,14 +148,14 @@ All items are processed without stopping for approval. The summary in Step 5 is 
   - <path>:<line> [Ignore] (claude) <one-line reasoning> — false positive, no change
   - <path>:<line> [Should fix] (shape) <one-line reasoning> — fixed
   - <path>:<line> [Should fix] (copilot) <one-line reasoning> — left for the person — at the top of the PR body
-  - <path>:<line> [Must fix] (claude) <who it affects, and what they get; the same on the base branch> — outside the diff — named here
-  - top-level (copilot-review) [Should fix] <one-line reasoning> — outside the diff — named here
+  - <path>:<line> [Must fix] (copilot+claude) <who it affects, and what they get; the same on the base branch> — fixed
+  - top-level (copilot-review) [Should fix] <what it names, and where> — dropped — outside the diff, a design signal
   ```
 
-  Use the categories and outcomes from Step 3, and tag each line with the source(s). **Include every finding, whatever its outcome** — the durable record of "we considered this and decided not to act" is the point. Write a finding outside the diff whole: where, who it affects, what they get. If Step 6 delegates to `/kit:commit`, pass this body as the intended message rather than letting `/kit:commit` draft its own.
-- **The summary carries these per-item lines too, commit or not.** It is what Step 7.5 posts, and the round summary on the PR is where a finding outside the diff is named — a commit body alone leaves it in history nobody holding the PR reads.
+  Use the categories and outcomes from Step 3, and tag each line with the source(s). **Include every finding, whatever its outcome** — the durable record of "we considered this and decided not to act" is the point. Write a finding dropped as a design signal whole: where, and what it names — the summary is the only place it is kept. If Step 6 delegates to `/kit:commit`, pass this body as the intended message rather than letting `/kit:commit` draft its own.
+- **The summary carries these per-item lines too, commit or not.** It is what Step 7.5 posts, and the round summary on the PR is where a design signal is named — a commit body alone leaves it in history nobody holding the PR reads.
 - If no fixes were made, do NOT create a commit — there is nothing to push. The summary still becomes the record at Step 7.5: a round that fixed nothing is closed, and a PR cannot otherwise show the difference between that and a round nobody ran.
-- **Report the summary back to your caller in a form it can act on**, naming explicitly whether any finding ended `outside the diff — named here`, and whether any was left for the person. The first pins the PR — a finding outside the diff that the minor-fix exception resolved ends `fixed` and pins nothing, per Step 7.5 — and a pinned PR still merges. The second holds it, per Step 7.5, and a held PR does not merge. Name, too, a hold Step 7.5 meant to write that was refused. The caller cannot recover any of these from prose counts.
+- **Report the summary back to your caller in a form it can act on**, naming explicitly whether any finding was left for the person, and how many were dropped as design signals. The first holds the PR, per Step 7.5, and a held PR does not merge; the second holds nothing and pins nothing. Name, too, a hold Step 7.5 meant to write that was refused. The caller cannot recover any of these from prose counts.
 
 **Step 6 — Quality gates (if any fixes were made):**
 - Invoke `kit:commit` through the Skill tool
@@ -205,9 +208,9 @@ person has to decide before the PR merges, so they are the first thing that
 person reads. A summary comment sits where they do not look. Do not edit the body any other way — the script is what keeps the
 rest of it as the author wrote it.
 
-**The body is these findings' record, and Step 7.5's hold is its mark.** They
-get no `kit-pinned`: a pin names a PR that merged carrying an open question, and
-a held PR's question is answered before it merges.
+**The body is these findings' record, and Step 7.5's hold is its mark.** A
+held PR's question is answered before it merges, so nothing about it goes to the
+store.
 
 **A write that fails loses them unless it is said.** Report what the script
 printed, and in Step 7.5's summary list each finding in full under `left for
@@ -320,30 +323,17 @@ working rather than the pass tripping over itself. `## Unattended`'s hold check
 sees `kit-hold`, closes the round again, reports it closed and held, and does not
 merge. This pass never removes the label — not even the one it set.
 
-**A finding that ended `outside the diff — named here` is not an escalation,
-and takes a different write.** One the minor-fix exception resolved ended
-`fixed`, leaves no question open, and takes none. It is a question about code
-this ticket did not change, to answer later, not a merge to stop: holding the PR
-over it strands finished work behind a question nobody has scheduled. The
-summary comment above already names it, so mark the PR and let the merge
-proceed:
-
-```
-gh pr edit <N> --add-label kit-pinned   # only if the comment posted
-```
-
-The summary comment is the record, on the PR the person holding it reads. The
-label is the filter `gh pr list --label kit-pinned` reads (`CONTEXT.md`
-**kit-pinned**), and never a vocabulary.
-
-**Nothing this round handled goes to the store.**
+**A finding dropped as a design signal takes no write** — the summary comment
+above names it, and that is all it gets. **Nothing this round handled goes to
+the store**, so this command never adds `kit-pinned` (`CONTEXT.md`
+**kit-pinned**).
 
 `## Unattended` below owns what the escalation *conditions* are, and the merge
 decision that branches on them. This step owns only the record.
 
 **Step 7.6 · `label-write-failed` — Say when a mark did not land:**
 
-**Every `--add-label` in this command** — the two above, `kit-pinned` below, and the declined-merge hold in Step 8 — can be refused, because the label does not
+**Every `--add-label` in this command** — the two above and the declined-merge hold in Step 8 — can be refused, because the label does not
 exist in this repo and the grant denies `gh label`. Report which label, on which
 PR, and what the unrecorded decision was, then carry on with the rest of the
 step.
@@ -464,15 +454,14 @@ hold the PR and the write was refused, leave auto-merge off and report the PR as
 unheld and unarmed. The decision stands; only its mark is missing.
 
 **Otherwise, decide the merge.** On a triage that escalated nothing — including
-one that pinned the PR — `gh pr merge <N> --auto --<method>`, with
+one that dropped design signals — `gh pr merge <N> --auto --<method>`, with
 the method Step 8 resolved, unless Step 8 found arming off. With a
 single review round there is nothing further to wait for, and leaving it off
 means the PR sits green until someone notices. Enabling it is idempotent, and
 the merge stays GitHub's to perform once checks pass.
 
-**A pinned PR is not withheld from the merge.** Step 7.5 owns that write. The
-reason it is not an escalation is that nothing is unverified: the gates ran, the
-round is closed, and what is left is a question whose answer can arrive later.
+**A design signal does not withhold the merge.** Nothing is unverified: the
+gates ran, the round is closed, and what was dropped is not this PR's to act on.
 The two conditions below are the
 opposite case — each of them means this pass could not establish that the PR is
 sound, and merging on an unestablished claim is what the hold prevents.
@@ -488,7 +477,7 @@ sound, and merging on an unestablished claim is what the hold prevents.
   session with a person nearby. Escalate and say so.
 
 **A finding is never one of them, and never stops the round to ask** — what it
-leaves open is the body's, the hold's and the pin's to carry.
+leaves open is the body's and the hold's to carry.
 
 An escalation is carried by the `kit-hold` label Step 7.5 applies, with the reason
 in the same comment body as the marker. Hand it the reason before it writes; do

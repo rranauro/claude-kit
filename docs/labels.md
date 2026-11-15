@@ -5,7 +5,7 @@ read. `kit-review-closed` stands for the summary comment. `kit-hold` stands for
 the record the pass that set it posted — a round summary, the questions a round
 left in the PR body, a shape review, or the
 comment naming a derived plan's kind or its migration — or for a person's decision at triage. `kit-blocked` stands for the "Blocked by"
-section a park wrote. `kit-pinned` stands for a round summary naming the question the PR merged carrying. `kit-shape-lead` stands for the marked shape-review comment an unattended hand-off posted, whose findings merged unapplied.
+section a park wrote. `kit-pinned` stands for the observation-store record a pass working the PR added — the store row and its copy in the PR description, which shows the record's claim, check and witness. `kit-shape-lead` stands for the marked shape-review comment an unattended hand-off posted, whose findings merged unapplied.
 
 A label without its record is therefore not a partial success. It is the one
 state that suppresses every later look: the PR reads as handled, no gate re-runs
