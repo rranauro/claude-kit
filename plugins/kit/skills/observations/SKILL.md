@@ -121,6 +121,30 @@ why. That single line is both *you can tell this was recorded*
 and *the drawer is this full*, and nothing counts the store on a schedule — so
 the count reaching a reader at all depends on a producing pass passing it on.
 
+## Pinning the PR it was written on
+
+**A record written while a pass is working a pull request pins that PR.** Copy
+it into the PR's description, then label it — in that order, and the label only
+once the copy landed (`docs/labels.md`):
+
+```bash
+${CLAUDE_PLUGIN_ROOT}/scripts/pr-body-pinned.sh <pr> <slug> [<slug> ...]
+gh pr edit <pr> --add-label kit-pinned   # only if the script exited 0
+```
+
+Each `<slug>` is the one the append printed after `observed`. The script adds
+each record's claim, check and witness to a marked block at the end of the
+body and leaves every record already there as written. The store lives on one
+machine, so the copy is what the label means everywhere else, and a pinned PR
+with no copy behind it is the state the label exists to rule out (`CONTEXT.md`
+**kit-pinned**).
+
+A pass with records from before its PR existed pins them once it opens —
+`kit:ticket-loop` `open-pr` does. A record written with no PR in reach pins
+nothing, and no pass adds `kit-pinned` for any other reason. A failed copy or
+label is reported as `docs/labels.md` says, and the record stays in the store
+either way.
+
 **One observation per thing observed.** Three seams in one pass are three
 records, each with its own check. A record carrying a list has no witness that
 can move.
@@ -132,8 +156,8 @@ can move.
 `docs/adr/0005-observations-are-stored-outside-the-repo.md`.
 
 The consequence a producer has to act on: **a pass whose checkout is discarded
-records nothing that survives**, so a record that has to outlive a runner goes on
-the PR instead. `docs/tending-on-a-runner.md` owns that case.
+records nothing that survives**, so a record that has to outlive a runner is
+copied onto its PR, as *Pinning the PR it was written on* says. `docs/tending-on-a-runner.md` owns that case.
 
 ## What is not an observation
 
@@ -147,8 +171,8 @@ the PR instead. `docs/tending-on-a-runner.md` owns that case.
   for. Pass `--who nobody` with `--affected` saying why: the script writes
   nothing and prints the drop, which is the line to report.
 - **A finding already stated where its reader looks** — the PR body, the
-  issue's stored plan, or a `kit-pinned` comment, the review round's own summary
-  included. A second copy is triaged twice and drifts from the first.
+  issue's stored plan, or the review round's summary comment. A second copy is
+  triaged twice and drifts from the first.
 
 A ticket-shaped finding *is* an observation: record it `--waiting ticket`, with
 its decision. Filing it directly would make every pass's close a network write

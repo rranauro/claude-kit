@@ -281,6 +281,11 @@ strands every ticket whose `kit-blocked-by` marker names this one, because a
 blocker reads as cleared only when its issue closes. `gh pr edit <n> --body` to
 add `Closes` if it carries neither. Leave a `Part of` in place — a `Closes`
 written over it closes an unfinished issue.
+
+**Pin the PR with every store record this pass wrote before it existed** — a
+claim parked by `kit:design`'s grilling, say — as `kit:observations` *Pinning
+the PR it was written on* says, using the slugs their appends printed. None
+written, nothing pinned.
 ---
 
 ## Phase 5 · `hand-off` — Close the review round, then leave the PR to CI
@@ -398,8 +403,8 @@ cannot lose a race with a green CI.
   gh pr edit <pr-number> --add-label kit-shape-lead   # only if the comment posted
   ```
 
-  Never `kit-pinned` here: that is the review round's label (`CONTEXT.md`
-  **kit-pinned**).
+  Never `kit-pinned` here: that label says a store record was added
+  (`CONTEXT.md` **kit-pinned**), and this writes none.
   **Record no observation.** The posted review and `kit-shape-lead` are the
   whole record: `kit:improve-codebase-architecture` takes each finding from the
   labelled PR as a lead and re-checks it against the code, and a copy in the

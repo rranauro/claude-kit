@@ -24,6 +24,7 @@ jobs:
       - run: ./tests/audit-review-records.sh
       - run: ./tests/pr-review.sh
       - run: ./tests/pr-body-left.sh
+      - run: ./tests/pr-body-pinned.sh
       - run: ./tests/capture-page.sh
       - run: ./tests/rails-quality-gates.sh
       - run: ./tests/base-show.sh
