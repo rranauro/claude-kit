@@ -91,11 +91,11 @@ _Avoid_: smoke test, QA pass, manual test, demo
 The finished PR does not merge on its own — a person is in charge of it. Usually
 because it must be walked in the running app first; also because someone declined
 auto-merge and means to merge it themselves; also because the review pass
-escalated a finding it may not settle alone, or left a finding for the person —
-whose question then sits at the top of the PR body, above the Gist — or a person at an attended hand-off
+escalated a finding it may not settle alone, or left one for the person, or a person at an attended hand-off
 held it on the shape review, or
 the plan was designed unattended for a kind whose acceptance is a look, or
-designed unattended and its change adds a migration. Set at
+designed unattended and its change adds a migration. A question the review pass
+left for the person sits at the top of the PR body, above the Gist. Set at
 triage on the issue and transcribed onto the PR, or written straight onto the PR
 when the decision is made after it exists — by a person, the review pass, or `kit:ticket-loop`.
 Cleared only by a person, never by the pass that set it. Once applied, it holds
@@ -105,8 +105,7 @@ _Avoid_: hold, do-not-merge
 
 **kit-pinned**:
 The PR merged carrying a question nobody has answered — a real review finding
-outside the diff. A finding left for the person holds the PR instead, since its
-question is about the diff that would merge. Written by the
+outside the diff. A finding left for the person holds the PR instead. Written by the
 review pass beside the round summary that names it, or by the hand-off beside a
 shape review an unattended run posted; either comment is its own record, and the label is
 named for the PR so the diff is one lookup away. Blocks nothing: it exists so the

@@ -79,13 +79,10 @@ if opened is not None:
         sys.exit("pr-body-left: the body opens a kit-review-left block it never closes; not editing it")
     start = offsets[live[opened][0]]
     stop = offsets[closed[0]] + len(closed[1])
-    if start == 0:
-        rest = body[stop:].lstrip("\r\n")
-    else:
-        # An earlier version wrote the block at the end of Instructions, after
-        # one blank line it added. Taking that line with it leaves the section
-        # as the author wrote it.
-        rest = body[:start].rstrip("\r\n") + body[stop:]
+    # A block found below the top was written at the end of Instructions,
+    # after a blank line of its own; taking that line too leaves the section as
+    # the author wrote it.
+    rest = (body[:start].rstrip("\r\n") + body[stop:]).lstrip("\r\n")
 
 new = block + (nl + nl + rest if rest else "")
 
@@ -96,7 +93,7 @@ sys.exit(3 if new == body else 0)
 PY
 status=$?
 if [ "$status" -eq 3 ]; then
-  echo "left: PR #$pr's Instructions already carry these items"
+  echo "left: the top of PR #$pr's body already carries these items"
   exit 0
 fi
 [ "$status" -eq 0 ] || exit 1
@@ -106,4 +103,4 @@ gh pr edit "$pr" --body-file "$tmp/new" >/dev/null || {
   exit 1
 }
 
-echo "left: $(grep -c '^[0-9][0-9]*\.' "$items") item(s) in PR #$pr's Instructions"
+echo "left: $(grep -c '^[0-9][0-9]*\.' "$items") item(s) at the top of PR #$pr's body"

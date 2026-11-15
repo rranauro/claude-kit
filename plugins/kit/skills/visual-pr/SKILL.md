@@ -385,10 +385,11 @@ look at the preview.
 
 ## Writing to an existing PR
 
-Rewriting a body that already has a `<!-- kit-review-left -->` block, carry it over unchanged as the first thing in the body, above the issue reference and the Gist. It holds the questions the review round left for the person holding the PR, and `/kit:review-copilot` is the only writer of it.
-
 When a person asks for a PR's body to be rewritten, write it to the output location first
-and show them. Run `gh pr edit <n> --body-file …` only on approval.
+and show them. Run `gh pr edit <n> --body-file …` only on approval. Carry any
+`<!-- kit-review-left -->` block over unchanged as the first thing in the body, above the
+issue reference and the Gist: it holds the questions the review round left for the person
+holding the PR, and `/kit:review-copilot` is the only writer of it.
 
 When a command invokes this skill to open a PR, return the body file's path. Creating the
 PR is the command's step, and invoking it was the approval.

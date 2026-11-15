@@ -123,7 +123,7 @@ cp "$OUT" "$BODY"
 out="$("$SCRIPT" 7 "$SANDBOX/items.md")"; code=$?
 assert_eq "$code" 0 "exits 0"
 assert_eq "$(cat "$OUT")" "" "edits nothing"
-assert_has "$out" "already carry" "says so"
+assert_has "$out" "already carries" "says so"
 
 # A body an earlier version of this script wrote carries the block at the end
 # of Instructions. Leaving it there splits the questions across two places.

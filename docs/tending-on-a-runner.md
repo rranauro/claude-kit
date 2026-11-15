@@ -66,8 +66,7 @@ gate never calls `gh pr merge`, and where it names a method, that is the flag.
 its summary, and adds a `kit-review-closed` label alongside it. Where the round
 escalated, the summary says why and the pass adds `kit-hold` as well — the same
 label a person's own veto uses. So does a round that left a finding for the
-person: its question is about the diff, and it sits at the top of the PR body
-until a person answers it.
+person, since its question is about the diff that would merge.
 
 A round that named a finding outside the diff did not escalate. It adds
 `kit-pinned` and the PR merges: the gates ran and the round closed, so nothing
