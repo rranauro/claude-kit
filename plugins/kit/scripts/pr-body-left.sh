@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
-# Writes the review round's left-for-the-person findings into the PR's body,
-# at the end of its Instructions section, inside a marked block a later round
-# replaces in place.
+# Writes the review round's left-for-the-person findings at the top of the PR's
+# body, above the Gist, inside a marked block a later round replaces in place.
+# They are the questions holding the PR, so they come before anything else the
+# person reads.
 #
 # A script rather than prose in /kit:review-copilot because the rest of the body
 # must come back byte-for-byte. The person holding the PR reads its Gist,
@@ -52,9 +53,8 @@ items = nl.join(open(items_path).read().strip("\n").splitlines())
 OPEN, CLOSE = "<!-- kit-review-left -->", "<!-- /kit-review-left -->"
 block = nl.join([OPEN, "**Left for you by the review round** — each says what to look at and what settles it:", "", items, CLOSE])
 
-# Only lines outside code fences count as headings or markers. A Gist showing
-# the block as an example, or a `# comment` in a fenced command, is the
-# author's text, not the section's edge.
+# Only lines outside code fences count as markers. A Gist showing the block as
+# an example is the author's text, not a block to replace.
 lines = body.splitlines(keepends=True)
 offsets = [0]
 for line in lines:
@@ -71,31 +71,25 @@ for i, line in enumerate(lines):
     else:
         live.append((i, text))
 
-headings = ((n, re.fullmatch(r"(#{1,6}) Instructions[ \t]*", t)) for n, (i, t) in enumerate(live))
-h, m = next(((n, m) for n, m in headings if m), (None, None))
-if m is None:
-    new = body + nl + nl + "## Instructions" + nl + nl + block
-else:
-    edge = re.compile(r"#{1,%d} " % len(m.group(1)))
-    section = live[h + 1:]
-    nxt = next((n for n, (i, t) in enumerate(section) if edge.match(t)), None)
-    if nxt is not None:
-        end, section = offsets[section[nxt][0]], section[:nxt]
+opened = next((n for n, (i, t) in enumerate(live) if t.strip() == OPEN), None)
+rest = body
+if opened is not None:
+    closed = next((live[n] for n in range(opened + 1, len(live)) if live[n][1].strip() == CLOSE), None)
+    if closed is None:
+        sys.exit("pr-body-left: the body opens a kit-review-left block it never closes; not editing it")
+    start = offsets[live[opened][0]]
+    stop = offsets[closed[0]] + len(closed[1])
+    # Take only the separator this script wrote beside the block — after it at
+    # the top, before it at the end of Instructions, where it used to go. Any
+    # other blank line is the author's.
+    sep = nl + nl
+    head, tail = body[:start], body[stop:]
+    if start == 0:
+        rest = tail[len(sep):] if tail.startswith(sep) else tail
     else:
-        end = len(body)
-    opened = next((n for n, (i, t) in enumerate(section) if t.strip() == OPEN), None)
-    if opened is not None:
-        closed = next((section[n] for n in range(opened + 1, len(section)) if section[n][1].strip() == CLOSE), None)
-        if closed is None:
-            sys.exit("pr-body-left: Instructions opens a kit-review-left block it never closes; not editing it")
-        start = offsets[section[opened][0]]
-        stop = offsets[closed[0]] + len(closed[1])
-        new = body[:start] + block + body[stop:]
-    else:
-        # The section's own trailing blank lines stay where they are, ahead of
-        # the next heading, so nothing the author wrote is re-spaced.
-        kept = body[:end].rstrip("\r\n")
-        new = kept + nl + nl + block + body[len(kept):]
+        rest = (head[:-len(sep)] if head.endswith(sep) else head) + tail
+
+new = block + (nl + nl + rest if rest else "")
 
 open(out_path, "w").write(new)
 # A round re-run over the same findings writes nothing, so the PR's history
@@ -104,7 +98,7 @@ sys.exit(3 if new == body else 0)
 PY
 status=$?
 if [ "$status" -eq 3 ]; then
-  echo "left: PR #$pr's Instructions already carry these items"
+  echo "left: the top of PR #$pr's body already carries these items"
   exit 0
 fi
 [ "$status" -eq 0 ] || exit 1
@@ -114,4 +108,4 @@ gh pr edit "$pr" --body-file "$tmp/new" >/dev/null || {
   exit 1
 }
 
-echo "left: $(grep -c '^[0-9][0-9]*\.' "$items") item(s) in PR #$pr's Instructions"
+echo "left: $(grep -c '^[0-9][0-9]*\.' "$items") item(s) at the top of PR #$pr's body"

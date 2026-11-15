@@ -110,8 +110,8 @@ For each item, in order:
      **Unless the code cannot settle it** — it needs an in-app look, a wording
      or product call, or an owner's decision. Then no fix is applied, since
      applying one is making that call, and the outcome is `left for the person`:
-     Step 7.4 writes it into the PR body, held or not, and on an unheld PR
-     Step 7.5 pins it. **It needs a question the owner decides, whose answer
+     Step 7.4 writes it at the top of the PR body, and Step 7.5 holds the PR.
+     **It needs a question the owner decides, whose answer
      changes something.** A finding you cannot put that way — whichever answer
      the owner gave, nothing would be done differently — is `dropped — affects
      nobody`, not left: there is nothing to look at, so it goes on neither the
@@ -126,7 +126,7 @@ For each item, in order:
 
    A contested shape finding stays ⚪ as above.
 
-   **A PR is held** when Step 1's labels carry `kit-hold`. Step 7.4 reads it.
+   **A PR is held** when Step 1's labels carry `kit-hold`. `## Unattended` reads it.
 
 **Step 4 — (removed — no per-item user gate):**
 All items are processed without stopping for approval. The summary in Step 5 is the user's review point.
@@ -144,7 +144,7 @@ All items are processed without stopping for approval. The summary in Step 5 is 
   - <path>:<line> [Optional] (claude) <one-line reasoning> — dropped — affects nobody
   - <path>:<line> [Ignore] (claude) <one-line reasoning> — false positive, no change
   - <path>:<line> [Should fix] (shape) <one-line reasoning> — fixed
-  - <path>:<line> [Should fix] (copilot) <one-line reasoning> — left for the person — in the PR's Instructions
+  - <path>:<line> [Should fix] (copilot) <one-line reasoning> — left for the person — at the top of the PR body
   - <path>:<line> [Must fix] (claude) <who it affects, and what they get; the same on the base branch> — outside the diff — named here
   - top-level (copilot-review) [Should fix] <one-line reasoning> — outside the diff — named here
   ```
@@ -152,7 +152,7 @@ All items are processed without stopping for approval. The summary in Step 5 is 
   Use the categories and outcomes from Step 3, and tag each line with the source(s). **Include every finding, whatever its outcome** — the durable record of "we considered this and decided not to act" is the point. Write a finding outside the diff whole: where, who it affects, what they get. If Step 6 delegates to `/kit:commit`, pass this body as the intended message rather than letting `/kit:commit` draft its own.
 - **The summary carries these per-item lines too, commit or not.** It is what Step 7.5 posts, and the round summary on the PR is where a finding outside the diff is named — a commit body alone leaves it in history nobody holding the PR reads.
 - If no fixes were made, do NOT create a commit — there is nothing to push. The summary still becomes the record at Step 7.5: a round that fixed nothing is closed, and a PR cannot otherwise show the difference between that and a round nobody ran.
-- **Report the summary back to your caller in a form it can act on**, naming explicitly whether any finding ended `outside the diff — named here`, and whether any was left for the person on an unheld PR. Either outcome pins the PR — a finding outside the diff that the minor-fix exception resolved ends `fixed` and pins nothing, per Step 7.5, and the caller cannot recover it from prose counts. It does not decide the merge: a pinned PR still merges.
+- **Report the summary back to your caller in a form it can act on**, naming explicitly whether any finding ended `outside the diff — named here`, and whether any was left for the person. The first pins the PR — a finding outside the diff that the minor-fix exception resolved ends `fixed` and pins nothing, per Step 7.5 — and a pinned PR still merges. The second holds it, per Step 7.5, and a held PR does not merge. Name, too, a hold Step 7.5 meant to write that was refused. The caller cannot recover any of these from prose counts.
 
 **Step 6 — Quality gates (if any fixes were made):**
 - Invoke `kit:commit` through the Skill tool
@@ -200,15 +200,14 @@ file, and run:
 ${CLAUDE_PLUGIN_ROOT}/scripts/pr-body-left.sh <N> <items-file>
 ```
 
-The person holding the PR reads its body, and the Instructions section is where
-they look for what to check; a summary comment sits where they do not. Do not edit the body any other way — the script is what keeps the
+The script puts them at the top of the body, above the Gist: they are what the
+person has to decide before the PR merges, so they are the first thing that
+person reads. A summary comment sits where they do not look. Do not edit the body any other way — the script is what keeps the
 rest of it as the author wrote it.
 
-**The body is these findings' record.** On a held PR they get no
-`kit-pinned`: it names a PR that merged
-carrying an open question, and a held PR's question is answered before it
-merges. An unheld PR can merge before anyone reads its body, so Step 7.5 pins
-it.
+**The body is these findings' record, and Step 7.5's hold is its mark.** They
+get no `kit-pinned`: a pin names a PR that merged carrying an open question, and
+a held PR's question is answered before it merges.
 
 **A write that fails loses them unless it is said.** Report what the script
 printed, and in Step 7.5's summary list each finding in full under `left for
@@ -271,31 +270,39 @@ gh api --method PATCH repos/{owner}/{repo}/issues/comments/<id> -f body=@<file>
 Two summaries on one PR read as two rounds, and the second is the one anybody
 trusts — which is the duplicate this step exists to prevent.
 
-**An escalation adds one more write, and states its reason in this same
-summary**, never a later comment. A pass that posts the marker and then dies
+**A round that holds adds one more write, and states its reason in this same
+summary**, never a later comment. Two reasons hold it: the round escalated, or
+it left a finding for the person, which is a decision nobody has made and which
+a merge makes costlier to answer, since the behaviour has then shipped. A pass that posts the marker and then dies
 leaves a PR reading as a clean closed round, which is this record inverted:
 
 ```
-gh pr edit <N> --add-label kit-hold          # escalating: this one goes first
+gh pr edit <N> --add-label kit-hold          # holding: this one goes first
 gh pr edit <N> --add-label kit-review-closed
 ```
 
-Both marks belong on an escalated PR — the round did close, and a gate should
+Both marks belong on a held PR — the round did close, and a gate should
 skip it for the same reason it skips any closed one: what it needs is a person,
 not another model pass.
 
-**On an escalation the hold is written first, and `kit-review-closed` only if it
-landed.** The two marks pull in opposite directions: `kit-hold` stops the merge
+**The hold is written first, and `kit-review-closed` only if it landed.** The two marks pull in opposite directions: `kit-hold` stops the merge
 and `kit-review-closed` is what permits it. A gate arms auto-merge on a
 closed-round, green, unheld PR — so a hold that failed while the closed mark
-succeeded is not a partial escalation, it is the escalation reversed, and the
+succeeded is not a partial hold, it is the hold reversed, and the
 next firing merges the thing this pass stopped.
 
 If the hold cannot be applied, **leave the round unclosed**: report the
-escalation, say `kit-review-closed` was deliberately withheld, and name
+hold and its reason, say `kit-review-closed` was deliberately withheld, and name
 `gh label create kit-hold` as what fixes it. An unclosed round costs a later
 pass that re-derives this one. That is the price of the only ordering where
 neither failure merges the PR.
+
+**A hold does not disarm a PR somebody already armed.** GitHub merges on green
+whatever the labels say, so where the PR already has auto-merge on — a re-review
+— run `gh pr merge <N> --disable-auto` once the hold lands. Leave it armed only
+where the project's `## Hold check` is `required`: there the check is what holds
+the PR, and removing the label is the whole release. A disarm that fails is
+reported: the PR is labelled, and it still merges on green.
 
 **`kit-hold` is what survives this pass.** Withholding auto-merge is the absence
 of an action, not a record: a CI gate arms auto-merge on any closed-round, green
@@ -314,12 +321,12 @@ sees `kit-hold`, closes the round again, reports it closed and held, and does no
 merge. This pass never removes the label — not even the one it set.
 
 **A finding that ended `outside the diff — named here` is not an escalation,
-and takes a different write** — and so does one left for the person on an
-unheld PR. One the minor-fix exception resolved ended `fixed`, leaves no
-question open, and takes neither. Each is a
-question to answer later, not a merge to stop: holding the PR over it strands
-finished work behind a question nobody has scheduled. The summary comment above
-already names it, so mark the PR and let the merge proceed:
+and takes a different write.** One the minor-fix exception resolved ended
+`fixed`, leaves no question open, and takes none. It is a question about code
+this ticket did not change, to answer later, not a merge to stop: holding the PR
+over it strands finished work behind a question nobody has scheduled. The
+summary comment above already names it, so mark the PR and let the merge
+proceed:
 
 ```
 gh pr edit <N> --add-label kit-pinned   # only if the comment posted
@@ -329,26 +336,14 @@ The summary comment is the record, on the PR the person holding it reads. The
 label is the filter `gh pr list --label kit-pinned` reads (`CONTEXT.md`
 **kit-pinned**), and never a vocabulary.
 
-**A finding left for the person on an unheld PR goes to the store only when no
-summary on the PR names it.** That is the comment above failing to post, with no
-earlier round's summary naming the finding either: a re-run whose edit failed
-still has the old summary and its pin. Then the store is the one place the
-question is waited on. Record one each
-through `kit:observations`, `--waiting owner` and `--pr <N>`, with its `action`
-stating the question the owner decides, and name it as recorded in the report to
-your caller. Where the comment posted, it, the body and `kit-pinned` are the
-record, and a copy in the store could only be deleted at triage. A body write
-that failed does not count: the summary lists those findings in full. A refused
-store write is reported and changes nothing else here. **Nothing else this round
-handled goes to the store.**
+**Nothing this round handled goes to the store.**
 
 `## Unattended` below owns what the escalation *conditions* are, and the merge
 decision that branches on them. This step owns only the record.
 
 **Step 7.6 · `label-write-failed` — Say when a mark did not land:**
 
-**Every `--add-label` in this command** — the two above, `kit-pinned` below, and
-the declined-merge hold in Step 8 — can be refused, because the label does not
+**Every `--add-label` in this command** — the two above, `kit-pinned` below, and the declined-merge hold in Step 8 — can be refused, because the label does not
 exist in this repo and the grant denies `gh label`. Report which label, on which
 PR, and what the unrecorded decision was, then carry on with the rest of the
 step.
@@ -391,6 +386,10 @@ this step reads the same rule.
 **Run unattended, decide the merge yourself** — see `## Unattended` below, which
 owns that decision. Do not also ask. The record is already written: Step 7.5 does
 that in both modes.
+
+**A held PR is not offered for arming.** Where Step 1's labels carry
+`kit-hold`, or Step 7.5 held the PR or meant to, report it held with its reason
+and stop. Arming it is the person's to do once they have answered the hold.
 
 Otherwise, ask the user before enabling:
 
@@ -452,12 +451,17 @@ belongs to you. You are the only one holding the per-item reasoning, and
 re-deriving it costs another pass.
 
 **A held PR still gets its round closed — a hold only ever withholds the merge.**
-If the labels fetched at Step 1 carry `kit-hold`, run every step above as normal —
+If the labels fetched at Step 1 carry `kit-hold`, or Step 7.5 added it
+this round, run every step above as normal —
 Step 7.5 records the round the same as any other PR's — but skip the merge:
 report the round as closed and held, and stop. A hold names a PR a person is
 already in charge of merging; this pass does not call `gh pr merge` over that
 decision, and it does not remove the label either — clearing `kit-hold` is the
 human's statement, the same as everywhere else in this file.
+
+**A hold that did not land still withholds the merge.** Where Step 7.5 meant to
+hold the PR and the write was refused, leave auto-merge off and report the PR as
+unheld and unarmed. The decision stands; only its mark is missing.
 
 **Otherwise, decide the merge.** On a triage that escalated nothing — including
 one that pinned the PR — `gh pr merge <N> --auto --<method>`, with
@@ -484,7 +488,7 @@ sound, and merging on an unestablished claim is what the hold prevents.
   session with a person nearby. Escalate and say so.
 
 **A finding is never one of them, and never stops the round to ask** — what it
-leaves open is the body's, the pin's and the store's to carry.
+leaves open is the body's, the hold's and the pin's to carry.
 
 An escalation is carried by the `kit-hold` label Step 7.5 applies, with the reason
 in the same comment body as the marker. Hand it the reason before it writes; do

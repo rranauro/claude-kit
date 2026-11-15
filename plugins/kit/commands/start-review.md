@@ -160,7 +160,7 @@ Two things this command adds on top:
   test steps, those are the list. Don't invent a click path alongside them, and
   don't fact-check their setup — if something in it errors locally, work around
   it quietly. It isn't yours to pin. A `<!-- kit-review-left -->` block at the
-  end of Instructions is not the author's: it is what the review round left to
+  top of the body is not the author's: it is what the review round left to
   settle, so each item is a step whose outcome you record.
 - **Add a step for every `suspected-from-code` finding**, so exercising the
   feature confirms or refutes it. That is the only thing that promotes one to a
