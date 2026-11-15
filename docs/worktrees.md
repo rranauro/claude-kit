@@ -54,7 +54,9 @@ freeness alone would hand it to the sweep while its owner is still writing in it
 
 So a ship pass takes a **lease**: `kit:start-ticket` locks the worktree with the
 reason `kit:ship #<issue> since <timestamp>`, and `kit:ticket-loop` unlocks it
-when the pass ends, whether that is an open PR or a park. Reclaim already holds a
+when the pass ends, whether that is an open PR or a park. `/kit:resolve-conflict`
+takes the same lease for the stretch between its push and its gate, where the
+merge commit has left the worktree clean. Reclaim already holds a
 locked worktree, so nothing coordinates and no operator has to serialise anything.
 
 The timestamp is what keeps a killed pass from owning a worktree forever:

@@ -41,6 +41,7 @@ ticket at a time. Run it directly in a terminal and leave; see
 |---|---|
 | `/kit:review-copilot` | The unattended half. Takes automated review findings one at a time and verifies each against the code before acting, recording the reasoning for every one in the commit body. A CI gate calls it with `unattended` once a review has landed on a PR — see [tending on a CI runner](tending-on-a-runner.md). |
 | `/kit:start-review` | The other side of the workflow: a PR arrives and you have to judge it. Checks the branch out in its own worktree, runs the headless reviewer, and walks the app. Assess-only on a colleague's PR; a fix loop on your own. |
+| `/kit:resolve-conflict` | Unsticks a PR stalled on a merge conflict, attended only — a pass may not bring the base into its branch. Merges the base in, puts any resolution that changes behavior in front of you, checks only what the conflict touched, pushes, then runs the ship gate once on the pushed head. |
 | `/kit:walkthrough` | Verifies a branch in-app one step at a time, against a checklist derived from the issue's acceptance criteria and the diff. The position lives in a file, so a bug found mid-walk detours into triage and returns to the same step. |
 
 ### Housekeeping
@@ -172,6 +173,10 @@ signoff its CI cannot produce — names the command that posts it under
 `## Ship gate` in `CLAUDE.md` (`- run: bin/ci`). `kit:ticket-loop` `hand-off` runs
 it once, after the review round's last push, and a non-zero exit keeps the PR in
 draft. A project without the section never runs its full suite from the loop.
+The gate attests the SHA it ran on, so a run before a push never counts. Every
+caller, `/kit:resolve-conflict` included, runs it once after the last push, and
+the status being required is what makes pushing first safe: a head that breaks
+something can be pushed, but it can't merge.
 
 **Review sources are declared too.** `## Review sources` in `CLAUDE.md` lists the
 automated reviews a project runs (`- copilot`, `- claude-review`); absent, both
