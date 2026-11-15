@@ -249,12 +249,12 @@ shape here.
 
 ### Leads from merged shape reviews
 
-§1's survey is one source of leads. Shape reviews on PRs that merged pinned with
-their findings unapplied (`kit:ticket-loop` `hand-off` step 3) are another, and
-each finding already names its count, its call site and its Afters. Gather them
-before §2.
+§1's survey is one source of leads. Shape reviews on PRs that merged labelled
+`kit-shape-lead`, their findings unapplied (`kit:ticket-loop` `hand-off` step 3),
+are another, and each finding already names its count, its call site and its
+Afters. Gather them before §2.
 
-**Read them from the PRs.** The posted comment and `kit-pinned` are the only
+**Read them from the PRs.** The posted comment and `kit-shape-lead` are the only
 record a merged shape finding leaves, and they survive everywhere, so a scan
 from a fresh clone or a CI runner gets the same leads as one from the checkout
 that merged them.
@@ -279,28 +279,33 @@ scanned. Then take the newest one that has the `ranking` marker among its commen
 - **`unscoped`, when they did not.** A run whose area §1 inferred from hot spots
   is unscoped as well.
 
-Leads come from PRs merged since that epic was opened, or from every pinned PR
+Leads come from PRs merged since that epic was opened, or from every labelled PR
 when no such epic exists.
 
-**One call fetches the reviews**, keeping only the marked comments, and leaving
-out PRs that still carry `kit-hold`, which belong to the person at the hold even
-once merged:
+**Two calls fetch the reviews**, each keeping only the marked comments and
+leaving out PRs that still carry `kit-hold`, which belong to the person at the
+hold even once merged. Run this one with `<label>` as `kit-shape-lead` and again
+as `kit-pinned`, every time, and take the union by PR number: a PR that merged
+before the project took up `kit-shape-lead` carries its review under
+`kit-pinned`, and no version dates the switch (ADR 0006).
 
 ```
-gh pr list --state merged --label kit-pinned \
+gh pr list --state merged --label <label> \
   --search "-label:kit-hold merged:>=<epic's createdAt date>" \
   --limit 1000 --json number,url,comments \
   --jq '{fetched: length, prs: [.[] | {number, url, reviews: [.comments[] | select(.body | startswith("<!-- kit-shape-review -->")) | .body]} | select(.reviews != [])]}'
 ```
 
+A `kit-pinned` PR the call leaves out was pinned by its review round rather
+than a shape review.
+
 Drop the `merged:` term when there is no epic. **`fetched` equal to the limit
-means the window was cut off.** Split it by merge date and run the call once per
-part. A PR left out now falls behind the epic this run may file, and no later
-window reaches it. A pinned PR the call leaves out was pinned
-by its review round rather than a shape review. Where a PR carries one marked
+means the window was cut off**, for either call. Split it by merge date and run
+that call once per part. A PR left out now falls behind the epic this run may
+file, and no later window reaches it. Where a PR carries one marked
 comment, that comment is the review. Where it carries several, which one is the
 review is `/kit:review-copilot` Step 2's rule, so run its shape-review lookup for
-that PR. This call returns no `updated_at` to pick by.
+that PR. Neither call returns an `updated_at` to pick by.
 
 **A lead is one finding**: a heading in the review, as `kit:shape-review` §5
 writes it. Accreted interface findings count, and so do contested ones — a
@@ -434,4 +439,4 @@ label a child to cover the gap — the label is triage's claim, not the scan's.
 - Score a class down for anything on the not-a-finding list.
 - Propose relocating a file as the finding. Ownership first, layout after.
 - Write the report anywhere but the repo's `plans/` directory.
-- Take leads from the observation store. The pinned PRs are the record.
+- Take leads from the observation store. The labelled PRs are the record.
