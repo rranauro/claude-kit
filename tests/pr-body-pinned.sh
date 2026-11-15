@@ -55,8 +55,8 @@ new_sandbox() {
   mkdir -p "$SANDBOX/bin" "$SANDBOX/repo/.claude"
   git -C "$SANDBOX/repo" init -q
   : > "$SANDBOX/repo/.claude/observations.jsonl"
-  export BODY="$SANDBOX/body.md" OUT="$SANDBOX/out.md" EDIT_EXIT=0
-  : > "$OUT"
+  export BODY="$SANDBOX/body.md" OUT="$SANDBOX/out.md" LABELS="$SANDBOX/labels" EDIT_EXIT=0 LABEL_EXIT=0
+  : > "$OUT"; : > "$LABELS"
 
   cat > "$SANDBOX/bin/gh" <<'GH'
 #!/usr/bin/env bash
@@ -64,10 +64,12 @@ case "$1 $2" in
   "pr view") cat "$BODY"; echo ;;
   "pr edit")
     while [ $# -gt 0 ]; do
-      [ "$1" = "--body-file" ] && cp "$2" "$OUT"
+      case "$1" in
+        --body-file) [ "$EDIT_EXIT" -eq 0 ] || exit "$EDIT_EXIT"; cp "$2" "$OUT" ;;
+        --add-label) [ "$LABEL_EXIT" -eq 0 ] || exit "$LABEL_EXIT"; echo "$2" >> "$LABELS" ;;
+      esac
       shift
-    done
-    exit "$EDIT_EXIT" ;;
+    done ;;
 esac
 GH
   chmod +x "$SANDBOX/bin/gh"
@@ -101,6 +103,7 @@ assert_has "$body" "docs/a.md names a step no command runs" "carries the claim"
 assert_has "$body" "grep -c 'step five' docs/a.md" "carries the check"
 assert_has "$body" "<!-- kit-pinned: docs-name-a-missing-step -->" "marks the record by its slug"
 assert_eq "${body##*<!-- /kit-pinned -->}" "" "the block ends the body"
+assert_eq "$(cat "$LABELS")" "kit-pinned" "labels the PR once the body is written"
 
 new_sandbox "a later record joins the block, and the earlier one stays as written"
 pr_body > "$BODY"
@@ -125,6 +128,8 @@ out="$("$SCRIPT" 7 first-claim)"; code=$?
 assert_eq "$code" 0 "exits 0"
 assert_eq "$(cat "$OUT")" "" "edits nothing"
 assert_has "$out" "already carries" "says so"
+assert_eq "$(cat "$LABELS")" "kit-pinned
+kit-pinned" "labels it again, in case the last run lost the label"
 
 new_sandbox "a witness carrying a fence cannot close the block's"
 pr_body > "$BODY"
@@ -162,19 +167,36 @@ assert_eq "${body##*<!-- /kit-pinned -->}" "" "the new block ends the body"
 new_sandbox "a slug the store does not hold is refused and writes nothing"
 pr_body > "$BODY"
 "$SCRIPT" 7 no-such-record >/dev/null 2>&1; code=$?
-[ "$code" -ne 0 ] && ok "exits non-zero" || bad "exits non-zero"
+assert_eq "$code" 1 "exits 1"
 assert_eq "$(cat "$OUT")" "" "edits nothing"
+assert_eq "$(cat "$LABELS")" "" "applies no label"
 
 new_sandbox "no slug is a usage error"
 "$SCRIPT" 7 >/dev/null 2>&1; code=$?
 assert_eq "$code" 2 "exits 2"
 
-new_sandbox "a refused write is a failure"
+new_sandbox "a refused body write is a failure, and labels nothing"
 pr_body > "$BODY"
 record first-claim "the first claim" "echo one" "one"
 export EDIT_EXIT=1
 "$SCRIPT" 7 first-claim >/dev/null 2>&1; code=$?
-[ "$code" -ne 0 ] && ok "exits non-zero" || bad "exits non-zero"
+assert_eq "$code" 1 "exits 1"
+assert_eq "$(cat "$LABELS")" "" "applies no label"
+
+new_sandbox "a refused label is said, and the body keeps its records"
+pr_body > "$BODY"
+record first-claim "the first claim" "echo one" "one"
+export LABEL_EXIT=1
+err="$("$SCRIPT" 7 first-claim 2>&1 >/dev/null)"; code=$?
+assert_eq "$code" 4 "exits 4"
+assert_has "$err" "could not be applied" "names the label that did not land"
+assert_has "$(cat "$OUT")" "the first claim" "the body was written"
+
+new_sandbox "the project's spelling of the label"
+pr_body > "$BODY"
+record first-claim "the first claim" "echo one" "one"
+"$SCRIPT" --label "Status: Pinned" 7 first-claim >/dev/null
+assert_eq "$(cat "$LABELS")" "Status: Pinned" "applies that label"
 
 echo
 echo "$passed passed, $failed failed"

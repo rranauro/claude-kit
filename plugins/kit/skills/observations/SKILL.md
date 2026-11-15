@@ -123,27 +123,24 @@ the count reaching a reader at all depends on a producing pass passing it on.
 
 ## Pinning the PR it was written on
 
-**A record written while a pass is working a pull request pins that PR.** Copy
-it into the PR's description, then label it — in that order, and the label only
-once the copy landed (`docs/labels.md`):
+**A record written while a pass is working a pull request pins that PR:**
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/pr-body-pinned.sh <pr> <slug> [<slug> ...]
-gh pr edit <pr> --add-label kit-pinned   # only if the script exited 0
+${CLAUDE_PLUGIN_ROOT}/scripts/pr-body-pinned.sh [--label <name>] <pr> <slug> [<slug> ...]
 ```
 
-Each `<slug>` is the one the append printed after `observed`. The script adds
-each record's claim, check and witness to a marked block at the end of the
-body and leaves every record already there as written. The store lives on one
-machine, so the copy is what the label means everywhere else, and a pinned PR
-with no copy behind it is the state the label exists to rule out (`CONTEXT.md`
-**kit-pinned**).
+Each `<slug>` is the one the append printed after `observed`; `--label` is the
+project's spelling of `kit-pinned` (`kit:project-rules` *Labels*). The script
+copies each record's claim, check and witness into the PR's description, then
+applies the label — so the store being on one machine never leaves a pin with
+nothing behind it (`CONTEXT.md` **kit-pinned**). Never add `kit-pinned` any
+other way.
 
 A pass with records from before its PR existed pins them once it opens —
 `kit:ticket-loop` `open-pr` does. A record written with no PR in reach pins
-nothing, and no pass adds `kit-pinned` for any other reason. A failed copy or
-label is reported as `docs/labels.md` says, and the record stays in the store
-either way.
+nothing. A non-zero exit is reported as `docs/labels.md` says — exit 4 means the
+copy landed and the label did not — and the record stays in the store either
+way.
 
 **One observation per thing observed.** Three seams in one pass are three
 records, each with its own check. A record carrying a list has no witness that

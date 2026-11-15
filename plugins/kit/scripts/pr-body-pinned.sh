@@ -2,9 +2,11 @@
 set -uo pipefail
 
 # Copies observation-store records into a marked block at the end of a PR's
-# body, one entry per record with its claim, check and witness. `kit-pinned`
-# claims a record was added; the store lives on one machine, so this copy is
-# what the label means everywhere else (ADR 0005).
+# body, one entry per record with its claim, check and witness, then labels the
+# PR `kit-pinned`. The label claims a record was added; the store lives on one
+# machine, so this copy is what the label means everywhere else (ADR 0005). The
+# label is applied here, and only after the body write lands, so no caller can
+# apply one without the other.
 #
 # A script for the reason pr-body-left.sh is one: the rest of the body must come
 # back byte-for-byte, and a model re-emitting a whole body eventually rewords a
@@ -12,9 +14,12 @@ set -uo pipefail
 # written, so a re-run adds only what is new. `tests/pr-body-pinned.sh` holds it
 # to that.
 
-if [ $# -lt 2 ]; then
-  echo "usage: pr-body-pinned.sh <pr> <slug> [<slug> ...]" >&2
-  echo "  each <slug> is a record in the observation store (observe.sh show)." >&2
+label="kit-pinned"
+if [ "${1-}" = "--label" ]; then label="${2-}"; shift 2 || shift $#; fi
+if [ $# -lt 2 ] || [ -z "$label" ]; then
+  echo "usage: pr-body-pinned.sh [--label <name>] <pr> <slug> [<slug> ...]" >&2
+  echo "  each <slug> is a record in the observation store (observe.sh show);" >&2
+  echo "  --label is the project's spelling of kit-pinned." >&2
   exit 2
 fi
 pr="$1"; shift
@@ -23,15 +28,15 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
 # Every slug resolves before anything is written: a block missing one record
-# reads as complete, and the pass would pin on it.
+# reads as complete, and the label would claim it.
 OBSERVE="$(cd "$(dirname "$0")" && pwd)/observe.sh"
-: > "$tmp/records"
+n=0
 for slug in "$@"; do
-  "$OBSERVE" show "$slug" > "$tmp/one" 2>/dev/null || {
+  n=$((n + 1))
+  "$OBSERVE" show "$slug" > "$tmp/record.$n" 2>/dev/null || {
     echo "pr-body-pinned: the store holds no record $slug; nothing written" >&2
     exit 1
   }
-  python3 -c 'import json,sys; print(json.dumps(json.load(open(sys.argv[1]))))' "$tmp/one" >> "$tmp/records"
 done
 
 gh pr view "$pr" --json body --jq .body > "$tmp/body" || {
@@ -39,15 +44,17 @@ gh pr view "$pr" --json body --jq .body > "$tmp/body" || {
   exit 1
 }
 
-added="$(python3 - "$tmp/body" "$tmp/records" "$tmp/new" <<'PY'
+added="$(python3 - "$tmp/body" "$tmp/new" "$tmp"/record.* <<'PY'
 import json, re, sys
 
-body_path, records_path, out_path = sys.argv[1:4]
+body_path, out_path, *record_paths = sys.argv[1:]
+# newline="" keeps a body written in GitHub's editor CRLF.
 body = open(body_path, newline="").read()
+# `--jq` adds one newline the body itself does not carry.
 if body.endswith("\n"):
     body = body[:-1]
 nl = "\r\n" if "\r\n" in body else "\n"
-records = [json.loads(l) for l in open(records_path) if l.strip()]
+records = [json.load(open(p)) for p in record_paths]
 
 OPEN, CLOSE = "<!-- kit-pinned -->", "<!-- /kit-pinned -->"
 ENTRY = "<!-- kit-pinned: {} -->"
@@ -71,13 +78,11 @@ def entry(r):
         "Witness when it was recorded:",
         "",
         *fenced(r.get("witness") or ""),
+        "",
     ]
 
 # Markers count only outside code fences, so an author's example is left alone.
 lines = body.splitlines(keepends=True)
-offsets = [0]
-for line in lines:
-    offsets.append(offsets[-1] + len(line))
 live, fence = [], None
 for i, line in enumerate(lines):
     text = line.rstrip("\r\n")
@@ -91,27 +96,22 @@ for i, line in enumerate(lines):
         live.append((i, text.strip()))
 
 opened = next((n for n, (i, t) in enumerate(live) if t == OPEN), None)
-if opened is None:
-    fresh = records
-    if not fresh:
-        sys.exit(3)
-    block = [OPEN, "**Pinned to the observation store** — each record a pass working this PR added, as the store holds it:", ""]
-    for r in fresh:
-        block += entry(r) + [""]
-    block.append(CLOSE)
-    new = (body + nl + nl if body else "") + nl.join(block)
-else:
+closed = None
+if opened is not None:
     closed = next((live[n] for n in range(opened + 1, len(live)) if live[n][1] == CLOSE), None)
     if closed is None:
         sys.exit("pr-body-pinned: the body opens a kit-pinned block it never closes; not editing it")
-    have = {t for i, t in live[opened + 1:] if t.startswith("<!-- kit-pinned: ")}
-    fresh = [r for r in records if ENTRY.format(r["id"]) not in have]
-    if not fresh:
-        sys.exit(3)
-    at = offsets[closed[0]]
-    added = []
-    for r in fresh:
-        added += entry(r) + [""]
+have = {t for i, t in live[opened + 1:]} if opened is not None else set()
+fresh = [r for r in records if ENTRY.format(r["id"]) not in have]
+if not fresh:
+    sys.exit(3)
+added = [l for r in fresh for l in entry(r)]
+
+if closed is None:
+    head = [OPEN, "**Pinned to the observation store** — each record a pass working this PR added, as the store holds it:", ""]
+    new = (body + nl + nl if body else "") + nl.join(head + added + [CLOSE])
+else:
+    at = sum(len(l) for l in lines[:closed[0]])
     new = body[:at] + nl.join(added) + nl + body[at:]
 
 open(out_path, "w", newline="").write(new)
@@ -121,13 +121,19 @@ PY
 status=$?
 if [ "$status" -eq 3 ]; then
   echo "pinned: PR #$pr's body already carries these records"
-  exit 0
-fi
-[ "$status" -eq 0 ] || exit 1
-
-gh pr edit "$pr" --body-file "$tmp/new" >/dev/null || {
-  echo "pr-body-pinned: could not write PR #$pr's body" >&2
+elif [ "$status" -ne 0 ]; then
   exit 1
-}
+elif gh pr edit "$pr" --body-file "$tmp/new" >/dev/null; then
+  echo "pinned: $added record(s) added to PR #$pr's body"
+else
+  echo "pr-body-pinned: could not write PR #$pr's body; $label not applied" >&2
+  exit 1
+fi
 
-echo "pinned: $added record(s) added to PR #$pr's body"
+# Applied on a re-run too: the last one may have written the body and lost the
+# label, and adding a label the PR already carries changes nothing.
+gh pr edit "$pr" --add-label "$label" >/dev/null || {
+  echo "pr-body-pinned: the records are in PR #$pr's body, but $label could not be applied; \`gh label create $label\` is the repo owner's fix" >&2
+  exit 4
+}
+echo "pinned: PR #$pr carries $label"
