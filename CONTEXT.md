@@ -107,8 +107,7 @@ _Avoid_: hold, do-not-merge
 The pass added a record to the observation store. The PR description shows that
 record's claim, check and witness, so the label still means something on a
 machine that doesn't have the store (ADR 0005). The record is the store row and
-its copy in the PR description; a pass applies the label only once the copy
-is written, and no pass applies it otherwise. A shape review an unattended run
+its copy in the PR description. A shape review an unattended run
 posted is a **kit-shape-lead**, not a pin. Blocks nothing: it exists so the PRs
 behind store records can be listed, which a store on one machine cannot do.
 Distinct from **kit-hold**, which stops a merge because something could not be

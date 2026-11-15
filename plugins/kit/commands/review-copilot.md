@@ -323,14 +323,10 @@ working rather than the pass tripping over itself. `## Unattended`'s hold check
 sees `kit-hold`, closes the round again, reports it closed and held, and does not
 merge. This pass never removes the label — not even the one it set.
 
-**A finding dropped as a design signal takes no write.** The summary comment
-above names it, and that is all it gets: it holds nothing, because nothing
-about this PR is unestablished, and it pins nothing, because `kit-pinned` says
-a store record was added (`CONTEXT.md` **kit-pinned**) and this round adds
-none.
-
-**Nothing this round handled goes to the store**, so this command never adds
-`kit-pinned`.
+**A finding dropped as a design signal takes no write** — the summary comment
+above names it, and that is all it gets. **Nothing this round handled goes to
+the store**, so this command never adds `kit-pinned` (`CONTEXT.md`
+**kit-pinned**).
 
 `## Unattended` below owns what the escalation *conditions* are, and the merge
 decision that branches on them. This step owns only the record.

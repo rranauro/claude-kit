@@ -72,8 +72,7 @@ A round that dropped a finding outside the diff as a design signal did not
 escalate, and it adds no other label: the gates ran and the round closed, so
 nothing about the change is unestablished, and the summary comment, which lives
 on the PR and so survives a runner that discards its checkout, is where the
-signal is kept. Only a finding the same round's Claude review also raised is
-addressed like one in the diff, and that is fixed or held.
+signal is kept.
 `workflow_run` fires again on every subsequent push, so a gate that does not look
 for the record first re-runs a round already answered — paying for a model to
 reach the same conclusion, and stacking a second summary comment on the PR saying
