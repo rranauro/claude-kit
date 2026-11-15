@@ -26,8 +26,10 @@ there to catch a resolution that breaks the code it touched.
 
 ## Step 1 · `locate` — A checkout of the PR's branch
 
-`gh pr view <n> --json state,headRefName,baseRefName,closingIssuesReferences`.
-If it isn't open, say so and stop.
+`gh pr view <n> --json state,isCrossRepository,headRefName,baseRefName,closingIssuesReferences`.
+If it isn't open, say so and stop. **If `isCrossRepository` is true, stop too.**
+The head lives in a fork, so fetching and pushing `headRefName` on `origin` would
+reach a different branch, or none. The fork's owner resolves it.
 
 `<base>` is the PR's `baseRefName`. The PR already names the branch it merges
 into, and that wins over `kit:project-rules` *The base branch*.
@@ -40,6 +42,16 @@ Its offered rebase is the operation Step 2 rules out. Hold the absolute path as
 `<worktree>`. Every Read/Edit/Write from here targets it, and the tool cwd
 stays at the main checkout.
 
+**Take the lease before touching anything**, in the shape `kit:start-ticket`
+`create-worktree` writes. Key it on the issue the PR closes, or on the PR number
+where it closes none. Once the merge commit exists the worktree is clean again,
+and a sweep running elsewhere would otherwise reclaim it between the push and
+the gate. **A lock refused because the worktree is already locked** belongs to
+another pass or to someone's hand. Leave it alone, say who holds it, and stop:
+another owner is working there. Let `git worktree lock` itself answer. This
+command holds the lease only once its lock succeeds, and it releases with `git
+worktree unlock <worktree>` only a lease it holds, however the command ends.
+
 **A worktree with uncommitted changes stops here.** Say what is dirty and let the
 person deal with it. A merge started over someone's work in progress mixes the
 two.
@@ -49,22 +61,19 @@ fast-forward it. If the two have diverged, ask before doing anything. A
 resolution merged onto a stale local tip pushes as a rejected non-fast-forward,
 or worse, a forced one.
 
-**Take the lease**, as `kit:start-ticket` `create-worktree` does. Key it on the
-issue the PR closes, or on the PR number where it closes none. Once the merge
-commit exists the worktree is clean again, and a sweep running elsewhere would
-otherwise reclaim it between the push and the gate. Release it however the
-command ends, with `git worktree unlock <worktree>`.
-
 ## Step 2 · `merge` — Bring the base in, and resolve
 
-`git -C <worktree> merge origin/<base>` — a merge, never a rebase. A rebase
-rewrites the commits the PR's review round was decided against and needs a
-forced push. A merge commit adds one commit on top, and a squash merge folds it
-away.
+`git -C <worktree> merge --no-commit --no-ff origin/<base>` — a merge, never a
+rebase. A rebase rewrites the commits the PR's review round was decided against
+and needs a forced push. A merge commit adds one commit on top, and a squash
+merge folds it away. `--no-commit --no-ff` keeps a merge that turns out clean
+from advancing the branch before this command has decided anything.
 
-**A merge that comes back clean means there was no conflict.** GitHub had not
-recomputed, or someone resolved it already. Say so, `git -C <worktree> merge
---abort`, and stop. A PR that is merely behind is GitHub's to update.
+**A merge with no conflicts means there was nothing to resolve.** GitHub had not
+recomputed, or someone resolved it already. Say so and stop. If `MERGE_HEAD`
+exists, `git -C <worktree> merge --abort` first. An already-up-to-date result
+started no merge and needs none. A PR that is merely behind is GitHub's to
+update.
 
 Record the conflicted paths before touching anything:
 `git -C <worktree> diff --name-only --diff-filter=U`. Step 3 checks exactly these.
@@ -82,6 +91,12 @@ its Step 4 does, on **the conflicted paths from Step 2 only**, not the branch's
 whole diff against the base. Named files and examples only, never a directory
 and never the whole suite, whether or not the project declares a ship gate.
 
+**That overrides `/kit:commit`'s whole-app fallback here.** A gate that only runs
+whole, such as a wrapper like `bin/ci` or a tool that takes no file list, is not
+run. Ask the person for a targeted alternative. If there is none, say that
+nothing checked the resolution before the push and let them decide whether to
+push it.
+
 **A failure is a broken resolution.** Fix it and run again. A failure that won't
 clear after a genuine attempt is the person's to decide, so surface it and stop
 before anything is pushed: `git -C <worktree> merge --abort` is theirs to run if
@@ -97,8 +112,8 @@ concern and a merge commit is one commit.
 means the remote moved since Step 1, so go back to Step 1's *make it current*
 rather than overriding it.
 
-Then read the PR once: `gh pr view <n> --json headRefOid,isDraft,autoMergeRequest,labels`.
-Steps 5 and 6 both decide from this read.
+Then read the PR once: `gh pr view <n> --json isDraft,autoMergeRequest,labels`.
+Step 5 decides from this read.
 
 ## Step 5 · `arm` — Leave the PR armed for the gate to release
 
@@ -120,9 +135,11 @@ Run the project's `## Ship gate` as `kit:ticket-loop` `hand-off` step 4 runs it:
 once, from `<worktree>`, with nothing committed or pushed after it. **Absent →
 skip this step.** CI is the gate.
 
-**First confirm the head.** `git -C <worktree> rev-parse HEAD` must equal the
-`headRefOid` from Step 4's read. If it doesn't, someone pushed in between, and a
-gate run now would attest the wrong commit. Say so and stop.
+**First confirm the head, read fresh.** `git -C <worktree> rev-parse HEAD`
+must equal `gh pr view <n> --json headRefOid` read immediately before the gate.
+Step 5 can wait on a person's answer, and a push during that wait is what this
+catches. If they differ, someone pushed in between, and a gate run now would
+attest the wrong commit. Say so and stop.
 
 - **Zero** → the status is posted, and an armed PR merges on it.
 - **Non-zero** → show the person the failing output and leave auto-merge as
